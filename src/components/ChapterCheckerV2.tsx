@@ -170,7 +170,8 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
 };
 
 type LayoutMode = "desktop" | "laptop" | "tablet";
-type SelectedDomain = Genre | "none";
+type SelectedDomain = Genre | "none" | "custom";
+type Domain = Genre; // Alias for compatibility
 
 const resolveLayoutMode = (width: number): LayoutMode => {
   // Tablet: ≤1024px (iPad and smaller)

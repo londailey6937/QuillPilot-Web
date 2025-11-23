@@ -13,7 +13,7 @@ import type {
   PatternAnalysis,
   Chapter,
 } from "../../types";
-import { ChemistryPatterns } from "./ChemistryPatterns";
+// import { ChemistryPatterns } from "./ChemistryPatterns"; // Disabled for fiction focus
 
 export class PatternRecognizer {
   /**
