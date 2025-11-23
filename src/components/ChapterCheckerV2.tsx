@@ -1718,10 +1718,14 @@ export const ChapterCheckerV2: React.FC = () => {
           minWidth: 0,
         }}
       >
-        {/* Left: Document Column (63% in all modes) */}
+        {/* Left: Document Column (60% desktop, 70% laptop) */}
         <div
           style={{
-            flex: isStackedLayout ? "1 1 100%" : "63 1 0", // 63% in all modes
+            flex: isStackedLayout
+              ? "1 1 100%"
+              : layoutMode === "desktop"
+              ? "60 1 0"
+              : "70 1 0",
             display: "flex",
             flexDirection: "column",
             gap: "16px",
