@@ -2743,13 +2743,9 @@ export const ChapterCheckerV2: React.FC = () => {
                               }}
                               style={{
                                 padding: "4px 12px",
-                                backgroundColor: "white",
-                                color: ACCESS_TIERS[accessLevel].customGenres
-                                  ? "#f7d8a8"
-                                  : "#2c3e50",
-                                border: ACCESS_TIERS[accessLevel].customGenres
-                                  ? "1.5px solid #f7d8a8"
-                                  : "1.5px solid #e0c392",
+                                backgroundColor: "#f2ebe3",
+                                color: "#2c3e50",
+                                border: "1.5px solid #2c3e50",
                                 borderRadius: "16px",
                                 fontSize: "12px",
                                 fontWeight: "600",
@@ -2757,14 +2753,18 @@ export const ChapterCheckerV2: React.FC = () => {
                                   ? "pointer"
                                   : "not-allowed",
                                 transition: "background-color 0.2s",
+                                opacity: ACCESS_TIERS[accessLevel].customGenres
+                                  ? 1
+                                  : 0.6,
                               }}
                               onMouseEnter={(e) => {
                                 if (ACCESS_TIERS[accessLevel].customGenres)
                                   e.currentTarget.style.backgroundColor =
-                                    "#f7e6d0";
+                                    "#e0d5c7";
                               }}
                               onMouseLeave={(e) => {
-                                e.currentTarget.style.backgroundColor = "white";
+                                e.currentTarget.style.backgroundColor =
+                                  "#f2ebe3";
                               }}
                             >
                               Create Custom{" "}
@@ -2890,13 +2890,9 @@ export const ChapterCheckerV2: React.FC = () => {
                           style={{
                             flex: 1,
                             padding: "6px",
-                            backgroundColor: "white",
-                            color: ACCESS_TIERS[accessLevel].customGenres
-                              ? "#f7d8a8"
-                              : "#2c3e50",
-                            border: ACCESS_TIERS[accessLevel].customGenres
-                              ? "1.5px solid #f7d8a8"
-                              : "1.5px solid #e0c392",
+                            backgroundColor: "#f2ebe3",
+                            color: "#2c3e50",
+                            border: "1.5px solid #2c3e50",
                             borderRadius: "16px",
                             fontSize: "12px",
                             fontWeight: "600",
@@ -2904,13 +2900,16 @@ export const ChapterCheckerV2: React.FC = () => {
                               ? "pointer"
                               : "not-allowed",
                             transition: "background-color 0.2s",
+                            opacity: ACCESS_TIERS[accessLevel].customGenres
+                              ? 1
+                              : 0.6,
                           }}
                           onMouseEnter={(e) => {
                             if (ACCESS_TIERS[accessLevel].customGenres)
-                              e.currentTarget.style.backgroundColor = "#f7e6d0";
+                              e.currentTarget.style.backgroundColor = "#e0d5c7";
                           }}
                           onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = "white";
+                            e.currentTarget.style.backgroundColor = "#f2ebe3";
                           }}
                         >
                           Create Custom{" "}

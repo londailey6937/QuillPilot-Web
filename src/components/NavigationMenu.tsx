@@ -95,7 +95,7 @@ export function NavigationMenu({
                   color: "#2c3e50",
                 }}
               >
-                AI-Powered Learning Content Analysis
+                Fiction Manuscript Analysis
               </p>
               <p
                 style={{
@@ -106,8 +106,8 @@ export function NavigationMenu({
                   lineHeight: "1.3",
                 }}
               >
-                For Education • Corporate Training • Research • K-12 • Emerging
-                Fields
+                Craft Analysis • Story Structure • Character Development • Genre
+                Mastery
               </p>
             </div>
           </div>
@@ -264,9 +264,10 @@ export function NavigationMenu({
                 color: "#4b5563",
               }}
             >
-              <span style={{ fontSize: "1.1rem" }}>🎓</span>
+              <span style={{ fontSize: "1.1rem" }}>✍️</span>
               <span>
-                <strong>Education</strong> - Textbooks, Courses, Exam Prep
+                <strong>Fiction Writers</strong> - Novels, Short Stories,
+                Novellas
               </span>
             </div>
             <div
@@ -278,9 +279,54 @@ export function NavigationMenu({
                 color: "#4b5563",
               }}
             >
-              <span style={{ fontSize: "1.1rem" }}>💼</span>
+              <span style={{ fontSize: "1.1rem" }}>📚</span>
               <span>
-                <strong>Corporate</strong> - Training, Handbooks, SOPs
+                <strong>Genre Fiction</strong> - Romance, Thriller, Fantasy,
+                Sci-Fi, Mystery
+              </span>
+            </div>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                fontSize: "0.85rem",
+                color: "#4b5563",
+              }}
+            >
+              <span style={{ fontSize: "1.1rem" }}>🎭</span>
+              <span>
+                <strong>Literary Fiction</strong> - Character-driven narratives
+              </span>
+            </div>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                fontSize: "0.85rem",
+                color: "#4b5563",
+              }}
+            >
+              <span style={{ fontSize: "1.1rem" }}>🔮</span>
+              <span>
+                <strong>Speculative Fiction</strong> - Fantasy, Horror,
+                Metaphysical
+              </span>
+            </div>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                fontSize: "0.85rem",
+                color: "#4b5563",
+              }}
+            >
+              <span style={{ fontSize: "1.1rem" }}>🤠</span>
+              <span>
+                <strong>Western & Historical</strong> - Period fiction, Western
+                adventures
               </span>
             </div>
             <div
@@ -294,49 +340,8 @@ export function NavigationMenu({
             >
               <span style={{ fontSize: "1.1rem" }}>📖</span>
               <span>
-                <strong>Documentation</strong> - APIs, Manuals, Guides
-              </span>
-            </div>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                fontSize: "0.85rem",
-                color: "#4b5563",
-              }}
-            >
-              <span style={{ fontSize: "1.1rem" }}>⚕️</span>
-              <span>
-                <strong>Healthcare</strong> - Clinical Protocols, Training
-              </span>
-            </div>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                fontSize: "0.85rem",
-                color: "#4b5563",
-              }}
-            >
-              <span style={{ fontSize: "1.1rem" }}>⚖️</span>
-              <span>
-                <strong>Compliance</strong> - Safety, Policy, Regulatory
-              </span>
-            </div>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                fontSize: "0.85rem",
-                color: "#4b5563",
-              }}
-            >
-              <span style={{ fontSize: "1.1rem" }}>🔬</span>
-              <span>
-                <strong>Research</strong> - Academic, Non-Profit, Government
+                <strong>Manuscript Editing</strong> - Developmental editing,
+                self-editing
               </span>
             </div>
           </div>
@@ -348,7 +353,7 @@ export function NavigationMenu({
               fontStyle: "italic",
             }}
           >
-            Analyze any learning or reference material
+            Analyze any fiction manuscript across all genres
           </p>
         </div>
 
@@ -375,14 +380,14 @@ export function NavigationMenu({
             onToggle={() => toggleSection("core")}
             features={[
               {
-                icon: "📊",
-                title: "10 Learning Principles",
-                desc: "Evidence-based cognitive science evaluation",
+                icon: "📖",
+                title: "12 Fiction Elements",
+                desc: "Characters, Setting, Plot, Theme, Voice, and more",
               },
               {
                 icon: "🎯",
-                title: "Weighted Scoring",
-                desc: "0-100 quality metrics with detailed breakdowns",
+                title: "Craft Scoring",
+                desc: "0-100 quality metrics for each element",
               },
               {
                 icon: "💡",
@@ -392,107 +397,107 @@ export function NavigationMenu({
               {
                 icon: "📈",
                 title: "Real-Time Analysis",
-                desc: "Web Worker processing for instant results",
+                desc: "Instant feedback as you write",
               },
             ]}
           />
 
-          {/* Domain Intelligence */}
+          {/* Genre Intelligence */}
           <FeatureSection
-            title="Domain Intelligence"
-            icon="🔬"
+            title="Genre Intelligence"
+            icon="🎭"
             isExpanded={expandedSection === "domain"}
             onToggle={() => toggleSection("domain")}
             badge="NEW!"
             features={[
               {
-                icon: "⚗️",
-                title: "Chemical Equations",
-                desc: "Reaction detection with difficulty assessment",
+                icon: "💝",
+                title: "Romance Tropes",
+                desc: "Enemies-to-lovers, forced proximity, slow burn",
               },
               {
-                icon: "🧮",
-                title: "Stoichiometry",
-                desc: "Mole/mass calculation recognition",
+                icon: "⚔️",
+                title: "Fantasy Elements",
+                desc: "Magic systems, worldbuilding, prophecies",
               },
               {
-                icon: "⚛️",
-                title: "Lewis Structures",
-                desc: "Molecular diagram identification",
+                icon: "🔪",
+                title: "Thriller Beats",
+                desc: "Tension, pacing, red herrings, reveals",
               },
               {
-                icon: "🔬",
-                title: "Lab Procedures",
-                desc: "Experimental method analysis",
+                icon: "🔍",
+                title: "Mystery Structure",
+                desc: "Clues, suspects, misdirection analysis",
               },
               {
-                icon: "🏷️",
-                title: "Nomenclature",
-                desc: "IUPAC naming exercise detection",
+                icon: "🚀",
+                title: "Sci-Fi Concepts",
+                desc: "Technology, future worlds, speculation",
               },
               {
-                icon: "🔄",
-                title: "Mechanisms",
-                desc: "Multi-step reaction pathway tracking",
+                icon: "👻",
+                title: "Horror Techniques",
+                desc: "Atmosphere, dread, supernatural elements",
               },
             ]}
           />
 
-          {/* Pattern Recognition */}
+          {/* Story Patterns */}
           <FeatureSection
-            title="Pattern Recognition"
+            title="Story Patterns"
             icon="🎨"
             isExpanded={expandedSection === "patterns"}
             onToggle={() => toggleSection("patterns")}
             features={[
               {
-                icon: "📝",
-                title: "Definition-Example",
-                desc: "Concept introduction patterns",
+                icon: "👁️",
+                title: "Show vs Tell",
+                desc: "Visual storytelling analysis",
               },
               {
-                icon: "🔄",
-                title: "Compare-Contrast",
-                desc: "Side-by-side analysis detection",
+                icon: "💬",
+                title: "Dialogue Balance",
+                desc: "Conversation vs narrative ratio",
               },
               {
-                icon: "📊",
-                title: "Problem-Solution",
-                desc: "Challenge/resolution structures",
+                icon: "⚡",
+                title: "Pacing Analysis",
+                desc: "Scene rhythm and momentum tracking",
               },
               {
-                icon: "📚",
-                title: "Elaboration",
-                desc: "Progressive detail expansion",
+                icon: "🎪",
+                title: "Emotional Beats",
+                desc: "Reader engagement and impact points",
               },
             ]}
           />
 
-          {/* Concept Analysis */}
+          {/* Character Analysis */}
           <FeatureSection
-            title="Concept Analysis"
+            title="Character Analysis"
             icon="🗺️"
             isExpanded={expandedSection === "concepts"}
             onToggle={() => toggleSection("concepts")}
             features={[
               {
-                icon: "🔥",
-                title: "Importance Ranking",
-                desc: "High/Medium/Low classification",
+                icon: "👤",
+                title: "Character Tracking",
+                desc: "Names, appearances, development arcs",
               },
               {
                 icon: "🔗",
                 title: "Relationship Mapping",
-                desc: "4 types: Prerequisites, Related, Examples, Contrasts",
+                desc: "Character connections and dynamics",
               },
               {
-                icon: "🏷️",
-                title: "Domain Metadata",
-                desc: "Chemistry-specific tags and classifications",
+                icon: "💭",
+                title: "Voice Consistency",
+                desc: "POV and narrative style analysis",
               },
               {
                 icon: "🌐",
-                title: "Visual Network",
+                title: "Character Network",
                 desc: "Interactive concept connection graphs",
               },
             ]}

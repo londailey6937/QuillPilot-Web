@@ -881,7 +881,20 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
       while (node && node !== editorRef.current) {
         const tag = node.tagName?.toLowerCase();
         if (
-          ["p", "h1", "h2", "h3", "h4", "h5", "h6", "blockquote"].includes(tag)
+          [
+            "p",
+            "h1",
+            "h2",
+            "h3",
+            "h4",
+            "h5",
+            "h6",
+            "blockquote",
+            "pullquote",
+            "pre",
+            "footnote",
+            "citation",
+          ].includes(tag)
         ) {
           setBlockType(tag);
           break;
@@ -1131,12 +1144,12 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
         <div
           style={{
             padding: "8px 16px",
-            backgroundColor: "#10b981",
-            color: "white",
+            backgroundColor: "#fef5e7",
+            color: "#2c3e50",
             fontSize: "13px",
             fontWeight: 600,
             textAlign: "center",
-            borderBottom: "2px solid #059669",
+            borderBottom: "2px solid #ef8432",
           }}
         >
           ✍️ Writer Mode Active - Click anywhere to start editing • Auto-saves
@@ -1180,6 +1193,10 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
             <option value="h5">Heading 5</option>
             <option value="h6">Heading 6</option>
             <option value="blockquote">Quote</option>
+            <option value="pullquote">Pull Quote</option>
+            <option value="pre">Code Block</option>
+            <option value="footnote">Footnote</option>
+            <option value="citation">Bibliography/Citation</option>
           </select>
 
           <div className="w-px h-6 bg-gray-300" />
@@ -1672,6 +1689,50 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           margin: 1em 0;
           color: #666;
           font-style: italic;
+        }
+        .editor-content pullquote {
+          border-left: 4px solid #ef8432;
+          border-right: 4px solid #ef8432;
+          padding: 1em 1.5em;
+          margin: 1.5em 0;
+          color: #2c3e50;
+          font-style: italic;
+          font-size: 1.25em;
+          text-align: center;
+          background-color: #fef5e7;
+        }
+        .editor-content pre {
+          background-color: #f5f5f5;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+          padding: 1em;
+          margin: 1em 0;
+          overflow-x: auto;
+          font-family: 'Courier New', Courier, monospace;
+          font-size: 0.9em;
+          line-height: 1.4;
+        }
+        .editor-content footnote {
+          display: block;
+          font-size: 0.85em;
+          color: #666;
+          border-top: 1px solid #e0e0e0;
+          padding-top: 0.5em;
+          margin: 1.5em 0 0.5em 0;
+        }
+        .editor-content footnote::before {
+          content: "Note: ";
+          font-weight: bold;
+          color: #2c3e50;
+        }
+        .editor-content citation {
+          display: block;
+          font-size: 0.9em;
+          color: #2c3e50;
+          padding-left: 2em;
+          text-indent: -2em;
+          margin: 0.5em 0;
+          line-height: 1.6;
         }
         .editor-content img {
           max-width: 100%;
