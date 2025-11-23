@@ -1595,10 +1595,10 @@ export const PrincipleScoresRadar: React.FC<{ analysis: ChapterAnalysis }> = ({
   return (
     <div className="viz-container">
       <h3>Writing Metrics</h3>
-      <ResponsiveContainer width="100%" height={400}>
+      <ResponsiveContainer width="100%" height={525}>
         <RadarChart
           data={data}
-          margin={{ top: 60, right: 100, bottom: 60, left: 100 }}
+          margin={{ top: 125, right: 120, bottom: 125, left: 120 }}
         >
           <PolarGrid stroke="#e0e0e0" />
           <PolarAngleAxis
