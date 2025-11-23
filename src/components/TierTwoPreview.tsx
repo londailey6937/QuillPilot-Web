@@ -5,6 +5,11 @@
 
 import React from "react";
 
-export const TierTwoPreview: React.FC = () => {
+interface TierTwoPreviewProps {
+  onClose: () => void;
+  onUpgrade: () => void;
+}
+
+export const TierTwoPreview: React.FC<TierTwoPreviewProps> = () => {
   return null;
 };

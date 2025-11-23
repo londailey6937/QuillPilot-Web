@@ -1060,8 +1060,8 @@ export const ChapterCheckerV2: React.FC = () => {
       );
 
       const analysisDomain: Domain = (() => {
-        if (selectedDomain === "none") {
-          return "cross-domain";
+        if (selectedDomain === "none" || selectedDomain === "custom") {
+          return "general" as Domain; // Default to general for non-genre selections
         }
         if (selectedDomain) {
           return selectedDomain;
@@ -1069,7 +1069,7 @@ export const ChapterCheckerV2: React.FC = () => {
         if (detectedDomain) {
           return detectedDomain;
         }
-        return "cross-domain";
+        return "general" as Domain;
       })();
 
       // Create Chapter object with plain text

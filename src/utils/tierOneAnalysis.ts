@@ -231,6 +231,7 @@ export function buildTierOneAnalysisSummary({
     chapterId: `tier1-${Date.now()}`,
     overallScore: Math.round((spacingScore + dualCodingScore) / 2),
     recommendations,
+    principleScores,
     conceptGraph: EMPTY_CONCEPT_GRAPH,
     metrics: {
       totalWords: wordCount,
@@ -249,7 +250,6 @@ export function buildTierOneAnalysisSummary({
     visualizations: visualization,
   } as ChapterAnalysis;
 
-  (analysis as any).principleScores = principleScores;
   return analysis;
 }
 

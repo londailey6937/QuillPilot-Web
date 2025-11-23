@@ -99,6 +99,15 @@ function ChapterInput({
         timestamp: new Date(),
         overallScore: 72,
         principles: [],
+        principleScores: [],
+        metrics: {
+          totalWords: 28,
+          readingTime: 1,
+          averageSectionLength: 7,
+          conceptDensity: 3.5,
+          readabilityScore: 0,
+          complexityScore: 0,
+        },
         conceptAnalysis: {
           totalConceptsIdentified: 28,
           coreConceptCount: 8,

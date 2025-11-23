@@ -32,9 +32,10 @@ export class PatternRecognizer {
     patterns.push(...this.detectComparisons(text));
 
     // Add domain-specific patterns
-    if (domain === "chemistry") {
-      patterns.push(...ChemistryPatterns.detectAll(text));
-    }
+    // Chemistry patterns disabled for fiction focus
+    // if (domain === "chemistry") {
+    //   patterns.push(...ChemistryPatterns.detectAll(text));
+    // }
     // Future: Add other domains (finance, biology, CS, etc.)
 
     // Sort by position

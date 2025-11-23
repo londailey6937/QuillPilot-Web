@@ -425,7 +425,12 @@ const ProseQualityDashboard: React.FC<{ proseQuality: any }> = ({
             <div className="speakers-list">
               <h5>Speaker Frequency:</h5>
               <div className="speaker-grid">
-                {Array.from(proseQuality.dialogue.speakers.entries())
+                {(
+                  Array.from(proseQuality.dialogue.speakers.entries()) as [
+                    string,
+                    number
+                  ][]
+                )
                   .sort((a, b) => b[1] - a[1])
                   .slice(0, 10)
                   .map(([speaker, count]: [string, number]) => (
@@ -648,8 +653,13 @@ const VisualAnalysisDashboard: React.FC<{ analysis: any }> = ({ analysis }) => {
             found ({analysis.filteringWords.density.toFixed(1)} per 1000 words)
           </div>
           <div className="filtering-types">
-            {Array.from(analysis.filteringWords.byType.entries())
-              .sort((a: any, b: any) => b[1] - a[1])
+            {(
+              Array.from(analysis.filteringWords.byType.entries()) as [
+                string,
+                number
+              ][]
+            )
+              .sort((a, b) => b[1] - a[1])
               .slice(0, 5)
               .map(([type, count]: [string, number]) => (
                 <div key={type} className="filtering-type-item">
@@ -1136,7 +1146,7 @@ const PRINCIPLE_DEFINITIONS: Record<
 export const ChapterOverviewTimeline: React.FC<{
   analysis: ChapterAnalysis;
 }> = ({ analysis }) => {
-  const allSections = analysis.visualizations.cognitiveLoadCurve || [];
+  const allSections = analysis.visualizations?.cognitiveLoadCurve || [];
   const [zoom, setZoom] = useState(1);
 
   // Filter out TOC and front matter sections, but only filter out 'Page N' if other headings exist
@@ -1160,7 +1170,7 @@ export const ChapterOverviewTimeline: React.FC<{
   }
 
   const blockingSegments =
-    analysis.visualizations.interleavingPattern.blockingSegments || [];
+    analysis.visualizations?.interleavingPattern.blockingSegments || [];
 
   // Build section issue severity map
   const sectionIssues: Record<
@@ -1593,11 +1603,12 @@ export const ChapterOverviewTimeline: React.FC<{
 export const PrincipleScoresRadar: React.FC<{ analysis: ChapterAnalysis }> = ({
   analysis,
 }) => {
-  const data = analysis.visualizations.principleScores.principles.map((p) => ({
-    name: p.displayName, // Use display name for chart labels
-    score: p.score,
-    fullName: p.displayName,
-  }));
+  const data =
+    analysis.visualizations?.principleScores.principles.map((p) => ({
+      name: p.displayName, // Use display name for chart labels
+      score: p.score,
+      fullName: p.displayName,
+    })) || [];
 
   // Determine color for score bands
   const getScoreColor = (score: number) => {
@@ -1704,9 +1715,9 @@ export const ConceptMentionFrequency: React.FC<{
   pageOffsets?: number[];
 }> = ({ analysis, pageOffsets }) => {
   const reviewPatterns: ReviewPattern[] =
-    analysis.conceptAnalysis.reviewPatterns.slice(0, 15);
+    analysis.conceptAnalysis?.reviewPatterns.slice(0, 15) || [];
   const data = reviewPatterns.map((pattern) => ({
-    concept: pattern.conceptName || pattern.conceptId.replace("concept-", "C"),
+    concept: pattern.conceptId.replace("concept-", "C"),
     conceptId: pattern.conceptId,
     mentions: pattern.mentions,
     isOptimal: pattern.isOptimal,
@@ -2137,21 +2148,23 @@ export const InterleavingPattern: React.FC<{
     return pageOffsets.length;
   };
 
-  const pattern = analysis.visualizations.interleavingPattern;
-  const fullSequence = pattern.conceptSequence || [];
+  const pattern = analysis.visualizations?.interleavingPattern;
+  const fullSequence = pattern?.conceptSequence || [];
 
   // Build ID -> Name map from conceptMap nodes
   const idToName: Record<string, string> = {};
-  const nodes = analysis.visualizations.conceptMap.nodes as any[];
-  nodes.forEach((n) => (idToName[n.id] = n.label));
+  const nodes = analysis.visualizations?.conceptMap.nodes as any[];
+  nodes?.forEach((n) => (idToName[n.id] = n.label));
 
   // Calculate transition matrix (which concepts follow which)
   const transitions: Record<string, Record<string, number>> = {};
-  for (let i = 1; i < pattern.conceptSequence.length; i++) {
-    const from = pattern.conceptSequence[i - 1];
-    const to = pattern.conceptSequence[i];
-    if (!transitions[from]) transitions[from] = {};
-    transitions[from][to] = (transitions[from][to] || 0) + 1;
+  if (pattern && pattern.conceptSequence) {
+    for (let i = 1; i < pattern.conceptSequence.length; i++) {
+      const from = pattern.conceptSequence[i - 1];
+      const to = pattern.conceptSequence[i];
+      if (!transitions[from]) transitions[from] = {};
+      transitions[from][to] = (transitions[from][to] || 0) + 1;
+    }
   }
 
   // Find top transitions
@@ -2168,7 +2181,7 @@ export const InterleavingPattern: React.FC<{
   const top5Transitions = topTransitions.slice(0, 5);
 
   // Identify blocking issues
-  const blockingSegments = pattern.blockingSegments || [];
+  const blockingSegments = pattern?.blockingSegments || [];
   // Group blocking segments by concept to avoid listing multiple separate runs of same concept without context
   const blockingGroups = Object.values(
     blockingSegments.reduce(
@@ -2216,7 +2229,9 @@ export const InterleavingPattern: React.FC<{
   });
 
   // Interleaving quality score
-  const interleavingScore = Math.round((1 - pattern.blockingRatio) * 100);
+  const interleavingScore = Math.round(
+    (1 - (pattern?.blockingRatio || 0)) * 100
+  );
   const scoreColor =
     interleavingScore >= 70
       ? "var(--success-600)"
@@ -2246,16 +2261,18 @@ export const InterleavingPattern: React.FC<{
         </div>
         <div className="metric-card">
           <div className="metric-label">Topic Switches</div>
-          <div className="metric-value">{pattern.topicSwitches}</div>
+          <div className="metric-value">{pattern?.topicSwitches || 0}</div>
         </div>
         <div className="metric-card">
           <div className="metric-label">Avg Block Size</div>
-          <div className="metric-value">{pattern.avgBlockSize.toFixed(1)}</div>
+          <div className="metric-value">
+            {pattern?.avgBlockSize.toFixed(1) || "0.0"}
+          </div>
         </div>
         <div className="metric-card">
           <div className="metric-label">Blocking Ratio</div>
           <div className="metric-value" style={{ color: scoreColor }}>
-            {(pattern.blockingRatio * 100).toFixed(0)}%
+            {((pattern?.blockingRatio || 0) * 100).toFixed(0)}%
           </div>
         </div>
       </div>
@@ -2491,7 +2508,8 @@ export const InterleavingPattern: React.FC<{
       )}
 
       <div className="recommendation-box">
-        <strong>Recommendation:</strong> {pattern.recommendation}
+        <strong>Recommendation:</strong>{" "}
+        {pattern?.recommendation || "No recommendation available"}
       </div>
       <div className="why-matters-block">
         <strong>Why this matters:</strong> Varied pacing (mixing story elements)
@@ -2805,8 +2823,13 @@ export const InterleavingPattern: React.FC<{
 export const ReviewScheduleTimeline: React.FC<{
   analysis: ChapterAnalysis;
 }> = ({ analysis }) => {
-  const schedule = analysis.visualizations.reviewSchedule;
+  const schedule = analysis.visualizations?.reviewSchedule;
   const [showAll, setShowAll] = useState(false);
+
+  if (!schedule) {
+    return null;
+  }
+
   const sortedConcepts = [...schedule.concepts].sort((a, b) => {
     const devA = a.spacing.length
       ? a.spacing.reduce(
@@ -2831,8 +2854,8 @@ export const ReviewScheduleTimeline: React.FC<{
 
   // Build ID -> Name map from conceptMap nodes
   const idToName: Record<string, string> = {};
-  const nodes = analysis.visualizations.conceptMap.nodes as any[];
-  nodes.forEach((n) => (idToName[n.id] = n.label));
+  const nodes = analysis.visualizations?.conceptMap.nodes as any[];
+  nodes?.forEach((n) => (idToName[n.id] = n.label));
 
   // Find max gap for scaling (use reasonable default if data is skewed)
   const maxGap = Math.max(
@@ -3345,7 +3368,8 @@ export const ChapterAnalysisDashboard: React.FC<{
       {/* Advanced Metrics Dashboard */}
       <AdvancedMetricsDashboard analysis={analysis} />
 
-      {shouldShowGeneralConcepts && (
+      {/* General concepts removed in MVP - component not available */}
+      {/* {shouldShowGeneralConcepts && (
         <div className="viz-grid general-concepts-grid">
           <GeneralConceptGenerator
             concepts={generalConcepts!}
@@ -3354,7 +3378,7 @@ export const ChapterAnalysisDashboard: React.FC<{
             style={{ marginTop: 0 }}
           />
         </div>
-      )}
+      )} */}
 
       <div className="principles-section">
         <h3>Writing Analysis Details</h3>

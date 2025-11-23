@@ -33,23 +33,13 @@ export default defineConfig({
           "docx-vendor": ["docx"],
           // Large evaluators and analysis engine
           "analysis-engine": ["./src/components/AnalysisEngine.ts"],
-          // Concept extraction and domain libraries
-          "concept-libs": [
-            "./src/components/ConceptExtractor.ts",
-            "./src/components/ConceptExtractorLibrary.ts",
-            "./src/data/chemistryConceptLibrary.ts",
-            "./src/data/mathematicsConceptLibrary.ts",
-            "./src/data/webDevelopmentConceptLibrary.ts",
-            "./src/data/financeConceptLibrary.ts",
-            "./src/data/crossDomainConcepts.ts",
+          // Fiction analysis libraries
+          "fiction-libs": [
+            "./src/data/genreRegistry.ts",
+            "./src/utils/fictionElementsAnalyzer.ts",
           ],
           // Visualization and UI components
-          visualization: [
-            "./src/components/VisualizationComponents.tsx",
-            "./src/components/PatternAnalysisSection.tsx",
-            "./src/components/ConceptAnalysisSection.tsx",
-            "./src/components/ConceptRelationshipsSection.tsx",
-          ],
+          visualization: ["./src/components/VisualizationComponents.tsx"],
         },
       },
     },

@@ -9,7 +9,7 @@ export function loadCustomDomains(): SavedCustomGenre[] {
   return [];
 }
 
-export function saveCustomDomain(domain: SavedCustomGenre): void {
+export function saveCustomDomain(name: string, concepts: any[]): void {
   // Stub
 }
 
@@ -17,6 +17,6 @@ export function getCustomDomain(name: string): SavedCustomGenre | null {
   return null;
 }
 
-export function convertToConceptDefinitions(concepts: any[]): any[] {
+export function convertToConceptDefinitions(genre: SavedCustomGenre): any[] {
   return [];
 }
