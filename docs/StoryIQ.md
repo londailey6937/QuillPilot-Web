@@ -2,7 +2,7 @@
 
 ## Overview
 
-Clone of Tome IQ adapted for creative writers. Analyzes manuscripts for story elements like character development, theme consistency, pacing, show vs tell, and dialogue quality.
+Clone of Quill Pilot adapted for creative writers. Analyzes manuscripts for story elements like character development, theme consistency, pacing, show vs tell, and dialogue quality.
 
 ## Core Architecture (Keep As-Is)
 
@@ -38,7 +38,7 @@ Detects: Math, Science, Computer Science, History, Literature, Business, etc.
 
 ### Replace Existing Educational Analysis
 
-**Current Tome IQ Metrics:**
+**Current Quill Pilot Metrics:**
 
 - Prerequisite checking
 - Dual coding (text + visuals)
@@ -259,7 +259,7 @@ New premium analysis:
 
 ### Name Options
 
-1. **Story IQ** (preferred - matches Tome IQ pattern)
+1. **Story IQ** (preferred - matches Quill Pilot pattern)
 2. Manuscript IQ
 3. Draft Doctor
 4. Narrative IQ
@@ -288,7 +288,7 @@ New premium analysis:
 
 - Tome Orange (#ef8432) + Navy (#2c3e50)
 - Professional, trustworthy
-- Shows connection to Tome IQ
+- Shows connection to Quill Pilot
 
 **Option B: Creative Rebrand**
 
@@ -311,7 +311,7 @@ cd story-iq
 # Rename project
 - Update package.json: "story-iq"
 - Update index.html: <title>Story IQ</title>
-- Find/replace: "Tome IQ" → "Story IQ"
+- Find/replace: "Quill Pilot" → "Story IQ"
 - Update vercel.json domain config
 ```
 
@@ -547,7 +547,7 @@ extractThemes(text: string): Theme[] {
 1. **Learning Science Foundation**
 
    - "Cognitive science meets creative writing" is unique angle
-   - Educational credibility from Tome IQ connection
+   - Educational credibility from Quill Pilot connection
    - Science-backed recommendations
 
 2. **Comprehensive Analysis**
@@ -600,7 +600,7 @@ extractThemes(text: string): Theme[] {
 - Writing coaches
 - Literary agents (for client manuscripts)
 
-### Pricing Strategy (Mirror Tome IQ)
+### Pricing Strategy (Mirror Quill Pilot)
 
 **Free Tier:**
 
@@ -714,7 +714,7 @@ extractThemes(text: string): Theme[] {
 
 ## Technical Debt to Address
 
-### From Tome IQ Codebase
+### From Quill Pilot Codebase
 
 1. **Worker error handling**: Already improved, good to go
 2. **Edge Function fallback**: Works fine
@@ -839,7 +839,7 @@ ChapterCheckerV2.tsx → ManuscriptAnalyzer.tsx (optional)
 
 ## Summary
 
-**Story IQ is 40% built already** because the core infrastructure from Tome IQ transfers directly:
+**Story IQ is 40% built already** because the core infrastructure from Quill Pilot transfers directly:
 
 - Document processing ✅
 - UI framework ✅

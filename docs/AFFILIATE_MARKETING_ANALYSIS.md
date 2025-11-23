@@ -1,4 +1,4 @@
-# Affiliate Marketing Analysis for Tome IQ
+# Affiliate Marketing Analysis for Quill Pilot
 
 ## Executive Summary
 
@@ -281,7 +281,7 @@ When user tries to export (free tier blocked feature):
 
 > **"Affiliate marketing should feel like a helpful librarian recommending books, not a used car salesman pushing inventory."**
 
-### For Tome IQ Specifically:
+### For Quill Pilot Specifically:
 
 **✅ DO affiliate marketing IF:**
 
@@ -301,7 +301,7 @@ When user tries to export (free tier blocked feature):
 
 ## Conclusion
 
-**For Tome IQ at current stage: Focus on Premium conversions first.**
+**For Quill Pilot at current stage: Focus on Premium conversions first.**
 
 The 3-upload limit creates natural upgrade pressure. Use that space to:
 

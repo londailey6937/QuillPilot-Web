@@ -447,7 +447,7 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
         incrementUploadCount();
         onDocumentLoad(payload);
       } else {
-        alert("Please upload a .docx, .obt, or .txt file");
+        alert("Please upload a .docx, .doc, .obt, or .txt file");
         // Reset file input
         if (fileInputRef.current) {
           fileInputRef.current.value = "";
@@ -475,7 +475,7 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
       <input
         ref={fileInputRef}
         type="file"
-        accept=".docx,.obt,.txt"
+        accept=".docx,.doc,.obt,.txt"
         onChange={handleFileChange}
         disabled={disabled}
         style={{ display: "none" }}

@@ -117,7 +117,7 @@ interface NavigationMenuProps {
 ### AnimatedLogo.tsx
 
 **Purpose**: Animated application logo
-**Responsibility**: Display animated brain icon with "Tome IQ" text
+**Responsibility**: Display animated neural network icon for Quill Pilot
 
 **Props**: None (static component)
 

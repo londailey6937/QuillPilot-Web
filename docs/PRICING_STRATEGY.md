@@ -1,4 +1,4 @@
-# Tome IQ Pricing Strategy
+# Quill Pilot Pricing Strategy
 
 ## Target Market
 
@@ -82,7 +82,7 @@ Educators and content creators spend hours manually checking if their content ha
 - Logical concept sequencing
 - Clear prerequisite chains
 
-Tome IQ automates this analysis in seconds.
+Quill Pilot automates this analysis in seconds.
 
 ## Monetization Strategy
 
@@ -109,10 +109,10 @@ The free tier is generous enough to demonstrate value but limited enough to enco
 
 ## Market Positioning
 
-Position Tome IQ as a **professional content quality tool** rather than just an educational checker. Comparable to:
+Position Quill Pilot as a **professional content quality tool** rather than just an educational checker. Comparable to:
 
 - Grammarly (writing quality): $12-15/month
 - Hemingway Editor Pro (readability): $19.99 one-time
 - ProWritingAid (comprehensive writing): $20/month
 
-Tome IQ offers **cognitive science-backed analysis** that no other tool provides, justifying premium positioning.
+Quill Pilot offers **cognitive science-backed analysis** that no other tool provides, justifying premium positioning.
