@@ -157,7 +157,7 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
     const fileType = file.name.split(".").pop()?.toLowerCase() || "";
 
     try {
-      if (fileType === "docx") {
+      if (fileType === "docx" || fileType === "doc") {
         const sourceBuffer = await file.arrayBuffer();
         const htmlBuffer = sourceBuffer.slice(0);
         const textBuffer = sourceBuffer.slice(0);
@@ -539,8 +539,8 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
           color: "#6b7280",
         }}
       >
-        Supported: Word documents (.docx), plain text (.txt), and Open Library
-        Text (.obt)
+        Supported: Word documents (.docx, .doc), plain text (.txt), and Open
+        Library Text (.obt)
       </div>
     </div>
   );
