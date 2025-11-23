@@ -1444,15 +1444,17 @@ export const ChapterCheckerV2: React.FC = () => {
               display: "flex",
               flexWrap: "wrap",
               alignItems: "center",
+              justifyContent: "space-between",
               gap: "1rem",
             }}
           >
+            {/* Left: Logo and Brand */}
             <div
               style={{
                 display: "flex",
                 alignItems: "center",
                 gap: "0.5rem",
-                flex: "1 1 360px",
+                flex: "0 1 auto",
                 minWidth: "280px",
               }}
             >
@@ -1514,7 +1516,7 @@ export const ChapterCheckerV2: React.FC = () => {
               </div>
             </div>
 
-            {/* Document Stats in Header */}
+            {/* Document Stats in Header - Centered */}
             {fileName && (
               <div
                 style={{
@@ -1531,7 +1533,8 @@ export const ChapterCheckerV2: React.FC = () => {
                   backgroundColor: "#f5ead9",
                   borderRadius: "12px",
                   border: "1.5px solid #e0c392",
-                  flexShrink: 0,
+                  flex: "1 1 auto",
+                  maxWidth: "500px",
                 }}
               >
                 <span style={{ fontWeight: "600", fontSize: "14px" }}>
@@ -1876,35 +1879,31 @@ export const ChapterCheckerV2: React.FC = () => {
                 style={{
                   display: "flex",
                   gap: "12px",
-                  alignItems: "flex-start",
+                  alignItems: "center",
                   justifyContent: "space-between",
-                  flexWrap: "nowrap",
+                  flexWrap: "wrap",
                 }}
               >
-                {/* Left: Upload button and action buttons */}
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "12px",
-                  }}
-                >
+                {/* Left: Upload button */}
+                <div>
                   <DocumentUploader
                     onDocumentLoad={handleDocumentLoad}
                     disabled={isAnalyzing}
                     accessLevel={accessLevel}
                   />
+                </div>
 
-                  {/* Action buttons */}
-                  {chapterData && !isAnalyzing && (
-                    <div
-                      style={{
-                        display: "flex",
-                        gap: "12px",
-                        alignItems: "center",
-                        flexWrap: "wrap",
-                      }}
-                    >
+                {/* Right: Action buttons */}
+                {chapterData && !isAnalyzing && (
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: "12px",
+                      alignItems: "center",
+                      flexWrap: "wrap",
+                      marginLeft: "auto",
+                    }}
+                  >
                       <button
                         onClick={handleClear}
                         style={{
