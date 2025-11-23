@@ -539,7 +539,8 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
           color: "#6b7280",
         }}
       >
-        Supported: Word documents (.docx) and Open Library Text (.obt)
+        Supported: Word documents (.docx), plain text (.txt), and Open Library
+        Text (.obt)
       </div>
     </div>
   );

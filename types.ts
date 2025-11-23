@@ -301,6 +301,17 @@ export interface ChapterAnalysis {
   structureAnalysis?: StructureAnalysisResult;
   visualizations?: AnalysisVisualization;
   patternAnalysis?: PatternAnalysis; // Learning patterns detected
+  characterAnalysis?: any; // Character arc analysis data
+  proseQuality?: any; // Prose quality metrics
+  emotionHeatmap?: any; // Emotional pacing heatmap
+  povConsistency?: any; // POV consistency tracking
+  clicheDetection?: any; // Cliché detection results
+  filteringWords?: any; // Filtering words detection
+  backstoryDensity?: any; // Backstory density analysis
+  dialogueNarrativeRatio?: any; // Dialogue-to-narrative balance
+  sceneSequel?: any; // Scene vs sequel structure
+  conflictTracking?: any; // Conflict tracking
+  sensoryBalance?: any; // Sensory details balance
 }
 
 export interface ConceptMapData {

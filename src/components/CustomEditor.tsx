@@ -73,6 +73,11 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   const [replaceText, setReplaceText] = useState("");
   const [showStats, setShowStats] = useState(false);
   const [focusMode, setFocusMode] = useState(false);
+  const [typewriterMode, setTypewriterMode] = useState(false);
+  const [sprintMode, setSprintMode] = useState(false);
+  const [sprintDuration, setSprintDuration] = useState(15); // minutes
+  const [sprintTimeRemaining, setSprintTimeRemaining] = useState(0);
+  const [sprintStartWords, setSprintStartWords] = useState(0);
   const [textAlign, setTextAlign] = useState("left");
   const [findMatches, setFindMatches] = useState<TextMatch[]>([]);
   const [currentMatchIndex, setCurrentMatchIndex] = useState(-1);
@@ -83,6 +88,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     readingTime: 0,
     readingLevel: 0,
   });
+  const [showBackToTop, setShowBackToTop] = useState(false);
 
   // Analyze content for spacing and dual-coding
   const analyzeContent = useCallback((text: string) => {
@@ -898,6 +904,99 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
       document.removeEventListener("selectionchange", handleSelectionChange);
   }, [updateFormatState]);
 
+  // Track scroll position for back to top button
+  useEffect(() => {
+    const handleScroll = () => {
+      if (wrapperRef.current) {
+        const scrollTop = wrapperRef.current.scrollTop;
+        setShowBackToTop(scrollTop > 300);
+      }
+    };
+
+    const wrapper = wrapperRef.current;
+    if (wrapper) {
+      wrapper.addEventListener("scroll", handleScroll);
+      return () => wrapper.removeEventListener("scroll", handleScroll);
+    }
+  }, []);
+
+  // Typewriter mode - center current line
+  useEffect(() => {
+    if (!typewriterMode || !editorRef.current || !wrapperRef.current) return;
+
+    const handleInput = () => {
+      const selection = window.getSelection();
+      if (!selection || !selection.rangeCount) return;
+
+      const range = selection.getRangeAt(0);
+      const rect = range.getBoundingClientRect();
+      const wrapperRect = wrapperRef.current!.getBoundingClientRect();
+      const wrapperMiddle = wrapperRect.height / 2;
+
+      // Scroll to keep cursor in middle of screen
+      const offset = rect.top - wrapperRect.top - wrapperMiddle;
+      if (Math.abs(offset) > 50) {
+        wrapperRef.current!.scrollBy({ top: offset, behavior: "smooth" });
+      }
+    };
+
+    editorRef.current.addEventListener("input", handleInput);
+    return () => editorRef.current?.removeEventListener("input", handleInput);
+  }, [typewriterMode]);
+
+  // Sprint timer
+  useEffect(() => {
+    if (!sprintMode || sprintTimeRemaining <= 0) return;
+
+    const interval = setInterval(() => {
+      setSprintTimeRemaining((prev) => {
+        if (prev <= 1) {
+          setSprintMode(false);
+          // Show completion message
+          const wordsWritten = statistics.words - sprintStartWords;
+          alert(
+            `Sprint Complete! 🎉\nYou wrote ${wordsWritten} words in ${sprintDuration} minutes!\nThat's ${Math.round(
+              wordsWritten / sprintDuration
+            )} words per minute!`
+          );
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [
+    sprintMode,
+    sprintTimeRemaining,
+    statistics.words,
+    sprintStartWords,
+    sprintDuration,
+  ]);
+
+  // Start sprint
+  const startSprint = useCallback(() => {
+    setSprintMode(true);
+    setSprintTimeRemaining(sprintDuration * 60);
+    setSprintStartWords(statistics.words);
+  }, [sprintDuration, statistics.words]);
+
+  // Stop sprint
+  const stopSprint = useCallback(() => {
+    setSprintMode(false);
+    setSprintTimeRemaining(0);
+  }, []);
+
+  // Scroll to top function
+  const scrollToTop = useCallback(() => {
+    if (wrapperRef.current) {
+      wrapperRef.current.scrollTo({
+        top: 0,
+        behavior: "smooth",
+      });
+    }
+  }, []);
+
   // Render spacing indicators
   const renderIndicators = () => {
     if (!editorRef.current || !showSpacingIndicators) return null;
@@ -1291,7 +1390,86 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
             >
               🎯
             </button>
+            <button
+              onClick={() => setTypewriterMode(!typewriterMode)}
+              className={`px-3 py-1.5 rounded transition-colors text-sm ${
+                typewriterMode
+                  ? "bg-purple-100 text-purple-700"
+                  : "hover:bg-gray-200 text-gray-700"
+              }`}
+              title="Typewriter Mode (Center Current Line)"
+            >
+              ⌨️
+            </button>
+            <button
+              onClick={() => {
+                if (sprintMode) {
+                  stopSprint();
+                } else {
+                  startSprint();
+                }
+              }}
+              className={`px-3 py-1.5 rounded transition-colors text-sm ${
+                sprintMode
+                  ? "bg-green-100 text-green-700"
+                  : "hover:bg-gray-200 text-gray-700"
+              }`}
+              title={
+                sprintMode
+                  ? "Stop Sprint"
+                  : `Start ${sprintDuration} Min Sprint`
+              }
+            >
+              {sprintMode ? "⏹️" : "⏱️"}
+            </button>
           </div>
+        </div>
+      )}
+
+      {/* Sprint Timer Display */}
+      {sprintMode && (
+        <div
+          style={{
+            position: "fixed",
+            top: "20px",
+            right: "20px",
+            padding: "16px 24px",
+            backgroundColor: "#10b981",
+            color: "white",
+            borderRadius: "12px",
+            boxShadow: "0 4px 12px rgba(16, 185, 129, 0.3)",
+            zIndex: 1100,
+            fontSize: "24px",
+            fontWeight: 700,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: "8px",
+          }}
+        >
+          <div>
+            {Math.floor(sprintTimeRemaining / 60)}:
+            {String(sprintTimeRemaining % 60).padStart(2, "0")}
+          </div>
+          <div style={{ fontSize: "14px", fontWeight: 500 }}>
+            {statistics.words - sprintStartWords} words written
+          </div>
+          <button
+            onClick={stopSprint}
+            style={{
+              marginTop: "8px",
+              padding: "6px 12px",
+              backgroundColor: "rgba(255, 255, 255, 0.2)",
+              border: "none",
+              borderRadius: "6px",
+              color: "white",
+              fontSize: "12px",
+              cursor: "pointer",
+              fontWeight: 600,
+            }}
+          >
+            Stop Sprint
+          </button>
         </div>
       )}
 
@@ -1546,6 +1724,50 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
             }
           `}</style>
         </div>
+      )}
+
+      {/* Back to Top Button */}
+      {showBackToTop && (
+        <button
+          onClick={scrollToTop}
+          className="back-to-top-button"
+          style={{
+            position: "fixed",
+            bottom: "24px",
+            left: "50%",
+            transform: "translateX(-50%)",
+            padding: "12px 20px",
+            borderRadius: "999px",
+            border: "2px solid #e0c392",
+            background: "linear-gradient(135deg, #f5ead9 0%, #f5e6d3 100%)",
+            color: "#2c3e50",
+            fontWeight: 600,
+            fontSize: "14px",
+            boxShadow: "0 4px 16px rgba(44, 62, 80, 0.15)",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            zIndex: 1200,
+            transition: "all 0.2s ease",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform =
+              "translateX(-50%) translateY(-2px)";
+            e.currentTarget.style.boxShadow =
+              "0 6px 20px rgba(44, 62, 80, 0.2)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = "translateX(-50%)";
+            e.currentTarget.style.boxShadow =
+              "0 4px 16px rgba(44, 62, 80, 0.15)";
+          }}
+          title="Back to top"
+          aria-label="Scroll to top"
+        >
+          <span style={{ fontSize: "16px" }}>↑</span>
+          Back to top
+        </button>
       )}
     </div>
   );

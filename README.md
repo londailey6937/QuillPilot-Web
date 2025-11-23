@@ -12,6 +12,18 @@
 4. **Theme Depth** - Identifies recurring themes and symbolic patterns across 12 theme clusters
 5. **Genre Conventions** - Detects genre-specific tropes and story beats
 
+### 🚀 Power Features
+
+Professional-grade tools for serious manuscript development:
+
+- **📊 Manuscript Comparison** - Track improvements between drafts with before/after metrics
+- **📤 Advanced Export** - Export to JSON, CSV, Markdown, and Excel with full data
+- **🔄 Batch Analysis** - Analyze multiple chapters simultaneously with consistency checking
+- **🤖 AI-Powered Suggestions** - Get specific rewrite examples for every weak area
+- **⚡ Real-time Assistant** - Live feedback as you type with inline issue detection
+
+[See Power Features Documentation →](docs/POWER_FEATURES.md)
+
 ### Genre Support
 
 - **Romance** - 8 tropes, 6 story beats (Enemies to Lovers, Forced Proximity, Meet Cute, etc.)

@@ -12,6 +12,8 @@ import ErrorAlert from "./ErrorAlert";
 // Export new auth components
 export { AuthModal } from "./AuthModal";
 export { UserMenu } from "./UserMenu";
+export { WritingStreakTracker } from "./WritingStreakTracker";
+export { GoalSettingProgress } from "./GoalSettingProgress";
 
 /**
  * Props interface for ChapterInput component

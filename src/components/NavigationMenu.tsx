@@ -560,6 +560,47 @@ export function NavigationMenu({
               },
             ]}
           />
+
+          {/* Genre-Specific Tools */}
+          <FeatureSection
+            title="Genre-Specific Tools"
+            icon="🎭"
+            isExpanded={expandedSection === "genre"}
+            onToggle={() => toggleSection("genre")}
+            badge="NEW!"
+            features={[
+              {
+                icon: "🔮",
+                title: "Fantasy Tropes",
+                desc: "Magic systems, prophecies, chosen ones",
+              },
+              {
+                icon: "🚀",
+                title: "Sci-Fi Elements",
+                desc: "Technology, world-building, first contact",
+              },
+              {
+                icon: "💀",
+                title: "Mystery Beats",
+                desc: "Clues, red herrings, plot twists",
+              },
+              {
+                icon: "💕",
+                title: "Romance Arc",
+                desc: "Meet-cute, conflict, emotional beats",
+              },
+              {
+                icon: "🎯",
+                title: "Thriller Pacing",
+                desc: "Tension, stakes, ticking clocks",
+              },
+              {
+                icon: "🏰",
+                title: "Historical Details",
+                desc: "Period accuracy, cultural context",
+              },
+            ]}
+          />
         </div>
 
         {/* Company & Support Section */}

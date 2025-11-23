@@ -52,7 +52,1000 @@ const PRINCIPLE_NAME_MAP: Record<string, string> = {
   fictionElement0: "Fiction Element (Top)",
   fictionElement1: "Fiction Element (2nd)",
   fictionElement2: "Fiction Element (3rd)",
+  fictionElement3: "Fiction Element (4th)",
+  fictionElement4: "Fiction Element (5th)",
+  fictionElement5: "Fiction Element (6th)",
+  fictionElement6: "Fiction Element (7th)",
+  fictionElement7: "Fiction Element (8th)",
+  fictionElement8: "Fiction Element (9th)",
+  fictionElement9: "Fiction Element (10th)",
+  fictionElement10: "Fiction Element (11th)",
+  fictionElement11: "Fiction Element (12th)",
   fictionBalance: "Fiction Elements Balance",
+  wordChoice: "Word Choice & Variety",
+  dialogueQuality: "Dialogue & Attribution",
+  voiceStrength: "Active Voice Usage",
+  adverbUsage: "Adverb Economy",
+  sentenceVariety: "Sentence Variety",
+  readability: "Readability",
+  emotionalPacing: "Emotional Pacing",
+  povConsistency: "POV Consistency",
+  clicheAvoidance: "Originality (Cliché Avoidance)",
+  directProse: "Direct Prose (Filtering Words)",
+  backstoryBalance: "Backstory Balance",
+  dialogueNarrativeBalance: "Dialogue-to-Narrative Balance",
+  sceneSequelStructure: "Scene vs Sequel Structure",
+  conflictPresence: "Conflict Tracking",
+  sensoryRichness: "Sensory Balance",
+};
+
+/**
+ * Character Arc Trajectory Chart
+ * Shows emotional journey of major characters across story progression
+ */
+const CharacterArcTrajectory: React.FC<{ characterAnalysis: any }> = ({
+  characterAnalysis,
+}) => {
+  // Filter to major characters only (protagonist or major role with enough mentions)
+  const majorCharacters = characterAnalysis.characters.filter(
+    (char: any) =>
+      (char.role === "protagonist" || char.role === "major") &&
+      char.totalMentions >= 5
+  );
+
+  if (majorCharacters.length === 0) {
+    return null;
+  }
+
+  // Prepare data for line chart
+  const trajectoryData = [
+    { stage: "Early", position: 0 },
+    { stage: "Middle", position: 50 },
+    { stage: "Late", position: 100 },
+  ];
+
+  // Add each character's trajectory to the data
+  majorCharacters.forEach((char: any) => {
+    trajectoryData[0][char.name] = char.emotionalTrajectory.early;
+    trajectoryData[1][char.name] = char.emotionalTrajectory.middle;
+    trajectoryData[2][char.name] = char.emotionalTrajectory.late;
+  });
+
+  // Color palette for characters
+  const colors = [
+    "#8b5cf6", // purple
+    "#3b82f6", // blue
+    "#10b981", // green
+    "#f59e0b", // orange
+    "#ef4444", // red
+    "#ec4899", // pink
+  ];
+
+  return (
+    <div className="viz-card character-arc-trajectory">
+      <h3>Character Emotional Arcs</h3>
+      <p className="section-subtitle">
+        Emotional trajectory of major characters across the manuscript (0 =
+        negative, 50 = neutral, 100 = positive)
+      </p>
+      <ResponsiveContainer width="100%" height={350}>
+        <LineChart data={trajectoryData}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+          <XAxis
+            dataKey="stage"
+            stroke="#999"
+            tick={{ fill: "#999" }}
+            label={{
+              value: "Story Progression",
+              position: "insideBottom",
+              offset: -5,
+              style: { fill: "#999" },
+            }}
+          />
+          <YAxis
+            stroke="#999"
+            tick={{ fill: "#999" }}
+            domain={[0, 100]}
+            label={{
+              value: "Emotional Sentiment",
+              angle: -90,
+              position: "insideLeft",
+              style: { fill: "#999" },
+            }}
+          />
+          <Tooltip
+            contentStyle={{
+              backgroundColor: "#1a1a1a",
+              border: "1px solid #333",
+              borderRadius: "8px",
+            }}
+            labelStyle={{ color: "#fff" }}
+          />
+          <Legend
+            wrapperStyle={{ paddingTop: "20px" }}
+            iconType="line"
+            formatter={(value) => (
+              <span style={{ color: "#ccc" }}>{value}</span>
+            )}
+          />
+          {majorCharacters.map((char: any, idx: number) => (
+            <Line
+              key={char.name}
+              type="monotone"
+              dataKey={char.name}
+              stroke={colors[idx % colors.length]}
+              strokeWidth={2}
+              dot={{ r: 5 }}
+              activeDot={{ r: 7 }}
+              name={`${char.name} (${char.arcType})`}
+            />
+          ))}
+        </LineChart>
+      </ResponsiveContainer>
+      <div className="character-arc-summary">
+        {majorCharacters.map((char: any, idx: number) => (
+          <div key={char.name} className="character-summary-item">
+            <span
+              className="character-color-dot"
+              style={{ backgroundColor: colors[idx % colors.length] }}
+            ></span>
+            <strong>{char.name}</strong>
+            <span className="character-role">({char.role})</span>
+            <span className="character-arc-type">Arc: {char.arcType}</span>
+            <span className="character-development">
+              Development: {char.developmentScore}/100
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+/**
+ * Prose Quality Dashboard
+ * Visualizations for word frequency, dialogue, passive voice, adverbs, sentence variety, and readability
+ */
+const ProseQualityDashboard: React.FC<{ proseQuality: any }> = ({
+  proseQuality,
+}) => {
+  const [selectedMetric, setSelectedMetric] = useState<string>("overview");
+
+  return (
+    <div className="prose-quality-dashboard">
+      <h3>Prose Quality Analysis</h3>
+      <p className="section-subtitle">
+        Deep dive into writing mechanics and style
+      </p>
+
+      {/* Overview Cards */}
+      <div className="prose-overview-grid">
+        <div className="prose-metric-card">
+          <div className="metric-icon">📚</div>
+          <div className="metric-value">
+            {proseQuality.wordFrequency.unique.toLocaleString()}
+          </div>
+          <div className="metric-label">Unique Words</div>
+          <div className="metric-detail">
+            {(
+              (proseQuality.wordFrequency.unique /
+                proseQuality.wordFrequency.total) *
+              100
+            ).toFixed(1)}
+            % vocabulary richness
+          </div>
+        </div>
+
+        <div className="prose-metric-card">
+          <div className="metric-icon">💬</div>
+          <div className="metric-value">
+            {proseQuality.dialogue.totalDialogueLines}
+          </div>
+          <div className="metric-label">Dialogue Lines</div>
+          <div className="metric-detail">
+            {proseQuality.dialogue.speakers.size} unique speakers
+          </div>
+        </div>
+
+        <div className="prose-metric-card">
+          <div className="metric-icon">⚡</div>
+          <div className="metric-value">
+            {proseQuality.passiveVoice.percentage.toFixed(1)}%
+          </div>
+          <div className="metric-label">Passive Voice</div>
+          <div className="metric-detail">
+            {proseQuality.passiveVoice.count} instances
+          </div>
+        </div>
+
+        <div className="prose-metric-card">
+          <div className="metric-icon">✍️</div>
+          <div className="metric-value">
+            {proseQuality.adverbs.density.toFixed(0)}
+          </div>
+          <div className="metric-label">Adverbs per 1K</div>
+          <div className="metric-detail">
+            {proseQuality.adverbs.weakAdverbs} weak adverbs
+          </div>
+        </div>
+
+        <div className="prose-metric-card">
+          <div className="metric-icon">📊</div>
+          <div className="metric-value">
+            {proseQuality.sentenceVariety.varietyScore.toFixed(0)}
+          </div>
+          <div className="metric-label">Variety Score</div>
+          <div className="metric-detail">
+            Avg: {proseQuality.sentenceVariety.averageLength.toFixed(1)} words
+          </div>
+        </div>
+
+        <div className="prose-metric-card">
+          <div className="metric-icon">🎯</div>
+          <div className="metric-value">
+            {proseQuality.readability.fleschKincaid.toFixed(1)}
+          </div>
+          <div className="metric-label">Grade Level</div>
+          <div className="metric-detail">
+            {proseQuality.readability.interpretation.split(" - ")[0]}
+          </div>
+        </div>
+      </div>
+
+      {/* Sentence Length Distribution Chart */}
+      <div className="viz-card sentence-distribution">
+        <h4>Sentence Length Distribution</h4>
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart
+            data={[
+              {
+                name: "Short (< 10)",
+                count: proseQuality.sentenceVariety.shortSentences,
+                fill: "#10b981",
+              },
+              {
+                name: "Medium (10-20)",
+                count: proseQuality.sentenceVariety.mediumSentences,
+                fill: "#3b82f6",
+              },
+              {
+                name: "Long (> 20)",
+                count: proseQuality.sentenceVariety.longSentences,
+                fill: "#8b5cf6",
+              },
+            ]}
+          >
+            <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+            <XAxis dataKey="name" stroke="#999" tick={{ fill: "#999" }} />
+            <YAxis stroke="#999" tick={{ fill: "#999" }} />
+            <Tooltip
+              contentStyle={{
+                backgroundColor: "#1a1a1a",
+                border: "1px solid #333",
+                borderRadius: "8px",
+              }}
+              labelStyle={{ color: "#fff" }}
+            />
+            <Bar dataKey="count" radius={[8, 8, 0, 0]}>
+              {[0, 1, 2].map((index) => (
+                <Cell
+                  key={`cell-${index}`}
+                  fill={
+                    index === 0
+                      ? "#10b981"
+                      : index === 1
+                      ? "#3b82f6"
+                      : "#8b5cf6"
+                  }
+                />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+        <div className="sentence-variety-note">
+          <p>
+            <strong>Ideal Mix:</strong> 30% short (punchy), 50% medium
+            (standard), 20% long (flowing)
+          </p>
+          <p>
+            <strong>Current:</strong>{" "}
+            {(
+              (proseQuality.sentenceVariety.shortSentences /
+                proseQuality.sentenceVariety.sentences.length) *
+              100
+            ).toFixed(0)}
+            % short,{" "}
+            {(
+              (proseQuality.sentenceVariety.mediumSentences /
+                proseQuality.sentenceVariety.sentences.length) *
+              100
+            ).toFixed(0)}
+            % medium,{" "}
+            {(
+              (proseQuality.sentenceVariety.longSentences /
+                proseQuality.sentenceVariety.sentences.length) *
+              100
+            ).toFixed(0)}
+            % long
+          </p>
+        </div>
+      </div>
+
+      {/* Top Overused Words */}
+      {proseQuality.wordFrequency.overusedWords.length > 0 && (
+        <div className="viz-card overused-words">
+          <h4>Potentially Overused Words</h4>
+          <p className="section-subtitle">
+            Words that appear frequently - consider varying with synonyms
+          </p>
+          <div className="word-frequency-grid">
+            {proseQuality.wordFrequency.overusedWords
+              .slice(0, 20)
+              .map((word: any) => (
+                <div key={word.word} className="word-freq-item">
+                  <span className="word-text">{word.word}</span>
+                  <span className="word-count">{word.count}×</span>
+                </div>
+              ))}
+          </div>
+        </div>
+      )}
+
+      {/* Dialogue Speakers Breakdown */}
+      {proseQuality.dialogue.speakers.size > 0 && (
+        <div className="viz-card dialogue-breakdown">
+          <h4>Dialogue Attribution</h4>
+          <div className="dialogue-stats">
+            <div className="dialogue-stat">
+              <div className="stat-value">
+                {proseQuality.dialogue.totalDialogueLines}
+              </div>
+              <div className="stat-label">Total Lines</div>
+            </div>
+            <div className="dialogue-stat">
+              <div className="stat-value">
+                {proseQuality.dialogue.taggedLines}
+              </div>
+              <div className="stat-label">Tagged</div>
+            </div>
+            <div className="dialogue-stat warning">
+              <div className="stat-value">
+                {proseQuality.dialogue.untaggedLines}
+              </div>
+              <div className="stat-label">Untagged</div>
+            </div>
+            <div className="dialogue-stat">
+              <div className="stat-value">
+                {proseQuality.dialogue.speakers.size}
+              </div>
+              <div className="stat-label">Speakers</div>
+            </div>
+          </div>
+          {proseQuality.dialogue.speakers.size > 0 && (
+            <div className="speakers-list">
+              <h5>Speaker Frequency:</h5>
+              <div className="speaker-grid">
+                {Array.from(proseQuality.dialogue.speakers.entries())
+                  .sort((a, b) => b[1] - a[1])
+                  .slice(0, 10)
+                  .map(([speaker, count]: [string, number]) => (
+                    <div key={speaker} className="speaker-item">
+                      <span className="speaker-name">{speaker}</span>
+                      <span className="speaker-count">{count} lines</span>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+/**
+ * Visual Analysis Enhancements Dashboard
+ * Shows emotion heatmap, POV consistency, clichés, filtering words, and backstory
+ */
+const VisualAnalysisDashboard: React.FC<{ analysis: any }> = ({ analysis }) => {
+  if (
+    !analysis.emotionHeatmap &&
+    !analysis.povConsistency &&
+    !analysis.clicheDetection &&
+    !analysis.filteringWords &&
+    !analysis.backstoryDensity
+  ) {
+    return null;
+  }
+
+  return (
+    <div className="visual-analysis-dashboard">
+      <h3>Advanced Style Analysis</h3>
+      <p className="section-subtitle">
+        Emotional pacing, POV consistency, originality, and style insights
+      </p>
+
+      {/* Emotion Heatmap */}
+      {analysis.emotionHeatmap && (
+        <div className="viz-card emotion-heatmap">
+          <h4>Emotional Intensity Heatmap</h4>
+          <p className="section-subtitle">
+            Track emotional tension throughout the manuscript
+          </p>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={analysis.emotionHeatmap.dataPoints}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+              <XAxis
+                dataKey="position"
+                stroke="#999"
+                tick={{ fill: "#999" }}
+                label={{
+                  value: "Position in Manuscript",
+                  position: "insideBottom",
+                  offset: -5,
+                  style: { fill: "#999" },
+                }}
+                tickFormatter={(value) => `${Math.round(value / 1000)}k`}
+              />
+              <YAxis
+                stroke="#999"
+                tick={{ fill: "#999" }}
+                domain={[0, 100]}
+                label={{
+                  value: "Emotional Intensity",
+                  angle: -90,
+                  position: "insideLeft",
+                  style: { fill: "#999" },
+                }}
+              />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: "#1a1a1a",
+                  border: "1px solid #333",
+                  borderRadius: "8px",
+                }}
+                labelStyle={{ color: "#fff" }}
+                formatter={(value: any, name: string) => [
+                  `${value}/100`,
+                  "Intensity",
+                ]}
+              />
+              <Line
+                type="monotone"
+                dataKey="intensity"
+                stroke="#f59e0b"
+                strokeWidth={3}
+                dot={false}
+                name="Emotional Intensity"
+              />
+            </LineChart>
+          </ResponsiveContainer>
+          <div className="emotion-insights">
+            <div className="insight-grid">
+              <div className="insight-item">
+                <strong>Average Intensity:</strong>{" "}
+                {analysis.emotionHeatmap.averageIntensity.toFixed(0)}/100
+              </div>
+              <div className="insight-item">
+                <strong>Peaks:</strong> {analysis.emotionHeatmap.peaks.length}
+              </div>
+              <div className="insight-item">
+                <strong>Valleys:</strong>{" "}
+                {analysis.emotionHeatmap.valleys.length}
+              </div>
+            </div>
+            {analysis.emotionHeatmap.pacingIssues.length > 0 && (
+              <div className="pacing-issues">
+                <h5>⚠️ Pacing Suggestions:</h5>
+                <ul>
+                  {analysis.emotionHeatmap.pacingIssues.map(
+                    (issue: string, idx: number) => (
+                      <li key={idx}>{issue}</li>
+                    )
+                  )}
+                </ul>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* POV Consistency */}
+      {analysis.povConsistency && (
+        <div className="viz-card pov-consistency">
+          <h4>Point of View Consistency</h4>
+          <div className="pov-stats-grid">
+            <div className="pov-stat-card">
+              <div className="stat-icon">👁️</div>
+              <div className="stat-value">
+                {analysis.povConsistency.dominantPOV}
+              </div>
+              <div className="stat-label">Dominant POV</div>
+            </div>
+            <div className="pov-stat-card">
+              <div className="stat-icon">🔄</div>
+              <div className="stat-value">
+                {analysis.povConsistency.shiftCount}
+              </div>
+              <div className="stat-label">POV Shifts</div>
+            </div>
+            <div className="pov-stat-card">
+              <div className="stat-icon">✓</div>
+              <div className="stat-value">
+                {analysis.povConsistency.consistency.toFixed(0)}%
+              </div>
+              <div className="stat-label">Consistency</div>
+            </div>
+            <div className="pov-stat-card warning">
+              <div className="stat-icon">⚠️</div>
+              <div className="stat-value">
+                {analysis.povConsistency.potentialHeadHops.length}
+              </div>
+              <div className="stat-label">Potential Head-Hops</div>
+            </div>
+          </div>
+          {analysis.povConsistency.recommendations.length > 0 && (
+            <div className="pov-recommendations">
+              <h5>Recommendations:</h5>
+              <ul>
+                {analysis.povConsistency.recommendations.map(
+                  (rec: string, idx: number) => (
+                    <li key={idx}>{rec}</li>
+                  )
+                )}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Cliché Detection */}
+      {analysis.clicheDetection && analysis.clicheDetection.count > 0 && (
+        <div className="viz-card cliche-detection">
+          <h4>Cliché Detection</h4>
+          <div className="cliche-summary">
+            <strong>{analysis.clicheDetection.count}</strong> clichés detected (
+            {analysis.clicheDetection.density.toFixed(2)} per 1000 words)
+          </div>
+          <div className="cliche-list">
+            {analysis.clicheDetection.instances
+              .slice(0, 10)
+              .map((cliche: any, idx: number) => (
+                <div
+                  key={idx}
+                  className={`cliche-item severity-${cliche.severity}`}
+                >
+                  <div className="cliche-phrase">"{cliche.cliche}"</div>
+                  <div className="cliche-alternative">
+                    <strong>Try instead:</strong> {cliche.alternative}
+                  </div>
+                </div>
+              ))}
+          </div>
+        </div>
+      )}
+
+      {/* Filtering Words */}
+      {analysis.filteringWords && analysis.filteringWords.count > 0 && (
+        <div className="viz-card filtering-words">
+          <h4>Filtering Words Detected</h4>
+          <div className="filtering-summary">
+            <strong>{analysis.filteringWords.count}</strong> filtering words
+            found ({analysis.filteringWords.density.toFixed(1)} per 1000 words)
+          </div>
+          <div className="filtering-types">
+            {Array.from(analysis.filteringWords.byType.entries())
+              .sort((a: any, b: any) => b[1] - a[1])
+              .slice(0, 5)
+              .map(([type, count]: [string, number]) => (
+                <div key={type} className="filtering-type-item">
+                  <span className="type-name">{type}</span>
+                  <span className="type-count">{count}</span>
+                </div>
+              ))}
+          </div>
+          <div className="filtering-tip">
+            <strong>💡 Tip:</strong> Remove filtering words for more immediate,
+            engaging prose. Instead of "She saw the door open," write "The door
+            opened."
+          </div>
+        </div>
+      )}
+
+      {/* Backstory Density */}
+      {analysis.backstoryDensity && (
+        <div className="viz-card backstory-density">
+          <h4>Backstory Distribution</h4>
+          <div className="backstory-stats">
+            <div className="backstory-stat">
+              <div className="stat-value">
+                {analysis.backstoryDensity.percentage.toFixed(1)}%
+              </div>
+              <div className="stat-label">Total Backstory</div>
+            </div>
+            <div className="backstory-stat">
+              <div className="stat-value">
+                {analysis.backstoryDensity.openingChaptersBackstory.toFixed(1)}%
+              </div>
+              <div className="stat-label">Opening Chapters</div>
+            </div>
+            <div className="backstory-stat">
+              <div className="stat-value">
+                {analysis.backstoryDensity.sections.length}
+              </div>
+              <div className="stat-label">Backstory Sections</div>
+            </div>
+          </div>
+          {analysis.backstoryDensity.distribution && (
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart
+                data={analysis.backstoryDensity.distribution.map(
+                  (value: number, idx: number) => ({
+                    section: `${idx * 10}-${(idx + 1) * 10}%`,
+                    backstory: value,
+                  })
+                )}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+                <XAxis
+                  dataKey="section"
+                  stroke="#999"
+                  tick={{ fill: "#999" }}
+                />
+                <YAxis stroke="#999" tick={{ fill: "#999" }} />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "#1a1a1a",
+                    border: "1px solid #333",
+                    borderRadius: "8px",
+                  }}
+                  labelStyle={{ color: "#fff" }}
+                />
+                <Bar dataKey="backstory" fill="#8b5cf6" radius={[8, 8, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+          {analysis.backstoryDensity.warnings.length > 0 && (
+            <div className="backstory-warnings">
+              <h5>⚠️ Warnings:</h5>
+              <ul>
+                {analysis.backstoryDensity.warnings.map(
+                  (warning: string, idx: number) => (
+                    <li key={idx}>{warning}</li>
+                  )
+                )}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+/**
+ * Advanced Metrics Dashboard
+ * Shows dialogue-to-narrative ratio, scene vs sequel, conflict tracking, and sensory balance
+ */
+export const AdvancedMetricsDashboard: React.FC<{
+  analysis: ChapterAnalysis;
+}> = ({ analysis }) => {
+  if (
+    !analysis.dialogueNarrativeRatio &&
+    !analysis.sceneSequel &&
+    !analysis.conflictTracking &&
+    !analysis.sensoryBalance
+  ) {
+    return null;
+  }
+
+  return (
+    <div className="advanced-metrics-dashboard">
+      <h3 className="dashboard-title">📊 Advanced Manuscript Metrics</h3>
+
+      {/* Dialogue-to-Narrative Ratio */}
+      {analysis.dialogueNarrativeRatio && (
+        <div className="metric-section dialogue-narrative-section">
+          <h4>💬 Dialogue-to-Narrative Balance</h4>
+          <div className="balance-cards">
+            <div className="balance-card dialogue-card">
+              <div className="card-label">Dialogue</div>
+              <div className="card-value">
+                {analysis.dialogueNarrativeRatio.dialoguePercentage.toFixed(1)}%
+              </div>
+              <div className="card-target">
+                Target:{" "}
+                {analysis.dialogueNarrativeRatio.genreTarget.idealDialogue}%
+              </div>
+            </div>
+            <div className="balance-card description-card">
+              <div className="card-label">Description</div>
+              <div className="card-value">
+                {analysis.dialogueNarrativeRatio.descriptionPercentage.toFixed(
+                  1
+                )}
+                %
+              </div>
+              <div className="card-target">
+                Target:{" "}
+                {analysis.dialogueNarrativeRatio.genreTarget.idealDescription}%
+              </div>
+            </div>
+            <div className="balance-card action-card">
+              <div className="card-label">Action</div>
+              <div className="card-value">
+                {analysis.dialogueNarrativeRatio.actionPercentage.toFixed(1)}%
+              </div>
+              <div className="card-target">
+                Target:{" "}
+                {analysis.dialogueNarrativeRatio.genreTarget.idealAction}%
+              </div>
+            </div>
+          </div>
+          <ResponsiveContainer width="100%" height={200}>
+            <BarChart
+              data={[
+                {
+                  name: "Your Manuscript",
+                  dialogue: analysis.dialogueNarrativeRatio.dialoguePercentage,
+                  description:
+                    analysis.dialogueNarrativeRatio.descriptionPercentage,
+                  action: analysis.dialogueNarrativeRatio.actionPercentage,
+                },
+                {
+                  name: `${analysis.dialogueNarrativeRatio.genreTarget.genre} Target`,
+                  dialogue:
+                    analysis.dialogueNarrativeRatio.genreTarget.idealDialogue,
+                  description:
+                    analysis.dialogueNarrativeRatio.genreTarget
+                      .idealDescription,
+                  action:
+                    analysis.dialogueNarrativeRatio.genreTarget.idealAction,
+                },
+              ]}
+            >
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis
+                label={{
+                  value: "Percentage (%)",
+                  angle: -90,
+                  position: "insideLeft",
+                }}
+              />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="dialogue" fill="#3b82f6" name="Dialogue" />
+              <Bar dataKey="description" fill="#10b981" name="Description" />
+              <Bar dataKey="action" fill="#f59e0b" name="Action" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
+      {/* Scene vs Sequel Structure */}
+      {analysis.sceneSequel && (
+        <div className="metric-section scene-sequel-section">
+          <h4>⚡ Scene vs Sequel Structure</h4>
+          <div className="scene-sequel-stats">
+            <div className="stat-card scene-stat">
+              <div className="stat-label">Scenes (Action)</div>
+              <div className="stat-value">
+                {analysis.sceneSequel.sceneCount}
+              </div>
+              <div className="stat-detail">
+                Avg: {analysis.sceneSequel.averageSceneLength.toFixed(0)} words
+              </div>
+            </div>
+            <div className="stat-card sequel-stat">
+              <div className="stat-label">Sequels (Reflection)</div>
+              <div className="stat-value">
+                {analysis.sceneSequel.sequelCount}
+              </div>
+              <div className="stat-detail">
+                Avg: {analysis.sceneSequel.averageSequelLength.toFixed(0)} words
+              </div>
+            </div>
+            <div className="stat-card ratio-stat">
+              <div className="stat-label">Ratio</div>
+              <div className="stat-value">
+                {analysis.sceneSequel.sceneToSequelRatio.toFixed(1)}:1
+              </div>
+              <div className="stat-detail">
+                {analysis.sceneSequel.balance === "excellent"
+                  ? "✅ Excellent"
+                  : analysis.sceneSequel.balance === "good"
+                  ? "👍 Good"
+                  : "⚠️ Unbalanced"}
+              </div>
+            </div>
+          </div>
+          {analysis.sceneSequel.recommendations.length > 0 && (
+            <div className="recommendations-list">
+              <h5>💡 Recommendations:</h5>
+              <ul>
+                {analysis.sceneSequel.recommendations.map(
+                  (rec: string, idx: number) => (
+                    <li key={idx}>{rec}</li>
+                  )
+                )}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Conflict Tracking */}
+      {analysis.conflictTracking && (
+        <div className="metric-section conflict-section">
+          <h4>⚔️ Conflict Tracking</h4>
+          <div className="conflict-overview">
+            <div className="conflict-stat total">
+              <span className="stat-label">Total Conflicts:</span>
+              <span className="stat-value">
+                {analysis.conflictTracking.totalConflicts}
+              </span>
+            </div>
+            <div className="conflict-stat density">
+              <span className="stat-label">Density:</span>
+              <span className="stat-value">
+                {analysis.conflictTracking.conflictDensity.toFixed(1)} per 1K
+                words
+              </span>
+            </div>
+            <div className="conflict-stat intensity">
+              <span className="stat-label">Avg Intensity:</span>
+              <span className="stat-value">
+                {analysis.conflictTracking.averageIntensity.toFixed(0)}/100
+              </span>
+            </div>
+          </div>
+          <ResponsiveContainer width="100%" height={200}>
+            <BarChart
+              data={[
+                {
+                  name: "Internal",
+                  count: analysis.conflictTracking.internalCount,
+                  fill: "#8b5cf6",
+                },
+                {
+                  name: "External",
+                  count: analysis.conflictTracking.externalCount,
+                  fill: "#ef4444",
+                },
+                {
+                  name: "Interpersonal",
+                  count: analysis.conflictTracking.interpersonalCount,
+                  fill: "#f59e0b",
+                },
+              ]}
+            >
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis
+                label={{ value: "Count", angle: -90, position: "insideLeft" }}
+              />
+              <Tooltip />
+              <Bar dataKey="count" />
+            </BarChart>
+          </ResponsiveContainer>
+          {analysis.conflictTracking.lowConflictSections.length > 0 && (
+            <div className="low-conflict-warning">
+              ⚠️ {analysis.conflictTracking.lowConflictSections.length}{" "}
+              section(s) with minimal conflict detected
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Sensory Balance */}
+      {analysis.sensoryBalance && (
+        <div className="metric-section sensory-section">
+          <h4>👁️ Sensory Balance</h4>
+          <div className="sensory-grid">
+            <div className="sensory-card sight">
+              <span className="sense-emoji">👁️</span>
+              <span className="sense-label">Sight</span>
+              <span className="sense-value">
+                {analysis.sensoryBalance.sightPercentage.toFixed(1)}%
+              </span>
+              <span className="sense-count">
+                ({analysis.sensoryBalance.sightCount})
+              </span>
+            </div>
+            <div className="sensory-card sound">
+              <span className="sense-emoji">👂</span>
+              <span className="sense-label">Sound</span>
+              <span className="sense-value">
+                {analysis.sensoryBalance.soundPercentage.toFixed(1)}%
+              </span>
+              <span className="sense-count">
+                ({analysis.sensoryBalance.soundCount})
+              </span>
+            </div>
+            <div className="sensory-card touch">
+              <span className="sense-emoji">✋</span>
+              <span className="sense-label">Touch</span>
+              <span className="sense-value">
+                {analysis.sensoryBalance.touchPercentage.toFixed(1)}%
+              </span>
+              <span className="sense-count">
+                ({analysis.sensoryBalance.touchCount})
+              </span>
+            </div>
+            <div className="sensory-card smell">
+              <span className="sense-emoji">👃</span>
+              <span className="sense-label">Smell</span>
+              <span className="sense-value">
+                {analysis.sensoryBalance.smellPercentage.toFixed(1)}%
+              </span>
+              <span className="sense-count">
+                ({analysis.sensoryBalance.smellCount})
+              </span>
+            </div>
+            <div className="sensory-card taste">
+              <span className="sense-emoji">👅</span>
+              <span className="sense-label">Taste</span>
+              <span className="sense-value">
+                {analysis.sensoryBalance.tastePercentage.toFixed(1)}%
+              </span>
+              <span className="sense-count">
+                ({analysis.sensoryBalance.tasteCount})
+              </span>
+            </div>
+          </div>
+          <ResponsiveContainer width="100%" height={250}>
+            <RadarChart
+              data={[
+                {
+                  sense: "Sight",
+                  value: analysis.sensoryBalance.sightPercentage,
+                },
+                {
+                  sense: "Sound",
+                  value: analysis.sensoryBalance.soundPercentage,
+                },
+                {
+                  sense: "Touch",
+                  value: analysis.sensoryBalance.touchPercentage,
+                },
+                {
+                  sense: "Smell",
+                  value: analysis.sensoryBalance.smellPercentage,
+                },
+                {
+                  sense: "Taste",
+                  value: analysis.sensoryBalance.tastePercentage,
+                },
+              ]}
+            >
+              <PolarGrid />
+              <PolarAngleAxis dataKey="sense" />
+              <PolarRadiusAxis angle={90} domain={[0, 100]} />
+              <Radar
+                name="Sensory Balance"
+                dataKey="value"
+                stroke="#8b5cf6"
+                fill="#8b5cf6"
+                fillOpacity={0.6}
+              />
+              <Tooltip />
+            </RadarChart>
+          </ResponsiveContainer>
+          <div className="sensory-status">
+            Balance Status:{" "}
+            {analysis.sensoryBalance.balance === "excellent"
+              ? "✅ Excellent - All senses well-represented"
+              : analysis.sensoryBalance.balance === "good"
+              ? "👍 Good - Minor adjustments suggested"
+              : analysis.sensoryBalance.balance === "visual-heavy"
+              ? "⚠️ Visual-Heavy - Add more variety"
+              : "⚠️ Needs Variety - Expand sensory range"}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 };
 
 // Definitions and examples for each learning principle
@@ -602,15 +1595,15 @@ export const PrincipleScoresRadar: React.FC<{ analysis: ChapterAnalysis }> = ({
   return (
     <div className="viz-container">
       <h3>Writing Metrics</h3>
-      <ResponsiveContainer width="100%" height={300}>
+      <ResponsiveContainer width="100%" height={400}>
         <RadarChart
           data={data}
-          margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
+          margin={{ top: 60, right: 100, bottom: 60, left: 100 }}
         >
           <PolarGrid stroke="#e0e0e0" />
           <PolarAngleAxis
             dataKey="name"
-            tick={{ fontSize: 12 }}
+            tick={{ fontSize: 12, fill: "#2c3e50" }}
             tickLine={false}
           />
           <PolarRadiusAxis
@@ -2299,8 +3292,25 @@ export const ChapterAnalysisDashboard: React.FC<{
 
       <div className="viz-grid">
         <PrincipleScoresRadar analysis={analysis} />
-        <InterleavingPattern analysis={analysis} pageOffsets={pageOffsets} />
       </div>
+
+      {/* Character Arc Trajectory Chart */}
+      {analysis.characterAnalysis && analysis.characterAnalysis.characters && (
+        <CharacterArcTrajectory
+          characterAnalysis={analysis.characterAnalysis}
+        />
+      )}
+
+      {/* Prose Quality Visualizations */}
+      {analysis.proseQuality && (
+        <ProseQualityDashboard proseQuality={analysis.proseQuality} />
+      )}
+
+      {/* Visual Analysis Enhancements */}
+      <VisualAnalysisDashboard analysis={analysis} />
+
+      {/* Advanced Metrics Dashboard */}
+      <AdvancedMetricsDashboard analysis={analysis} />
 
       {shouldShowGeneralConcepts && (
         <div className="viz-grid general-concepts-grid">

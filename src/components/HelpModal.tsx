@@ -199,8 +199,8 @@ function QuickStartSection() {
             </li>
           </ul>
           <p>
-            <strong>Supported formats:</strong> <code>.docx</code> and{" "}
-            <code>.obt</code>
+            <strong>Supported formats:</strong> <code>.docx</code>,{" "}
+            <code>.txt</code>, and <code>.obt</code>
           </p>
         </section>
 
