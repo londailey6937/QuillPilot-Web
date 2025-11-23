@@ -1603,7 +1603,23 @@ export const PrincipleScoresRadar: React.FC<{ analysis: ChapterAnalysis }> = ({
           <PolarGrid stroke="#e0e0e0" />
           <PolarAngleAxis
             dataKey="name"
-            tick={{ fontSize: 12, fill: "#2c3e50" }}
+            tick={({ payload, x, y, cx, cy, ...rest }) => {
+              const angle = Math.atan2(y - cy, x - cx) * (180 / Math.PI);
+              const adjustedAngle = angle > 90 || angle < -90 ? angle + 180 : angle;
+              return (
+                <text
+                  x={x}
+                  y={y}
+                  textAnchor={angle > 90 || angle < -90 ? "end" : "start"}
+                  dominantBaseline="middle"
+                  fontSize={12}
+                  fill="#2c3e50"
+                  transform={`rotate(${adjustedAngle}, ${x}, ${y})`}
+                >
+                  {payload.value}
+                </text>
+              );
+            }}
             tickLine={false}
           />
           <PolarRadiusAxis
