@@ -1001,6 +1001,40 @@ export function ReferenceLibraryModal({
                   </li>
                 </ul>
 
+                <h3
+                  style={{
+                    marginTop: "1.5rem",
+                    marginBottom: "0.5rem",
+                    color: "#374151",
+                  }}
+                >
+                  Writing Productivity Tools
+                </h3>
+                <ul style={{ marginBottom: "1rem", paddingLeft: "1.5rem" }}>
+                  <li style={{ marginBottom: "0.5rem" }}>
+                    <strong>⌨️ Typewriter Mode:</strong> Keeps the current line
+                    centered in the editor viewport as you write. Works with all
+                    cursor movements - typing, arrow keys, mouse clicks, and
+                    navigation shortcuts. Creates a distraction-free writing
+                    experience by maintaining consistent eye position.
+                  </li>
+                  <li style={{ marginBottom: "0.5rem" }}>
+                    <strong>🎯 Focus Mode:</strong> Hides all craft indicators
+                    and analysis highlights for pure writing without distractions.
+                    Toggle on when drafting, off when revising.
+                  </li>
+                  <li style={{ marginBottom: "0.5rem" }}>
+                    <strong>⏱️ Sprint Mode:</strong> Set a timer (5-60 minutes)
+                    for focused writing sessions. Tracks word count progress and
+                    helps build consistent writing habits.
+                  </li>
+                  <li style={{ marginBottom: "0.5rem" }}>
+                    <strong>📝 Word Count Tracking:</strong> Real-time updates
+                    showing total words and sprint progress. Helps maintain daily
+                    writing goals.
+                  </li>
+                </ul>
+
                 <div
                   style={{
                     background: "#fef5e7",
@@ -1714,8 +1748,7 @@ export function ReferenceLibraryModal({
                 marginRight: "0.5rem",
               }}
             >
-              Tome{" "}
-              <span style={{ fontStyle: "italic", fontWeight: "700" }}>IQ</span>
+              Quill Pilot
             </span>
             <span
               style={{
