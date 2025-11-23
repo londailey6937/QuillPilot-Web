@@ -66,6 +66,8 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
 
   // New feature states
   const [blockType, setBlockType] = useState("p");
+  const [fontFamily, setFontFamily] = useState("default");
+  const [fontSize, setFontSize] = useState("16px");
   const [showLinkModal, setShowLinkModal] = useState(false);
   const [linkUrl, setLinkUrl] = useState("");
   const [showFindReplace, setShowFindReplace] = useState(false);
@@ -1162,12 +1164,12 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
         <div
           style={{
             padding: "8px 16px",
-            backgroundColor: "#f59e0b",
-            color: "white",
+            backgroundColor: "#fef5e7",
+            color: "#2c3e50",
             fontSize: "13px",
             fontWeight: 600,
             textAlign: "center",
-            borderBottom: "2px solid #d97706",
+            borderBottom: "2px solid #ef8432",
           }}
         >
           📊 Analysis Mode - Document is read-only • Switch to Writer Mode to
@@ -1197,6 +1199,66 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
             <option value="pre">Code Block</option>
             <option value="footnote">Footnote</option>
             <option value="citation">Bibliography/Citation</option>
+          </select>
+
+          <div className="w-px h-6 bg-gray-300" />
+
+          {/* Font family dropdown */}
+          <select
+            value={fontFamily}
+            onChange={(e) => {
+              setFontFamily(e.target.value);
+              if (editorRef.current) {
+                editorRef.current.style.fontFamily =
+                  e.target.value === "default" ? "" : e.target.value;
+              }
+            }}
+            className="px-2 py-1.5 rounded border bg-white hover:bg-gray-50 transition-colors text-sm"
+            title="Font Family"
+          >
+            <option value="default">Default</option>
+            <option value="Georgia, serif">Georgia</option>
+            <option value="'Times New Roman', Times, serif">
+              Times New Roman
+            </option>
+            <option value="'Courier New', Courier, monospace">
+              Courier New
+            </option>
+            <option value="Arial, sans-serif">Arial</option>
+            <option value="Helvetica, sans-serif">Helvetica</option>
+            <option value="Verdana, sans-serif">Verdana</option>
+            <option value="'Comic Sans MS', cursive">Comic Sans</option>
+            <option value="'Palatino Linotype', 'Book Antiqua', Palatino, serif">
+              Palatino
+            </option>
+            <option value="'Trebuchet MS', sans-serif">Trebuchet</option>
+            <option value="'Lucida Console', Monaco, monospace">
+              Lucida Console
+            </option>
+          </select>
+
+          {/* Font size dropdown */}
+          <select
+            value={fontSize}
+            onChange={(e) => {
+              setFontSize(e.target.value);
+              if (editorRef.current) {
+                editorRef.current.style.fontSize = e.target.value;
+              }
+            }}
+            className="px-2 py-1.5 rounded border bg-white hover:bg-gray-50 transition-colors text-sm"
+            title="Font Size"
+          >
+            <option value="12px">12px</option>
+            <option value="14px">14px</option>
+            <option value="16px">16px</option>
+            <option value="18px">18px</option>
+            <option value="20px">20px</option>
+            <option value="22px">22px</option>
+            <option value="24px">24px</option>
+            <option value="28px">28px</option>
+            <option value="32px">32px</option>
+            <option value="36px">36px</option>
           </select>
 
           <div className="w-px h-6 bg-gray-300" />

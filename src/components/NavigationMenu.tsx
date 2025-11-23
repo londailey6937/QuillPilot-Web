@@ -396,8 +396,8 @@ export function NavigationMenu({
               },
               {
                 icon: "📈",
-                title: "Real-Time Analysis",
-                desc: "Instant feedback as you write",
+                title: "On-Demand Analysis",
+                desc: "Comprehensive analysis when you're ready",
               },
             ]}
           />
@@ -727,7 +727,7 @@ export function NavigationMenu({
             desc="Usage terms and conditions"
             onClick={() => {
               alert(
-                "Terms of Service:\n\n• Free to use for educational purposes\n• Analyze unlimited chapters\n• Export and share your results\n• No warranty on analysis accuracy\n• Use responsibly and ethically\n\nFull terms available at:\nquillpilot.ai/terms"
+                "Terms of Service:\n\n• Available for purchase - not free to use\n• Analyze unlimited manuscripts\n• Export and share your results\n• No warranty on analysis accuracy\n• Use responsibly and ethically\n\nFull terms available at:\nquillpilot.ai/terms"
               );
             }}
           />
@@ -779,14 +779,14 @@ export function NavigationMenu({
             style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}
           >
             <ComingSoonItem
-              icon="🧬"
-              title="Biology Domain"
-              desc="DNA, cells, genetics patterns"
+              icon="💉"
+              title="More Genre Detection"
+              desc="Expanded genre libraries and trope analysis"
             />
             <ComingSoonItem
-              icon="�"
-              title="Comparative Analysis"
-              desc="Compare multiple chapters"
+              icon="🌎"
+              title="Additional Genres"
+              desc="Urban fantasy, paranormal, dystopian, and more"
             />
           </div>
         </div>
