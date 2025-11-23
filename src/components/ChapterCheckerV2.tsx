@@ -1514,6 +1514,129 @@ export const ChapterCheckerV2: React.FC = () => {
               </div>
             </div>
 
+            {/* Document Stats in Header */}
+            {fileName && (
+              <div
+                style={{
+                  fontSize: "13px",
+                  color: "#2c3e50",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "6px",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  textAlign: "center",
+                  minWidth: "240px",
+                  padding: "10px 18px",
+                  backgroundColor: "#f5ead9",
+                  borderRadius: "12px",
+                  border: "1.5px solid #e0c392",
+                  flexShrink: 0,
+                }}
+              >
+                <span style={{ fontWeight: "600", fontSize: "14px" }}>
+                  📄 {fileName}
+                </span>
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "8px",
+                    fontSize: "12px",
+                    flexWrap: "wrap",
+                    justifyContent: "center",
+                  }}
+                >
+                  <span style={{ fontWeight: 500 }}>
+                    {wordCount.toLocaleString()} words
+                  </span>
+                  <span style={{ color: "#9ca3af" }}>•</span>
+                  <span style={{ fontWeight: 500 }}>
+                    {Math.ceil(wordCount / 250).toLocaleString()} pages
+                  </span>
+                  <span style={{ color: "#9ca3af" }}>•</span>
+                  <span style={{ fontWeight: 500 }}>
+                    {charCount.toLocaleString()} chars
+                  </span>
+                  <span style={{ color: "#9ca3af" }}>•</span>
+                  <span style={{ fontWeight: 500 }}>
+                    {(() => {
+                      const totalMinutes = Math.ceil(wordCount / 200);
+                      const hours = Math.floor(totalMinutes / 60);
+                      const minutes = totalMinutes % 60;
+                      if (hours > 0) {
+                        return `~${hours}h ${minutes}m read`;
+                      }
+                      return `~${minutes}m read`;
+                    })()}
+                  </span>
+                  {readingLevel > 0 && (
+                    <>
+                      <span style={{ color: "#9ca3af" }}>•</span>
+                      <span style={{ fontWeight: 500 }}>
+                        Grade {readingLevel}
+                      </span>
+                    </>
+                  )}
+                </div>
+                {selectedDomain && selectedDomain !== "none" && (
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: "8px",
+                      fontSize: "12px",
+                      flexWrap: "wrap",
+                      justifyContent: "center",
+                      marginTop: "4px",
+                      padding: "6px 12px",
+                      backgroundColor: "#fef5e7",
+                      borderRadius: "12px",
+                      border: "1px solid #f7d8a8",
+                    }}
+                  >
+                    <span style={{ fontWeight: 500, color: "#64748b" }}>
+                      Genre:
+                    </span>
+                    <span
+                      style={{
+                        fontWeight: 600,
+                        color: "#ef8432",
+                        textTransform: "capitalize",
+                      }}
+                    >
+                      {selectedDomain === "custom"
+                        ? customDomainName || "Custom"
+                        : selectedDomain}
+                    </span>
+                  </div>
+                )}
+                {analysis && (
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: "8px",
+                      fontSize: "12px",
+                      flexWrap: "wrap",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontWeight: 600,
+                        color:
+                          analysis.overallScore > 70
+                            ? "#10b981"
+                            : analysis.overallScore > 50
+                            ? "#f59e0b"
+                            : "#ef4444",
+                      }}
+                    >
+                      Overall Score: {Math.round(analysis.overallScore)}/100
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Save Button (only show if analysis exists and user has access) */}
             {analysis && accessLevel !== "free" && (
               <div
@@ -1772,33 +1895,7 @@ export const ChapterCheckerV2: React.FC = () => {
                     accessLevel={accessLevel}
                   />
 
-                  {/* TEMP: Reset Upload Counter Button - FOR TESTING ONLY */}
-                  {accessLevel === "free" && (
-                    <button
-                      onClick={() => {
-                        localStorage.removeItem("tomeiq_upload_count");
-                        alert(
-                          "Upload counter reset! You now have 3 uploads available."
-                        );
-                      }}
-                      style={{
-                        padding: "8px 16px",
-                        backgroundColor: "#f59e0b",
-                        color: "white",
-                        border: "none",
-                        borderRadius: "8px",
-                        cursor: "pointer",
-                        fontSize: "12px",
-                        fontWeight: "600",
-                        opacity: 0.7,
-                      }}
-                      title="Testing only - Reset upload counter"
-                    >
-                      🔄 Reset Upload Counter (Testing)
-                    </button>
-                  )}
-
-                  {/* Action buttons below upload */}
+                  {/* Action buttons */}
                   {chapterData && !isAnalyzing && (
                     <div
                       style={{
@@ -1933,165 +2030,8 @@ export const ChapterCheckerV2: React.FC = () => {
                   )}
                 </div>
 
-                {/* Right: Document info */}
-                {fileName && (
-                  <div
-                    style={{
-                      fontSize: "13px",
-                      color: "#2c3e50",
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "6px",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      textAlign: "center",
-                      minWidth: "240px",
-                      padding: "10px 18px",
-                      backgroundColor: "#f5ead9",
-                      borderRadius: "12px",
-                      border: "1.5px solid #e0c392",
-                      flexShrink: 0,
-                    }}
-                  >
-                    <span style={{ fontWeight: "600", fontSize: "14px" }}>
-                      📄 {fileName}
-                    </span>
-                    <div
-                      style={{
-                        display: "flex",
-                        gap: "8px",
-                        fontSize: "12px",
-                        flexWrap: "wrap",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <span style={{ fontWeight: 500 }}>
-                        {wordCount.toLocaleString()} words
-                      </span>
-                      <span style={{ color: "#9ca3af" }}>•</span>
-                      <span style={{ fontWeight: 500 }}>
-                        {Math.ceil(wordCount / 250).toLocaleString()} pages
-                      </span>
-                      <span style={{ color: "#9ca3af" }}>•</span>
-                      <span style={{ fontWeight: 500 }}>
-                        {charCount.toLocaleString()} chars
-                      </span>
-                      <span style={{ color: "#9ca3af" }}>•</span>
-                      <span style={{ fontWeight: 500 }}>
-                        {(() => {
-                          const totalMinutes = Math.ceil(wordCount / 200);
-                          const hours = Math.floor(totalMinutes / 60);
-                          const minutes = totalMinutes % 60;
-                          if (hours > 0) {
-                            return `~${hours}h ${minutes}m read`;
-                          }
-                          return `~${minutes}m read`;
-                        })()}
-                      </span>
-                      {readingLevel > 0 && (
-                        <>
-                          <span style={{ color: "#9ca3af" }}>•</span>
-                          <span style={{ fontWeight: 500 }}>
-                            Grade {readingLevel}
-                          </span>
-                        </>
-                      )}
-                    </div>
-                    {/* Show detected genre immediately */}
-                    {selectedDomain && selectedDomain !== "none" && (
-                      <div
-                        style={{
-                          display: "flex",
-                          gap: "8px",
-                          fontSize: "12px",
-                          flexWrap: "wrap",
-                          justifyContent: "center",
-                          marginTop: "4px",
-                          padding: "6px 12px",
-                          backgroundColor: "#fef5e7",
-                          borderRadius: "12px",
-                          border: "1px solid #f7d8a8",
-                        }}
-                      >
-                        <span style={{ fontWeight: 500, color: "#64748b" }}>
-                          Genre:
-                        </span>
-                        <span
-                          style={{
-                            fontWeight: 600,
-                            color: "#ef8432",
-                            textTransform: "capitalize",
-                          }}
-                        >
-                          {selectedDomain === "custom"
-                            ? customDomainName || "Custom"
-                            : selectedDomain}
-                        </span>
-                      </div>
-                    )}
-                    {analysis && (
-                      <>
-                        <div
-                          style={{
-                            display: "flex",
-                            gap: "8px",
-                            fontSize: "12px",
-                            flexWrap: "wrap",
-                            justifyContent: "center",
-                          }}
-                        >
-                          {selectedDomain && selectedDomain !== "none" && (
-                            <>
-                              <span
-                                style={{
-                                  fontWeight: 600,
-                                  color: "#ef8432",
-                                  textTransform: "capitalize",
-                                }}
-                              >
-                                {selectedDomain === "custom"
-                                  ? "Custom"
-                                  : selectedDomain}
-                              </span>
-                              <span style={{ color: "#9ca3af" }}>•</span>
-                            </>
-                          )}
-                          {(analysis.conceptGraph?.concepts?.length || 0) >
-                            0 && (
-                            <>
-                              <span style={{ fontWeight: 500 }}>
-                                {analysis.conceptGraph.concepts.length} concepts
-                              </span>
-                              <span style={{ color: "#9ca3af" }}>•</span>
-                              <span style={{ fontWeight: 500 }}>
-                                {(
-                                  analysis.conceptGraph.concepts.length /
-                                  (wordCount / 1000)
-                                ).toFixed(1)}{" "}
-                                per 1k words
-                              </span>
-                              <span style={{ color: "#9ca3af" }}>•</span>
-                            </>
-                          )}
-                          <span
-                            style={{
-                              fontWeight: 600,
-                              color:
-                                analysis.overallScore > 70
-                                  ? "#10b981"
-                                  : analysis.overallScore > 50
-                                  ? "#f59e0b"
-                                  : "#ef4444",
-                            }}
-                          >
-                            Overall Score: {Math.round(analysis.overallScore)}
-                            /100
-                          </span>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                )}
+                {/* Right side - empty now that stats moved to header */}
+                <div style={{ flex: 1 }}></div>
               </div>
             </div>
           </div>
