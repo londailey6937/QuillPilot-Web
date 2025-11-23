@@ -924,7 +924,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   useEffect(() => {
     if (!typewriterMode || !editorRef.current || !wrapperRef.current) return;
 
-    const handleInput = () => {
+    const centerCursor = () => {
       const selection = window.getSelection();
       if (!selection || !selection.rangeCount) return;
 
@@ -940,8 +940,30 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
       }
     };
 
+    // Handle typing
+    const handleInput = () => centerCursor();
+
+    // Handle cursor movement (arrow keys, clicks, etc.)
+    const handleSelectionChange = () => {
+      // Only center if the selection is within our editor
+      const selection = window.getSelection();
+      if (selection && editorRef.current?.contains(selection.anchorNode)) {
+        centerCursor();
+      }
+    };
+
+    // Handle clicks
+    const handleClick = () => centerCursor();
+
     editorRef.current.addEventListener("input", handleInput);
-    return () => editorRef.current?.removeEventListener("input", handleInput);
+    editorRef.current.addEventListener("click", handleClick);
+    document.addEventListener("selectionchange", handleSelectionChange);
+
+    return () => {
+      editorRef.current?.removeEventListener("input", handleInput);
+      editorRef.current?.removeEventListener("click", handleClick);
+      document.removeEventListener("selectionchange", handleSelectionChange);
+    };
   }, [typewriterMode]);
 
   // Sprint timer
