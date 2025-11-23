@@ -472,54 +472,68 @@ const VisualAnalysisDashboard: React.FC<{ analysis: any }> = ({ analysis }) => {
           <p className="section-subtitle">
             Track emotional tension throughout the manuscript
           </p>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={analysis.emotionHeatmap.dataPoints}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-              <XAxis
-                dataKey="position"
-                stroke="#999"
-                tick={{ fill: "#999" }}
-                label={{
-                  value: "Position in Manuscript",
-                  position: "insideBottom",
-                  offset: -5,
-                  style: { fill: "#999" },
-                }}
-                tickFormatter={(value) => `${Math.round(value / 1000)}k`}
-              />
-              <YAxis
-                stroke="#999"
-                tick={{ fill: "#999" }}
-                domain={[0, 100]}
-                label={{
-                  value: "Emotional Intensity",
-                  angle: -90,
-                  position: "insideLeft",
-                  style: { fill: "#999" },
-                }}
-              />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "#1a1a1a",
-                  border: "1px solid #333",
-                  borderRadius: "8px",
-                }}
-                labelStyle={{ color: "#fff" }}
-                formatter={(value: any, name: string) => [
-                  `${value}/100`,
-                  "Intensity",
-                ]}
-              />
-              <Line
-                type="monotone"
-                dataKey="intensity"
-                stroke="#f59e0b"
-                strokeWidth={3}
-                dot={false}
-                name="Emotional Intensity"
-              />
-            </LineChart>
-          </ResponsiveContainer>
+          <div style={{ width: "100%", overflowX: "auto" }}>
+            <div
+              style={{
+                minWidth: Math.max(
+                  800,
+                  analysis.emotionHeatmap.dataPoints.length * 20
+                ),
+              }}
+            >
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={analysis.emotionHeatmap.dataPoints}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+                  <XAxis
+                    dataKey="position"
+                    stroke="#999"
+                    tick={{ fill: "#999" }}
+                    label={{
+                      value: "Page Number (approx. 350 words/page)",
+                      position: "insideBottom",
+                      offset: -5,
+                      style: { fill: "#999" },
+                    }}
+                    tickFormatter={(value) => `p${Math.ceil(value / 2500)}`}
+                  />
+                  <YAxis
+                    stroke="#999"
+                    tick={{ fill: "#999" }}
+                    domain={[0, 100]}
+                    label={{
+                      value: "Emotional Intensity",
+                      angle: -90,
+                      position: "insideLeft",
+                      style: { fill: "#999" },
+                    }}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "#1a1a1a",
+                      border: "1px solid #333",
+                      borderRadius: "8px",
+                    }}
+                    labelStyle={{ color: "#fff" }}
+                    labelFormatter={(value) =>
+                      `Page ${Math.ceil(Number(value) / 2500)}`
+                    }
+                    formatter={(value: any, name: string) => [
+                      `${value}/100`,
+                      "Intensity",
+                    ]}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="intensity"
+                    stroke="#f59e0b"
+                    strokeWidth={3}
+                    dot={false}
+                    name="Emotional Intensity"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
           <div className="emotion-insights">
             <div className="insight-grid">
               <div className="insight-item">
