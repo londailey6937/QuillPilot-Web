@@ -29,6 +29,7 @@ export function ReferenceLibraryModal({
     colors: "Color Coding",
     technical: "Technical Specs",
     matching: "Character & Element Tracking",
+    fictionElements: "12 Fiction Elements",
     faq: "FAQ",
   };
 
@@ -1020,8 +1021,8 @@ export function ReferenceLibraryModal({
                   </li>
                   <li style={{ marginBottom: "0.5rem" }}>
                     <strong>🎯 Focus Mode:</strong> Hides all craft indicators
-                    and analysis highlights for pure writing without distractions.
-                    Toggle on when drafting, off when revising.
+                    and analysis highlights for pure writing without
+                    distractions. Toggle on when drafting, off when revising.
                   </li>
                   <li style={{ marginBottom: "0.5rem" }}>
                     <strong>⏱️ Sprint Mode:</strong> Set a timer (5-60 minutes)
@@ -1030,8 +1031,8 @@ export function ReferenceLibraryModal({
                   </li>
                   <li style={{ marginBottom: "0.5rem" }}>
                     <strong>📝 Word Count Tracking:</strong> Real-time updates
-                    showing total words and sprint progress. Helps maintain daily
-                    writing goals.
+                    showing total words and sprint progress. Helps maintain
+                    daily writing goals.
                   </li>
                 </ul>
 
@@ -1494,6 +1495,361 @@ export function ReferenceLibraryModal({
                     </li>
                     <li>✅ No tracking or analytics</li>
                   </ul>
+                </div>
+              </section>
+            </div>
+          </div>
+        );
+
+      case "fictionElements":
+        return (
+          <div className="quickstart-shell">
+            <div className="quickstart-content">
+              <section
+                className="quickstart-card"
+                style={{ borderRadius: "1rem" }}
+              >
+                <h4>12 Core Fiction Elements</h4>
+
+                <p style={{ marginBottom: "1.5rem", lineHeight: "1.6" }}>
+                  Quill Pilot analyzes your manuscript across 12 essential
+                  fiction craft elements to provide comprehensive insights into
+                  your storytelling.
+                </p>
+
+                <div
+                  style={{
+                    backgroundColor: "#f0f9ff",
+                    borderLeft: "4px solid #3b82f6",
+                    padding: "1rem",
+                    marginBottom: "1rem",
+                    borderRadius: "0 0.5rem 0.5rem 0",
+                  }}
+                >
+                  <h5
+                    style={{
+                      margin: "0 0 0.5rem 0",
+                      color: "#1e40af",
+                      fontSize: "1rem",
+                    }}
+                  >
+                    📖 Characters
+                  </h5>
+                  <p style={{ margin: 0, color: "#334155", lineHeight: "1.6" }}>
+                    Tracks character names, development arcs, relationships, and
+                    presence throughout your manuscript. Identifies protagonist,
+                    antagonist, and supporting characters, analyzing how they
+                    evolve and interact.
+                  </p>
+                </div>
+
+                <div
+                  style={{
+                    backgroundColor: "#fef5e7",
+                    borderLeft: "4px solid #ef8432",
+                    padding: "1rem",
+                    marginBottom: "1rem",
+                    borderRadius: "0 0.5rem 0.5rem 0",
+                  }}
+                >
+                  <h5
+                    style={{
+                      margin: "0 0 0.5rem 0",
+                      color: "#ef8432",
+                      fontSize: "1rem",
+                    }}
+                  >
+                    🏔️ Setting
+                  </h5>
+                  <p style={{ margin: 0, color: "#334155", lineHeight: "1.6" }}>
+                    Evaluates place descriptions, atmosphere, and environmental
+                    details. Measures sensory depth (sight, sound, smell, touch,
+                    taste) and how effectively setting grounds readers in your
+                    story world.
+                  </p>
+                </div>
+
+                <div
+                  style={{
+                    backgroundColor: "#f0fdf4",
+                    borderLeft: "4px solid #10b981",
+                    padding: "1rem",
+                    marginBottom: "1rem",
+                    borderRadius: "0 0.5rem 0.5rem 0",
+                  }}
+                >
+                  <h5
+                    style={{
+                      margin: "0 0 0.5rem 0",
+                      color: "#059669",
+                      fontSize: "1rem",
+                    }}
+                  >
+                    ⏰ Time
+                  </h5>
+                  <p style={{ margin: 0, color: "#334155", lineHeight: "1.6" }}>
+                    Analyzes temporal flow, pacing markers, and time
+                    transitions. Identifies scene breaks, flashbacks, time
+                    jumps, and the rhythm of your narrative's progression
+                    through story time.
+                  </p>
+                </div>
+
+                <div
+                  style={{
+                    backgroundColor: "#fef2f2",
+                    borderLeft: "4px solid #ef4444",
+                    padding: "1rem",
+                    marginBottom: "1rem",
+                    borderRadius: "0 0.5rem 0.5rem 0",
+                  }}
+                >
+                  <h5
+                    style={{
+                      margin: "0 0 0.5rem 0",
+                      color: "#dc2626",
+                      fontSize: "1rem",
+                    }}
+                  >
+                    📊 Plot
+                  </h5>
+                  <p style={{ margin: 0, color: "#334155", lineHeight: "1.6" }}>
+                    Examines story events, causality, and narrative structure.
+                    Tracks key plot points, turning points, and how events build
+                    upon each other to create a cohesive story arc.
+                  </p>
+                </div>
+
+                <div
+                  style={{
+                    backgroundColor: "#fdf4ff",
+                    borderLeft: "4px solid #a855f7",
+                    padding: "1rem",
+                    marginBottom: "1rem",
+                    borderRadius: "0 0.5rem 0.5rem 0",
+                  }}
+                >
+                  <h5
+                    style={{
+                      margin: "0 0 0.5rem 0",
+                      color: "#9333ea",
+                      fontSize: "1rem",
+                    }}
+                  >
+                    ⚔️ Conflict
+                  </h5>
+                  <p style={{ margin: 0, color: "#334155", lineHeight: "1.6" }}>
+                    Identifies sources of tension, obstacles, and stakes.
+                    Analyzes internal and external conflicts, antagonistic
+                    forces, and how tension escalates throughout your story.
+                  </p>
+                </div>
+
+                <div
+                  style={{
+                    backgroundColor: "#fffbeb",
+                    borderLeft: "4px solid #f59e0b",
+                    padding: "1rem",
+                    marginBottom: "1rem",
+                    borderRadius: "0 0.5rem 0.5rem 0",
+                  }}
+                >
+                  <h5
+                    style={{
+                      margin: "0 0 0.5rem 0",
+                      color: "#d97706",
+                      fontSize: "1rem",
+                    }}
+                  >
+                    💡 Theme
+                  </h5>
+                  <p style={{ margin: 0, color: "#334155", lineHeight: "1.6" }}>
+                    Detects underlying meanings, recurring motifs, and thematic
+                    patterns. Identifies the deeper ideas your story explores
+                    and how they're woven through narrative events.
+                  </p>
+                </div>
+
+                <div
+                  style={{
+                    backgroundColor: "#f5f3ff",
+                    borderLeft: "4px solid #8b5cf6",
+                    padding: "1rem",
+                    marginBottom: "1rem",
+                    borderRadius: "0 0.5rem 0.5rem 0",
+                  }}
+                >
+                  <h5
+                    style={{
+                      margin: "0 0 0.5rem 0",
+                      color: "#7c3aed",
+                      fontSize: "1rem",
+                    }}
+                  >
+                    🎙️ Voice
+                  </h5>
+                  <p style={{ margin: 0, color: "#334155", lineHeight: "1.6" }}>
+                    Evaluates narrative style, point of view, and distinctive
+                    language choices. Measures consistency in voice, tonal
+                    qualities, and how effectively your narrator's perspective
+                    shapes the story.
+                  </p>
+                </div>
+
+                <div
+                  style={{
+                    backgroundColor: "#ecfccb",
+                    borderLeft: "4px solid #84cc16",
+                    padding: "1rem",
+                    marginBottom: "1rem",
+                    borderRadius: "0 0.5rem 0.5rem 0",
+                  }}
+                >
+                  <h5
+                    style={{
+                      margin: "0 0 0.5rem 0",
+                      color: "#65a30d",
+                      fontSize: "1rem",
+                    }}
+                  >
+                    🎭 Genre Elements
+                  </h5>
+                  <p style={{ margin: 0, color: "#334155", lineHeight: "1.6" }}>
+                    Identifies genre-specific markers like magical systems
+                    (fantasy), technology (sci-fi), romantic tension (romance),
+                    or investigative clues (mystery). Ensures your story
+                    delivers expected genre elements.
+                  </p>
+                </div>
+
+                <div
+                  style={{
+                    backgroundColor: "#fef5e7",
+                    borderLeft: "4px solid #ef8432",
+                    padding: "1rem",
+                    marginBottom: "1rem",
+                    borderRadius: "0 0.5rem 0.5rem 0",
+                  }}
+                >
+                  <h5
+                    style={{
+                      margin: "0 0 0.5rem 0",
+                      color: "#ef8432",
+                      fontSize: "1rem",
+                    }}
+                  >
+                    🏗️ Structure
+                  </h5>
+                  <p style={{ margin: 0, color: "#334155", lineHeight: "1.6" }}>
+                    Analyzes narrative organization, chapter breaks, and story
+                    architecture. Examines how scenes connect, where act breaks
+                    fall, and whether your structure serves the story
+                    effectively.
+                  </p>
+                </div>
+
+                <div
+                  style={{
+                    backgroundColor: "#f0f9ff",
+                    borderLeft: "4px solid #0ea5e9",
+                    padding: "1rem",
+                    marginBottom: "1rem",
+                    borderRadius: "0 0.5rem 0.5rem 0",
+                  }}
+                >
+                  <h5
+                    style={{
+                      margin: "0 0 0.5rem 0",
+                      color: "#0284c7",
+                      fontSize: "1rem",
+                    }}
+                  >
+                    ⚡ Pacing
+                  </h5>
+                  <p style={{ margin: 0, color: "#334155", lineHeight: "1.6" }}>
+                    Measures narrative rhythm and momentum. Tracks sentence
+                    length variation, scene tempo, action vs. reflection
+                    balance, and whether your story maintains reader engagement
+                    throughout.
+                  </p>
+                </div>
+
+                <div
+                  style={{
+                    backgroundColor: "#f0fdfa",
+                    borderLeft: "4px solid #14b8a6",
+                    padding: "1rem",
+                    marginBottom: "1rem",
+                    borderRadius: "0 0.5rem 0.5rem 0",
+                  }}
+                >
+                  <h5
+                    style={{
+                      margin: "0 0 0.5rem 0",
+                      color: "#0f766e",
+                      fontSize: "1rem",
+                    }}
+                  >
+                    🌍 Worldbuilding
+                  </h5>
+                  <p style={{ margin: 0, color: "#334155", lineHeight: "1.6" }}>
+                    Evaluates consistency and depth of your story world. Tracks
+                    rules, systems, cultural details, and how thoroughly you've
+                    established the reality in which your story unfolds.
+                  </p>
+                </div>
+
+                <div
+                  style={{
+                    backgroundColor: "#fff1f2",
+                    borderLeft: "4px solid #f43f5e",
+                    padding: "1rem",
+                    marginBottom: "1rem",
+                    borderRadius: "0 0.5rem 0.5rem 0",
+                  }}
+                >
+                  <h5
+                    style={{
+                      margin: "0 0 0.5rem 0",
+                      color: "#e11d48",
+                      fontSize: "1rem",
+                    }}
+                  >
+                    ❤️ Emotional Core
+                  </h5>
+                  <p style={{ margin: 0, color: "#334155", lineHeight: "1.6" }}>
+                    Analyzes emotional resonance and reader engagement
+                    potential. Identifies emotional beats, character
+                    vulnerability, stakes that matter, and moments designed to
+                    create reader emotional investment.
+                  </p>
+                </div>
+
+                <div
+                  style={{
+                    backgroundColor: "#f8fafc",
+                    border: "1px solid #e2e8f0",
+                    padding: "1rem",
+                    marginTop: "1.5rem",
+                    borderRadius: "0.5rem",
+                  }}
+                >
+                  <h5
+                    style={{
+                      margin: "0 0 0.5rem 0",
+                      color: "#1e293b",
+                      fontSize: "1rem",
+                    }}
+                  >
+                    💡 How to Use This Analysis
+                  </h5>
+                  <p style={{ margin: 0, color: "#475569", lineHeight: "1.6" }}>
+                    Each element receives a score showing how effectively it's
+                    executed in your manuscript. Use these scores to identify
+                    strengths to leverage and weaknesses to address. The
+                    combined analysis reveals your storytelling patterns and
+                    opportunities for improvement.
+                  </p>
                 </div>
               </section>
             </div>

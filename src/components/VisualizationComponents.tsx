@@ -1474,17 +1474,17 @@ export const ChapterOverviewTimeline: React.FC<{
       </div>
 
       <div className="why-matters-block">
-        <strong>Why this matters:</strong> Managing peaks prevents overload.
-        Balanced cognitive demand keeps working memory free for meaning-making
-        instead of survival.
+        <strong>Why this matters:</strong> Managing information density prevents
+        reader fatigue. Balanced pacing keeps readers engaged with the story
+        instead of overwhelmed by details.
         <br />
         <br />
-        <strong>New Concepts & Cognitive Load:</strong> Each new concept adds to
-        cognitive load because learners must process unfamiliar information
-        while maintaining existing knowledge in working memory. Introducing too
-        many new concepts at once (high green dashed line) can overwhelm
-        learners, especially when combined with other demands like complex
-        examples or prerequisite gaps.
+        <strong>New Concepts & Information Density:</strong> Each new concept
+        adds to the reader's mental workload as they track unfamiliar
+        information while following the narrative thread. Introducing too many
+        new concepts at once (high green dashed line) can overwhelm learners,
+        especially when combined with other demands like complex examples or
+        prerequisite gaps.
       </div>
 
       {(() => {
@@ -1802,9 +1802,9 @@ export const ConceptMentionFrequency: React.FC<{
         </small>
       </div>
       <div className="why-matters-block">
-        <strong>Why this matters:</strong> Frequency without strategic spacing
-        can create illusion of mastery; balanced distributed mentions foster
-        durable learning.
+        <strong>Why this matters:</strong> Repetition without strategic pacing
+        creates monotony; balanced distribution of key elements maintains reader
+        engagement throughout your story.
       </div>
       <div className="recommendation-block">
         <strong>Recommendation:</strong>{" "}
@@ -2028,8 +2028,9 @@ export const ConceptMapVisualization: React.FC<ConceptMapProps> = ({
         </div>
       </div>
       <div className="why-matters-block">
-        <strong>Why this matters:</strong> Explicit structure accelerates schema
-        formation and transfer; learners remember networks, not isolated facts.
+        <strong>Why this matters:</strong> Clear narrative structure helps
+        readers follow story threads and thematic connections; readers engage
+        with interconnected storytelling, not isolated events.
       </div>
       <div className="recommendation-block">
         <strong>Recommendation:</strong>{" "}
@@ -2098,10 +2099,10 @@ const BlockingIssueCard: React.FC<BlockingIssueCardProps> = ({
           </div>
 
           <div className="blocking-why-matters">
-            <strong>Why this matters:</strong> Blocked practice (repeating the
-            same concept many times in a row) creates an illusion of mastery but
-            leads to poor long-term retention and difficulty distinguishing
-            between similar concepts.
+            <strong>Why this matters:</strong> Repetitive focus (dwelling on the
+            same element many times in a row) can feel monotonous to readers and
+            reduces narrative variety, making it harder for readers to
+            appreciate distinctions between related story elements.
           </div>
 
           <div className="blocking-suggestion-box">
@@ -2493,8 +2494,9 @@ export const InterleavingPattern: React.FC<{
         <strong>Recommendation:</strong> {pattern.recommendation}
       </div>
       <div className="why-matters-block">
-        <strong>Why this matters:</strong> Interleaving (mixing topics) improves
-        discrimination and long‑term retention compared to blocked sequences.
+        <strong>Why this matters:</strong> Varied pacing (mixing story elements)
+        maintains reader interest and creates dynamic storytelling compared to
+        repetitive sequences.
       </div>
 
       {top5Transitions.length > 0 && (
@@ -2518,11 +2520,11 @@ export const InterleavingPattern: React.FC<{
             ))}
           </div>
           <div className="transitions-why-matters">
-            <strong>Why this matters:</strong> Understanding your concept flow
-            patterns helps identify natural connections students make.
-            High-frequency transitions reveal your chapter's conceptual
-            narrative—use this to reinforce effective bridges between ideas or
-            to spot opportunities for more diverse interleaving.
+            <strong>Why this matters:</strong> Understanding your narrative flow
+            patterns helps identify natural connections readers experience.
+            High-frequency transitions reveal your story's thematic threads—use
+            this to reinforce effective bridges between elements or to spot
+            opportunities for more varied storytelling.
           </div>
         </div>
       )}
@@ -2910,9 +2912,9 @@ export const ReviewScheduleTimeline: React.FC<{
         </div>
       )}
       <div className="why-matters-block">
-        <strong>Why this matters:</strong> Spaced revisits interrupt forgetting
-        and strengthen consolidation; uneven or absent reviews waste prior
-        exposure.
+        <strong>Why this matters:</strong> Well-timed callbacks reinforce key
+        story elements and maintain reader connection; uneven or absent
+        references weaken thematic threads and character development.
       </div>
       <div className="recommendation-block">
         <strong>Recommendation:</strong>{" "}
@@ -3128,9 +3130,9 @@ export const PrincipleFindings: React.FC<{
             ))}
           </div>
           <div className="why-matters-block">
-            <strong>Why this matters:</strong> Principle-aligned edits shift
-            material from exposure to learning experience—targeting low scores
-            yields disproportionate gains.
+            <strong>Why this matters:</strong> Craft-aligned revisions transform
+            weak passages into engaging storytelling—targeting low scores yields
+            the biggest reader impact.
           </div>
           <div className="recommendation-block">
             <strong>Recommendation:</strong>{" "}
@@ -3310,7 +3312,7 @@ export const ChapterAnalysisDashboard: React.FC<{
   return (
     <div className="dashboard">
       <div className="dashboard-header">
-        <h2>Chapter Analysis Report</h2>
+        <h2>Book Analysis Report</h2>
         <div className="overall-score-display">
           <div className="score-circle">
             <span className="score-number">{overallScore.toFixed(1)}</span>

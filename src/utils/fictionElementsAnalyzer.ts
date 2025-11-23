@@ -759,6 +759,24 @@ function analyzeGenreElements(
       "mystery",
       "solve",
     ],
+    Western: [
+      "cowboy",
+      "sheriff",
+      "saloon",
+      "frontier",
+      "outlaw",
+      "gunslinger",
+      "ranch",
+    ],
+    Metaphysical: [
+      "zen",
+      "meditation",
+      "enlightenment",
+      "consciousness",
+      "spiritual",
+      "chakra",
+      "karma",
+    ],
   };
 
   let score = 0;

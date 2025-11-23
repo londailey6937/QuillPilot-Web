@@ -951,8 +951,10 @@ export function analyzeTropes(
       subversionScore: 50,
       tropeOveruseScore: 0,
       recommendations: [
-        `Genre "${genre}" doesn't have a specialized trope library yet.`,
-        "Analysis will be available for: Romance, Thriller, Fantasy, Mystery, SciFi, Horror",
+        `Genre "${
+          genre === "cross-domain" ? "General Fiction" : genre
+        }" uses universal storytelling patterns rather than genre-specific tropes.`,
+        "For genre-specific analysis, select: Romance, Thriller, Fantasy, Mystery, SciFi, Horror, Western, or Metaphysical",
       ],
     };
   }

@@ -12,6 +12,8 @@ export type Genre =
   | "horror"
   | "literary"
   | "historical"
+  | "western"
+  | "metaphysical"
   | "general";
 
 export interface GenreDefinition {
@@ -246,6 +248,62 @@ export const GENRE_DEFINITIONS: Record<Genre, GenreDefinition> = {
       "chronicle",
     ],
     icon: "🏛️",
+  },
+  western: {
+    id: "western",
+    name: "Western",
+    description: "American frontier stories with cowboys and outlaws",
+    keywords: [
+      "cowboy",
+      "sheriff",
+      "saloon",
+      "frontier",
+      "outlaw",
+      "gunslinger",
+      "ranch",
+      "cattle",
+      "deputy",
+      "marshal",
+      "desperado",
+      "lasso",
+      "saddle",
+      "gunfight",
+      "prairie",
+      "wagon",
+      "homestead",
+      "posse",
+      "bandit",
+      "stagecoach",
+    ],
+    icon: "🤠",
+  },
+  metaphysical: {
+    id: "metaphysical",
+    name: "Metaphysical/Spiritual",
+    description: "Stories exploring spiritual awakening and consciousness",
+    keywords: [
+      "zen",
+      "chan",
+      "prana",
+      "chakra",
+      "karma",
+      "meditation",
+      "enlightenment",
+      "consciousness",
+      "awakening",
+      "spiritual",
+      "transcendence",
+      "mindfulness",
+      "dharma",
+      "nirvana",
+      "soul",
+      "cosmic",
+      "divine",
+      "mysticism",
+      "aura",
+      "energy",
+    ],
+    icon: "🧘",
   },
   general: {
     id: "general",
