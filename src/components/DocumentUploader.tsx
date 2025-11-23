@@ -157,7 +157,7 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
     const fileType = file.name.split(".").pop()?.toLowerCase() || "";
 
     try {
-      if (fileType === "docx" || fileType === "doc") {
+      if (fileType === "docx") {
         const sourceBuffer = await file.arrayBuffer();
         const htmlBuffer = sourceBuffer.slice(0);
         const textBuffer = sourceBuffer.slice(0);
@@ -447,7 +447,10 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
         incrementUploadCount();
         onDocumentLoad(payload);
       } else {
-        alert("Please upload a .docx, .doc, .obt, or .txt file");
+        alert(
+          "Please upload a .docx, .obt, or .txt file.\n\n" +
+            "Note: Legacy .doc files are not supported. Please save as .docx or convert to .txt first."
+        );
         // Reset file input
         if (fileInputRef.current) {
           fileInputRef.current.value = "";
@@ -456,7 +459,29 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
       }
     } catch (error) {
       console.error("❌ Error reading document:", error);
-      alert("Error reading document. Please try again.");
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+
+      // Check if it's a .doc file error
+      if (fileType === "doc" || errorMessage.toLowerCase().includes("doc")) {
+        alert(
+          "Cannot process .doc files.\n\n" +
+            "Legacy .doc format is not supported. Please:\n" +
+            "• Open the file in Microsoft Word\n" +
+            "• Save As → Choose .docx format\n" +
+            "• Or export as .txt file\n\n" +
+            "Then upload the converted file."
+        );
+      } else {
+        alert(
+          "Error reading document.\n\n" +
+            "Please ensure:\n" +
+            "• File is not corrupted\n" +
+            "• File is in .docx, .txt, or .obt format\n" +
+            "• File size is reasonable\n\n" +
+            "Try again or convert to a supported format."
+        );
+      }
       // Reset file input after error
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
@@ -475,7 +500,7 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
       <input
         ref={fileInputRef}
         type="file"
-        accept=".docx,.doc,.obt,.txt"
+        accept=".docx,.txt,.obt,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
         onChange={handleFileChange}
         disabled={disabled}
         style={{ display: "none" }}
@@ -539,8 +564,8 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
           color: "#6b7280",
         }}
       >
-        Supported: Word documents (.docx, .doc), plain text (.txt), and Open
-        Library Text (.obt)
+        Supported: Word documents (.docx), plain text (.txt), and Open Library
+        Text (.obt). Note: Legacy .doc files must be converted to .docx first.
       </div>
     </div>
   );
