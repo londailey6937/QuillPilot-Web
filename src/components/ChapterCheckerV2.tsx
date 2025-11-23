@@ -1640,6 +1640,49 @@ export const ChapterCheckerV2: React.FC = () => {
               </div>
             )}
 
+            {/* User Menu / Auth */}
+            <UserMenu onAuthRequired={() => setIsAuthModalOpen(true)} />
+
+            {/* Access Level Selector (for demo purposes) */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "0.5rem",
+                flex: "0 0 auto",
+                justifyContent: "flex-end",
+                maxWidth: "400px",
+                padding: "8px 12px",
+                border: "2px solid #ef8432",
+                borderRadius: "20px",
+                backgroundColor: "#f7e6d0",
+              }}
+            >
+              <span
+                style={{
+                  fontSize: "0.875rem",
+                  opacity: 0.9,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                Access Tier:
+              </span>
+              <CustomDropdown
+                value={accessLevel}
+                onChange={(value) =>
+                  handleAccessLevelChange(value as AccessLevel)
+                }
+                options={[
+                  { value: "free", label: "Free (Spacing + Dual Coding)" },
+                  { value: "premium", label: "Premium (Full Analysis)" },
+                  {
+                    value: "professional",
+                    label: "Professional (Writer Mode)",
+                  },
+                ]}
+              />
+            </div>
+
             {/* Save Button (only show if analysis exists and user has access) */}
             {analysis && accessLevel !== "free" && (
               <div
@@ -1684,50 +1727,6 @@ export const ChapterCheckerV2: React.FC = () => {
                 )}
               </div>
             )}
-
-            {/* User Menu / Auth */}
-            <UserMenu onAuthRequired={() => setIsAuthModalOpen(true)} />
-
-            {/* Access Level Selector (for demo purposes) */}
-            <div
-              style={{
-                marginLeft: "auto",
-                display: "flex",
-                alignItems: "center",
-                gap: "0.5rem",
-                flex: "0 0 auto",
-                justifyContent: "flex-end",
-                maxWidth: "400px",
-                padding: "8px 12px",
-                border: "2px solid #ef8432",
-                borderRadius: "20px",
-                backgroundColor: "#f7e6d0",
-              }}
-            >
-              <span
-                style={{
-                  fontSize: "0.875rem",
-                  opacity: 0.9,
-                  whiteSpace: "nowrap",
-                }}
-              >
-                Access Tier:
-              </span>
-              <CustomDropdown
-                value={accessLevel}
-                onChange={(value) =>
-                  handleAccessLevelChange(value as AccessLevel)
-                }
-                options={[
-                  { value: "free", label: "Free (Spacing + Dual Coding)" },
-                  { value: "premium", label: "Premium (Full Analysis)" },
-                  {
-                    value: "professional",
-                    label: "Professional (Writer Mode)",
-                  },
-                ]}
-              />
-            </div>
           </div>
         </header>
       </div>
@@ -1878,318 +1877,304 @@ export const ChapterCheckerV2: React.FC = () => {
               <div
                 style={{
                   display: "flex",
-                  gap: "12px",
+                  gap: "8px",
                   alignItems: "center",
-                  justifyContent: "space-between",
+                  justifyContent: "center",
                   flexWrap: "wrap",
                 }}
               >
-                {/* Left: Upload button */}
-                <div>
-                  <DocumentUploader
-                    onDocumentLoad={handleDocumentLoad}
-                    disabled={isAnalyzing}
-                    accessLevel={accessLevel}
-                  />
-                </div>
+                <DocumentUploader
+                  onDocumentLoad={handleDocumentLoad}
+                  disabled={isAnalyzing}
+                  accessLevel={accessLevel}
+                />
 
-                {/* Right: Action buttons */}
                 {chapterData && !isAnalyzing && (
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: "12px",
-                      alignItems: "center",
-                      flexWrap: "wrap",
-                      marginLeft: "auto",
-                    }}
-                  >
-                      <button
-                        onClick={handleClear}
-                        style={{
-                          padding: "10px 18px",
-                          backgroundColor: "white",
-                          color: "#2c3e50",
-                          border: "1.5px solid #e0c392",
-                          borderRadius: "12px",
-                          cursor: "pointer",
-                          fontSize: "13px",
-                          fontWeight: "600",
-                          textAlign: "center",
-                          transition: "background-color 0.2s",
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = "#f7e6d0";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = "white";
-                        }}
-                      >
-                        🗑️ Clear
-                      </button>
+                  <>
+                    <button
+                      onClick={handleClear}
+                      style={{
+                        padding: "8px 14px",
+                        backgroundColor: "white",
+                        color: "#2c3e50",
+                        border: "1.5px solid #e0c392",
+                        borderRadius: "12px",
+                        cursor: "pointer",
+                        fontSize: "13px",
+                        fontWeight: "600",
+                        textAlign: "center",
+                        transition: "background-color 0.2s",
+                        flexShrink: 0,
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = "#f7e6d0";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = "white";
+                      }}
+                    >
+                      🗑️ Clear
+                    </button>
 
-                      <button
-                        onClick={handleExportDocx}
-                        style={{
-                          padding: "10px 18px",
-                          backgroundColor: "white",
-                          color: "#2c3e50",
-                          border: "1.5px solid #e0c392",
-                          borderRadius: "12px",
-                          cursor: "pointer",
-                          fontSize: "13px",
-                          fontWeight: "600",
-                          textAlign: "center",
-                          transition: "background-color 0.2s",
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = "#f7e6d0";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = "white";
-                        }}
-                      >
-                        📥 Export DOCX
-                      </button>
+                    <button
+                      onClick={handleExportDocx}
+                      style={{
+                        padding: "8px 14px",
+                        backgroundColor: "white",
+                        color: "#2c3e50",
+                        border: "1.5px solid #e0c392",
+                        borderRadius: "12px",
+                        cursor: "pointer",
+                        fontSize: "13px",
+                        fontWeight: "600",
+                        textAlign: "center",
+                        transition: "background-color 0.2s",
+                        flexShrink: 0,
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = "#f7e6d0";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = "white";
+                      }}
+                    >
+                      📥 Export DOCX
+                    </button>
 
-                      <button
-                        onClick={handleExportHtml}
-                        style={{
-                          padding: "10px 18px",
-                          backgroundColor: "white",
-                          color: "#2c3e50",
-                          border: "1.5px solid #e0c392",
-                          borderRadius: "12px",
-                          cursor: "pointer",
-                          fontSize: "13px",
-                          fontWeight: "600",
-                          textAlign: "center",
-                          transition: "background-color 0.2s",
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = "#f7e6d0";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = "white";
-                        }}
-                        title="Export as styled HTML document"
-                      >
-                        🌐 Export HTML
-                      </button>
+                    <button
+                      onClick={handleExportHtml}
+                      style={{
+                        padding: "8px 14px",
+                        backgroundColor: "white",
+                        color: "#2c3e50",
+                        border: "1.5px solid #e0c392",
+                        borderRadius: "12px",
+                        cursor: "pointer",
+                        fontSize: "13px",
+                        fontWeight: "600",
+                        textAlign: "center",
+                        transition: "background-color 0.2s",
+                        flexShrink: 0,
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = "#f7e6d0";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = "white";
+                      }}
+                      title="Export as styled HTML document"
+                    >
+                      🌐 Export HTML
+                    </button>
 
-                      <button
-                        onClick={() => {
-                          try {
-                            const autosaved =
-                              localStorage.getItem("tomeiq_autosave");
-                            if (autosaved) {
-                              const saved = JSON.parse(autosaved);
-                              const savedTime = new Date(
-                                saved.timestamp
-                              ).toLocaleString();
-                              const clear = window.confirm(
-                                `💾 Auto-save Status\n\nLast saved: ${savedTime}\nFile: ${saved.fileName}\n\nClick OK to clear auto-saved data, or Cancel to keep it.`
-                              );
-                              if (clear) {
-                                localStorage.removeItem("tomeiq_autosave");
-                                alert("🗑️ Auto-saved data cleared!");
-                              }
-                            } else {
-                              alert(
-                                "ℹ️ No auto-saved data found.\n\nYour work is automatically saved as you edit in Writer Mode."
-                              );
+                    <button
+                      onClick={() => {
+                        try {
+                          const autosaved =
+                            localStorage.getItem("tomeiq_autosave");
+                          if (autosaved) {
+                            const saved = JSON.parse(autosaved);
+                            const savedTime = new Date(
+                              saved.timestamp
+                            ).toLocaleString();
+                            const clear = window.confirm(
+                              `💾 Auto-save Status\n\nLast saved: ${savedTime}\nFile: ${saved.fileName}\n\nClick OK to clear auto-saved data, or Cancel to keep it.`
+                            );
+                            if (clear) {
+                              localStorage.removeItem("tomeiq_autosave");
+                              alert("🗑️ Auto-saved data cleared!");
                             }
-                          } catch (error) {
-                            alert("⚠️ Error checking auto-save status");
+                          } else {
+                            alert(
+                              "ℹ️ No auto-saved data found.\n\nYour work is automatically saved as you edit in Writer Mode."
+                            );
                           }
-                        }}
-                        style={{
-                          padding: "10px 18px",
-                          backgroundColor: "white",
-                          color: "#2c3e50",
-                          border: "1.5px solid #e0c392",
-                          borderRadius: "12px",
-                          cursor: "pointer",
-                          fontSize: "13px",
-                          fontWeight: "600",
-                          textAlign: "center",
-                          transition: "background-color 0.2s",
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = "#f7e6d0";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = "white";
-                        }}
-                        title="Check auto-save status"
-                      >
-                        💾 Auto-save info
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                {/* Right side - empty now that stats moved to header */}
-                <div style={{ flex: 1 }}></div>
+                        } catch (error) {
+                          alert("⚠️ Error checking auto-save status");
+                        }
+                      }}
+                      style={{
+                        padding: "8px 14px",
+                        backgroundColor: "white",
+                        color: "#2c3e50",
+                        border: "1.5px solid #e0c392",
+                        borderRadius: "12px",
+                        cursor: "pointer",
+                        fontSize: "13px",
+                        fontWeight: "600",
+                        textAlign: "center",
+                        transition: "background-color 0.2s",
+                        flexShrink: 0,
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = "#f7e6d0";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = "white";
+                      }}
+                      title="Check auto-save status"
+                    >
+                      💾 Auto-save info
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           </div>
+        </div>
 
+        <div
+          className="app-panel"
+          style={{
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            minHeight: 0,
+            padding: 0,
+            backgroundColor: "#eddcc5",
+            background: "#eddcc5",
+            overflow: "hidden",
+          }}
+        >
           <div
-            className="app-panel"
             style={{
               flex: 1,
               display: "flex",
               flexDirection: "column",
+              padding: "16px",
               minHeight: 0,
-              padding: 0,
-              backgroundColor: "#eddcc5",
-              background: "#eddcc5",
               overflow: "hidden",
             }}
           >
-            <div
-              style={{
-                flex: 1,
-                display: "flex",
-                flexDirection: "column",
-                padding: "16px",
-                minHeight: 0,
-                overflow: "hidden",
-              }}
-            >
-              {chapterData ? (
-                <div
-                  style={{
-                    flex: 1,
-                    display: "flex",
-                    flexDirection: "column",
-                    minHeight: 0,
-                    overflow: "hidden",
-                  }}
-                >
-                  <div style={{ flex: 1, minHeight: 0, position: "relative" }}>
-                    <DocumentEditor
-                      key={fileName} // Force new component instance when file changes
-                      initialText={
-                        chapterData.originalPlainText ?? chapterData.plainText
+            {chapterData ? (
+              <div
+                style={{
+                  flex: 1,
+                  display: "flex",
+                  flexDirection: "column",
+                  minHeight: 0,
+                  overflow: "hidden",
+                }}
+              >
+                <div style={{ flex: 1, minHeight: 0, position: "relative" }}>
+                  <DocumentEditor
+                    key={fileName} // Force new component instance when file changes
+                    initialText={
+                      chapterData.originalPlainText ?? chapterData.plainText
+                    }
+                    htmlContent={
+                      chapterData.editorHtml
+                        ? chapterData.editorHtml
+                        : chapterData.isHybridDocx
+                        ? chapterData.html
+                        : null
+                    }
+                    searchText={
+                      chapterData.originalPlainText ?? chapterData.plainText
+                    }
+                    onTextChange={(text) => {
+                      if (viewMode === "writer" && !tierFeatures.writerMode) {
+                        setUpgradeFeature("Writer Mode");
+                        setUpgradeTarget("professional");
+                        setShowUpgradePrompt(true);
+                        return;
                       }
-                      htmlContent={
-                        chapterData.editorHtml
-                          ? chapterData.editorHtml
-                          : chapterData.isHybridDocx
-                          ? chapterData.html
-                          : null
+                      if (!canEditChapter) {
+                        return;
                       }
-                      searchText={
-                        chapterData.originalPlainText ?? chapterData.plainText
+                      handleTextChange(text);
+                    }}
+                    onContentChange={(content) => {
+                      if (viewMode === "writer" && !tierFeatures.writerMode) {
+                        setUpgradeFeature("Writer Mode");
+                        setUpgradeTarget("professional");
+                        setShowUpgradePrompt(true);
+                        return;
                       }
-                      onTextChange={(text) => {
-                        if (viewMode === "writer" && !tierFeatures.writerMode) {
-                          setUpgradeFeature("Writer Mode");
-                          setUpgradeTarget("professional");
-                          setShowUpgradePrompt(true);
-                          return;
-                        }
-                        if (!canEditChapter) {
-                          return;
-                        }
-                        handleTextChange(text);
-                      }}
-                      onContentChange={(content) => {
-                        if (viewMode === "writer" && !tierFeatures.writerMode) {
-                          setUpgradeFeature("Writer Mode");
-                          setUpgradeTarget("professional");
-                          setShowUpgradePrompt(true);
-                          return;
-                        }
-                        if (!canEditChapter) {
-                          return;
-                        }
-                        handleEditorContentChange(content);
-                      }}
-                      showSpacingIndicators={true}
-                      showVisualSuggestions={true}
-                      highlightPosition={highlightPosition}
-                      searchWord={searchWord}
-                      searchOccurrence={searchOccurrence}
-                      isFreeMode={!tierFeatures.writerMode}
-                      concepts={
-                        analysis?.conceptGraph?.concepts?.map(
-                          (c: any) => c.name
-                        ) || []
+                      if (!canEditChapter) {
+                        return;
                       }
-                      onConceptClick={(conceptName) => {
-                        // Find the concept object
-                        const concept = analysis?.conceptGraph?.concepts?.find(
-                          (c: any) => c.name === conceptName
-                        );
-                        if (concept) {
-                          // Trigger the same logic as clicking in the sidebar
-                          handleConceptClick(concept, 0);
-                        }
-                      }}
-                      onSave={
-                        analysis && viewMode === "writer"
-                          ? () => {
-                              // Save to localStorage
-                              try {
-                                const saveData = {
-                                  content: {
-                                    plainText: chapterData?.plainText || "",
-                                    editorHtml: chapterData?.editorHtml || "",
-                                  },
-                                  fileName: fileName || "untitled",
-                                  timestamp: new Date().toISOString(),
-                                  analysis: analysis,
-                                  isTemplateMode: isTemplateMode,
-                                };
-                                localStorage.setItem(
-                                  "tomeiq_autosave",
-                                  JSON.stringify(saveData)
-                                );
-                                const time = new Date().toLocaleTimeString();
-                                alert(
-                                  `✅ Changes saved locally at ${time}!\n\nYour work will persist across browser sessions.`
-                                );
-                              } catch (error) {
-                                alert(
-                                  "❌ Failed to save. Storage may be full."
-                                );
-                              }
+                      handleEditorContentChange(content);
+                    }}
+                    showSpacingIndicators={true}
+                    showVisualSuggestions={true}
+                    highlightPosition={highlightPosition}
+                    searchWord={searchWord}
+                    searchOccurrence={searchOccurrence}
+                    isFreeMode={!tierFeatures.writerMode}
+                    concepts={
+                      analysis?.conceptGraph?.concepts?.map(
+                        (c: any) => c.name
+                      ) || []
+                    }
+                    onConceptClick={(conceptName) => {
+                      // Find the concept object
+                      const concept = analysis?.conceptGraph?.concepts?.find(
+                        (c: any) => c.name === conceptName
+                      );
+                      if (concept) {
+                        // Trigger the same logic as clicking in the sidebar
+                        handleConceptClick(concept, 0);
+                      }
+                    }}
+                    onSave={
+                      analysis && viewMode === "writer"
+                        ? () => {
+                            // Save to localStorage
+                            try {
+                              const saveData = {
+                                content: {
+                                  plainText: chapterData?.plainText || "",
+                                  editorHtml: chapterData?.editorHtml || "",
+                                },
+                                fileName: fileName || "untitled",
+                                timestamp: new Date().toISOString(),
+                                analysis: analysis,
+                                isTemplateMode: isTemplateMode,
+                              };
+                              localStorage.setItem(
+                                "tomeiq_autosave",
+                                JSON.stringify(saveData)
+                              );
+                              const time = new Date().toLocaleTimeString();
+                              alert(
+                                `✅ Changes saved locally at ${time}!\n\nYour work will persist across browser sessions.`
+                              );
+                            } catch (error) {
+                              alert("❌ Failed to save. Storage may be full.");
                             }
-                          : undefined
-                      }
-                      readOnly={!canEditChapter}
-                      scrollToTopSignal={scrollToTopSignal}
-                      onScrollDepthChange={handleDocumentScrollDepthChange}
-                      isCompactLayout={isCompactEditorLayout}
-                      analysisResult={analysis}
-                      viewMode={viewMode}
-                      isTemplateMode={isTemplateMode}
-                      onExitTemplateMode={() => setIsTemplateMode(false)}
-                    />
-                  </div>
+                          }
+                        : undefined
+                    }
+                    readOnly={!canEditChapter}
+                    scrollToTopSignal={scrollToTopSignal}
+                    onScrollDepthChange={handleDocumentScrollDepthChange}
+                    isCompactLayout={isCompactEditorLayout}
+                    analysisResult={analysis}
+                    viewMode={viewMode}
+                    isTemplateMode={isTemplateMode}
+                    onExitTemplateMode={() => setIsTemplateMode(false)}
+                  />
                 </div>
-              ) : (
-                <div
-                  style={{
-                    flex: 1,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: "#2c3e50",
-                    flexDirection: "column",
-                    gap: "1rem",
-                  }}
-                >
-                  <div style={{ fontSize: "64px" }}>📄</div>
-                  <div style={{ fontSize: "18px", fontWeight: "600" }}>
-                    Upload a document to get started
-                  </div>
+              </div>
+            ) : (
+              <div
+                style={{
+                  flex: 1,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "#2c3e50",
+                  flexDirection: "column",
+                  gap: "1rem",
+                }}
+              >
+                <div style={{ fontSize: "64px" }}>📄</div>
+                <div style={{ fontSize: "18px", fontWeight: "600" }}>
+                  Upload a document to get started
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -2493,7 +2478,7 @@ export const ChapterCheckerV2: React.FC = () => {
                       color: "#2c3e50",
                     }}
                   >
-                    Detected Domain:
+                    Detected Genre:
                   </label>{" "}
                   {!showDomainSelector ? (
                     <div
@@ -3392,49 +3377,49 @@ export const ChapterCheckerV2: React.FC = () => {
             </div>
           )}
         </div>
-      </div>
 
-      {shouldShowBackToTop && (
-        <button
-          type="button"
-          onClick={handleBackToTop}
-          style={{
-            position: "fixed",
-            bottom: "24px",
-            left: "50%",
-            transform: "translateX(-50%)",
-            padding: "12px 20px",
-            borderRadius: "999px",
-            border: "2px solid #e0c392",
-            background: "linear-gradient(135deg, #f5ead9 0%, #f5e6d3 100%)",
-            color: "#2c3e50",
-            fontWeight: 600,
-            fontSize: "14px",
-            boxShadow: "0 4px 16px rgba(44, 62, 80, 0.15)",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            zIndex: 1200,
-            transition: "all 0.2s ease",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform =
-              "translateX(-50%) translateY(-2px)";
-            e.currentTarget.style.boxShadow =
-              "0 6px 20px rgba(44, 62, 80, 0.2)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = "translateX(-50%)";
-            e.currentTarget.style.boxShadow =
-              "0 4px 16px rgba(44, 62, 80, 0.15)";
-          }}
-          aria-label="Back to top"
-        >
-          <span style={{ fontSize: "16px" }}>↑</span>
-          Back to top
-        </button>
-      )}
+        {shouldShowBackToTop && (
+          <button
+            type="button"
+            onClick={handleBackToTop}
+            style={{
+              position: "fixed",
+              bottom: "24px",
+              left: "50%",
+              transform: "translateX(-50%)",
+              padding: "12px 20px",
+              borderRadius: "999px",
+              border: "2px solid #e0c392",
+              background: "linear-gradient(135deg, #f5ead9 0%, #f5e6d3 100%)",
+              color: "#2c3e50",
+              fontWeight: 600,
+              fontSize: "14px",
+              boxShadow: "0 4px 16px rgba(44, 62, 80, 0.15)",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              zIndex: 1200,
+              transition: "all 0.2s ease",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform =
+                "translateX(-50%) translateY(-2px)";
+              e.currentTarget.style.boxShadow =
+                "0 6px 20px rgba(44, 62, 80, 0.2)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = "translateX(-50%)";
+              e.currentTarget.style.boxShadow =
+                "0 4px 16px rgba(44, 62, 80, 0.15)";
+            }}
+            aria-label="Back to top"
+          >
+            <span style={{ fontSize: "16px" }}>↑</span>
+            Back to top
+          </button>
+        )}
+      </div>
 
       {/* Custom Domain Dialog */}
       {showCustomDomainDialog && (

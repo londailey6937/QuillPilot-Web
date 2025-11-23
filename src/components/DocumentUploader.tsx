@@ -496,7 +496,7 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
   };
 
   return (
-    <div>
+    <div style={{ display: "inline-block" }}>
       <input
         ref={fileInputRef}
         type="file"
@@ -557,16 +557,6 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
           display: inline-block;
         }
       `}</style>
-      <div
-        style={{
-          marginTop: "8px",
-          fontSize: "12px",
-          color: "#6b7280",
-        }}
-      >
-        Supported: Word documents (.docx), plain text (.txt), and Open Library
-        Text (.obt). Note: Legacy .doc files must be converted to .docx first.
-      </div>
     </div>
   );
 };
