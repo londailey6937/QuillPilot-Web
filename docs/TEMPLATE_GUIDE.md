@@ -115,7 +115,7 @@ Claude can automatically generate:
 
 3. **Add to Application**
 
-   - In Tome IQ, click your profile icon
+   - In Quill Pilot, click your profile icon
    - Select "Settings" or "API Keys"
    - Paste your Claude API key
    - Click "Save"

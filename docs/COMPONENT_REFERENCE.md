@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document provides a comprehensive overview of the React component architecture in the Chapter Analysis Tool, including component hierarchy, responsibilities, props interfaces, and state management patterns.
+This document provides a comprehensive overview of the React component architecture in Quill Pilot, including component hierarchy, responsibilities, props interfaces, and state management patterns.
 
 ## Architecture Overview
 

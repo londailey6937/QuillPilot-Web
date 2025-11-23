@@ -6,7 +6,7 @@ interface AnimatedLogoProps {
 }
 
 /**
- * AnimatedLogo - Tech-forward line-drawn AI/neural network icon for TomeIQ
+ * AnimatedLogo - Tech-forward line-drawn AI/neural network icon for Quill Pilot
  *
  * Features:
  * - Neural network node connections

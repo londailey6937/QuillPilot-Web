@@ -1,4 +1,4 @@
-# Tome IQ Reference Library
+# Quill Pilot Reference Library
 
 **Complete feature reference and technical documentation**
 

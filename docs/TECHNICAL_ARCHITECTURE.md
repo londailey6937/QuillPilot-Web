@@ -2,7 +2,7 @@
 
 ## System Overview
 
-The Chapter Analysis Tool is a **React + TypeScript** application using **Web Workers** for background processing and **domain-specific pattern recognition** for intelligent analysis of educational content.
+Quill Pilot is a **React + TypeScript** application using **Web Workers** for background processing and **domain-specific pattern recognition** for intelligent analysis of educational content.
 
 ---
 

@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide covers the complete Stripe integration for handling subscriptions, payments, and user access level management in the Chapter Analysis Tool (Tome IQ).
+This guide covers the complete Stripe integration for handling subscriptions, payments, and user access level management in Quill Pilot.
 
 ## Architecture
 
@@ -36,7 +36,7 @@ This guide covers the complete Stripe integration for handling subscriptions, pa
 
 **Product 1: Premium Tier**
 
-- **Name**: Tome IQ Premium
+- **Name**: Quill Pilot Premium
 - **Description**: Full analysis suite with exports and custom domains
 - **Pricing**: $9/month (or your chosen price)
 - **Billing**: Recurring monthly
@@ -44,7 +44,7 @@ This guide covers the complete Stripe integration for handling subscriptions, pa
 
 **Product 2: Professional Tier**
 
-- **Name**: Tome IQ Professional
+- **Name**: Quill Pilot Professional
 - **Description**: Unlimited analyses with Writer Mode and AI templates
 - **Pricing**: $29/month (or your chosen price)
 - **Billing**: Recurring monthly

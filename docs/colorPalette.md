@@ -1,4 +1,4 @@
-# Tome IQ Color Palette
+# Quill Pilot Color Palette
 
 ## Brand Colors
 

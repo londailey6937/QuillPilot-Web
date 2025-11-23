@@ -1,4 +1,4 @@
-# Tome IQ - Quick Start Guide
+# Quill Pilot - Quick Start Guide
 
 **Experience Learning Science-Powered Document Analysis**
 
@@ -566,7 +566,7 @@ describe("DeepProcessingEvaluator", () => {
 
 1. ✅ Clone/copy the files
 2. ✅ Install recharts
-3. ✅ Import Tome IQ into your app
+3. ✅ Import Quill Pilot into your app
 4. ✅ Users can start analyzing!
 
 For advanced usage, see the [full README](./README.md).

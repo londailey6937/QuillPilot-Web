@@ -85,10 +85,7 @@ export function NavigationMenu({
                   fontWeight: "bold",
                 }}
               >
-                Tome{" "}
-                <span style={{ fontStyle: "italic", fontWeight: "700" }}>
-                  IQ
-                </span>
+                Quill Pilot
               </h2>
               <p
                 style={{
@@ -631,7 +628,7 @@ export function NavigationMenu({
             desc="Learn about our mission and team"
             onClick={() => {
               alert(
-                "About: Tome IQ is an AI-powered tool that helps educators create better learning materials using evidence-based cognitive science principles."
+                "About: Quill Pilot is an AI-powered tool that helps educators create better learning materials using evidence-based cognitive science principles."
               );
             }}
           />
@@ -656,7 +653,7 @@ export function NavigationMenu({
             desc="Get help with your analysis"
             onClick={() => {
               alert(
-                "Support:\n\nNeed help? We're here for you!\n\n📧 Email: support@tomeiq.ai\n💬 Live Chat: Available Mon-Fri 9am-5pm EST\n📚 Documentation: Quick Start Guide from Quick Actions\n🐛 Report Bug: Use feedback option below"
+                "Support:\n\nNeed help? We're here for you!\n\n📧 Email: support@quillpilot.ai\n💬 Live Chat: Available Mon-Fri 9am-5pm EST\n📚 Documentation: Quick Start Guide from Quick Actions\n🐛 Report Bug: Use feedback option below"
               );
             }}
           />
@@ -668,7 +665,7 @@ export function NavigationMenu({
             desc="Reach out to our team"
             onClick={() => {
               alert(
-                "Contact Us:\n\n📧 General: hello@tomeiq.ai\n💼 Partnerships: partners@tomeiq.ai\n🎓 Education: education@tomeiq.ai\n📰 Press: press@tomeiq.ai\n\n📍 Location: San Francisco, CA"
+                "Contact Us:\n\n📧 General: hello@quillpilot.ai\n💼 Partnerships: partners@quillpilot.ai\n🎓 Education: education@quillpilot.ai\n📰 Press: press@quillpilot.ai\n\n📍 Location: San Francisco, CA"
               );
             }}
           />
@@ -680,7 +677,7 @@ export function NavigationMenu({
             desc="Guides, tutorials, and research"
             onClick={() => {
               alert(
-                "Resources:\n\n📖 User Guide: Built into the app\n🎥 Video Tutorials: Coming soon\n📊 Case Studies: See how educators use Tome IQ\n🔬 Research: Based on peer-reviewed cognitive science\n📝 Blog: Tips for better educational content\n🎓 Webinars: Monthly learning science workshops"
+                "Resources:\n\n📖 User Guide: Built into the app\n🎥 Video Tutorials: Coming soon\n📊 Case Studies: See how educators use Quill Pilot\n🔬 Research: Based on peer-reviewed cognitive science\n📝 Blog: Tips for better educational content\n🎓 Webinars: Monthly learning science workshops"
               );
             }}
           />
@@ -692,7 +689,7 @@ export function NavigationMenu({
             desc="Share your ideas and suggestions"
             onClick={() => {
               alert(
-                "We'd love to hear from you!\n\n💡 Feature Requests: What would make Tome IQ better?\n🐛 Bug Reports: Found an issue? Let us know\n⭐ Testimonials: Share your success story\n\n📧 Send feedback to: feedback@tomeiq.ai"
+                "We'd love to hear from you!\n\n💡 Feature Requests: What would make Quill Pilot better?\n🐛 Bug Reports: Found an issue? Let us know\n⭐ Testimonials: Share your success story\n\n📧 Send feedback to: feedback@quillpilot.ai"
               );
             }}
           />
@@ -725,7 +722,7 @@ export function NavigationMenu({
             desc="Usage terms and conditions"
             onClick={() => {
               alert(
-                "Terms of Service:\n\n• Free to use for educational purposes\n• Analyze unlimited chapters\n• Export and share your results\n• No warranty on analysis accuracy\n• Use responsibly and ethically\n\nFull terms available at:\ntomeiq.ai/terms"
+                "Terms of Service:\n\n• Free to use for educational purposes\n• Analyze unlimited chapters\n• Export and share your results\n• No warranty on analysis accuracy\n• Use responsibly and ethically\n\nFull terms available at:\nquillpilot.ai/terms"
               );
             }}
           />
@@ -736,7 +733,7 @@ export function NavigationMenu({
             desc="How we protect your data"
             onClick={() => {
               alert(
-                "Privacy Policy:\n\n✅ Your data stays local - processed in your browser\n✅ No server uploads of chapter content\n✅ We don't sell your data\n✅ Minimal analytics for improvements\n✅ GDPR & CCPA compliant\n\nFull policy at:\ntomeiq.ai/privacy"
+                "Privacy Policy:\n\n✅ Your data stays local - processed in your browser\n✅ No server uploads of chapter content\n✅ We don't sell your data\n✅ Minimal analytics for improvements\n✅ GDPR & CCPA compliant\n\nFull policy at:\nquillpilot.ai/privacy"
               );
             }}
           />
@@ -747,7 +744,7 @@ export function NavigationMenu({
             desc="How we use cookies"
             onClick={() => {
               alert(
-                "Cookie Policy:\n\n🍪 Essential cookies only\n📊 Optional analytics (with consent)\n🎯 No advertising cookies\n✅ Full control over your preferences\n\nManage cookies at:\ntomeiq.ai/cookies"
+                "Cookie Policy:\n\n🍪 Essential cookies only\n📊 Optional analytics (with consent)\n🎯 No advertising cookies\n✅ Full control over your preferences\n\nManage cookies at:\nquillpilot.ai/cookies"
               );
             }}
           />

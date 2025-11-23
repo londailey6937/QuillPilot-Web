@@ -1,6 +1,6 @@
 # Supabase Setup Guide
 
-Complete instructions for setting up Supabase backend for Tome IQ (Chapter Analysis Tool).
+Complete instructions for setting up Supabase backend for Quill Pilot.
 
 ---
 

@@ -90,7 +90,7 @@ const htmlContent = `<!DOCTYPE html>
 </head>
 <body>
   <div class="container">
-    <h1>Tome IQ Favicon PNG Generator</h1>
+    <h1>Quill Pilot Favicon PNG Generator</h1>
 
     <div class="instructions">
       <h2 style="margin-top:0; color: #ef8432;">Instructions:</h2>

@@ -182,7 +182,7 @@ function QuickStartSection() {
           <p>
             <strong>Designed for True "Tome" Analysis</strong>
           </p>
-          <p>Tome IQ can handle large academic documents:</p>
+          <p>Quill Pilot can handle large academic documents:</p>
           <ul className="quickstart-list">
             <li>
               <strong>Tested up to 200 MB</strong> - Approximately 800-1,200
@@ -205,7 +205,7 @@ function QuickStartSection() {
         </section>
 
         <section className="quickstart-card" style={{ borderRadius: "1rem" }}>
-          <h4>How to Use Tome IQ</h4>
+          <h4>How to Use Quill Pilot</h4>
           <ol className="quickstart-order">
             <li>
               <span className="quickstart-step-title">

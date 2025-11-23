@@ -1,4 +1,4 @@
-# 🧠 Chapter Analysis Tool - START HERE
+# 🧠 Quill Pilot - START HERE
 
 **Your complete, production-ready application is ready to use!**
 
@@ -196,9 +196,9 @@ chapter-checker/
 
 ---
 
-## 📖 Chapter Analysis Tool - Documentation
+## 📖 Quill Pilot - Documentation
 
-Welcome! This directory contains all documentation for the Chapter Analysis Tool.
+Welcome! This directory contains all documentation for Quill Pilot.
 
 ## 🚀 Quick Start
 
