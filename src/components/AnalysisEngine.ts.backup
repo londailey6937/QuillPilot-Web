@@ -1,0 +1,941 @@
+/**
+ * Chapter Analysis Engine
+ * Orchestrates pacing, dual-coding, and writing quality analysis for creative writing
+ */
+
+import type {
+  Chapter,
+  ChapterAnalysis,
+  ConceptGraph,
+  PrincipleEvaluation,
+  PrincipleScoreDisplay,
+  AnalysisVisualization,
+  Recommendation,
+  Suggestion,
+  ConceptAnalysisResult,
+  StructureAnalysisResult,
+  ReviewPattern,
+  ReviewScheduleData,
+  Section,
+} from "../types";
+
+import { supabase } from "../utils/supabase";
+
+import type { Genre } from "@/data/genreRegistry";
+import { PatternRecognizer } from "@/utils/PatternRecognizer";
+import {
+  analyzeParagraphSpacing,
+  extractParagraphs,
+} from "@/utils/spacingInsights";
+import { DualCodingAnalyzer } from "@/utils/dualCodingAnalyzer";
+import { clamp } from "lodash";
+import {
+  evaluateCognitiveLoad,
+  evaluateInterleaving,
+  evaluateKeywordPrinciple,
+} from "@/utils/localHeuristics";
+
+// Human-friendly labels for principle codes used in visualization summaries
+const PRINCIPLE_LABELS: Record<string, string> = {
+  deepProcessing: "Deep Processing",
+  spacedRepetition: "Spaced Repetition",
+  retrievalPractice: "Retrieval Practice",
+  interleaving: "Interleaving",
+  dualCoding: "Dual Coding",
+  generativeLearning: "Generative Learning",
+  metacognition: "Metacognition",
+  schemaBuilding: "Schema Building",
+  cognitiveLoad: "Cognitive Load",
+  emotionAndRelevance: "Emotion & Relevance",
+};
+
+export class AnalysisEngine {
+  /**
+   * Main entry point: Analyze a complete chapter
+   */
+  static async analyzeChapter(
+    chapter: Chapter,
+    onProgress?: (step: string, detail?: string) => void,
+    domain: Domain = "chemistry",
+    includeCrossDomain: boolean = true,
+    customConcepts: ConceptDefinition[] = []
+  ): Promise<ChapterAnalysis> {
+    try {
+      onProgress?.("extracting-concepts", "Analyzing chapter structure");
+
+      // Note: HTML conversion already handled in ChapterCheckerV2
+      // Content should be plain text at this point
+      console.log(
+        `[AnalysisEngine] Analyzing content (${chapter.content.length} chars)`
+      );
+
+      console.log(
+        "[AnalysisEngine] Starting concept extraction with domain:",
+        domain
+      );
+      // Extract concepts and build graph with progress reporting
+      const conceptGraph = await ConceptExtractor.extractConceptsFromChapter(
+        chapter.content,
+        chapter.sections,
+        onProgress,
+        domain,
+        includeCrossDomain,
+        customConcepts
+      );
+      console.log(
+        "[AnalysisEngine] Concept extraction complete, found",
+        conceptGraph.concepts.length,
+        "concepts"
+      );
+
+      onProgress?.("concept-analysis-complete", "Concept extraction complete");
+
+      onProgress?.("detecting-patterns", "Detecting learning patterns");
+
+      // Detect learning patterns (worked examples, practice problems, etc.)
+      // Pass domain for domain-specific pattern detection
+      const patternAnalysis = PatternRecognizer.analyzePatterns(
+        chapter,
+        domain
+      );
+      console.log(
+        "[AnalysisEngine] Pattern detection complete, found",
+        patternAnalysis.totalPatterns,
+        "patterns"
+      );
+
+      onProgress?.(
+        "evaluating-principles",
+        "Evaluating learning science principles"
+      );
+
+      console.log("[AnalysisEngine] Starting principle evaluations...");
+      // Evaluate all learning principles (full evaluations used by UI)
+      const principleEvaluations = await this.runEvaluators(
+        chapter,
+        conceptGraph,
+        patternAnalysis,
+        onProgress
+      );
+      console.log("[AnalysisEngine] Principle evaluations complete");
+
+      onProgress?.("principles-complete", "Principle evaluation complete");
+
+      onProgress?.(
+        "building-visualizations",
+        "Creating analysis visualizations"
+      );
+
+      // Derive lightweight display scores for visualization summary
+      const principleDisplay: PrincipleScoreDisplay[] =
+        principleEvaluations.map((ev) => ({
+          name: ev.principle,
+          displayName: PRINCIPLE_LABELS[ev.principle] || ev.principle,
+          score: ev.score,
+          weight: ev.weight ?? 1,
+        }));
+
+      onProgress?.(
+        "analyzing-concepts",
+        "Analyzing concept patterns and relationships"
+      );
+
+      // Build concept analysis (basic defaults from graph/metrics)
+      const reviewPatterns: ReviewPattern[] = conceptGraph.concepts.map(
+        (concept) => {
+          const mentions = concept.mentions.length;
+          const positions = concept.mentions
+            .map((m) => m.position)
+            .sort((a, b) => a - b);
+          const spacing: number[] = [];
+          for (let i = 1; i < positions.length; i++) {
+            // Calculate word count between mentions instead of character count
+            const textBetween = chapter.content.substring(
+              positions[i - 1],
+              positions[i]
+            );
+            const wordCount = this.countWords(textBetween);
+            spacing.push(wordCount);
+          }
+          const avgSpacing =
+            spacing.length > 0
+              ? spacing.reduce((a, b) => a + b, 0) / spacing.length
+              : 0;
+          // Heuristic: optimal if 2+ mentions and spacing variance is low
+          const variance =
+            spacing.length > 0
+              ? spacing.reduce(
+                  (sum, gap) => sum + Math.pow(gap - avgSpacing, 2),
+                  0
+                ) / spacing.length
+              : 0;
+          const isOptimal = mentions >= 2 && variance < avgSpacing * avgSpacing;
+
+          return {
+            conceptId: concept.id,
+            conceptName: concept.name,
+            mentions,
+            // <-- add real mention positions for visualization
+            positions: concept.mentions.map((m) => m.position) ?? [],
+            firstAppearance: concept.firstMentionPosition,
+            spacing,
+            avgSpacing: Math.round(avgSpacing),
+            isOptimal,
+            recommendation: isOptimal
+              ? undefined
+              : mentions < 2
+              ? "Consider revisiting this concept at least once more"
+              : "Try spacing mentions more evenly",
+          };
+        }
+      );
+
+      // Generate visualization data (after reviewPatterns are available)
+      const visualization = this.generateVisualization(
+        chapter,
+        conceptGraph,
+        principleDisplay,
+        reviewPatterns
+      );
+
+      // Build recommendations based on principle scores and suggestions
+      const recommendations: Recommendation[] = principleEvaluations.flatMap(
+        (p) =>
+          (p.suggestions || [])
+            .filter((s: Suggestion) => s.priority === "high" || p.score < 70)
+            .map((s: Suggestion) => ({
+              id: s.id || `${p.principle}-${s.title.slice(0, 20)}`,
+              priority: s.priority,
+              category: "enhance",
+              title: s.title,
+              description: s.description,
+              affectedSections: [],
+              affectedConcepts: s.relatedConcepts || [],
+              estimatedEffort: "medium",
+              expectedOutcome: s.expectedImpact,
+              actionItems: [s.implementation],
+            }))
+      );
+
+      const overallScore = this.calculateWeightedScoreDisplay(principleDisplay);
+
+      const metrics = {
+        totalWords: chapter.wordCount,
+        readingTime: Math.round(chapter.wordCount / 200),
+        averageSectionLength:
+          chapter.sections.reduce((sum, s) => sum + s.wordCount, 0) /
+          Math.max(1, chapter.sections.length),
+        conceptDensity:
+          conceptGraph.concepts.length / Math.max(1, chapter.wordCount / 1000),
+        readabilityScore: 0,
+        complexityScore: 0,
+        timestamp: new Date(),
+      };
+
+      // reviewPatterns already built above
+
+      const conceptAnalysis: ConceptAnalysisResult = {
+        totalConceptsIdentified: conceptGraph.concepts.length,
+        coreConceptCount: conceptGraph.hierarchy.core.length,
+        conceptDensity: metrics.conceptDensity,
+        novelConceptsPerSection: chapter.sections.map(
+          (s) => s.conceptsIntroduced.length
+        ),
+        reviewPatterns,
+        hierarchyBalance: (() => {
+          const total =
+            conceptGraph.hierarchy.core.length +
+            conceptGraph.hierarchy.supporting.length +
+            conceptGraph.hierarchy.detail.length;
+          if (!total) return 0;
+          const ideal = total / 3;
+          const diffs = [
+            Math.abs(conceptGraph.hierarchy.core.length - ideal),
+            Math.abs(conceptGraph.hierarchy.supporting.length - ideal),
+            Math.abs(conceptGraph.hierarchy.detail.length - ideal),
+          ];
+          const maxDiff = ideal; // worst case: all in one bucket
+          const balance =
+            1 - Math.min(1, diffs.reduce((a, b) => a + b, 0) / (3 * maxDiff));
+          return Number(balance.toFixed(2));
+        })(),
+        orphanConcepts: conceptGraph.concepts
+          .filter(
+            (c) =>
+              !conceptGraph.relationships.some(
+                (r) => r.source === c.id || r.target === c.id
+              )
+          )
+          .map((c) => c.id),
+      };
+
+      // Build structure analysis (lightweight heuristics)
+
+      console.log("AnalysisEngine calculated conceptAnalysis:", {
+        totalConceptsIdentified: conceptAnalysis.totalConceptsIdentified,
+        coreConceptCount: conceptAnalysis.coreConceptCount,
+        conceptDensity: conceptAnalysis.conceptDensity,
+        hierarchyBalance: conceptAnalysis.hierarchyBalance,
+        conceptGraphLength: conceptGraph.concepts.length,
+        coreLength: conceptGraph.hierarchy.core.length,
+      });
+
+      // Build structure analysis (lightweight heuristics)
+      const lengths = chapter.sections.map((s) => s.wordCount);
+      const avg =
+        metrics.averageSectionLength ||
+        lengths.reduce((a, b) => a + b, 0) / Math.max(1, lengths.length);
+      const variance =
+        lengths.reduce((sum, l) => sum + Math.pow(l - avg, 2), 0) /
+        Math.max(1, lengths.length);
+      const pacing: StructureAnalysisResult["pacing"] =
+        avg < 150 ? "fast" : avg < 350 ? "moderate" : "slow";
+      const structureAnalysis: StructureAnalysisResult = {
+        sectionCount: chapter.sections.length,
+        avgSectionLength: Math.round(avg),
+        sectionLengthVariance: Math.round(variance),
+        pacing,
+        scaffolding: {
+          hasIntroduction: chapter.sections.some((s) =>
+            /intro|overview/i.test(s.heading)
+          ),
+          hasProgression: chapter.sections.length > 1,
+          hasSummary: chapter.sections.some((s) =>
+            /summary|conclusion/i.test(s.heading)
+          ),
+          hasReview: chapter.sections.some((s) =>
+            /review|practice|questions/i.test(s.heading)
+          ),
+          scaffoldingScore: 0.5,
+        },
+        transitionQuality: 0.5,
+        conceptualization: "moderate",
+      };
+
+      onProgress?.("finalizing", "Finalizing analysis results");
+
+      console.log("[AnalysisEngine] Analysis complete!");
+      return {
+        chapterId: chapter.id,
+        timestamp: new Date(),
+        overallScore,
+        principles: principleEvaluations,
+        conceptAnalysis,
+        structureAnalysis,
+        recommendations,
+        visualizations: visualization,
+        conceptGraph, // Include conceptGraph for concept highlighting
+        patternAnalysis, // Include detected learning patterns
+      } as ChapterAnalysis;
+    } catch (error) {
+      console.error("[AnalysisEngine] Error during analysis:", error);
+      throw error;
+    }
+  }
+
+  private static async runEvaluators(
+    chapter: Chapter,
+    conceptGraph: ConceptGraph,
+    patternAnalysis: any,
+    onProgress?: (step: string, detail?: string) => void
+  ): Promise<PrincipleEvaluation[]> {
+    const overallStart = performance.now();
+
+    onProgress?.("evaluating-server", "Running secure server-side analysis...");
+
+    try {
+      // Check content length to avoid server timeouts/payload limits
+      const MAX_SERVER_ANALYSIS_LENGTH = 100000; // ~20k words
+      if (chapter.content.length > MAX_SERVER_ANALYSIS_LENGTH) {
+        console.warn(
+          `[AnalysisEngine] Content too large for server analysis (${chapter.content.length} chars). Using local evaluation.`
+        );
+        throw new Error("Content too large for server analysis");
+      }
+
+      const { data, error } = await supabase.functions.invoke(
+        "analyze-concept",
+        {
+          body: {
+            chapter,
+            concepts: conceptGraph,
+            patternAnalysis,
+          },
+        }
+      );
+
+      if (error) {
+        console.error("[AnalysisEngine] Server analysis failed:", error);
+        throw error;
+      }
+
+      if (!data || !data.results) {
+        throw new Error("Invalid response from analysis server");
+      }
+
+      const overallTime = performance.now() - overallStart;
+      console.log(
+        `[AnalysisEngine] ✅ Server analysis complete in ${overallTime.toFixed(
+          2
+        )}ms`
+      );
+
+      return data.results;
+    } catch (err) {
+      console.error("[AnalysisEngine] Error running evaluators:", err);
+      console.warn("[AnalysisEngine] Falling back to local evaluation.");
+
+      // Local Fallback Logic
+      try {
+        const paragraphs = extractParagraphs(chapter.content);
+        const spacingInsights = paragraphs.map((p) => ({
+          paragraph: p,
+          assessment: analyzeParagraphSpacing(p.wordCount),
+        }));
+
+        const balancedCount = spacingInsights.filter(
+          (i) => i.assessment.tone === "balanced"
+        ).length;
+        const extendedCount = spacingInsights.filter(
+          (i) => i.assessment.tone === "extended"
+        ).length;
+        const compactCount = spacingInsights.filter(
+          (i) => i.assessment.tone === "compact"
+        ).length;
+
+        const spacingScore = Math.min(
+          98,
+          Math.max(
+            35,
+            78 +
+              (balancedCount / Math.max(1, spacingInsights.length)) * 20 -
+              extendedCount * 6 -
+              compactCount * 3
+          )
+        );
+
+        const visualSuggestions = DualCodingAnalyzer.analyzeForVisuals(
+          chapter.content
+        );
+        const highPriorityVisuals = visualSuggestions.filter(
+          (s) => s.priority === "high"
+        ).length;
+        const dualCodingScore = Math.min(
+          97,
+          Math.max(
+            30,
+            90 -
+              highPriorityVisuals * 8 -
+              (visualSuggestions.length - highPriorityVisuals) * 4
+          )
+        );
+
+        return [
+          {
+            principle: "spacedRepetition",
+            score: Math.round(spacingScore),
+            weight: 1,
+            findings: spacingInsights
+              .filter((i) => i.assessment.tone !== "balanced")
+              .map((i) => ({
+                type:
+                  i.assessment.tone === "extended"
+                    ? ("warning" as const)
+                    : ("neutral" as const),
+                message: i.assessment.message,
+                severity: i.assessment.tone === "extended" ? 0.6 : 0.3,
+                location: {
+                  sectionId: "unknown",
+                  position: i.paragraph.startIndex,
+                },
+                evidence: i.paragraph.text.substring(0, 50) + "...",
+              })),
+            suggestions: [],
+            evidence: [],
+          },
+          {
+            principle: "dualCoding",
+            score: Math.round(dualCodingScore),
+            weight: 1,
+            findings: visualSuggestions.map((s) => ({
+              type:
+                s.priority === "high"
+                  ? ("critical" as const)
+                  : ("neutral" as const),
+              message: `${s.visualType} needed: ${s.reason}`,
+              severity: s.priority === "high" ? 0.8 : 0.4,
+              location: { sectionId: "unknown", position: s.position },
+              evidence: s.context || "Context unavailable",
+            })),
+            suggestions: [],
+            evidence: [],
+          },
+          evaluateInterleaving(chapter.content),
+          evaluateKeywordPrinciple(
+            chapter.content,
+            "deepProcessing",
+            "deepProcessing"
+          ),
+          evaluateKeywordPrinciple(
+            chapter.content,
+            "retrievalPractice",
+            "retrievalPractice"
+          ),
+          evaluateKeywordPrinciple(
+            chapter.content,
+            "generativeLearning",
+            "generativeLearning"
+          ),
+          evaluateKeywordPrinciple(
+            chapter.content,
+            "metacognition",
+            "metacognition"
+          ),
+          evaluateKeywordPrinciple(
+            chapter.content,
+            "schemaBuilding",
+            "schemaBuilding"
+          ),
+          evaluateCognitiveLoad(chapter.content),
+          evaluateKeywordPrinciple(
+            chapter.content,
+            "emotionAndRelevance",
+            "emotionAndRelevance"
+          ),
+        ];
+      } catch (fallbackErr) {
+        console.error(
+          "[AnalysisEngine] Fallback analysis failed:",
+          fallbackErr
+        );
+        // Ultimate fallback to prevent crash
+        return [
+          {
+            principle: "spacedRepetition",
+            score: 0,
+            weight: 1,
+            findings: [
+              {
+                type: "warning" as const,
+                message: "Analysis unavailable. Please check your connection.",
+                severity: 1,
+                location: { sectionId: "system", position: 0 },
+                evidence: "Fallback failed",
+              },
+            ],
+            suggestions: [],
+            evidence: [],
+          },
+        ];
+      }
+    }
+  }
+
+  private static calculateWeightedScoreDisplay(
+    principles: PrincipleScoreDisplay[]
+  ): number {
+    if (!principles || principles.length === 0) return 0;
+    const total = principles.reduce(
+      (sum, p) => sum + p.score * (p.weight ?? 1),
+      0
+    );
+    const weightSum = principles.reduce((sum, p) => sum + (p.weight ?? 1), 0);
+    return Math.round(total / Math.max(1, weightSum));
+  }
+
+  private static generateVisualization(
+    chapter: Chapter,
+    conceptGraph: ConceptGraph,
+    principles: PrincipleScoreDisplay[],
+    reviewPatterns: ReviewPattern[]
+  ): AnalysisVisualization {
+    // Ensure section metadata about concept introductions / revisits is populated
+    // (needed for cognitive load waveform – novel concepts factor otherwise 0)
+    try {
+      this.annotateSectionsWithConceptActivity(chapter, conceptGraph);
+    } catch (e) {
+      // Non-fatal – continue without enriched metadata
+      // eslint-disable-next-line no-console
+      console.warn("Section annotation failed", e);
+    }
+    const cognitiveLoadCurve = this.estimateCognitiveLoad(
+      chapter,
+      conceptGraph
+    );
+    const interleavingPattern = this.estimateInterleavingPattern(
+      chapter,
+      conceptGraph
+    );
+
+    const reviewSchedule = this.estimateReviewSchedule(reviewPatterns);
+
+    return {
+      conceptMap: {
+        nodes: conceptGraph.concepts.map((concept) => ({
+          id: concept.id,
+          label: concept.name,
+          importance: concept.importance,
+          size: concept.mentions.length,
+          color: "#000000",
+          firstMention: concept.firstMentionPosition,
+        })),
+        links: conceptGraph.relationships.map((rel) => ({
+          source: rel.source,
+          target: rel.target,
+          type: rel.type,
+          strength: rel.strength,
+        })),
+        clusters: [],
+      },
+      cognitiveLoadCurve,
+      interleavingPattern,
+      reviewSchedule,
+      principleScores: {
+        principles,
+        overallWeightedScore: 0,
+        strongestPrinciples: [],
+        weakestPrinciples: [],
+      },
+    };
+  }
+
+  /**
+   * Annotate chapter.sections with conceptsIntroduced and conceptsRevisited arrays.
+   * Introduced = first mention falls inside section; Revisited = any subsequent mentions in that section.
+   */
+  private static annotateSectionsWithConceptActivity(
+    chapter: Chapter,
+    conceptGraph: ConceptGraph
+  ) {
+    if (!chapter.sections || chapter.sections.length === 0) return;
+    const sections = chapter.sections;
+    // Reset arrays to avoid duplicate accumulation on re-run
+    for (const s of sections) {
+      s.conceptsIntroduced = [];
+      s.conceptsRevisited = [];
+    }
+    for (const concept of conceptGraph.concepts) {
+      const firstPos = concept.firstMentionPosition;
+      let introducedSection: string | null = null;
+      // Determine introduction section
+      for (const s of sections) {
+        if (firstPos >= s.startPosition && firstPos <= s.endPosition) {
+          s.conceptsIntroduced.push(concept.id);
+          introducedSection = s.id;
+          break;
+        }
+      }
+      // Subsequent mentions count as revisits (exclude first)
+      concept.mentions.slice(1).forEach((m) => {
+        const sec = sections.find(
+          (s) => m.position >= s.startPosition && m.position <= s.endPosition
+        );
+        if (sec) {
+          // Avoid marking introduction section revisit if same section and no second mention separation
+          if (!sec.conceptsRevisited.includes(concept.id)) {
+            sec.conceptsRevisited.push(concept.id);
+          }
+        }
+      });
+    }
+  }
+
+  /**
+   * Estimate cognitive load per section using a simple weighted heuristic.
+   * Factors (normalized 0-1): novel concepts, concept density, sentence complexity, technical terms.
+   */
+  private static estimateCognitiveLoad(
+    chapter: Chapter,
+    conceptGraph: ConceptGraph
+  ) {
+    const sections = chapter.sections;
+
+    // Precompute concept mentions by section boundaries
+    const conceptMentionsPerSection: number[] = sections.map((s) => 0);
+    for (const concept of conceptGraph.concepts) {
+      for (const m of concept.mentions) {
+        const idx = sections.findIndex(
+          (s) => m.position >= s.startPosition && m.position <= s.endPosition
+        );
+        if (idx >= 0) conceptMentionsPerSection[idx]++;
+      }
+    }
+
+    // Compute raw metrics per section
+    const rawNovel: number[] = sections.map((s) => s.conceptsIntroduced.length);
+    const rawDensityPer100: number[] = sections.map((s, i) => {
+      const words = Math.max(1, s.wordCount || this.countWords(s.content));
+      return (conceptMentionsPerSection[i] / words) * 100;
+    });
+    const rawAvgSentenceLen: number[] = sections.map((s) =>
+      this.avgSentenceLength(s.content)
+    );
+    const rawTechPer100: number[] = sections.map((s) => {
+      const words = this.tokenizeWords(s.content);
+      const technical = words.filter((w) => this.isTechnicalToken(w)).length;
+      const denom = Math.max(1, words.length);
+      return (technical / denom) * 100;
+    });
+
+    // Normalization helpers
+    const maxNovel = Math.max(0, ...rawNovel);
+    const maxDensity = Math.max(0.0001, ...rawDensityPer100);
+    const novelNorm = rawNovel.map((v) => (maxNovel > 0 ? v / maxNovel : 0));
+    // Cap density at 1 using observed max to prevent extreme spikes
+    const densityNorm = rawDensityPer100.map((v) =>
+      Math.min(1, v / maxDensity)
+    );
+    // Map avg sentence length roughly: 12 (low) -> 0, 30 (high) -> 1
+    const complexityNorm = rawAvgSentenceLen.map((len) => {
+      const n = (len - 12) / (30 - 12);
+      return this.clamp(n, 0, 1);
+    });
+    // Technical terms per 100 words: cap at 5/100 -> 1
+    const technicalNorm = rawTechPer100.map((v) => Math.min(1, v / 5));
+
+    // Weights sum to 1
+    const W = {
+      novel: 0.3,
+      density: 0.25,
+      complexity: 0.25,
+      technical: 0.2,
+    } as const;
+
+    return sections.map((s, i) => {
+      const load =
+        W.novel * novelNorm[i] +
+        W.density * densityNorm[i] +
+        W.complexity * complexityNorm[i] +
+        W.technical * technicalNorm[i];
+
+      return {
+        sectionId: s.id,
+        heading: s.heading || `Section ${i + 1}`,
+        position: s.startPosition || 0,
+        load: this.clamp(load, 0, 1),
+        factors: {
+          novelConcepts: rawNovel[i],
+          conceptDensity: Number(densityNorm[i].toFixed(2)),
+          sentenceComplexity: Number(complexityNorm[i].toFixed(2)),
+          technicalTerms: Number(technicalNorm[i].toFixed(2)),
+        },
+      };
+    });
+  }
+
+  // ---------- Local utilities ----------
+  private static clamp(v: number, min: number, max: number) {
+    return Math.max(min, Math.min(max, v));
+  }
+
+  private static tokenizeWords(text: string): string[] {
+    if (!text) return [];
+    return text
+      .toLowerCase()
+      .replace(/[^a-z0-9\-\u0370-\u03FF\s]/g, " ") // keep greek range
+      .split(/\s+/)
+      .filter(Boolean);
+  }
+
+  private static countWords(text: string): number {
+    return this.tokenizeWords(text).length;
+  }
+
+  private static avgSentenceLength(text: string): number {
+    if (!text) return 0;
+    const sentences = text
+      .split(/(?<=[.!?])\s+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const words = this.countWords(text);
+    const sCount = Math.max(1, sentences.length);
+    return words / sCount;
+  }
+
+  private static isTechnicalToken(token: string): boolean {
+    if (!token) return false;
+    // Heuristics: long words, embedded digits/symbols, greek letters, hyphenated compounds
+    const hasDigit = /\d/.test(token);
+    const hasGreek = /[\u0370-\u03FF]/.test(token);
+    const longWord = token.length >= 12;
+    const hasHyphen = /.+-.+/.test(token);
+    return longWord || hasDigit || hasGreek || hasHyphen;
+  }
+
+  /**
+   * Build review schedule data from review patterns.
+   * optimalSpacing: median of avgSpacing for concepts with >=2 mentions.
+   * currentAvgSpacing: overall average of avgSpacing values (>=2 mentions).
+   */
+  private static estimateReviewSchedule(
+    patterns: ReviewPattern[]
+  ): ReviewScheduleData {
+    if (!patterns || patterns.length === 0) {
+      return {
+        concepts: [],
+        optimalSpacing: 0,
+        currentAvgSpacing: 0,
+      };
+    }
+    const multiMention = patterns.filter((p) => p.mentions >= 2);
+    const spacings = multiMention.map((p) => p.avgSpacing).filter((v) => v > 0);
+    spacings.sort((a, b) => a - b);
+    const median = spacings.length
+      ? spacings[Math.floor(spacings.length / 2)]
+      : 0;
+    const avg = spacings.length
+      ? spacings.reduce((a, b) => a + b, 0) / spacings.length
+      : 0;
+
+    return {
+      concepts: patterns.map((p) => ({
+        conceptId: p.conceptId,
+        mentions: p.mentions,
+        spacing: p.spacing,
+        isOptimal: p.isOptimal,
+      })),
+      optimalSpacing: Math.round(median),
+      currentAvgSpacing: Math.round(avg),
+    };
+  }
+
+  /**
+   * Estimate interleaving pattern by analyzing sequence of concept mentions.
+   * Creates blocking segments (>=3 consecutive identical concept mentions).
+   */
+  private static estimateInterleavingPattern(
+    chapter: Chapter,
+    conceptGraph: ConceptGraph
+  ) {
+    const mentionEvents: { conceptId: string; position: number }[] = [];
+    for (const c of conceptGraph.concepts) {
+      // Defensive skip: exclude stopword/common non-concept labels from interleaving analysis
+      const normName = c.name.toLowerCase();
+      // We replicate ConceptExtractor guards lightly here without importing the class
+      const stopwords = new Set([
+        "the",
+        "a",
+        "an",
+        "and",
+        "or",
+        "but",
+        "for",
+        "nor",
+        "so",
+        "yet",
+        "of",
+        "to",
+        "in",
+        "on",
+        "at",
+        "by",
+        "with",
+        "as",
+        "is",
+        "are",
+        "was",
+        "were",
+        "be",
+        "been",
+        "being",
+      ]);
+      if (stopwords.has(normName)) continue;
+      for (const m of c.mentions) {
+        mentionEvents.push({ conceptId: c.id, position: m.position });
+      }
+    }
+
+    // Helper: map position to section
+    const findSectionForPosition = (pos: number): Section | undefined => {
+      return chapter.sections.find(
+        (s) => pos >= s.startPosition && pos <= s.endPosition
+      );
+    };
+    mentionEvents.sort((a, b) => a.position - b.position);
+    const totalMentions = mentionEvents.length;
+    if (totalMentions === 0) {
+      return {
+        conceptSequence: [],
+        blockingSegments: [],
+        blockingRatio: 0,
+        topicSwitches: 0,
+        avgBlockSize: 0,
+        recommendation: "No concept mentions detected.",
+      };
+    }
+    const sequence = mentionEvents.map((e) => e.conceptId);
+    const conceptPositions = mentionEvents.map((e) => e.position);
+    const blocks: {
+      conceptId: string;
+      length: number;
+      startPosition: number;
+      endPosition: number;
+    }[] = [];
+    let i = 0;
+    while (i < sequence.length) {
+      const conceptId = sequence[i];
+      const startIdx = i;
+      let j = i + 1;
+      while (j < sequence.length && sequence[j] === conceptId) j++;
+      const endIdx = j - 1;
+      blocks.push({
+        conceptId,
+        length: endIdx - startIdx + 1,
+        startPosition: mentionEvents[startIdx].position,
+        endPosition: mentionEvents[endIdx].position,
+      });
+      i = j;
+    }
+    const BLOCK_THRESHOLD = 3;
+    const blockingBlocks = blocks.filter((b) => b.length >= BLOCK_THRESHOLD);
+    const mentionsInBlocking = blockingBlocks.reduce(
+      (sum, b) => sum + b.length,
+      0
+    );
+    const blockingRatio = mentionsInBlocking / totalMentions;
+    let topicSwitches = 0;
+    for (let k = 1; k < sequence.length; k++) {
+      if (sequence[k] !== sequence[k - 1]) topicSwitches++;
+    }
+    const avgBlockSize =
+      blocks.reduce((sum, b) => sum + b.length, 0) / Math.max(1, blocks.length);
+    let recommendation = "";
+    if (totalMentions < 5) {
+      recommendation = "Few mentions detected; interleaving signal is weak.";
+    } else if (blockingRatio > 0.5) {
+      const worst = blockingBlocks.sort((a, b) => b.length - a.length)[0];
+      recommendation = `High blocking detected (${Math.round(
+        blockingRatio * 100
+      )}%). Break up large blocks like ${worst.conceptId} (run of ${
+        worst.length
+      }).`;
+    } else if (blockingRatio > 0.3) {
+      recommendation = `Moderate blocking (${Math.round(
+        blockingRatio * 100
+      )}%). Consider interleaving shorter segments.`;
+    } else {
+      recommendation =
+        "Good interleaving; keep mixing topics where appropriate.";
+    }
+    return {
+      conceptSequence: sequence,
+      conceptPositions,
+      blockingSegments: blockingBlocks.map((b) => {
+        const section = findSectionForPosition(b.startPosition);
+        return {
+          startPosition: b.startPosition,
+          endPosition: b.endPosition,
+          conceptId: b.conceptId,
+          length: b.length,
+          issue: "blocking",
+          sectionId: section?.id,
+          sectionHeading: section?.heading,
+        };
+      }),
+      blockingRatio,
+      topicSwitches,
+      avgBlockSize,
+      recommendation,
+    };
+  }
+}

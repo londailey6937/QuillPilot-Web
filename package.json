@@ -1,0 +1,59 @@
+{
+  "name": "quillpilot",
+  "version": "1.0.1",
+  "description": "AI-Powered Creative Writing Analysis Tool",
+  "type": "module",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "lint": "eslint . --ext ts,tsx",
+    "preview": "vite preview",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@stripe/stripe-js": "^8.5.2",
+    "@supabase/supabase-js": "^2.83.0",
+    "@syncfusion/ej2-base": "^31.2.12",
+    "@syncfusion/ej2-react-documenteditor": "^31.2.12",
+    "docx": "^9.5.1",
+    "file-saver": "^2.0.5",
+    "lodash": "^4.17.21",
+    "mammoth": "^1.11.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-is": "^19.2.0",
+    "recharts": "^2.10.3",
+    "use-immer": "^0.11.0",
+    "wmf": "^1.0.2",
+    "zustand": "^4.4.4"
+  },
+  "devDependencies": {
+    "@types/file-saver": "^2.0.7",
+    "@types/node": "^20.10.0",
+    "@types/react": "^18.2.43",
+    "@types/react-dom": "^18.2.17",
+    "@typescript-eslint/eslint-plugin": "^8.46.4",
+    "@typescript-eslint/parser": "^8.46.4",
+    "@vitejs/plugin-react": "^4.2.1",
+    "autoprefixer": "^10.4.22",
+    "dotenv": "^17.2.3",
+    "eslint": "^8.57.1",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.18",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
+    "tsx": "^4.20.6",
+    "typescript": "^5.3.3",
+    "vite": "^7.2.1"
+  },
+  "overrides": {
+    "sucrase": {
+      "glob": "12.0.0"
+    }
+  }
+}

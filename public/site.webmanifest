@@ -1,0 +1,18 @@
+{
+  "name": "Tome IQ - AI-Powered Learning Content Analysis",
+  "short_name": "Tome IQ",
+  "description": "Analyze educational content using evidence-based cognitive science principles",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "theme_color": "#ef8432",
+  "background_color": "#f7e6d0",
+  "display": "standalone",
+  "start_url": "/",
+  "scope": "/"
+}

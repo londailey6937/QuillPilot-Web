@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{DOCUMENT_TITLE}}</title>
+    <style>
+      /* Base Document Styles */
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Georgia", "Times New Roman", serif;
+        font-size: 16px;
+        line-height: 1.8;
+        color: #1f2937;
+        background-color: #ffffff;
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 48px 32px;
+      }
+
+      @media print {
+        body {
+          padding: 24px;
+        }
+      }
+
+      /* Typography */
+      h1,
+      h2,
+      h3,
+      h4,
+      h5,
+      h6 {
+        font-family: "Arial", "Helvetica", sans-serif;
+        font-weight: 700;
+        color: #111827;
+        margin-bottom: 16px;
+      }
+
+      h1 {
+        font-size: 32px;
+        line-height: 1.2;
+        margin-top: 0;
+        margin-bottom: 24px;
+        text-align: center;
+        border-bottom: 3px solid #2563eb;
+        padding-bottom: 16px;
+      }
+
+      h2 {
+        font-size: 24px;
+        line-height: 1.3;
+        margin-top: 32px;
+        margin-bottom: 16px;
+        color: #1e40af;
+      }
+
+      h3 {
+        font-size: 20px;
+        line-height: 1.4;
+        margin-top: 24px;
+        margin-bottom: 12px;
+        color: #1e3a8a;
+      }
+
+      p {
+        margin-bottom: 16px;
+        text-align: justify;
+      }
+
+      /* Analysis Section Styles */
+      .analysis-summary {
+        background-color: #f3f4f6;
+        border-left: 4px solid #2563eb;
+        padding: 24px;
+        margin: 32px 0;
+        border-radius: 8px;
+      }
+
+      .analysis-summary h2 {
+        margin-top: 0;
+        color: #1e40af;
+      }
+
+      .score-display {
+        font-size: 20px;
+        font-weight: 700;
+        color: #2563eb;
+        margin: 16px 0;
+      }
+
+      .principle-section {
+        background-color: #eff6ff;
+        border: 1px solid #bfdbfe;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 24px 0;
+      }
+
+      .principle-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+
+      .principle-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #1e40af;
+      }
+
+      .principle-score {
+        font-size: 16px;
+        font-weight: 700;
+        padding: 4px 12px;
+        border-radius: 16px;
+        background-color: #dbeafe;
+        color: #1e40af;
+      }
+
+      .principle-score.high {
+        background-color: #d1fae5;
+        color: #065f46;
+      }
+
+      .principle-score.medium {
+        background-color: #fef3c7;
+        color: #92400e;
+      }
+
+      .principle-score.low {
+        background-color: #fee2e2;
+        color: #991b1b;
+      }
+
+      .principle-summary {
+        margin-top: 12px;
+        font-size: 14px;
+        color: #4b5563;
+        font-style: italic;
+      }
+
+      /* Spacing Indicators */
+      .spacing-indicator {
+        background-color: #dbeafe;
+        border-left: 4px solid #2563eb;
+        padding: 12px 16px;
+        margin: 20px 0;
+        border-radius: 4px;
+        font-size: 14px;
+        color: #1e40af;
+      }
+
+      .spacing-indicator.compact {
+        background-color: #d1fae5;
+        border-left-color: #10b981;
+        color: #065f46;
+      }
+
+      .spacing-indicator.extended {
+        background-color: #fef3c7;
+        border-left-color: #f59e0b;
+        color: #92400e;
+      }
+
+      .spacing-label {
+        font-weight: 700;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .spacing-message {
+        font-style: italic;
+        margin-top: 4px;
+      }
+
+      /* Dual Coding Callouts */
+      .dual-coding-callout {
+        background-color: #fef9c3;
+        border: 2px solid #fbbf24;
+        border-radius: 8px;
+        padding: 16px;
+        margin: 20px 0;
+      }
+
+      .callout-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+
+      .callout-icon {
+        font-size: 20px;
+      }
+
+      .callout-title {
+        font-weight: 700;
+        color: #92400e;
+        font-size: 15px;
+      }
+
+      .callout-priority {
+        margin-left: auto;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+      }
+
+      .callout-priority.high {
+        background-color: #fca5a5;
+        color: #7f1d1d;
+      }
+
+      .callout-priority.medium {
+        background-color: #fde047;
+        color: #713f12;
+      }
+
+      .callout-priority.low {
+        background-color: #d1d5db;
+        color: #374151;
+      }
+
+      .callout-reason {
+        color: #92400e;
+        margin: 8px 0;
+        font-size: 14px;
+      }
+
+      .callout-context {
+        color: #78350f;
+        font-style: italic;
+        margin: 8px 0;
+        font-size: 13px;
+        padding: 8px;
+        background-color: #fffbeb;
+        border-radius: 4px;
+      }
+
+      .callout-action {
+        color: #b45309;
+        font-weight: 600;
+        margin-top: 8px;
+        font-size: 14px;
+      }
+
+      /* Recommendations */
+      .recommendations-section {
+        margin: 32px 0;
+      }
+
+      .recommendation {
+        background-color: #f9fafb;
+        border-left: 4px solid #6b7280;
+        padding: 16px;
+        margin: 16px 0;
+        border-radius: 4px;
+      }
+
+      .recommendation.high {
+        border-left-color: #ef4444;
+        background-color: #fef2f2;
+      }
+
+      .recommendation.medium {
+        border-left-color: #f59e0b;
+        background-color: #fffbeb;
+      }
+
+      .recommendation-title {
+        font-weight: 700;
+        color: #111827;
+        margin-bottom: 4px;
+      }
+
+      .recommendation-description {
+        color: #4b5563;
+        font-size: 15px;
+      }
+
+      /* Content Section */
+      .content-divider {
+        border: 0;
+        border-top: 2px solid #e5e7eb;
+        margin: 48px 0;
+      }
+
+      .chapter-content {
+        margin-top: 32px;
+      }
+
+      /* Lists */
+      ul,
+      ol {
+        margin: 16px 0;
+        padding-left: 32px;
+      }
+
+      li {
+        margin: 8px 0;
+      }
+
+      /* Emphasis */
+      strong,
+      b {
+        font-weight: 700;
+        color: #111827;
+      }
+
+      em,
+      i {
+        font-style: italic;
+      }
+
+      /* Code */
+      code {
+        font-family: "Courier New", monospace;
+        background-color: #f3f4f6;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 14px;
+      }
+
+      pre {
+        background-color: #1f2937;
+        color: #f9fafb;
+        padding: 16px;
+        border-radius: 8px;
+        overflow-x: auto;
+        margin: 16px 0;
+      }
+
+      pre code {
+        background-color: transparent;
+        color: inherit;
+        padding: 0;
+      }
+
+      /* Blockquotes */
+      blockquote {
+        border-left: 4px solid #9ca3af;
+        padding-left: 20px;
+        margin: 20px 0;
+        color: #6b7280;
+        font-style: italic;
+      }
+
+      /* Images */
+      img {
+        max-width: 100%;
+        height: auto;
+        display: block;
+        margin: 24px auto;
+        border-radius: 8px;
+      }
+
+      /* Tables */
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 24px 0;
+      }
+
+      th,
+      td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid #e5e7eb;
+      }
+
+      th {
+        background-color: #f3f4f6;
+        font-weight: 700;
+        color: #111827;
+      }
+
+      /* Print Styles */
+      @media print {
+        .analysis-summary,
+        .principle-section,
+        .spacing-indicator,
+        .dual-coding-callout,
+        .recommendation {
+          page-break-inside: avoid;
+        }
+
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6 {
+          page-break-after: avoid;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    {{CONTENT}}
+  </body>
+</html>

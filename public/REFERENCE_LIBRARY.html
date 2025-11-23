@@ -1,0 +1,1825 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chapter Checker Reference Library</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
+          "Oxygen", "Ubuntu", "Cantarell", sans-serif;
+        line-height: 1.6;
+        color: #1f2937;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        overflow: hidden;
+      }
+
+      .header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 40px 60px;
+        text-align: center;
+      }
+
+      .header h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 10px;
+      }
+
+      .header p {
+        font-size: 1.1rem;
+        opacity: 0.95;
+      }
+
+      .content {
+        padding: 60px;
+      }
+
+      .toc {
+        background: #f9fafb;
+        border-left: 4px solid #667eea;
+        padding: 30px;
+        margin-bottom: 50px;
+        border-radius: 8px;
+      }
+
+      .toc h2 {
+        color: #667eea;
+        margin-bottom: 20px;
+        font-size: 1.5rem;
+      }
+
+      .toc ol {
+        list-style-position: inside;
+        margin-left: 10px;
+      }
+
+      .toc li {
+        margin: 10px 0;
+        font-size: 1.05rem;
+      }
+
+      .toc a {
+        color: #4f46e5;
+        text-decoration: none;
+        transition: color 0.2s;
+      }
+
+      .toc a:hover {
+        color: #764ba2;
+        text-decoration: underline;
+      }
+
+      h2 {
+        color: #111827;
+        font-size: 2rem;
+        margin: 50px 0 20px 0;
+        padding-bottom: 10px;
+        border-bottom: 3px solid #667eea;
+      }
+
+      h3 {
+        color: #374151;
+        font-size: 1.5rem;
+        margin: 30px 0 15px 0;
+      }
+
+      h4 {
+        color: #4b5563;
+        font-size: 1.2rem;
+        margin: 20px 0 10px 0;
+      }
+
+      p {
+        margin: 15px 0;
+        font-size: 1.05rem;
+      }
+
+      strong {
+        color: #111827;
+        font-weight: 600;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 25px 0;
+        background: white;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+        overflow: hidden;
+      }
+
+      thead {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+      }
+
+      th {
+        padding: 15px;
+        text-align: left;
+        font-weight: 600;
+        font-size: 1rem;
+      }
+
+      td {
+        padding: 12px 15px;
+        border-bottom: 1px solid #e5e7eb;
+      }
+
+      tbody tr:hover {
+        background: #f9fafb;
+      }
+
+      tbody tr:last-child td {
+        border-bottom: none;
+      }
+
+      .badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin: 2px;
+      }
+
+      .badge-green {
+        background: #d1fae5;
+        color: #065f46;
+      }
+
+      .badge-yellow {
+        background: #fef3c7;
+        color: #92400e;
+      }
+
+      .badge-red {
+        background: #fee2e2;
+        color: #991b1b;
+      }
+
+      .badge-blue {
+        background: #dbeafe;
+        color: #1e40af;
+      }
+
+      .badge-purple {
+        background: #ede9fe;
+        color: #5b21b6;
+      }
+
+      .info-box {
+        background: #eff6ff;
+        border-left: 4px solid #3b82f6;
+        padding: 20px;
+        margin: 20px 0;
+        border-radius: 6px;
+      }
+
+      .warning-box {
+        background: #fef3c7;
+        border-left: 4px solid #f59e0b;
+        padding: 20px;
+        margin: 20px 0;
+        border-radius: 6px;
+      }
+
+      .success-box {
+        background: #d1fae5;
+        border-left: 4px solid #10b981;
+        padding: 20px;
+        margin: 20px 0;
+        border-radius: 6px;
+      }
+
+      code {
+        background: #f3f4f6;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-family: "Monaco", "Courier New", monospace;
+        font-size: 0.9em;
+        color: #dc2626;
+      }
+
+      pre {
+        background: #1f2937;
+        color: #f9fafb;
+        padding: 20px;
+        border-radius: 8px;
+        overflow-x: auto;
+        margin: 20px 0;
+        line-height: 1.5;
+      }
+
+      pre code {
+        background: none;
+        color: #f9fafb;
+        padding: 0;
+      }
+
+      ul,
+      ol {
+        margin: 15px 0;
+        padding-left: 30px;
+      }
+
+      li {
+        margin: 8px 0;
+      }
+
+      hr {
+        border: none;
+        border-top: 2px solid #e5e7eb;
+        margin: 40px 0;
+      }
+
+      .feature-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+        margin: 30px 0;
+      }
+
+      .feature-card {
+        background: #f9fafb;
+        border: 2px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 25px;
+        transition: all 0.3s;
+      }
+
+      .feature-card:hover {
+        border-color: #667eea;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+        transform: translateY(-2px);
+      }
+
+      .feature-card h4 {
+        color: #667eea;
+        margin-top: 0;
+      }
+
+      .checkmark {
+        color: #10b981;
+        margin-right: 8px;
+      }
+
+      .xmark {
+        color: #ef4444;
+        margin-right: 8px;
+      }
+
+      @media (max-width: 768px) {
+        .content {
+          padding: 30px 20px;
+        }
+
+        .header {
+          padding: 30px 20px;
+        }
+
+        .header h1 {
+          font-size: 1.8rem;
+        }
+
+        h2 {
+          font-size: 1.6rem;
+        }
+
+        h3 {
+          font-size: 1.3rem;
+        }
+
+        table {
+          font-size: 0.9rem;
+        }
+
+        th,
+        td {
+          padding: 10px;
+        }
+      }
+
+      @media print {
+        body {
+          background: white;
+          padding: 0;
+        }
+
+        .container {
+          box-shadow: none;
+        }
+
+        .header {
+          background: #667eea;
+          print-color-adjust: exact;
+          -webkit-print-color-adjust: exact;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>📚 Chapter Checker Reference Library</h1>
+        <p>Complete feature reference and technical documentation</p>
+      </div>
+
+      <div class="content">
+        <!-- Why Concepts Matter Section -->
+        <div
+          style="
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-left: 4px solid #f59e0b;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            border-radius: 8px;
+          "
+        >
+          <h3
+            style="
+              margin-top: 0;
+              color: #92400e;
+              display: flex;
+              align-items: center;
+              gap: 0.5rem;
+              font-size: 1.25rem;
+            "
+          >
+            <span style="font-size: 1.5rem">💡</span>
+            Why Concepts Matter
+          </h3>
+          <p style="color: #78350f; line-height: 1.7; margin-bottom: 1rem">
+            <strong
+              >Concepts are the foundation of all learning and
+              communication.</strong
+            >
+            They are the mental building blocks that let us understand,
+            categorize, and connect information. When you learn
+            "photosynthesis," you're not just memorizing a word—you're building
+            a concept that connects to "sunlight," "chlorophyll," "energy," and
+            hundreds of other concepts.
+          </p>
+          <p style="color: #78350f; line-height: 1.7; margin-bottom: 1rem">
+            <strong>Everything we know is a network of concepts.</strong>
+            Understanding "democracy" requires concepts like "voting,"
+            "representation," and "rights." Mastering "calculus" requires
+            concepts like "function," "limit," and "rate of change." The quality
+            of learning depends entirely on how well these concepts are
+            introduced, explained, spaced, and reinforced.
+          </p>
+          <p style="color: #78350f; line-height: 1.7; margin-bottom: 0">
+            <strong>This app revolves around concepts</strong> because that's
+            what effective learning revolves around. We analyze how your content
+            introduces concepts, spaces their repetition for memory retention,
+            pairs them with visuals for deeper understanding, and builds
+            connections between related ideas.
+            <em
+              >If your content teaches effectively, it's because the concepts
+              are managed well.</em
+            >
+          </p>
+        </div>
+
+        <div class="toc">
+          <h2>📖 Table of Contents</h2>
+          <ol>
+            <li><a href="#spacing-analysis">Spacing Analysis Reference</a></li>
+            <li><a href="#dual-coding">Dual Coding Analysis Reference</a></li>
+            <li><a href="#export-formats">Export Formats Guide</a></li>
+            <li><a href="#domain-libraries">Domain Libraries Explained</a></li>
+            <li><a href="#use-cases">Use Cases & Applications</a></li>
+            <li><a href="#custom-domains">Custom Domain Creation</a></li>
+            <li><a href="#access-tiers">Access Tiers & Features</a></li>
+            <li><a href="#writer-mode">Writer Mode Workflow</a></li>
+            <li><a href="#color-coding">Color Coding System</a></li>
+            <li><a href="#technical-specs">Technical Specifications</a></li>
+          </ol>
+        </div>
+
+        <!-- Spacing Analysis Section -->
+        <h2 id="spacing-analysis">📏 Spacing Analysis Reference</h2>
+
+        <h3>What is Spacing Analysis?</h3>
+        <p>
+          Spacing analysis evaluates how concepts are distributed across your
+          chapter to support <strong>spaced repetition</strong> - a proven
+          learning technique where information is revisited at optimal
+          intervals.
+        </p>
+
+        <h3>Paragraph Spacing Indicators</h3>
+        <p>
+          When you upload a document, spacing indicators appear between
+          paragraphs showing word counts and density:
+        </p>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Indicator Color</th>
+              <th>Word Count Range</th>
+              <th>Meaning</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="badge badge-green">🟢 Green (Good)</span></td>
+              <td>60-160 words</td>
+              <td>Optimal paragraph length for learning</td>
+              <td>Keep this density</td>
+            </tr>
+            <tr>
+              <td>
+                <span class="badge badge-yellow">🟡 Amber (Compact)</span>
+              </td>
+              <td>&lt;60 words</td>
+              <td>Too brief, may lack detail</td>
+              <td>Consider expanding</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-red">🔴 Orange (Extended)</span></td>
+              <td>&gt;160 words</td>
+              <td>Too long, cognitive overload risk</td>
+              <td>Split into smaller chunks</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>How Spacing Scores Are Calculated</h3>
+        <div class="info-box">
+          <p><strong>Score Range: 0-100</strong></p>
+          <ul>
+            <li>
+              <strong>80-100 (High)</strong>: Strong spaced repetition with
+              concepts revisited 3-5 times at good intervals
+            </li>
+            <li>
+              <strong>50-79 (Medium)</strong>: Moderate spacing, some concepts
+              repeated but intervals could be better
+            </li>
+            <li>
+              <strong>0-49 (Low)</strong>: Poor spacing, concepts either
+              mentioned once or clustered together
+            </li>
+          </ul>
+        </div>
+
+        <h3>Optimal Spacing Patterns</h3>
+        <div class="success-box">
+          <h4>✅ Good Example:</h4>
+          <pre><code>Introduction → Concept A introduced
+Section 2 → Concept A mentioned in context (80 words later)
+Section 4 → Concept A applied in example (200 words later)
+Summary → Concept A reviewed (300 words later)</code></pre>
+        </div>
+
+        <div class="warning-box">
+          <h4>❌ Poor Example:</h4>
+          <pre><code>Section 1 → Concept A introduced
+Section 1 → Concept A mentioned 3 times in rapid succession
+[Never mentioned again in rest of chapter]</code></pre>
+        </div>
+
+        <h3>Spacing Targets Explained</h3>
+        <p>
+          The dashed lines between paragraphs mark "spacing targets" - ideal
+          locations where concepts should be revisited. The system analyzes:
+        </p>
+        <ul>
+          <li><strong>Gap size</strong> between concept mentions</li>
+          <li><strong>Distribution</strong> across chapter sections</li>
+          <li><strong>Density</strong> of paragraphs (words per paragraph)</li>
+          <li><strong>Cognitive load</strong> based on paragraph length</li>
+        </ul>
+
+        <hr />
+
+        <!-- Dual Coding Section -->
+        <h2 id="dual-coding">🎨 Dual Coding Analysis Reference</h2>
+
+        <h3>What is Dual Coding?</h3>
+        <p>
+          <strong>Dual coding</strong> combines verbal (text) and visual
+          (images, diagrams) representations to enhance learning and memory
+          retention.
+        </p>
+
+        <h3>Visual Suggestion Types</h3>
+        <p>
+          The analyzer detects passages that would benefit from visuals and
+          suggests specific formats:
+        </p>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Visual Type</th>
+              <th>When Suggested</th>
+              <th>Example Text Patterns</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>📊 <strong>Diagram</strong></td>
+              <td>Spatial relationships, structures</td>
+              <td>"consists of three layers", "connected to"</td>
+            </tr>
+            <tr>
+              <td>🧭 <strong>Flowchart</strong></td>
+              <td>Processes, sequences, steps</td>
+              <td>"first step", "then proceed", "finally"</td>
+            </tr>
+            <tr>
+              <td>📈 <strong>Graph</strong></td>
+              <td>Data, trends, comparisons</td>
+              <td>"increased by 40%", "correlation between"</td>
+            </tr>
+            <tr>
+              <td>🎨 <strong>Illustration</strong></td>
+              <td>Physical descriptions</td>
+              <td>"shaped like", "appears as", "resembles"</td>
+            </tr>
+            <tr>
+              <td>🧠 <strong>Concept Map</strong></td>
+              <td>Abstract relationships</td>
+              <td>"relates to", "category of", "consists of"</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Priority Levels</h3>
+        <p>Each suggestion has a priority indicating urgency:</p>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Priority</th>
+              <th>Badge Color</th>
+              <th>Meaning</th>
+              <th>When Assigned</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="badge badge-red">High Priority</span></td>
+              <td>🔴 Red</td>
+              <td>Critical - Complex content suffers without visual</td>
+              <td>Dense technical passages, multi-step processes</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-yellow">Medium Priority</span></td>
+              <td>🟡 Orange</td>
+              <td>Beneficial - Would improve comprehension</td>
+              <td>Comparisons, moderate complexity</td>
+            </tr>
+            <tr>
+              <td><span class="badge">Low Priority</span></td>
+              <td>⚪ Gray</td>
+              <td>Optional - Minor enhancement</td>
+              <td>Simple descriptions, supplementary details</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>How Dual Coding Scores Are Calculated</h3>
+        <div class="info-box">
+          <p><strong>Score Range: 0-100</strong></p>
+          <ul>
+            <li>
+              <strong>80-100 (High)</strong>: Excellent visual support with
+              diagrams/images for complex concepts
+            </li>
+            <li>
+              <strong>50-79 (Medium)</strong>: Some visual elements present but
+              opportunities missed
+            </li>
+            <li>
+              <strong>0-49 (Low)</strong>: Text-heavy with little to no visual
+              representation
+            </li>
+          </ul>
+        </div>
+
+        <h3>Dual Coding Callouts Structure</h3>
+        <p>
+          When you see a yellow callout box in Writer Mode or exports, it
+          contains:
+        </p>
+        <ol>
+          <li>
+            <strong>Icon + Title</strong>: Visual type (e.g., "📊 Diagram - High
+            Priority")
+          </li>
+          <li>
+            <strong>Reason</strong>: Why this visual is needed (e.g., "Complex
+            spatial relationships detected")
+          </li>
+          <li>
+            <strong>Context</strong>: Quote from your text triggering the
+            suggestion
+          </li>
+          <li>
+            <strong>Suggested Action</strong>: Specific recommendation (e.g.,
+            "Create a diagram showing the three-layer architecture")
+          </li>
+        </ol>
+
+        <hr />
+
+        <!-- Export Formats Section -->
+        <h2 id="export-formats">💾 Export Formats Guide</h2>
+
+        <div class="feature-grid">
+          <div class="feature-card">
+            <h4>🌐 HTML Export</h4>
+            <p>
+              <strong>Best for:</strong> Sharing, viewing in browser, printing
+            </p>
+            <p>
+              <span class="checkmark">✅</span> Self-contained file (CSS
+              embedded)
+            </p>
+            <p><span class="checkmark">✅</span> Works in any browser</p>
+            <p>
+              <span class="checkmark">✅</span> Color-coded indicators and
+              callouts
+            </p>
+            <p><span class="checkmark">✅</span> Print-optimized styles</p>
+            <p><span class="checkmark">✅</span> Responsive design</p>
+          </div>
+
+          <div class="feature-card">
+            <h4>📄 DOCX Export</h4>
+            <p>
+              <strong>Best for:</strong> Editing in Word, collaborating, formal
+              documents
+            </p>
+            <p><span class="checkmark">✅</span> Editable in Microsoft Word</p>
+            <p><span class="checkmark">✅</span> Colored shaded backgrounds</p>
+            <p>
+              <span class="checkmark">✅</span> Same structure as HTML export
+            </p>
+            <p><span class="checkmark">✅</span> Professional formatting</p>
+          </div>
+
+          <div class="feature-card">
+            <h4>📋 JSON Export</h4>
+            <p>
+              <strong>Best for:</strong> Developers, data analysis, integrations
+            </p>
+            <p><span class="checkmark">✅</span> Complete raw analysis data</p>
+            <p><span class="checkmark">✅</span> Machine-readable format</p>
+            <p>
+              <span class="checkmark">✅</span> All scores, findings,
+              suggestions
+            </p>
+            <p>
+              <span class="checkmark">✅</span> Can be re-imported or processed
+            </p>
+          </div>
+        </div>
+
+        <h3>DOCX Color Coding</h3>
+        <ul>
+          <li>
+            <span class="badge badge-blue">Blue background</span> = Good spacing
+          </li>
+          <li>
+            <span class="badge badge-yellow">Orange background</span> = Compact
+            spacing warning
+          </li>
+          <li>
+            <span class="badge badge-red">Red background</span> = Extended
+            spacing warning
+          </li>
+          <li>
+            <span class="badge badge-yellow">Yellow background</span> =
+            Dual-coding suggestion
+          </li>
+        </ul>
+
+        <hr />
+
+        <!-- Domain Libraries Section -->
+        <h2 id="domain-libraries">📚 Domain Libraries Explained</h2>
+
+        <h3>What Are Domain Libraries?</h3>
+        <p>
+          Domain libraries are pre-built concept dictionaries tailored to
+          specific subject areas. They help the analyzer:
+        </p>
+        <ul>
+          <li><strong>Recognize</strong> subject-specific terminology</li>
+          <li><strong>Extract</strong> domain concepts more accurately</li>
+          <li><strong>Evaluate</strong> content relevance to the field</li>
+        </ul>
+
+        <h3>Built-in Domains</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Domain</th>
+              <th>Concept Count</th>
+              <th>Best For</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Chemistry</strong></td>
+              <td>150+</td>
+              <td>General chemistry, organic, reactions, lab techniques</td>
+            </tr>
+            <tr>
+              <td><strong>Algebra & Trig</strong></td>
+              <td>120+</td>
+              <td>Mathematical concepts, equations, functions</td>
+            </tr>
+            <tr>
+              <td><strong>Computing</strong></td>
+              <td>180+</td>
+              <td>Programming, data structures, algorithms, systems</td>
+            </tr>
+            <tr>
+              <td><strong>Finance</strong></td>
+              <td>90+</td>
+              <td>Financial concepts, markets, accounting, economics</td>
+            </tr>
+            <tr>
+              <td><strong>React</strong></td>
+              <td>85+</td>
+              <td>React.js development, hooks, components, state management</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Auto-Detection Feature</h3>
+        <p>
+          When you upload a document, Chapter Checker analyzes your content and
+          suggests the most likely domain based on:
+        </p>
+        <ul>
+          <li>
+            <strong>Keyword analysis</strong> - Detecting domain-specific
+            terminology
+          </li>
+          <li>
+            <strong>Concept frequency</strong> - How often domain concepts
+            appear
+          </li>
+          <li>
+            <strong>Confidence scoring</strong> - Accuracy of the detection
+          </li>
+        </ul>
+        <div class="info-box">
+          <p><strong>💡 Detected Domain</strong></p>
+          <p>
+            After uploading, you'll see a
+            <strong>"Detected Domain"</strong> section showing the auto-detected
+            subject area. You can:
+          </p>
+          <ul>
+            <li>✅ Accept the detected domain if it looks correct</li>
+            <li>🔄 Click "Change Domain" to select a different one</li>
+            <li>🎯 Use the dropdown to choose from all available domains</li>
+          </ul>
+          <p>
+            <strong>Tip:</strong> Always verify the detected domain matches your
+            chapter's primary subject for best results!
+          </p>
+        </div>
+
+        <h3>How Domains Affect Analysis</h3>
+        <div class="success-box">
+          <h4>✅ With Correct Domain:</h4>
+          <pre><code>Text: "The activation energy determines reaction rate"
+Recognized: ✅ "activation energy", "reaction rate" (both core chemistry concepts)
+Score Impact: Higher concept density, better evaluation</code></pre>
+        </div>
+
+        <div class="warning-box">
+          <h4>❌ Without Domain (or wrong domain):</h4>
+          <pre><code>Text: "The activation energy determines reaction rate"
+Recognized: ❌ Generic terms only
+Score Impact: Lower scores, missed learning opportunities</code></pre>
+        </div>
+
+        <hr />
+
+        <!-- Use Cases Section -->
+        <h2 id="use-cases">💼 Use Cases & Applications</h2>
+
+        <p style="font-size: 1.05rem; margin-bottom: 1.5rem">
+          Tomeiq analyzes <strong>any learning or reference material</strong> to
+          ensure concepts are properly spaced, explained, and connected.
+        </p>
+
+        <div
+          class="info-box"
+          style="
+            background: linear-gradient(135deg, #9333ea 0%, #4f46e5 100%);
+            color: white;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+          "
+        >
+          <h4 style="margin-top: 0; color: white">
+            Key Principle: If It Teaches, We Can Analyze It
+          </h4>
+          <p style="margin-bottom: 0; color: #e0e7ff">
+            From textbooks to employee handbooks, from clinical protocols to API
+            documentation—any material designed to transfer knowledge benefits
+            from spacing, dual coding, and concept reinforcement analysis.
+          </p>
+        </div>
+
+        <div class="feature-grid">
+          <div class="feature-card">
+            <h4>🎓 Education & Academia</h4>
+            <p><strong>Perfect for:</strong></p>
+            <ul style="margin: 0.5rem 0; font-size: 0.9rem">
+              <li>Textbooks (K-12, college, graduate)</li>
+              <li>Course materials and lecture notes</li>
+              <li>Exam prep guides and study materials</li>
+              <li>Online course content (MOOCs, LMS)</li>
+              <li>Specialized subject matter (STEM, humanities)</li>
+            </ul>
+          </div>
+
+          <div class="feature-card">
+            <h4>💼 Corporate Training</h4>
+            <p><strong>Perfect for:</strong></p>
+            <ul style="margin: 0.5rem 0; font-size: 0.9rem">
+              <li>Employee handbooks and onboarding guides</li>
+              <li>Standard Operating Procedures (SOPs)</li>
+              <li>Industry-specific training materials</li>
+              <li>Sales training and product knowledge</li>
+              <li>Compliance and certification programs</li>
+            </ul>
+          </div>
+
+          <div class="feature-card">
+            <h4>📖 Technical Documentation</h4>
+            <p><strong>Perfect for:</strong></p>
+            <ul style="margin: 0.5rem 0; font-size: 0.9rem">
+              <li>API documentation and developer guides</li>
+              <li>User manuals and quick-start guides</li>
+              <li>Software tutorials and help systems</li>
+              <li>Engineering specifications</li>
+              <li>Manufacturing process documentation</li>
+            </ul>
+          </div>
+
+          <div class="feature-card">
+            <h4>⚕️ Healthcare & Medical</h4>
+            <p><strong>Perfect for:</strong></p>
+            <ul style="margin: 0.5rem 0; font-size: 0.9rem">
+              <li>Clinical protocols and procedures</li>
+              <li>Patient education materials</li>
+              <li>Medical training modules</li>
+              <li>Nursing education content</li>
+              <li>Healthcare compliance documentation</li>
+            </ul>
+          </div>
+
+          <div class="feature-card">
+            <h4>⚖️ Compliance & Safety</h4>
+            <p><strong>Perfect for:</strong></p>
+            <ul style="margin: 0.5rem 0; font-size: 0.9rem">
+              <li>Safety manuals and procedures</li>
+              <li>Regulatory training materials</li>
+              <li>Policy and procedure documents</li>
+              <li>OSHA and workplace safety guides</li>
+              <li>Environmental compliance documentation</li>
+            </ul>
+          </div>
+
+          <div class="feature-card">
+            <h4>🔬 Research & Non-Profit</h4>
+            <p><strong>Perfect for:</strong></p>
+            <ul style="margin: 0.5rem 0; font-size: 0.9rem">
+              <li>Academic research materials</li>
+              <li>Grant proposal education components</li>
+              <li>Volunteer training programs</li>
+              <li>Community education resources</li>
+              <li>Public awareness campaigns</li>
+            </ul>
+          </div>
+
+          <div class="feature-card">
+            <h4>🏛️ Government & Public Sector</h4>
+            <p><strong>Perfect for:</strong></p>
+            <ul style="margin: 0.5rem 0; font-size: 0.9rem">
+              <li>Public service training materials</li>
+              <li>Government program documentation</li>
+              <li>Citizen education resources</li>
+              <li>Emergency response procedures</li>
+              <li>Public policy educational materials</li>
+            </ul>
+          </div>
+
+          <div class="feature-card">
+            <h4>🛠️ Technical & Specialized Fields</h4>
+            <p><strong>Perfect for:</strong></p>
+            <ul style="margin: 0.5rem 0; font-size: 0.9rem">
+              <li>Aviation training and manuals</li>
+              <li>Maritime and shipping procedures</li>
+              <li>Construction and building codes</li>
+              <li>Automotive repair and maintenance</li>
+              <li>Agriculture and farming best practices</li>
+            </ul>
+          </div>
+        </div>
+
+        <div
+          class="info-box"
+          style="margin-top: 1.5rem; background: #f3f4f6; padding: 1rem"
+        >
+          <h4>Common Thread: Learning Effectiveness</h4>
+          <p>
+            All these materials share one goal:
+            <strong>transfer knowledge effectively</strong>. Tomeiq's learning
+            science principles (spacing, dual coding, retrieval practice) apply
+            universally to any content meant to teach or inform.
+          </p>
+          <p style="margin-bottom: 0">
+            Whether you're teaching chemistry to high schoolers or training
+            nurses on new protocols, the science of how people learn remains the
+            same.
+          </p>
+        </div>
+
+        <hr />
+
+        <!-- Custom Domain Creation Section -->
+        <h2 id="custom-domains">🎨 Custom Domain Creation</h2>
+
+        <div class="warning-box">
+          <p><strong>⚠️ Professional Tier Feature</strong></p>
+          <p>
+            Custom domain creation requires a Professional tier subscription.
+            Premium users can use all built-in domains.
+          </p>
+        </div>
+
+        <h3>When to Create Custom Domains</h3>
+        <p>Create custom domains when working with:</p>
+        <ul>
+          <li>
+            <strong>Specialized subjects</strong> - Marine biology, ancient
+            history, medical terminology
+          </li>
+          <li>
+            <strong>Corporate training</strong> - Industry-specific jargon and
+            processes
+          </li>
+          <li>
+            <strong>Academic research</strong> - Novel terminology not in
+            standard dictionaries
+          </li>
+          <li>
+            <strong>K-12 curricula</strong> - Grade-appropriate concept
+            vocabulary
+          </li>
+          <li>
+            <strong>Emerging fields</strong> - New technologies or methodologies
+          </li>
+        </ul>
+
+        <h3>Step-by-Step: Creating Your Domain</h3>
+
+        <h4>1. Access Custom Domains</h4>
+        <ol>
+          <li>Upload your chapter document first</li>
+          <li>
+            Click the <strong>☰ Navigation</strong> menu button (top-left)
+          </li>
+          <li>Select <strong>"Custom Domains"</strong> from the menu</li>
+          <li>Click <strong>"+ Create New Domain"</strong></li>
+        </ol>
+
+        <h4>2. Name Your Domain</h4>
+        <div class="info-box">
+          <p><strong>Domain Name Tips:</strong></p>
+          <ul>
+            <li>
+              ✅ Use descriptive names: "Marine Biology 101", "Corporate Finance
+              2025"
+            </li>
+            <li>
+              ✅ Include course/book identifiers: "Intro Chemistry Spring 2025"
+            </li>
+            <li>✅ Keep it under 50 characters for readability</li>
+            <li>❌ Avoid generic names like "My Domain" or "Test"</li>
+          </ul>
+        </div>
+
+        <h4>3. Add Concepts</h4>
+        <p>You have two methods for adding concepts:</p>
+
+        <div class="feature-grid">
+          <div class="feature-card">
+            <h4>📝 Manual Entry</h4>
+            <p><strong>Best for:</strong> Small domains (10-50 concepts)</p>
+            <p><strong>Steps:</strong></p>
+            <ol style="font-size: 0.9rem; padding-left: 20px">
+              <li>Click <strong>"+ Add Concept"</strong></li>
+              <li>Enter the concept name (e.g., "photosynthesis")</li>
+              <li>Select category: Core, Supporting, or Detail</li>
+              <li>Optionally add a definition</li>
+              <li>Click <strong>"Save Concept"</strong></li>
+              <li>Repeat for each concept</li>
+            </ol>
+          </div>
+
+          <div class="feature-card">
+            <h4>📋 Bulk Import</h4>
+            <p><strong>Best for:</strong> Large domains (50+ concepts)</p>
+            <p><strong>Steps:</strong></p>
+            <ol style="font-size: 0.9rem; padding-left: 20px">
+              <li>Click <strong>"Bulk Import"</strong></li>
+              <li>Prepare a list (one concept per line)</li>
+              <li>Paste into the text area</li>
+              <li>Select default category for all</li>
+              <li>Click <strong>"Import Concepts"</strong></li>
+              <li>Review and edit individually if needed</li>
+            </ol>
+          </div>
+        </div>
+
+        <h3>Concept Categories Explained</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Category</th>
+              <th>Purpose</th>
+              <th>How Many?</th>
+              <th>Examples</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="badge badge-red">Core</span></td>
+              <td>Foundation ideas students MUST understand</td>
+              <td>10-15 per chapter</td>
+              <td>"photosynthesis", "cell membrane", "DNA replication"</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-yellow">Supporting</span></td>
+              <td>Important but not central to main concepts</td>
+              <td>20-30 per chapter</td>
+              <td>"chloroplast", "phospholipid bilayer", "base pairs"</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-blue">Detail</span></td>
+              <td>Specific terms, technical vocabulary</td>
+              <td>40-60 per chapter</td>
+              <td>"thylakoid", "glycerol molecule", "adenine"</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Adding Concept Definitions (Optional)</h3>
+        <p>
+          Definitions help you remember what each concept means, but they're not
+          required for analysis:
+        </p>
+
+        <div class="success-box">
+          <h4>✅ Good Definition:</h4>
+          <p><strong>Concept:</strong> photosynthesis</p>
+          <p>
+            <strong>Definition:</strong> "Process by which plants convert light
+            energy into chemical energy (glucose)"
+          </p>
+          <p>
+            <strong>Why it's good:</strong> Concise, accurate, includes key
+            mechanism
+          </p>
+        </div>
+
+        <div class="warning-box">
+          <h4>⚠️ Unnecessary Definition:</h4>
+          <p><strong>Concept:</strong> photosynthesis</p>
+          <p><strong>Definition:</strong> "A word that appears in Chapter 5"</p>
+          <p>
+            <strong>Why skip it:</strong> Not helpful for understanding or
+            analysis
+          </p>
+        </div>
+
+        <h3>Managing Your Concepts</h3>
+
+        <h4>Edit a Concept</h4>
+        <ol>
+          <li>Find the concept in your domain list</li>
+          <li>Click the <strong>✏️ Edit</strong> button</li>
+          <li>Modify name, category, or definition</li>
+          <li>Click <strong>"Save Changes"</strong></li>
+        </ol>
+
+        <h4>Delete a Concept</h4>
+        <ol>
+          <li>Find the concept in your domain list</li>
+          <li>Click the <strong>🗑️ Delete</strong> button</li>
+          <li>Confirm deletion in the popup</li>
+          <li><strong>Note:</strong> This cannot be undone!</li>
+        </ol>
+
+        <h4>Search Within Domain</h4>
+        <p>Use the search box to quickly find concepts in large domains:</p>
+        <ul>
+          <li>Type any part of the concept name</li>
+          <li>Results filter in real-time</li>
+          <li>Search is case-insensitive</li>
+        </ul>
+
+        <h3>Best Practices</h3>
+
+        <div class="info-box">
+          <p><strong>📏 Domain Size Guidelines</strong></p>
+          <ul>
+            <li>
+              <strong>Small domain:</strong> 20-50 concepts for focused chapters
+            </li>
+            <li>
+              <strong>Medium domain:</strong> 50-100 concepts for standard
+              textbook chapters
+            </li>
+            <li>
+              <strong>Large domain:</strong> 100-200 concepts for comprehensive
+              courses
+            </li>
+            <li>
+              <strong>⚠️ Too large:</strong> Over 300 concepts may slow analysis
+            </li>
+          </ul>
+        </div>
+
+        <div class="success-box">
+          <p><strong>✅ Quality Tips</strong></p>
+          <ul>
+            <li>
+              <strong>Consistent terminology</strong> - Match your textbook's
+              exact wording
+            </li>
+            <li>
+              <strong>Include synonyms</strong> - Add variations if concepts
+              have multiple names
+            </li>
+            <li>
+              <strong>Lowercase preferred</strong> - Use "cell membrane" not
+              "Cell Membrane"
+            </li>
+            <li>
+              <strong>Avoid abbreviations</strong> - Add both "DNA" and
+              "deoxyribonucleic acid"
+            </li>
+            <li>
+              <strong>Test first</strong> - Analyze a sample chapter before
+              finalizing
+            </li>
+            <li>
+              <strong>Iterate</strong> - Add missed terms as you discover them
+            </li>
+          </ul>
+        </div>
+
+        <h3>Using Your Custom Domain</h3>
+
+        <ol>
+          <li>Save your custom domain (it's stored in your browser)</li>
+          <li>Go back to the main upload screen</li>
+          <li>Upload your chapter document</li>
+          <li>
+            In the <strong>"Detected Domain"</strong> section, click
+            <strong>"Change Domain"</strong>
+          </li>
+          <li>Select your custom domain from the dropdown</li>
+          <li>Click <strong>"Analyze with [Your Domain]"</strong></li>
+        </ol>
+
+        <div class="warning-box">
+          <p><strong>⚠️ How Custom Domains Are Stored</strong></p>
+          <p>
+            Custom domains use <strong>browser localStorage</strong> - a
+            client-side storage mechanism:
+          </p>
+          <ul>
+            <li>
+              ✅ <strong>Stored locally</strong> - All data stays on YOUR
+              computer, never uploaded to servers
+            </li>
+            <li>
+              ✅ <strong>Persistent</strong> - Domains remain even after closing
+              the browser or restarting your computer
+            </li>
+            <li>
+              ✅ <strong>Fast access</strong> - No network calls, instant
+              loading
+            </li>
+            <li>
+              ✅ <strong>Privacy</strong> - Your custom concepts are 100%
+              private
+            </li>
+            <li>
+              ❌ <strong>Per-browser</strong> - Chrome domains won't appear in
+              Firefox (they're separate)
+            </li>
+            <li>
+              ❌ <strong>Per-device</strong> - Laptop domains won't sync to your
+              tablet or phone
+            </li>
+            <li>
+              ❌ <strong>Cleared with browser data</strong> - Using "Clear
+              browsing data" will delete them
+            </li>
+          </ul>
+          <p><strong>💡 Backup Strategy:</strong></p>
+          <ul>
+            <li>
+              Copy your concept list to a text file before clearing browser data
+            </li>
+            <li>Keep a spreadsheet of important domains for easy re-import</li>
+            <li>Take screenshots of complex domain configurations</li>
+          </ul>
+          <p><strong>🔧 Technical Details:</strong></p>
+          <p
+            style="
+              font-family: monospace;
+              font-size: 0.85rem;
+              background: #f3f4f6;
+              padding: 10px;
+              border-radius: 4px;
+            "
+          >
+            Storage Key: "tomeiq_custom_domains"<br />
+            Format: JSON array of domain objects<br />
+            Max Size: ~5-10MB (browser dependent)<br />
+            Location: Browser's IndexedDB/localStorage
+          </p>
+        </div>
+
+        <h3>Example: Creating a Marine Biology Domain</h3>
+
+        <div class="info-box">
+          <h4>Sample Concept List</h4>
+          <p><strong>Core Concepts (10):</strong></p>
+          <p style="font-family: monospace; font-size: 0.9rem">
+            marine ecosystem, coral reef, phytoplankton, zooplankton, food web,
+            symbiosis, photosynthetic zone, benthic zone, pelagic zone,
+            biodiversity
+          </p>
+
+          <p><strong>Supporting Concepts (20):</strong></p>
+          <p style="font-family: monospace; font-size: 0.9rem">
+            algae, kelp forest, mangrove, estuary, tide pool, bioluminescence,
+            salinity, thermocline, upwelling, current, migration, spawning,
+            plankton bloom, fish school, mutualism, parasitism, predation,
+            nutrient cycling, primary production, secondary production
+          </p>
+
+          <p><strong>Detail Concepts (30):</strong></p>
+          <p style="font-family: monospace; font-size: 0.9rem">
+            nematocyst, cnidarian, echinoderm, mollusk, crustacean, cephalopod,
+            gill, swim bladder, lateral line, chromatophore, carapace,
+            exoskeleton, polyp, medusa, radula, siphon, test, spicule, osculum,
+            choanocyte, zooxanthellae, diatom, dinoflagellate, copepod, krill,
+            amphipod, isopod, barnacle, tunicate, ctenophore
+          </p>
+        </div>
+
+        <hr />
+
+        <!-- Access Tiers Section -->
+        <h2 id="access-tiers">🎯 Access Tiers & Features</h2>
+
+        <div class="feature-grid">
+          <div class="feature-card">
+            <h4>🆓 Free Tier</h4>
+            <p><span class="checkmark">✅</span> Spacing analysis (full)</p>
+            <p><span class="checkmark">✅</span> Dual coding analysis (full)</p>
+            <p><span class="checkmark">✅</span> Upload DOCX/OBT files</p>
+            <p><span class="checkmark">✅</span> View analysis dashboard</p>
+            <p><span class="xmark">❌</span> No exports</p>
+            <p><span class="xmark">❌</span> No Writer Mode</p>
+            <p><span class="xmark">❌</span> No custom domains</p>
+          </div>
+
+          <div class="feature-card">
+            <h4>👑 Premium Tier</h4>
+            <p><span class="checkmark">✅</span> Everything in Free</p>
+            <p>
+              <span class="checkmark">✅</span>
+              <strong>Full 10-principle analysis</strong>
+            </p>
+            <p>
+              <span class="checkmark">✅</span>
+              <strong>Export results</strong> (HTML, DOCX, JSON)
+            </p>
+            <p><span class="checkmark">✅</span> Concept graphs</p>
+            <p>
+              <span class="checkmark">✅</span>
+              <strong>Custom domain creation</strong>
+            </p>
+            <p><span class="checkmark">✅</span> Priority support</p>
+            <p><span class="xmark">❌</span> No Writer Mode</p>
+          </div>
+
+          <div class="feature-card">
+            <h4>💼 Professional Tier</h4>
+            <p><span class="checkmark">✅</span> Everything in Premium</p>
+            <p>
+              <span class="checkmark">✅</span>
+              <strong>Writer Mode</strong> (edit + live updates)
+            </p>
+            <p>
+              <span class="checkmark">✅</span>
+              <strong>Real-time highlighting</strong>
+            </p>
+            <p>
+              <span class="checkmark">✅</span>
+              <strong>Unlimited analyses</strong>
+            </p>
+            <p>
+              <span class="checkmark">✅</span> <strong>Bulk exports</strong>
+            </p>
+            <p><span class="checkmark">✅</span> Version tracking</p>
+            <p><span class="checkmark">✅</span> Team collaboration</p>
+          </div>
+        </div>
+
+        <hr />
+
+        <!-- Writer Mode Section -->
+        <h2 id="writer-mode">✍️ Writer Mode Workflow</h2>
+
+        <h3>Accessing Writer Mode</h3>
+        <ol>
+          <li><strong>Upload a document</strong> (DOCX or OBT)</li>
+          <li><strong>Run analysis</strong> (select domain first)</li>
+          <li>
+            <strong>Click "✍️ Writer" tab</strong> (Professional tier required)
+          </li>
+          <li><strong>Editor opens</strong> with your document text</li>
+        </ol>
+
+        <h3>Writer Mode Layout</h3>
+        <div class="info-box">
+          <p><strong>Desktop (&gt;1520px):</strong></p>
+          <pre><code>┌────────────────────────────┬────────────────────────┐
+│  Editable Document (65%)   │  Analysis Panel (35%)  │
+│                            │                        │
+│  [Edit your text here...]  │  • Spacing Overview    │
+│                            │  • Dual Coding Alerts  │
+│  [Live indicators appear]  │  • Concept Mentions    │
+│                            │  • Search/Highlight    │
+└────────────────────────────┴────────────────────────┘</code></pre>
+        </div>
+
+        <h3>Editing Features</h3>
+        <ul>
+          <li>
+            <strong>Text Editing:</strong> Type directly, copy/paste, word count
+            updates live
+          </li>
+          <li>
+            <strong>Spacing Controls:</strong> Toggle indicators on/off, view
+            color badges
+          </li>
+          <li>
+            <strong>Dual Coding Controls:</strong> Toggle callouts, see priority
+            badges
+          </li>
+          <li>
+            <strong>Search & Highlight:</strong> Find concepts, highlight
+            mentions, navigate occurrences
+          </li>
+          <li>
+            <strong>🤖 AI Template Generation:</strong> Auto-generate structured
+            templates based on analysis issues (NEW!)
+          </li>
+        </ul>
+
+        <h3>🤖 AI-Driven Template Generation</h3>
+        <div
+          class="info-box"
+          style="
+            background: linear-gradient(135deg, #9333ea 0%, #7c3aed 100%);
+            color: white;
+            border-left: 4px solid #6b21a8;
+          "
+        >
+          <h4 style="margin-top: 0; color: white">
+            Automatic Content Structure Based on Analysis
+          </h4>
+          <p style="color: #e9d5ff; margin-bottom: 0">
+            When your chapter has spacing or dual coding issues, click
+            <strong>"🤖 Generate AI Template"</strong> to create a structured
+            outline with specific sections addressing the problems.
+          </p>
+        </div>
+
+        <h4>How It Works</h4>
+        <ol>
+          <li>
+            <strong>Run Analysis First:</strong> Upload and analyze your
+            document
+          </li>
+          <li>
+            <strong>Switch to Writer Mode:</strong> Click the ✍️ Writer tab
+          </li>
+          <li>
+            <strong>Generate Template:</strong> Click "🤖 Generate AI Template"
+            button
+          </li>
+          <li>
+            <strong>AI Analyzes Issues:</strong> System examines your spacing
+            and dual coding scores
+          </li>
+          <li>
+            <strong>Template Created:</strong> Structured outline appears with:
+            <ul>
+              <li><strong>[WRITER]</strong> sections - Fill in manually</li>
+              <li>
+                <strong>[CLAUDE]</strong> sections - Connect to Claude API to
+                auto-fill
+              </li>
+              <li>
+                <strong>[VISUAL]</strong> markers - Where diagrams/charts are
+                needed
+              </li>
+            </ul>
+          </li>
+        </ol>
+
+        <h4>What the Template Includes</h4>
+        <table>
+          <thead>
+            <tr>
+              <th>Template Section</th>
+              <th>Purpose</th>
+              <th>Addresses Issue</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Introduction</strong></td>
+              <td>Key concepts overview with brief definitions</td>
+              <td>Concept grounding</td>
+            </tr>
+            <tr>
+              <td><strong>Core Concept Sections</strong></td>
+              <td>
+                Dedicated sections for each important concept with visual
+                prompts
+              </td>
+              <td>Dual Coding issues</td>
+            </tr>
+            <tr>
+              <td><strong>Concept Connections</strong></td>
+              <td>Section to revisit earlier concepts in new contexts</td>
+              <td>Spacing issues</td>
+            </tr>
+            <tr>
+              <td><strong>Practical Application</strong></td>
+              <td>Real-world scenarios using the concepts</td>
+              <td>Retention & transfer</td>
+            </tr>
+            <tr>
+              <td><strong>Retrieval Practice</strong></td>
+              <td>Self-check questions to reinforce learning</td>
+              <td>Spacing reinforcement</td>
+            </tr>
+            <tr>
+              <td><strong>Analysis Insights</strong></td>
+              <td>Summary of detected issues and actions needed</td>
+              <td>Writer guidance</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h4>Two Ways to Fill the Template</h4>
+        <div class="feature-grid">
+          <div class="feature-card">
+            <h4>✍️ Manual Writing</h4>
+            <p><strong>Best for:</strong> Complete creative control</p>
+            <ul style="font-size: 0.9rem; margin-top: 0.5rem">
+              <li>Fill in [WRITER] sections yourself</li>
+              <li>Add your own examples and explanations</li>
+              <li>Create custom diagrams for [VISUAL] markers</li>
+              <li>Edit and refine as you go</li>
+            </ul>
+          </div>
+
+          <div class="feature-card">
+            <h4>🤖 Claude API Integration</h4>
+            <p><strong>Best for:</strong> Fast first drafts</p>
+            <ul style="font-size: 0.9rem; margin-top: 0.5rem">
+              <li>Connect your Claude API key (optional)</li>
+              <li>Auto-generate content for [CLAUDE] sections</li>
+              <li>Get visual suggestions for [VISUAL] markers</li>
+              <li>Review and refine AI-generated content</li>
+            </ul>
+            <p
+              style="
+                font-size: 0.85rem;
+                color: #6b7280;
+                margin-top: 0.5rem;
+                font-style: italic;
+              "
+            >
+              Note: Claude API integration is optional and requires your own API
+              key
+            </p>
+          </div>
+        </div>
+
+        <div class="success-box">
+          <p><strong>💡 Template Benefits:</strong></p>
+          <ul style="margin: 0.5rem 0 0 1.5rem">
+            <li>
+              <strong>Issue-Specific:</strong> Addresses YOUR chapter's detected
+              problems
+            </li>
+            <li>
+              <strong>Concept-Focused:</strong> Uses the actual concepts from
+              your content
+            </li>
+            <li>
+              <strong>Structured Guidance:</strong> Clear sections with prompts
+              for what to add
+            </li>
+            <li>
+              <strong>Flexible:</strong> Write manually or use AI assistance
+            </li>
+            <li>
+              <strong>Educational:</strong> Teaches you where spacing and
+              visuals are needed
+            </li>
+          </ul>
+        </div>
+
+        <h3>Export from Writer Mode</h3>
+        <p>Export options:</p>
+        <ol>
+          <li>
+            <strong>📄 Export DOCX</strong> - Save edits as Word document with
+            embedded analysis
+          </li>
+          <li>
+            <strong>🌐 Export HTML</strong> - Generate styled HTML with
+            highlights
+          </li>
+          <li><strong>Export JSON</strong> - Download raw analysis data</li>
+        </ol>
+        <div class="success-box">
+          <p>
+            <strong>💡 Tip:</strong> Export after each major revision to track
+            improvement!
+          </p>
+        </div>
+
+        <hr />
+
+        <!-- Color Coding Section -->
+        <h2 id="color-coding">🎨 Color Coding System</h2>
+
+        <h3>Score Badges</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Color</th>
+              <th>Range</th>
+              <th>Principle Performance</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="badge badge-green">Green</span></td>
+              <td>80-100</td>
+              <td>Strong application</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-yellow">Yellow/Orange</span></td>
+              <td>50-79</td>
+              <td>Moderate application</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-red">Red</span></td>
+              <td>0-49</td>
+              <td>Needs improvement</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Spacing Indicators</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Background Color</th>
+              <th>Border</th>
+              <th>Meaning</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Light Blue (#DBEAFE)</td>
+              <td>Blue</td>
+              <td>Good paragraph length (60-160 words)</td>
+            </tr>
+            <tr>
+              <td>Orange (#FEF3C7)</td>
+              <td>Orange</td>
+              <td>Too compact (&lt;60 words)</td>
+            </tr>
+            <tr>
+              <td>Red (#FEE2E2)</td>
+              <td>Red</td>
+              <td>Too extended (&gt;160 words)</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <hr />
+
+        <!-- Technical Specs Section -->
+        <h2 id="technical-specs">⚙️ Technical Specifications</h2>
+
+        <h3>Supported File Formats</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Format</th>
+              <th>Extension</th>
+              <th>Max Size</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Microsoft Word</td>
+              <td><code>.docx</code></td>
+              <td>200 MB</td>
+              <td>Tested up to 800-1200 pages</td>
+            </tr>
+            <tr>
+              <td>Open Book Text</td>
+              <td><code>.obt</code></td>
+              <td>200 MB</td>
+              <td>Proprietary format for textbooks</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Browser Requirements</h3>
+        <div class="info-box">
+          <p><strong>Minimum:</strong></p>
+          <ul>
+            <li>Chrome 90+</li>
+            <li>Firefox 88+</li>
+            <li>Safari 14+</li>
+            <li>Edge 90+</li>
+          </ul>
+          <p>
+            <strong>Recommended:</strong> Chrome 120+ or Firefox 115+ for best
+            performance
+          </p>
+        </div>
+
+        <h3>Analysis Performance</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Document Size</th>
+              <th>Analysis Time</th>
+              <th>Memory Usage</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>~5,000 words</td>
+              <td>1-2 seconds</td>
+              <td>~40 MB</td>
+            </tr>
+            <tr>
+              <td>~28,000 words</td>
+              <td>4-6 seconds</td>
+              <td>~80 MB</td>
+            </tr>
+            <tr>
+              <td>~210,000 words</td>
+              <td>25-35 seconds</td>
+              <td>~400 MB</td>
+            </tr>
+            <tr>
+              <td>~350,000 words</td>
+              <td>40-60 seconds</td>
+              <td>~650 MB</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Data Privacy</h3>
+        <div class="success-box">
+          <h4>🔒 Local Storage</h4>
+          <ul>
+            <li>
+              <span class="checkmark">✅</span> All analysis runs
+              <strong>in your browser</strong>
+            </li>
+            <li>
+              <span class="checkmark">✅</span> Documents
+              <strong>never uploaded</strong> to servers
+            </li>
+            <li>
+              <span class="checkmark">✅</span> Custom domains saved
+              <strong>locally</strong> only
+            </li>
+            <li><span class="checkmark">✅</span> No tracking or analytics</li>
+          </ul>
+        </div>
+
+        <hr />
+
+        <h2>❓ Frequently Asked Questions</h2>
+
+        <h3>General Questions</h3>
+        <div class="info-box">
+          <p><strong>Q: How long does analysis take?</strong></p>
+          <p>
+            A: 2-5 seconds for typical chapters (1000-5000 words). Very large
+            documents may take 15-30 seconds.
+          </p>
+        </div>
+
+        <div class="info-box">
+          <p><strong>Q: Can I analyze multiple chapters at once?</strong></p>
+          <p>
+            A: Currently one at a time. Open multiple browser tabs for parallel
+            analysis (Premium/Pro).
+          </p>
+        </div>
+
+        <div class="info-box">
+          <p><strong>Q: Does this work offline?</strong></p>
+          <p>
+            A: Yes! Once loaded, the app runs entirely in your browser without
+            internet.
+          </p>
+        </div>
+
+        <div class="info-box">
+          <p><strong>Q: Is my document secure?</strong></p>
+          <p>
+            A: Completely. Nothing uploads to servers - all analysis happens
+            locally in your browser.
+          </p>
+        </div>
+
+        <hr />
+
+        <div class="success-box">
+          <h3>📚 Need More Help?</h3>
+          <p><strong>Documentation Resources:</strong></p>
+          <ul>
+            <li><strong>Quick Start Guide</strong> - 10-minute setup</li>
+            <li><strong>System Overview</strong> - Architecture deep dive</li>
+            <li><strong>Export Guide</strong> - Export technical details</li>
+            <li><strong>HTML Export</strong> - HTML customization</li>
+          </ul>
+          <p>
+            <strong>In-App Help:</strong> Click the
+            <strong>"❓ Help"</strong> button in navigation for
+            context-sensitive guidance
+          </p>
+        </div>
+
+        <hr />
+
+        <div style="text-align: center; padding: 40px 0; color: #6b7280">
+          <p><strong>Last Updated:</strong> November 15, 2025</p>
+          <p><strong>Version:</strong> 2.0</p>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
