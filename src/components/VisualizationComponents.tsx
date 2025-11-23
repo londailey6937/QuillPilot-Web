@@ -1605,7 +1605,8 @@ export const PrincipleScoresRadar: React.FC<{ analysis: ChapterAnalysis }> = ({
             dataKey="name"
             tick={({ payload, x, y, cx, cy, ...rest }) => {
               const angle = Math.atan2(y - cy, x - cx) * (180 / Math.PI);
-              const adjustedAngle = angle > 90 || angle < -90 ? angle + 180 : angle;
+              const adjustedAngle =
+                angle > 90 || angle < -90 ? angle + 180 : angle;
               return (
                 <text
                   x={x}
