@@ -74,17 +74,25 @@ export class AnalysisEngine {
       onProgress?.("analyzing-characters", "Analyzing character development");
 
       // Analyze character arcs
-      const characterAnalysis: CharacterAnalysisResult = analyzeCharacters(chapter.content);
+      const characterAnalysis: CharacterAnalysisResult = analyzeCharacters(
+        chapter.content
+      );
 
       onProgress?.("analyzing-themes", "Detecting themes and symbols");
 
       // Analyze themes and symbolism
       const themeAnalysis: ThemeAnalysisResult = analyzeThemes(chapter.content);
 
-      onProgress?.("analyzing-tropes", "Identifying genre tropes and conventions");
+      onProgress?.(
+        "analyzing-tropes",
+        "Identifying genre tropes and conventions"
+      );
 
       // Analyze genre-specific tropes
-      const tropeAnalysis: TropeAnalysisResult = analyzeTropes(chapter.content, genre);
+      const tropeAnalysis: TropeAnalysisResult = analyzeTropes(
+        chapter.content,
+        genre
+      );
 
       onProgress?.("building-report", "Generating analysis report");
 
@@ -152,10 +160,15 @@ export class AnalysisEngine {
           weight: 1.0,
           details: [
             `${characterAnalysis.totalCharacters} characters detected`,
-            `${characterAnalysis.protagonists.length} protagonist(s): ${characterAnalysis.protagonists.join(", ") || "none"}`,
-            ...characterAnalysis.characters.slice(0, 3).map(c => 
-              `${c.name}: ${c.arcType} arc (${c.totalMentions} mentions)`
-            ),
+            `${characterAnalysis.protagonists.length} protagonist(s): ${
+              characterAnalysis.protagonists.join(", ") || "none"
+            }`,
+            ...characterAnalysis.characters
+              .slice(0, 3)
+              .map(
+                (c) =>
+                  `${c.name}: ${c.arcType} arc (${c.totalMentions} mentions)`
+              ),
           ],
           suggestions: characterAnalysis.recommendations.map((rec, i) => ({
             id: `char-${i}`,
@@ -177,9 +190,12 @@ export class AnalysisEngine {
             `${themeAnalysis.primaryThemes.length} primary themes detected`,
             `Dominant theme: ${themeAnalysis.dominantTheme || "none"}`,
             `${themeAnalysis.symbolicPatterns.length} symbolic patterns found`,
-            ...themeAnalysis.primaryThemes.slice(0, 3).map(t => 
-              `${t.theme}: ${t.frequency} mentions (${t.intensity}% intensity)`
-            ),
+            ...themeAnalysis.primaryThemes
+              .slice(0, 3)
+              .map(
+                (t) =>
+                  `${t.theme}: ${t.frequency} mentions (${t.intensity}% intensity)`
+              ),
           ],
           suggestions: themeAnalysis.recommendations.map((rec, i) => ({
             id: `theme-${i}`,
@@ -203,19 +219,25 @@ export class AnalysisEngine {
             `Subversion score: ${tropeAnalysis.subversionScore}/100`,
             `Trope overuse: ${tropeAnalysis.tropeOveruseScore}/100`,
             `${tropeAnalysis.detectedTropes.length} tropes detected`,
-            `${tropeAnalysis.storyBeats.filter(b => b.detected).length}/${tropeAnalysis.storyBeats.length} story beats present`,
-            ...tropeAnalysis.detectedTropes.slice(0, 3).map(t => 
-              `${t.name}: ${t.strength}% strength`
-            ),
+            `${tropeAnalysis.storyBeats.filter((b) => b.detected).length}/${
+              tropeAnalysis.storyBeats.length
+            } story beats present`,
+            ...tropeAnalysis.detectedTropes
+              .slice(0, 3)
+              .map((t) => `${t.name}: ${t.strength}% strength`),
           ],
           suggestions: tropeAnalysis.recommendations.map((rec, i) => ({
             id: `trope-${i}`,
             principle: "genreTropes" as LearningPrinciple,
-            priority: tropeAnalysis.tropeOveruseScore > 60 ? "high" as const : "medium" as const,
+            priority:
+              tropeAnalysis.tropeOveruseScore > 60
+                ? ("high" as const)
+                : ("medium" as const),
             title: "Genre Conventions",
             description: rec,
             implementation: "Review genre tropes and narrative conventions",
-            expectedImpact: "Better alignment with reader expectations and genre standards",
+            expectedImpact:
+              "Better alignment with reader expectations and genre standards",
             relatedConcepts: [],
           })),
         },

@@ -27,6 +27,7 @@
 ### Writer Mode
 
 Professional tier includes a full-featured text editor with:
+
 - Rich text formatting (bold, italic, underline, strikethrough)
 - Headers (H1, H2, H3)
 - Lists (bulleted and numbered)
@@ -44,7 +45,7 @@ Professional tier includes a full-featured text editor with:
 
 ### Prerequisites
 
-- Node.js 18+ 
+- Node.js 18+
 - npm or yarn
 
 ### Installation
@@ -81,6 +82,7 @@ npm run build
 ## 📊 Analysis Capabilities
 
 ### Character Analysis
+
 - Automatic character name extraction
 - Mention frequency tracking
 - Emotional trajectory analysis (early/middle/late sections)
@@ -89,6 +91,7 @@ npm run build
 - Development scoring (0-100)
 
 ### Theme Analysis
+
 - 12 theme clusters with 15-20 keywords each
 - 10 symbolic pattern categories
 - Context-aware detection
@@ -97,6 +100,7 @@ npm run build
 - Actionable recommendations
 
 ### Trope Detection
+
 - Genre-specific keyword matching
 - Pattern recognition for narrative conventions
 - Story beat detection by section (early/middle/late)
