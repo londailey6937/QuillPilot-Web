@@ -435,29 +435,31 @@ function OverallScoreSection() {
               {[
                 {
                   range: "90-100",
-                  level: "Excellent",
-                  interpretation: "Exemplifies evidence-based learning design",
+                  level: "Publication Ready",
+                  interpretation:
+                    "Professional-level craft with strong storytelling",
                 },
                 {
                   range: "80-89",
-                  level: "Good",
+                  level: "Strong Draft",
                   interpretation:
-                    "Strong foundation with room for minor refinements",
+                    "Solid foundation with minor refinements needed",
                 },
                 {
                   range: "70-79",
-                  level: "Adequate",
-                  interpretation: "Meets basic standards but has clear gaps",
+                  level: "Good Progress",
+                  interpretation:
+                    "Core story works but needs revision in key areas",
                 },
                 {
                   range: "60-69",
-                  level: "Needs Improvement",
-                  interpretation: "Missing multiple key principles",
+                  level: "Needs Work",
+                  interpretation: "Multiple craft elements require attention",
                 },
                 {
                   range: "Below 60",
-                  level: "Critical",
-                  interpretation: "Requires a pedagogical redesign",
+                  level: "Early Draft",
+                  interpretation: "Foundational storytelling issues to address",
                 },
               ].map((row) => (
                 <tr key={row.range}>
@@ -623,11 +625,12 @@ function RelationshipsSection() {
     <div className="quickstart-shell">
       <div className="quickstart-content">
         <section className="quickstart-card" style={{ borderRadius: "1rem" }}>
-          <h4>Concept Relationships</h4>
+          <h4>Story Relationships</h4>
           <p>
-            This view maps how concepts connect to each other, revealing the
-            knowledge structure of the chapter and exposing prerequisite chains,
-            conceptual clusters, and contrasting ideas.
+            This view maps how characters, plot threads, themes, and story
+            elements connect throughout your manuscript. It reveals the
+            narrative structure, character relationships, thematic connections,
+            and plot dependencies.
           </p>
         </section>
 
@@ -636,7 +639,7 @@ function RelationshipsSection() {
           <div
             style={{ display: "flex", flexDirection: "column", gap: "1rem" }}
           >
-            {conceptRelationshipTypes.map((type) => (
+            {storyRelationshipTypes.map((type) => (
               <div
                 key={type.name}
                 style={{
@@ -664,18 +667,20 @@ function RelationshipsSection() {
         <section className="quickstart-card" style={{ borderRadius: "1rem" }}>
           <h4>What Strong Relationships Indicate</h4>
           <ul className="quickstart-list">
-            <li>Well-integrated content with clear conceptual connections</li>
-            <li>Logical progressions that build prerequisite knowledge</li>
-            <li>Dense networks that support schema building</li>
+            <li>Well-integrated plot threads with clear connections</li>
+            <li>Character relationships that drive conflict and growth</li>
+            <li>Thematic consistency throughout the narrative</li>
+            <li>Satisfying payoffs for established setups</li>
           </ul>
         </section>
 
         <section className="quickstart-card" style={{ borderRadius: "1rem" }}>
           <h4>What Weak Relationships Indicate</h4>
           <ul className="quickstart-list">
-            <li>Isolated concepts that may confuse learners</li>
-            <li>Missing prerequisite explanations or bridges</li>
-            <li>Opportunities to add comparisons, contrasts, or examples</li>
+            <li>Isolated plot threads that may confuse readers</li>
+            <li>Missing character motivations or relationship development</li>
+            <li>Opportunities to strengthen thematic resonance</li>
+            <li>Dropped subplots or unresolved story elements</li>
           </ul>
         </section>
       </div>
@@ -690,17 +695,18 @@ function PatternsSection() {
         <section className="quickstart-card" style={{ borderRadius: "1rem" }}>
           <h4>Pattern Recognition Overview</h4>
           <p>
-            Pattern detection highlights instructional structures that make
-            content easier to process, remember, and apply. Results are grouped
-            into universal patterns that appear across disciplines and
-            domain-specific patterns tailored for chemistry.
+            Pattern detection highlights storytelling structures and narrative
+            devices that make fiction more engaging, emotionally resonant, and
+            satisfying to read. Results are grouped into universal fiction
+            patterns that appear across all genres and genre-specific patterns
+            tailored to your story type.
           </p>
         </section>
 
         <section className="quickstart-card" style={{ borderRadius: "1rem" }}>
-          <h4>Universal Patterns</h4>
+          <h4>Universal Fiction Patterns</h4>
           <ul className="quickstart-list">
-            {universalPatterns.map((pattern) => (
+            {universalFictionPatterns.map((pattern) => (
               <li key={pattern.name}>
                 <strong>{pattern.name}:</strong> {pattern.description}
               </li>
@@ -709,9 +715,10 @@ function PatternsSection() {
         </section>
 
         <section className="quickstart-card" style={{ borderRadius: "1rem" }}>
-          <h4>Chemistry-Specific Patterns</h4>
+          <h4>Genre-Specific Patterns</h4>
+          <p>Examples of patterns analyzed based on your genre selection:</p>
           <ul className="quickstart-list">
-            {chemistryPatterns.map((pattern) => (
+            {genreSpecificPatterns.map((pattern) => (
               <li key={pattern.name}>
                 <strong>{pattern.name}:</strong> {pattern.description}
               </li>
@@ -722,12 +729,10 @@ function PatternsSection() {
         <section className="quickstart-card" style={{ borderRadius: "1rem" }}>
           <h4>Why Patterns Matter</h4>
           <ul className="quickstart-list">
-            <li>Provide structure and predictability for learners</li>
-            <li>Support schema development and transfer</li>
-            <li>Reduce cognitive load by signaling important moves</li>
-            <li>
-              Reveal opportunities to add examples, contrasts, or practice
-            </li>
+            <li>Provide structure and rhythm that meets reader expectations</li>
+            <li>Support character development and emotional engagement</li>
+            <li>Create narrative momentum and pacing variation</li>
+            <li>Reveal opportunities to strengthen story beats and payoffs</li>
           </ul>
         </section>
       </div>
@@ -740,32 +745,33 @@ function PrinciplesSection() {
     <div className="quickstart-shell">
       <div className="quickstart-content">
         <section className="quickstart-card" style={{ borderRadius: "1rem" }}>
-          <h4>Learning Principles Overview</h4>
+          <h4>Fiction Elements Overview</h4>
           <p>
-            The analysis scores ten evidence-based learning principles from 0 to
-            100 based on the presence, quality, and depth of each instructional
-            move in the chapter.
+            Quill Pilot analyzes 30+ fiction craft elements, scoring each from 0
+            to 100 based on presence, quality, and effectiveness in your
+            manuscript. Below are the most critical elements that significantly
+            impact reader engagement and story quality.
           </p>
         </section>
 
-        {principlesData.map((principle) => (
+        {fictionElementsData.map((element) => (
           <section
-            key={principle.name}
+            key={element.name}
             className="quickstart-card"
             style={{ borderRadius: "1rem" }}
           >
-            <h4>{principle.name}</h4>
+            <h4>{element.name}</h4>
             <p style={{ fontStyle: "italic", color: "#4b5563" }}>
-              {principle.definition}
+              {element.definition}
             </p>
             <p>
-              <strong>Why it matters:</strong> {principle.why}
+              <strong>Why it matters:</strong> {element.why}
             </p>
             <p>
               <strong>What's evaluated:</strong>
             </p>
             <ul className="quickstart-list">
-              {principle.evaluated.map((item) => (
+              {element.evaluated.map((item) => (
                 <li key={item}>{item}</li>
               ))}
             </ul>
@@ -774,13 +780,13 @@ function PrinciplesSection() {
             </p>
             <ul className="quickstart-list">
               <li>
-                <strong>80-100:</strong> {principle.ranges.high}
+                <strong>80-100:</strong> {element.ranges.high}
               </li>
               <li>
-                <strong>50-79:</strong> {principle.ranges.medium}
+                <strong>50-79:</strong> {element.ranges.medium}
               </li>
               <li>
-                <strong>0-49:</strong> {principle.ranges.low}
+                <strong>0-49:</strong> {element.ranges.low}
               </li>
             </ul>
           </section>
@@ -798,8 +804,9 @@ function RecommendationsSection() {
           <h4>Recommendation Overview</h4>
           <p>
             Recommendations translate analysis findings into specific,
-            actionable steps for improving learning effectiveness. Each
-            suggestion ties back to one or more learning principles.
+            actionable steps for improving your manuscript's craft and
+            storytelling effectiveness. Each suggestion ties back to one or more
+            fiction elements and reader engagement principles.
           </p>
         </section>
 
@@ -807,16 +814,16 @@ function RecommendationsSection() {
           <h4>Recommendation Priorities</h4>
           <ul className="quickstart-list">
             <li>
-              <strong>High priority:</strong> Critical improvements when a
-              principle scores below 50
+              <strong>High priority:</strong> Critical craft issues when an
+              element scores below 50 (affects reader engagement)
             </li>
             <li>
-              <strong>Medium priority:</strong> Meaningful enhancements for
-              scores between 50 and 79
+              <strong>Medium priority:</strong> Meaningful improvements for
+              scores between 50 and 79 (strengthen storytelling)
             </li>
             <li>
-              <strong>Low priority:</strong> Fine-tuning opportunities when
-              principles score 80-89
+              <strong>Low priority:</strong> Polish opportunities when elements
+              score 80-89 (publication-level refinement)
             </li>
           </ul>
         </section>
@@ -826,7 +833,7 @@ function RecommendationsSection() {
           <div
             style={{ display: "flex", flexDirection: "column", gap: "1rem" }}
           >
-            {recommendationTypes.map((type) => (
+            {fictionRecommendationTypes.map((type) => (
               <div
                 key={type.title}
                 style={{
@@ -852,13 +859,19 @@ function RecommendationsSection() {
           <h4>How to Use Recommendations</h4>
           <ol className="quickstart-order">
             <li>
-              Start with the highest-priority items to address critical gaps
+              Start with high-priority items to address critical craft
+              weaknesses
             </li>
             <li>
-              Adapt suggestions to your teaching context and student needs
+              Focus on one or two elements per revision pass for manageable
+              progress
             </li>
-            <li>Implement in manageable increments to track impact</li>
-            <li>Re-run the analysis after changes to confirm improvements</li>
+            <li>Use Writer Mode's inline analysis to see issues in context</li>
+            <li>
+              Re-analyze after revisions to track improvements and validate
+              changes
+            </li>
+            <li>Balance technical fixes with preserving your unique voice</li>
           </ol>
         </section>
       </div>
@@ -867,270 +880,232 @@ function RecommendationsSection() {
 }
 
 // Section data helpers
-const conceptRelationshipTypes = [
+const storyRelationshipTypes = [
   {
-    name: "Prerequisites (requires)",
-    meaning: "Concept A must be understood before Concept B",
-    example: "Atomic structure -> chemical bonding",
-    importance: "Shows the logical learning sequence and reveals gaps",
+    name: "Character Relationships",
+    meaning:
+      "How characters connect emotionally, socially, or through conflict",
+    example: "Protagonist and mentor, rivals, love interests, family bonds",
+    importance: "Drives character development and creates emotional stakes",
   },
   {
-    name: "Related (relates-to)",
-    meaning: "Concepts share features or frequently appear together",
-    example: "Acids and bases appear together for comparisons",
-    importance: "Identifies conceptual clusters that support schema building",
+    name: "Plot Dependencies",
+    meaning: "Story events that must occur in a specific sequence",
+    example: "Setup in Act 1 must payoff in Act 3, clues lead to revelations",
+    importance: "Creates narrative causality and satisfying story logic",
   },
   {
-    name: "Examples (example-of)",
-    meaning: "Concrete instances of abstract ideas",
-    example: "HCl is an example of an acid",
-    importance: "Connects abstract ideas to tangible representations",
+    name: "Thematic Connections",
+    meaning: "How themes echo and reinforce throughout the story",
+    example: "Redemption theme appears in multiple character arcs and subplots",
+    importance: "Provides depth and resonance beyond plot events",
   },
   {
-    name: "Contrasts (contrasts-with)",
-    meaning: "Concepts are compared or contrasted",
-    example: "Ionic bonds versus covalent bonds",
-    importance: "Highlights distinctions that clarify nuanced differences",
-  },
-];
-
-const universalPatterns = [
-  {
-    name: "Definition-Example",
-    description:
-      "Concept introduced formally and reinforced with concrete examples",
-  },
-  {
-    name: "Compare-Contrast",
-    description:
-      "Multiple concepts juxtaposed to emphasize similarities and differences",
-  },
-  {
-    name: "Problem-Solution",
-    description:
-      "A problem is posed and solved step-by-step to model reasoning",
-  },
-  {
-    name: "Elaboration",
-    description: "Concepts explained in increasing depth with layered details",
+    name: "Symbolic Links",
+    meaning:
+      "Recurring symbols, motifs, or imagery that connect story elements",
+    example:
+      "A broken compass symbolizing lost direction appears at key moments",
+    importance: "Creates layers of meaning and emotional cohesion",
   },
 ];
 
-const chemistryPatterns = [
+const universalFictionPatterns = [
   {
-    name: "Reaction Mechanism",
-    description: "Step-by-step breakdown of chemical reactions with equations",
+    name: "Scene-Sequel Structure",
+    description:
+      "Action scenes followed by reflection/reaction sequences that deepen character response",
   },
   {
-    name: "Lab Procedure",
+    name: "Setup-Payoff",
     description:
-      "Experimental methods that include safety, materials, and observations",
+      "Elements introduced early that deliver emotional or plot payoffs later",
   },
   {
-    name: "Stoichiometry Problem",
+    name: "Rising Tension",
     description:
-      "Quantitative calculations showing balanced units and reasoning",
+      "Escalating stakes and conflict intensity as the story progresses",
+  },
+  {
+    name: "Character Arc Beats",
+    description:
+      "Character transformation shown through consistent developmental moments",
+  },
+  {
+    name: "Dialogue-Action-Reflection",
+    description: "Balanced rhythm between talking, doing, and internalizing",
   },
 ];
 
-const recommendationTypes = [
+const genreSpecificPatterns = [
   {
-    title: "Content Additions",
+    name: "Romance: Emotional Beats",
     description:
-      "Prompt authors to add missing elements that reinforce learning",
+      "Meeting, attraction, obstacle, dark moment, resolution structure",
+  },
+  {
+    name: "Mystery: Clue Placement",
+    description:
+      "Strategic revelation of information to maintain suspense and fairness",
+  },
+  {
+    name: "Fantasy: Worldbuilding Layers",
+    description:
+      "Gradual revelation of magic systems, history, and cultural rules",
+  },
+  {
+    name: "Thriller: Escalating Danger",
+    description:
+      "Ticking clocks, narrowing options, increasing personal stakes",
+  },
+];
+
+const fictionRecommendationTypes = [
+  {
+    title: "Show Don't Tell",
+    description:
+      "Transform exposition into vivid scenes with sensory details and action",
     items: [
-      "Practice questions for retrieval",
-      "Visual diagrams for dual coding",
-      "Worked examples for problem solving",
-      "Review sections for spaced repetition",
+      "Replace emotional telling with physical reactions and dialogue",
+      "Add sensory details (sight, sound, smell, touch, taste)",
+      "Show character traits through actions rather than description",
+      "Use specific concrete details instead of abstract statements",
     ],
   },
   {
-    title: "Structural Changes",
-    description: "Suggest reorganizing material to improve flow and spacing",
+    title: "Pacing & Structure",
+    description: "Adjust narrative rhythm to maintain reader engagement",
     items: [
-      "Interleaving related concepts",
-      "Adding prerequisite explanations",
-      "Breaking down complex ideas",
-      "Creating concept maps",
+      "Vary sentence length to control pacing",
+      "Balance action scenes with quieter character moments",
+      "Cut unnecessary backstory that slows momentum",
+      "Add scene breaks or white space for natural pauses",
     ],
   },
   {
-    title: "Pedagogical Techniques",
-    description: "Encourage instructional strategies that deepen processing",
+    title: "Character Development",
+    description: "Deepen character arcs and make protagonists more engaging",
     items: [
-      "Prompts for self-explanation",
-      "Elaboration questions",
-      "Comparative analysis activities",
-      "Generative exercises",
+      "Give characters clear internal and external goals",
+      "Show character change through contrasting behaviors",
+      "Add character-specific voice patterns in dialogue",
+      "Develop meaningful relationships and conflicts",
+    ],
+  },
+  {
+    title: "Dialogue Quality",
+    description: "Make dialogue natural, purposeful, and character-revealing",
+    items: [
+      "Remove unnecessary dialogue tags (said is sufficient)",
+      "Ensure each character has distinct speech patterns",
+      "Use subtext - characters don't always say what they mean",
+      "Cut small talk that doesn't advance plot or character",
     ],
   },
 ];
 
-// Principles data
-const principlesData = [
+// Fiction Elements data
+const fictionElementsData = [
   {
-    name: "1. Deep Processing",
+    name: "1. Show vs Tell",
     definition:
-      "Engaging with material at a meaningful level through analysis, synthesis, and critical thinking",
-    why: "Surface-level reading leads to poor retention. Deep processing creates stronger, more durable memories",
+      "Revealing story through action, dialogue, and sensory details rather than exposition",
+    why: "Showing creates immersive experiences; telling distances readers from the story",
     evaluated: [
-      "Questions requiring analysis/synthesis",
-      "Critical thinking prompts",
-      "Application to new contexts",
-      "Conceptual explanations beyond facts",
+      "Ratio of action/dialogue to exposition",
+      "Use of sensory details (sight, sound, smell, touch, taste)",
+      "Physical reactions instead of emotional labels",
+      "Character actions revealing personality",
     ],
     ranges: {
-      high: "Excellent deep processing opportunities throughout",
-      medium: "Some deep processing, could be enhanced",
-      low: "Primarily surface-level content, needs depth",
+      high: "Vivid, immersive scenes with strong sensory grounding",
+      medium: "Mix of showing and telling, could be more immersive",
+      low: "Heavy exposition, lacking sensory engagement",
     },
   },
   {
-    name: "2. Dual Coding",
+    name: "2. Pacing & Flow",
     definition:
-      "Combining verbal and visual information to create multiple memory pathways",
-    why: "Visual + verbal encoding creates redundant memory traces, improving recall",
+      "The rhythm and speed at which the story unfolds, controlling reader engagement",
+    why: "Varied pacing maintains interest; monotonous rhythm causes reader fatigue",
     evaluated: [
-      "Presence of diagrams, charts, illustrations",
-      "Visual representations of abstract concepts",
-      "Integration of text and images",
-      "Spatial arrangements that aid understanding",
+      "Sentence length variation",
+      "Balance of action vs. reflection scenes",
+      "Chapter/scene length distribution",
+      "Tension escalation patterns",
     ],
     ranges: {
-      high: "Rich multimodal content throughout",
-      medium: "Some visuals, could use more integration",
-      low: "Text-heavy, needs visual support",
+      high: "Dynamic pacing with strategic rhythm changes",
+      medium: "Generally good flow with some slow spots",
+      low: "Monotonous or inconsistent pacing",
     },
   },
   {
-    name: "3. Retrieval Practice",
-    definition: "Testing yourself to strengthen memory through active recall",
-    why: "Testing effect - recalling information is more powerful than re-reading",
-    evaluated: [
-      "Practice questions and exercises",
-      "Self-assessment opportunities",
-      "Prompts to recall prior learning",
-      "Variety of question types",
-    ],
-    ranges: {
-      high: "Abundant retrieval opportunities",
-      medium: "Some practice, could expand",
-      low: "Minimal testing/practice",
-    },
-  },
-  {
-    name: "4. Spaced Repetition",
-    definition: "Reviewing material at increasing intervals over time",
-    why: "Distributed practice leads to better long-term retention than cramming",
-    evaluated: [
-      "Built-in review sections",
-      "Callbacks to earlier concepts",
-      "Cumulative exercises",
-      "Suggestions for future review",
-    ],
-    ranges: {
-      high: "Clear spaced review structure",
-      medium: "Some review, could be more systematic",
-      low: "Limited review opportunities",
-    },
-  },
-  {
-    name: "5. Interleaving",
+    name: "3. Character Development",
     definition:
-      "Mixing different types of problems or concepts rather than blocking them",
-    why: "Strengthens discrimination between concepts and improves transfer",
+      "Growth, change, and complexity in characters throughout the story",
+    why: "Readers connect with characters who feel real and evolve meaningfully",
     evaluated: [
-      "Mixed practice problems",
-      "Alternating between related concepts",
-      "Varied question formats",
-      "Cross-concept integration",
+      "Character arc presence and clarity",
+      "Internal and external goals",
+      "Consistent but evolving behavior patterns",
+      "Meaningful relationships and conflicts",
     ],
     ranges: {
-      high: "Well-interleaved content and practice",
-      medium: "Some mixing, mostly blocked",
-      low: "Heavily blocked organization",
+      high: "Rich, layered characters with clear arcs",
+      medium: "Decent development, some depth lacking",
+      low: "Flat or inconsistent characterization",
     },
   },
   {
-    name: "6. Elaboration",
+    name: "4. Dialogue Quality",
     definition:
-      "Explaining and describing ideas with many details and connections",
-    why: "Rich elaboration creates more retrieval cues and deeper understanding",
+      "Natural, purposeful conversation that reveals character and advances plot",
+    why: "Good dialogue feels authentic while serving multiple story functions",
     evaluated: [
-      "Detailed explanations",
-      "Multiple examples per concept",
-      "Connections to prior knowledge",
-      "Real-world applications",
+      "Distinct character voices",
+      "Subtext and tension in conversations",
+      "Minimal dialogue tags (overuse of adverbs)",
+      "Balance of dialogue vs. narrative",
     ],
     ranges: {
-      high: "Thorough elaboration throughout",
-      medium: "Adequate detail, could expand",
-      low: "Sparse, superficial treatment",
+      high: "Natural, character-specific dialogue with purpose",
+      medium: "Functional dialogue, could be more distinctive",
+      low: "Stilted or indistinguishable character voices",
     },
   },
   {
-    name: "7. Worked Examples",
-    definition: "Step-by-step demonstrations of problem-solving procedures",
-    why: "Reduces cognitive load and provides clear procedural models",
+    name: "5. POV Consistency",
+    definition:
+      "Maintaining clear and consistent point of view throughout scenes",
+    why: "POV shifts confuse readers and break immersion",
     evaluated: [
-      "Presence of worked examples",
-      "Step-by-step solutions",
-      "Explanations of reasoning",
-      "Gradual fading to independence",
+      "Head-hopping frequency",
+      "Filter word usage (saw, heard, felt, thought)",
+      "Appropriate access to character thoughts",
+      "Clear scene POV ownership",
     ],
     ranges: {
-      high: "Comprehensive worked examples",
-      medium: "Some examples, could be more detailed",
-      low: "Few or no worked examples",
+      high: "Clean, consistent POV with clear transitions",
+      medium: "Mostly consistent with occasional slips",
+      low: "Frequent head-hopping or unclear POV",
     },
   },
   {
-    name: "8. Self-Explanation",
-    definition: "Prompting learners to explain concepts to themselves",
-    why: "Reveals gaps in understanding and promotes active sense-making",
+    name: "6. Conflict & Tension",
+    definition:
+      "Obstacles, stakes, and opposition that drive the narrative forward",
+    why: "Conflict creates investment; without it, stories feel aimless",
     evaluated: [
-      "Prompts to explain reasoning",
-      "'Why' and 'How' questions",
-      "Opportunities to justify answers",
-      "Reflection activities",
+      "Conflict presence in scenes",
+      "Stakes clarity and escalation",
+      "Internal and external opposition",
+      "Tension maintenance between action beats",
     ],
     ranges: {
-      high: "Frequent self-explanation prompts",
-      medium: "Some prompts, could be more frequent",
-      low: "Rare self-explanation opportunities",
-    },
-  },
-  {
-    name: "9. Generative Learning",
-    definition: "Creating new content or products from learned material",
-    why: "Active generation leads to deeper processing and better transfer",
-    evaluated: [
-      "Creative application tasks",
-      "Synthesis activities",
-      "Open-ended questions",
-      "Project-based learning",
-    ],
-    ranges: {
-      high: "Strong emphasis on generation",
-      medium: "Some generative activities",
-      low: "Mostly receptive learning",
-    },
-  },
-  {
-    name: "10. Schema Building",
-    definition: "Organizing knowledge into coherent mental structures",
-    why: "Schemas facilitate expert-like thinking and efficient retrieval",
-    evaluated: [
-      "Explicit organization and structure",
-      "Concept maps or frameworks",
-      "Hierarchical relationships",
-      "Integration of new with existing knowledge",
-    ],
-    ranges: {
-      high: "Clear schema development",
-      medium: "Some structure, could be clearer",
-      low: "Disconnected information",
+      high: "Strong, escalating conflict throughout",
+      medium: "Adequate conflict, could intensify",
+      low: "Minimal conflict or unclear stakes",
     },
   },
 ];
