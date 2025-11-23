@@ -10,7 +10,7 @@ interface HelpModalProps {
  * HelpModal Component - In-app documentation for analysis results
  *
  * Displays comprehensive guide to interpreting analysis results,
- * learning principles, scores, and recommendations.
+ * fiction elements, scores, and recommendations.
  */
 export function HelpModal({
   isOpen,
@@ -495,50 +495,31 @@ function OverallScoreSection() {
 
         <section className="quickstart-card" style={{ borderRadius: "1rem" }}>
           <h4>How It's Calculated</h4>
-          <div
-            style={{
-              backgroundColor: "#fef5e7",
-              padding: "1rem",
-              borderRadius: "0.75rem",
-              marginBottom: "1rem",
-              fontFamily:
-                "'SFMono-Regular', Consolas, 'Liberation Mono', monospace",
-            }}
-          >
-            Overall Score = sum(Principle Score * Weight) / sum(Weights)
-          </div>
+          <p>
+            The overall score is computed as a weighted average of all analyzed
+            fiction elements. Core storytelling elements like character
+            development, conflict, and pacing receive higher weights, while
+            polish elements like sensory balance receive moderate weights.
+          </p>
+          <p style={{ marginTop: "0.75rem" }}>
+            The algorithm considers 30+ different aspects of your manuscript,
+            including:
+          </p>
           <ul className="quickstart-list">
-            <li>
-              <strong>Deep Processing:</strong> 0.95
-            </li>
-            <li>
-              <strong>Retrieval Practice:</strong> 0.90
-            </li>
-            <li>
-              <strong>Schema Building:</strong> 0.90
-            </li>
-            <li>
-              <strong>Dual Coding:</strong> 0.85
-            </li>
-            <li>
-              <strong>Generative Learning:</strong> 0.85
-            </li>
-            <li>
-              <strong>Spaced Repetition:</strong> 0.80
-            </li>
-            <li>
-              <strong>Interleaving:</strong> 0.75
-            </li>
-            <li>
-              <strong>Worked Examples:</strong> 0.70
-            </li>
-            <li>
-              <strong>Self-Explanation:</strong> 0.65
-            </li>
-            <li>
-              <strong>Elaboration:</strong> 0.60
-            </li>
+            <li>Character development and arc strength</li>
+            <li>Pacing and narrative flow</li>
+            <li>Show vs Tell balance</li>
+            <li>Conflict presence and intensity</li>
+            <li>Dialogue quality and authenticity</li>
+            <li>POV consistency</li>
+            <li>Emotional resonance</li>
+            <li>Scene-sequel structure</li>
+            <li>Sensory details and immersion</li>
           </ul>
+          <p style={{ marginTop: "0.75rem" }}>
+            Each element is scored 0-100, then weighted by importance to create
+            your overall manuscript quality score.
+          </p>
         </section>
       </div>
     </div>
