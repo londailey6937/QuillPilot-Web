@@ -2129,35 +2129,6 @@ export const ChapterCheckerV2: React.FC = () => {
                     overflow: "hidden",
                   }}
                 >
-                  {/* Image notification banner */}
-                  {chapterData.imageCount > 0 && (
-                    <div
-                      style={{
-                        padding: "10px 14px",
-                        backgroundColor: "#f5ead9",
-                        border: "1.5px solid #e0c392",
-                        marginBottom: "12px",
-                        borderRadius: "8px",
-                        fontSize: "13px",
-                        color: "#2c3e50",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "8px",
-                        flexShrink: 0,
-                      }}
-                    >
-                      <span>📸</span>
-                      <span>
-                        <strong style={{ color: "#ef8432" }}>
-                          {chapterData.imageCount} image
-                          {chapterData.imageCount > 1 ? "s" : ""} detected
-                        </strong>{" "}
-                        - Images are preserved in HTML exports. Editor shows
-                        text structure with spacing/dual-coding analysis.
-                      </span>
-                    </div>
-                  )}
-
                   <div style={{ flex: 1, minHeight: 0, position: "relative" }}>
                     <DocumentEditor
                       key={fileName} // Force new component instance when file changes
@@ -2971,7 +2942,7 @@ export const ChapterCheckerV2: React.FC = () => {
                     e.currentTarget.style.backgroundColor = "white";
                   }}
                 >
-                  {isAnalyzing ? "⏳ Analyzing..." : "🔍 Analyze Chapter"}
+                  {isAnalyzing ? "⏳ Analyzing..." : "🔍 Analyze Book"}
                 </button>
 
                 {/* Free tier info */}

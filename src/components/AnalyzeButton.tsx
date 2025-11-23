@@ -42,7 +42,7 @@ function AnalyzeButton({
             {progress || "Analyzing..."}
           </>
         ) : (
-          <>🔍 Analyze Chapter</>
+          <>🔍 Analyze Book</>
         )}
       </button>
       {isLoading && (

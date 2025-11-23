@@ -1141,42 +1141,6 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
         ...style,
       }}
     >
-      {/* Writer Mode Active Banner */}
-      {isEditable && viewMode === "writer" && !isFreeMode && (
-        <div
-          style={{
-            padding: "8px 16px",
-            backgroundColor: "#fef5e7",
-            color: "#2c3e50",
-            fontSize: "13px",
-            fontWeight: 600,
-            textAlign: "center",
-            borderBottom: "2px solid #ef8432",
-          }}
-        >
-          ✍️ Writer Mode Active - Click anywhere to start editing • Auto-saves
-          your work
-        </div>
-      )}
-
-      {/* Read-Only Mode Notice */}
-      {!isEditable && viewMode === "analysis" && (
-        <div
-          style={{
-            padding: "8px 16px",
-            backgroundColor: "#fef5e7",
-            color: "#2c3e50",
-            fontSize: "13px",
-            fontWeight: 600,
-            textAlign: "center",
-            borderBottom: "2px solid #ef8432",
-          }}
-        >
-          📊 Analysis Mode - Document is read-only • Switch to Writer Mode to
-          edit
-        </div>
-      )}
-
       {/* Toolbar */}
       {viewMode === "writer" && !isFreeMode && (
         <div className="toolbar flex flex-wrap items-center gap-2 p-2 border-b bg-gray-50 sticky top-0 z-20 shadow-sm">
@@ -1199,6 +1163,9 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
             <option value="pre">Code Block</option>
             <option value="footnote">Footnote</option>
             <option value="citation">Bibliography/Citation</option>
+            <option value="toc">Table of Contents</option>
+            <option value="index">Index</option>
+            <option value="figure">Figure</option>
           </select>
 
           <div className="w-px h-6 bg-gray-300" />
@@ -1795,6 +1762,69 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           text-indent: -2em;
           margin: 0.5em 0;
           line-height: 1.6;
+        }
+        .editor-content toc {
+          display: block;
+          background-color: #fef5e7;
+          border: 2px solid #e0c392;
+          border-radius: 8px;
+          padding: 1.5em;
+          margin: 2em 0;
+        }
+        .editor-content toc::before {
+          content: "Table of Contents";
+          display: block;
+          font-size: 1.25em;
+          font-weight: bold;
+          color: #2c3e50;
+          margin-bottom: 1em;
+          border-bottom: 2px solid #ef8432;
+          padding-bottom: 0.5em;
+        }
+        .editor-content index {
+          display: block;
+          background-color: #f5ead9;
+          border: 2px solid #e0c392;
+          border-radius: 8px;
+          padding: 1.5em;
+          margin: 2em 0;
+          column-count: 2;
+          column-gap: 2em;
+        }
+        .editor-content index::before {
+          content: "Index";
+          display: block;
+          font-size: 1.25em;
+          font-weight: bold;
+          color: #2c3e50;
+          margin-bottom: 1em;
+          border-bottom: 2px solid #ef8432;
+          padding-bottom: 0.5em;
+          column-span: all;
+        }
+        .editor-content figure {
+          display: block;
+          margin: 2em auto;
+          padding: 1em;
+          background-color: #ffffff;
+          border: 2px solid #e0c392;
+          border-radius: 8px;
+          text-align: center;
+          max-width: 90%;
+        }
+        .editor-content figure img {
+          max-width: 100%;
+          height: auto;
+          display: block;
+          margin: 0 auto 0.5em auto;
+        }
+        .editor-content figcaption {
+          font-size: 0.9em;
+          color: #374151;
+          font-style: italic;
+          margin-top: 0.5em;
+          padding-top: 0.5em;
+          border-top: 1px solid #e0c392;
         }
         .editor-content img {
           max-width: 100%;
