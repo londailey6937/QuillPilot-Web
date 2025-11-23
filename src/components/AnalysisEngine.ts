@@ -26,6 +26,8 @@ import { analyzeThemes } from "@/utils/themeAnalyzer";
 import type { ThemeAnalysisResult } from "@/utils/themeAnalyzer";
 import { analyzeTropes } from "@/utils/tropeAnalyzer";
 import type { TropeAnalysisResult } from "@/utils/tropeAnalyzer";
+import { analyzeFictionElements } from "@/utils/fictionElementsAnalyzer";
+import type { FictionElementsResult } from "@/utils/fictionElementsAnalyzer";
 
 export class AnalysisEngine {
   /**
@@ -92,6 +94,16 @@ export class AnalysisEngine {
       const tropeAnalysis: TropeAnalysisResult = analyzeTropes(
         chapter.content,
         genre
+      );
+
+      onProgress?.(
+        "analyzing-fiction-elements",
+        "Analyzing 12 core fiction elements"
+      );
+
+      // Analyze comprehensive fiction elements
+      const fictionElements: FictionElementsResult = analyzeFictionElements(
+        chapter.content
       );
 
       onProgress?.("building-report", "Generating analysis report");
@@ -238,6 +250,64 @@ export class AnalysisEngine {
             implementation: "Review genre tropes and narrative conventions",
             expectedImpact:
               "Better alignment with reader expectations and genre standards",
+            relatedConcepts: [],
+          })),
+        },
+        // Fiction Elements - add top 3 strongest elements as individual scores
+        ...fictionElements.elements
+          .sort((a, b) => b.score - a.score)
+          .slice(0, 3)
+          .map((element, idx) => ({
+            principleId: `fictionElement${idx}` as any,
+            principle: element.element,
+            score: element.score,
+            weight: 0.8, // Slightly lower weight than core metrics
+            details: [
+              `Presence: ${element.presence}`,
+              ...element.details,
+              ...element.insights.slice(0, 2),
+            ],
+            suggestions: element.insights.slice(0, 3).map((insight, i) => ({
+              id: `element-${element.element}-${i}`,
+              principle: `fictionElement${idx}` as any,
+              priority:
+                element.score < 40 ? ("high" as const) : ("medium" as const),
+              title: `${element.element} Development`,
+              description: insight,
+              implementation: `Focus on strengthening ${element.element.toLowerCase()}`,
+              expectedImpact: `Improved narrative depth and ${element.element.toLowerCase()}`,
+              relatedConcepts: [],
+            })),
+          })),
+        {
+          principleId: "fictionBalance",
+          principle: "Fiction Elements Balance",
+          score: fictionElements.overallBalance,
+          weight: 1.0,
+          details: [
+            `Overall balance: ${fictionElements.overallBalance}/100`,
+            `Strengths: ${
+              fictionElements.strengths.join(", ") || "None identified"
+            }`,
+            `Focus areas: ${
+              fictionElements.weaknesses.join(", ") || "All strong"
+            }`,
+            `${
+              fictionElements.elements.filter((e) => e.presence === "strong")
+                .length
+            }/12 elements strong`,
+          ],
+          suggestions: fictionElements.recommendations.map((rec, i) => ({
+            id: `balance-${i}`,
+            principle: "fictionBalance" as LearningPrinciple,
+            priority:
+              fictionElements.overallBalance < 50
+                ? ("high" as const)
+                : ("medium" as const),
+            title: "Balance Fiction Elements",
+            description: rec,
+            implementation: "Review and strengthen weaker narrative elements",
+            expectedImpact: "More cohesive and well-rounded story",
             relatedConcepts: [],
           })),
         },

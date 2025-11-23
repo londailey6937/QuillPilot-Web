@@ -49,6 +49,10 @@ const PRINCIPLE_NAME_MAP: Record<string, string> = {
   characterDevelopment: "Character Development",
   themeDepth: "Theme Depth",
   genreTropes: "Genre Conventions",
+  fictionElement0: "Fiction Element (Top)",
+  fictionElement1: "Fiction Element (2nd)",
+  fictionElement2: "Fiction Element (3rd)",
+  fictionBalance: "Fiction Elements Balance",
 };
 
 // Definitions and examples for each learning principle
