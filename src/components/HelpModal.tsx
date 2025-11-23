@@ -24,10 +24,10 @@ export function HelpModal({
     quickStart: "Quick Start",
     overview: "Overview",
     overallScore: "Overall Score",
-    concepts: "Concept Analysis",
-    relationships: "Concept Relationships",
+    concepts: "Characters & Elements",
+    relationships: "Story Relationships",
     patterns: "Pattern Recognition",
-    principles: "Learning Principles",
+    principles: "Fiction Elements",
     recommendations: "Recommendations",
   };
 
@@ -87,8 +87,7 @@ export function HelpModal({
                 marginRight: "0.5rem",
               }}
             >
-              Tome{" "}
-              <span style={{ fontStyle: "italic", fontWeight: "700" }}>IQ</span>
+              Quill Pilot
             </span>
             <span
               style={{
@@ -180,22 +179,21 @@ function QuickStartSection() {
         <section className="quickstart-card" style={{ borderRadius: "1rem" }}>
           <h4>Document Size Support</h4>
           <p>
-            <strong>Designed for True "Tome" Analysis</strong>
+            <strong>Designed for Full Manuscript Analysis</strong>
           </p>
-          <p>Quill Pilot can handle large academic documents:</p>
+          <p>Quill Pilot can handle complete novels and long manuscripts:</p>
           <ul className="quickstart-list">
             <li>
               <strong>Tested up to 200 MB</strong> - Approximately 800-1,200
               pages
             </li>
             <li>
-              A typical <strong>500-page academic textbook</strong> with
-              moderate images is usually 50-80 MB
+              A typical <strong>80,000-word novel manuscript</strong> (300-350
+              pages) is usually 1-5 MB as plain text
             </li>
             <li>
-              Comfortably handles even the{" "}
-              <strong>largest scholarly works</strong> or complete multi-volume
-              compilations
+              Comfortably handles even <strong>epic fantasy novels</strong>,
+              multi-book series, or complete story compilations
             </li>
           </ul>
           <p>
@@ -209,60 +207,66 @@ function QuickStartSection() {
           <ol className="quickstart-order">
             <li>
               <span className="quickstart-step-title">
-                Upload or Paste Your Document
+                Upload or Paste Your Manuscript
               </span>
               <ul className="quickstart-sublist">
                 <li>
                   Click "Upload Document" to select a file from your computer
                 </li>
-                <li>Or paste text directly into the text area</li>
-                <li>Documents can include images (automatically processed)</li>
+                <li>Or paste text directly into the Writer Mode editor</li>
+                <li>Supports .docx, .txt, and .obt formats</li>
               </ul>
             </li>
             <li>
               <span className="quickstart-step-title">
-                Select Domain (Optional)
+                Select Genre (Optional)
               </span>
               <ul className="quickstart-sublist">
                 <li>
-                  Choose the subject area: Chemistry, Finance,
-                  Algebra/Trigonometry
+                  Choose your story genre: Fantasy, Romance, Mystery, Thriller,
+                  Science Fiction, Literary Fiction, etc.
                 </li>
+                <li>Or use "Auto-detect" for automatic genre identification</li>
                 <li>
-                  Or use "Auto-detect" for automatic domain identification
-                </li>
-                <li>
-                  <strong>Premium/Pro users:</strong> Create custom domains with
-                  your own concepts
+                  <strong>Premium/Pro users:</strong> Create custom genre
+                  profiles with specific trope expectations
                 </li>
               </ul>
             </li>
             <li>
-              <span className="quickstart-step-title">Analyze Chapter</span>
+              <span className="quickstart-step-title">Analyze Manuscript</span>
               <ul className="quickstart-sublist">
-                <li>Click the "Analyze Chapter" button</li>
-                <li>Processing may take 10-30 seconds for large documents</li>
+                <li>Click the "Analyze" button</li>
+                <li>Processing may take 10-30 seconds for full novels</li>
                 <li>Web workers prevent UI freezing during analysis</li>
               </ul>
             </li>
             <li>
               <span className="quickstart-step-title">Review Results</span>
               <ul className="quickstart-sublist">
-                <li>Overall score shows learning effectiveness (0-100)</li>
-                <li>10 learning principles each scored individually</li>
-                <li>Actionable recommendations for improvement</li>
-                <li>Concept maps and relationship visualizations</li>
+                <li>Overall score shows writing quality and craft (0-100)</li>
+                <li>
+                  30+ fiction elements scored individually (pacing, dialogue,
+                  POV, etc.)
+                </li>
+                <li>Actionable recommendations for strengthening your story</li>
+                <li>
+                  Character arcs, emotional pacing, and scene structure
+                  visualizations
+                </li>
               </ul>
             </li>
             <li>
-              <span className="quickstart-step-title">
-                Export or Take Action
-              </span>
+              <span className="quickstart-step-title">Edit and Improve</span>
               <ul className="quickstart-sublist">
                 <li>
-                  <strong>Premium/Pro:</strong> Export results as DOCX
+                  <strong>Writer Mode:</strong> Edit directly in the integrated
+                  editor
                 </li>
-                <li>Use recommendations to improve content in your editor</li>
+                <li>
+                  Use inline analysis indicators to identify issues in real-time
+                </li>
+                <li>Export results as HTML, DOCX, or manuscript format</li>
                 <li>Compare before/after analyses to track improvements</li>
               </ul>
             </li>
@@ -273,20 +277,21 @@ function QuickStartSection() {
           <h4>Tips for Best Results</h4>
           <ul className="quickstart-list">
             <li>
-              <strong>Complete Chapters:</strong> Upload full chapters rather
-              than fragments for accurate analysis
+              <strong>Complete Scenes/Chapters:</strong> Upload full chapters
+              rather than fragments for accurate pacing and character arc
+              analysis
             </li>
             <li>
-              <strong>Include Images:</strong> Visual content (diagrams, charts)
-              improves dual coding scores
+              <strong>Genre Selection:</strong> Choose the correct genre for
+              more accurate trope detection and convention analysis
             </li>
             <li>
-              <strong>Domain Selection:</strong> Choose the correct domain for
-              more accurate concept extraction
+              <strong>Context Matters:</strong> Prologue, middle chapters, and
+              climax have different expected patterns
             </li>
             <li>
-              <strong>Multiple Passes:</strong> Re-analyze after making
-              improvements to see progress
+              <strong>Iterative Revision:</strong> Re-analyze after making
+              improvements to track your progress and validate changes
             </li>
           </ul>
         </section>
@@ -295,24 +300,26 @@ function QuickStartSection() {
           <h4>What Gets Analyzed</h4>
           <ul className="quickstart-list">
             <li>
-              <strong>10 Learning Principles:</strong> Evidence-based cognitive
-              science metrics
+              <strong>30+ Fiction Elements:</strong> Show vs Tell, pacing,
+              dialogue, POV consistency, character development, theme depth, and
+              more
             </li>
             <li>
-              <strong>Concept Extraction:</strong> Automatic identification of
-              key ideas and relationships
+              <strong>Character Analysis:</strong> Character arcs, emotional
+              journeys, development patterns, and role consistency
             </li>
             <li>
-              <strong>Pattern Recognition:</strong> Domain-specific and
-              universal learning patterns
+              <strong>Story Structure:</strong> Scene/sequel balance, conflict
+              tracking, tension curves, and emotional pacing
             </li>
             <li>
-              <strong>Structure Analysis:</strong> Content organization,
-              spacing, and interleaving
+              <strong>Writing Craft:</strong> Prose style, word choice, sentence
+              variety, active voice, adverb usage, readability, and filtering
+              words
             </li>
             <li>
-              <strong>Cognitive Load:</strong> Information density and
-              complexity assessment
+              <strong>Genre Conventions:</strong> Trope adherence,
+              genre-specific expectations, and reader satisfaction patterns
             </li>
           </ul>
         </section>
@@ -329,8 +336,8 @@ function OverviewSection() {
           <h4>Guide Purpose</h4>
           <p>
             This reference explains every section of the analysis results, what
-            each metric means, and how to interpret the findings when improving
-            educational materials.
+            each metric means, and how to interpret the findings when revising
+            and strengthening your fiction manuscript.
           </p>
         </section>
 
@@ -338,20 +345,20 @@ function OverviewSection() {
           <h4>What Gets Analyzed</h4>
           <ul className="quickstart-list">
             <li>
-              <strong>Content Quality:</strong> Ten evidence-based learning
-              principles scored individually
+              <strong>Writing Craft:</strong> 30+ fiction elements including
+              pacing, dialogue, POV, show vs tell, and prose style
             </li>
             <li>
-              <strong>Concepts:</strong> Key ideas that appear in the chapter
-              and their relationships
+              <strong>Characters:</strong> Character development, emotional
+              arcs, role consistency, and reader engagement
             </li>
             <li>
-              <strong>Patterns:</strong> Universal and domain-specific learning
-              structures that aid comprehension
+              <strong>Story Structure:</strong> Scene/sequel patterns, conflict
+              escalation, tension curves, and narrative rhythm
             </li>
             <li>
-              <strong>Structure:</strong> Organization, sequencing, and cohesion
-              across sections
+              <strong>Genre & Style:</strong> Genre convention adherence, trope
+              usage, tone consistency, and reader expectations
             </li>
           </ul>
         </section>
@@ -361,9 +368,9 @@ function OverviewSection() {
           <p>Use the sidebar navigation to quickly jump to details on:</p>
           <ul className="quickstart-list">
             <li>Interpreting each score and understanding the scale</li>
-            <li>How metrics are calculated and weighted</li>
-            <li>Common findings and what they signal about the content</li>
-            <li>Recommended actions tied to the learning principles</li>
+            <li>How fiction metrics are calculated and weighted</li>
+            <li>Common findings and what they signal about your manuscript</li>
+            <li>Recommended actions for strengthening story craft</li>
           </ul>
         </section>
       </div>
@@ -378,9 +385,10 @@ function OverallScoreSection() {
         <section className="quickstart-card" style={{ borderRadius: "1rem" }}>
           <h4>Overall Score Overview</h4>
           <p>
-            The overall score is a weighted average of the ten learning
-            principles, producing a single quality metric for the chapter. It
-            reflects both the presence and the strength of each principle.
+            The overall score is a weighted average of 30+ fiction elements,
+            producing a single quality metric for your manuscript. It reflects
+            both the presence and strength of essential storytelling craft
+            elements.
           </p>
         </section>
 
@@ -540,24 +548,25 @@ function ConceptsSection() {
     <div className="quickstart-shell">
       <div className="quickstart-content">
         <section className="quickstart-card" style={{ borderRadius: "1rem" }}>
-          <h4>Concept Analysis Overview</h4>
+          <h4>Character & Element Analysis Overview</h4>
           <p>
-            The analysis identifies fundamental ideas, terms, and theories that
-            are essential to understanding the chapter. Only core-level concepts
-            appear to keep the focus on knowledge students must master.
+            The analysis identifies major characters, key story elements,
+            themes, and narrative devices that are essential to your story. Core
+            characters and recurring elements appear to help you track
+            consistency and development throughout your manuscript.
           </p>
         </section>
 
         <section className="quickstart-card" style={{ borderRadius: "1rem" }}>
-          <h4>Core Concept Highlights</h4>
+          <h4>Major Character Tracking</h4>
           <p>
-            Core concepts are foundational to the topic - for example: function,
-            variable, loop, or array in a programming chapter.
+            Major characters are tracked throughout the story - protagonists,
+            antagonists, and significant supporting cast members.
           </p>
           <ul className="quickstart-list">
-            <li>Signal what must be explained thoroughly</li>
-            <li>Appear in headings, callouts, and key paragraphs</li>
-            <li>Create anchors for examples, visuals, and practice</li>
+            <li>Track character presence and development across chapters</li>
+            <li>Monitor emotional arcs and character growth patterns</li>
+            <li>Identify inconsistencies in characterization or voice</li>
           </ul>
         </section>
 
@@ -565,35 +574,43 @@ function ConceptsSection() {
           <h4>How Importance Is Determined</h4>
           <ul className="quickstart-list">
             <li>
-              <strong>Frequency:</strong> Concepts that occur throughout the
-              document
+              <strong>Frequency:</strong> Characters and elements that appear
+              throughout the manuscript
             </li>
             <li>
-              <strong>Context:</strong> Appearances in definitions, headings, or
-              assessment items
+              <strong>Context:</strong> Appearances in key scenes, dialogue,
+              action sequences, or emotional moments
             </li>
             <li>
               <strong>Relationships:</strong> The number and strength of
-              connections to other concepts
+              connections to other characters and plot threads
             </li>
             <li>
-              <strong>Patterns:</strong> Participation in learning patterns and
-              pedagogical structures
+              <strong>Story Role:</strong> Participation in conflict, character
+              arcs, and narrative structure
             </li>
           </ul>
         </section>
 
         <section className="quickstart-card" style={{ borderRadius: "1rem" }}>
-          <h4>Domain-Specific Metadata</h4>
+          <h4>Genre-Specific Analysis</h4>
           <p>
-            Specialized domains include extra tagging to help authors tune the
-            level of rigor and support:
+            Different genres include specialized tracking to help authors meet
+            reader expectations:
           </p>
           <ul className="quickstart-list">
-            <li>Reaction types or mechanisms</li>
-            <li>Physical states or classifications (solid, liquid, gas)</li>
-            <li>Compound categories such as acid, base, or salt</li>
-            <li>Difficulty ratings for scaffolding</li>
+            <li>
+              Romance: Emotional beats, relationship development, trope
+              adherence
+            </li>
+            <li>
+              Mystery/Thriller: Clue placement, red herrings, tension escalation
+            </li>
+            <li>
+              Fantasy: Worldbuilding consistency, magic system rules, lore
+              tracking
+            </li>
+            <li>Literary: Theme depth, symbolism, prose sophistication</li>
           </ul>
         </section>
       </div>
