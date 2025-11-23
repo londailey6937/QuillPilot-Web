@@ -390,8 +390,64 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
         });
         incrementUploadCount();
         onDocumentLoad(payload);
+      } else if (fileType === "txt") {
+        const textContent = await file.text();
+
+        if (!textContent.trim()) {
+          alert(
+            "Could not extract text from the document. Please try a different file."
+          );
+          // Reset file input
+          if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+          }
+          return;
+        }
+
+        // Estimate page count (approximately 350 words per page)
+        const wordCount = textContent
+          .split(/\s+/)
+          .filter((w) => w.length > 0).length;
+        const estimatedPages = Math.ceil(wordCount / 350);
+        const maxPages = ACCESS_TIERS[accessLevel].maxPages;
+
+        // Check page limit
+        if (estimatedPages > maxPages) {
+          const tierName =
+            accessLevel === "free"
+              ? "Free"
+              : accessLevel === "premium"
+              ? "Premium"
+              : "Professional";
+          alert(
+            `Document too large: ~${estimatedPages} pages detected.\n\n` +
+              `Your ${tierName} tier allows up to ${maxPages} pages.\n\n` +
+              "Please upgrade or split your document."
+          );
+          // Reset file input
+          if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+          }
+          return;
+        }
+
+        const payload: UploadedDocumentPayload = {
+          fileName,
+          fileType,
+          format: "text",
+          content: textContent,
+          plainText: textContent,
+          imageCount: 0,
+        };
+
+        console.log("✅ TXT document processed, calling onDocumentLoad", {
+          fileName,
+          contentLength: textContent.length,
+        });
+        incrementUploadCount();
+        onDocumentLoad(payload);
       } else {
-        alert("Please upload a .docx or .obt file");
+        alert("Please upload a .docx, .obt, or .txt file");
         // Reset file input
         if (fileInputRef.current) {
           fileInputRef.current.value = "";
@@ -419,7 +475,7 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
       <input
         ref={fileInputRef}
         type="file"
-        accept=".docx,.obt"
+        accept=".docx,.obt,.txt"
         onChange={handleFileChange}
         disabled={disabled}
         style={{ display: "none" }}
