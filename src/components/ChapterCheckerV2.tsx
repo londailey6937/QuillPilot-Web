@@ -2021,160 +2021,162 @@ export const ChapterCheckerV2: React.FC = () => {
               </div>
             </div>
           </div>
-        </div>
 
-        <div
-          className="app-panel"
-          style={{
-            flex: 1,
-            display: "flex",
-            flexDirection: "column",
-            minHeight: 0,
-            padding: 0,
-            backgroundColor: "#eddcc5",
-            background: "#eddcc5",
-            overflow: "hidden",
-          }}
-        >
           <div
+            className="app-panel"
             style={{
               flex: 1,
               display: "flex",
               flexDirection: "column",
-              padding: "16px",
               minHeight: 0,
+              padding: 0,
+              backgroundColor: "#eddcc5",
+              background: "#eddcc5",
               overflow: "hidden",
             }}
           >
-            {chapterData ? (
-              <div
-                style={{
-                  flex: 1,
-                  display: "flex",
-                  flexDirection: "column",
-                  minHeight: 0,
-                  overflow: "hidden",
-                }}
-              >
-                <div style={{ flex: 1, minHeight: 0, position: "relative" }}>
-                  <DocumentEditor
-                    key={fileName} // Force new component instance when file changes
-                    initialText={
-                      chapterData.originalPlainText ?? chapterData.plainText
-                    }
-                    htmlContent={
-                      chapterData.editorHtml
-                        ? chapterData.editorHtml
-                        : chapterData.isHybridDocx
-                        ? chapterData.html
-                        : null
-                    }
-                    searchText={
-                      chapterData.originalPlainText ?? chapterData.plainText
-                    }
-                    onTextChange={(text) => {
-                      if (viewMode === "writer" && !tierFeatures.writerMode) {
-                        setUpgradeFeature("Writer Mode");
-                        setUpgradeTarget("professional");
-                        setShowUpgradePrompt(true);
-                        return;
+            <div
+              style={{
+                flex: 1,
+                display: "flex",
+                flexDirection: "column",
+                padding: "16px",
+                minHeight: 0,
+                overflow: "hidden",
+              }}
+            >
+              {chapterData ? (
+                <div
+                  style={{
+                    flex: 1,
+                    display: "flex",
+                    flexDirection: "column",
+                    minHeight: 0,
+                    overflow: "hidden",
+                  }}
+                >
+                  <div style={{ flex: 1, minHeight: 0, position: "relative" }}>
+                    <DocumentEditor
+                      key={fileName} // Force new component instance when file changes
+                      initialText={
+                        chapterData.originalPlainText ?? chapterData.plainText
                       }
-                      if (!canEditChapter) {
-                        return;
+                      htmlContent={
+                        chapterData.editorHtml
+                          ? chapterData.editorHtml
+                          : chapterData.isHybridDocx
+                          ? chapterData.html
+                          : null
                       }
-                      handleTextChange(text);
-                    }}
-                    onContentChange={(content) => {
-                      if (viewMode === "writer" && !tierFeatures.writerMode) {
-                        setUpgradeFeature("Writer Mode");
-                        setUpgradeTarget("professional");
-                        setShowUpgradePrompt(true);
-                        return;
+                      searchText={
+                        chapterData.originalPlainText ?? chapterData.plainText
                       }
-                      if (!canEditChapter) {
-                        return;
+                      onTextChange={(text) => {
+                        if (viewMode === "writer" && !tierFeatures.writerMode) {
+                          setUpgradeFeature("Writer Mode");
+                          setUpgradeTarget("professional");
+                          setShowUpgradePrompt(true);
+                          return;
+                        }
+                        if (!canEditChapter) {
+                          return;
+                        }
+                        handleTextChange(text);
+                      }}
+                      onContentChange={(content) => {
+                        if (viewMode === "writer" && !tierFeatures.writerMode) {
+                          setUpgradeFeature("Writer Mode");
+                          setUpgradeTarget("professional");
+                          setShowUpgradePrompt(true);
+                          return;
+                        }
+                        if (!canEditChapter) {
+                          return;
+                        }
+                        handleEditorContentChange(content);
+                      }}
+                      showSpacingIndicators={true}
+                      showVisualSuggestions={true}
+                      highlightPosition={highlightPosition}
+                      searchWord={searchWord}
+                      searchOccurrence={searchOccurrence}
+                      isFreeMode={!tierFeatures.writerMode}
+                      concepts={
+                        analysis?.conceptGraph?.concepts?.map(
+                          (c: any) => c.name
+                        ) || []
                       }
-                      handleEditorContentChange(content);
-                    }}
-                    showSpacingIndicators={true}
-                    showVisualSuggestions={true}
-                    highlightPosition={highlightPosition}
-                    searchWord={searchWord}
-                    searchOccurrence={searchOccurrence}
-                    isFreeMode={!tierFeatures.writerMode}
-                    concepts={
-                      analysis?.conceptGraph?.concepts?.map(
-                        (c: any) => c.name
-                      ) || []
-                    }
-                    onConceptClick={(conceptName) => {
-                      // Find the concept object
-                      const concept = analysis?.conceptGraph?.concepts?.find(
-                        (c: any) => c.name === conceptName
-                      );
-                      if (concept) {
-                        // Trigger the same logic as clicking in the sidebar
-                        handleConceptClick(concept, 0);
-                      }
-                    }}
-                    onSave={
-                      analysis && viewMode === "writer"
-                        ? () => {
-                            // Save to localStorage
-                            try {
-                              const saveData = {
-                                content: {
-                                  plainText: chapterData?.plainText || "",
-                                  editorHtml: chapterData?.editorHtml || "",
-                                },
-                                fileName: fileName || "untitled",
-                                timestamp: new Date().toISOString(),
-                                analysis: analysis,
-                                isTemplateMode: isTemplateMode,
-                              };
-                              localStorage.setItem(
-                                "tomeiq_autosave",
-                                JSON.stringify(saveData)
-                              );
-                              const time = new Date().toLocaleTimeString();
-                              alert(
-                                `✅ Changes saved locally at ${time}!\n\nYour work will persist across browser sessions.`
-                              );
-                            } catch (error) {
-                              alert("❌ Failed to save. Storage may be full.");
+                      onConceptClick={(conceptName) => {
+                        // Find the concept object
+                        const concept = analysis?.conceptGraph?.concepts?.find(
+                          (c: any) => c.name === conceptName
+                        );
+                        if (concept) {
+                          // Trigger the same logic as clicking in the sidebar
+                          handleConceptClick(concept, 0);
+                        }
+                      }}
+                      onSave={
+                        analysis && viewMode === "writer"
+                          ? () => {
+                              // Save to localStorage
+                              try {
+                                const saveData = {
+                                  content: {
+                                    plainText: chapterData?.plainText || "",
+                                    editorHtml: chapterData?.editorHtml || "",
+                                  },
+                                  fileName: fileName || "untitled",
+                                  timestamp: new Date().toISOString(),
+                                  analysis: analysis,
+                                  isTemplateMode: isTemplateMode,
+                                };
+                                localStorage.setItem(
+                                  "tomeiq_autosave",
+                                  JSON.stringify(saveData)
+                                );
+                                const time = new Date().toLocaleTimeString();
+                                alert(
+                                  `✅ Changes saved locally at ${time}!\n\nYour work will persist across browser sessions.`
+                                );
+                              } catch (error) {
+                                alert(
+                                  "❌ Failed to save. Storage may be full."
+                                );
+                              }
                             }
-                          }
-                        : undefined
-                    }
-                    readOnly={!canEditChapter}
-                    scrollToTopSignal={scrollToTopSignal}
-                    onScrollDepthChange={handleDocumentScrollDepthChange}
-                    isCompactLayout={isCompactEditorLayout}
-                    analysisResult={analysis}
-                    viewMode={viewMode}
-                    isTemplateMode={isTemplateMode}
-                    onExitTemplateMode={() => setIsTemplateMode(false)}
-                  />
+                          : undefined
+                      }
+                      readOnly={!canEditChapter}
+                      scrollToTopSignal={scrollToTopSignal}
+                      onScrollDepthChange={handleDocumentScrollDepthChange}
+                      isCompactLayout={isCompactEditorLayout}
+                      analysisResult={analysis}
+                      viewMode={viewMode}
+                      isTemplateMode={isTemplateMode}
+                      onExitTemplateMode={() => setIsTemplateMode(false)}
+                    />
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <div
-                style={{
-                  flex: 1,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "#2c3e50",
-                  flexDirection: "column",
-                  gap: "1rem",
-                }}
-              >
-                <div style={{ fontSize: "64px" }}>📄</div>
-                <div style={{ fontSize: "18px", fontWeight: "600" }}>
-                  Upload a document to get started
+              ) : (
+                <div
+                  style={{
+                    flex: 1,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "#2c3e50",
+                    flexDirection: "column",
+                    gap: "1rem",
+                  }}
+                >
+                  <div style={{ fontSize: "64px" }}>📄</div>
+                  <div style={{ fontSize: "18px", fontWeight: "600" }}>
+                    Upload a document to get started
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
 

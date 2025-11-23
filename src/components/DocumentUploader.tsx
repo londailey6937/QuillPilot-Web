@@ -496,7 +496,7 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
   };
 
   return (
-    <div style={{ display: "inline-block" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
       <input
         ref={fileInputRef}
         type="file"
