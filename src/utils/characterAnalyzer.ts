@@ -132,6 +132,7 @@ function extractCharacterNames(text: string): Map<string, number> {
     "The",
     "A",
     "An",
+    "And",
     "This",
     "That",
     "These",

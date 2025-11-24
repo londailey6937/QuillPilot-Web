@@ -1744,24 +1744,33 @@ export const ChapterCheckerV2: React.FC = () => {
               </div>
             )}
 
-            {/* User Menu / Auth */}
-            <UserMenu onAuthRequired={() => setIsAuthModalOpen(true)} />
-
-            {/* Access Level Selector (for demo purposes) */}
+            {/* Right side: User Menu and Access Tier */}
             <div
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: "0.5rem",
+                gap: "0.75rem",
                 flex: "0 0 auto",
-                justifyContent: "flex-end",
-                maxWidth: "400px",
-                padding: "8px 12px",
-                border: "2px solid #ef8432",
-                borderRadius: "20px",
-                backgroundColor: "#f7e6d0",
               }}
             >
+              {/* User Menu / Auth */}
+              <UserMenu onAuthRequired={() => setIsAuthModalOpen(true)} />
+
+              {/* Access Level Selector (for demo purposes) */}
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                  flex: "0 0 auto",
+                  justifyContent: "flex-end",
+                  maxWidth: "400px",
+                  padding: "8px 12px",
+                  border: "2px solid #ef8432",
+                  borderRadius: "20px",
+                  backgroundColor: "#f7e6d0",
+                }}
+              >
               <span
                 style={{
                   fontSize: "0.875rem",
@@ -1785,6 +1794,7 @@ export const ChapterCheckerV2: React.FC = () => {
                   },
                 ]}
               />
+            </div>
             </div>
 
             {/* Save Button (only show if analysis exists and user has access) */}

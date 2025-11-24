@@ -80,7 +80,7 @@ export function analyzeParagraphSpacing(
   if (wordCount > 160) {
     return {
       tone: "extended",
-      shortLabel: "Consider splitting",
+      shortLabel: "Split para",
       message:
         "This paragraph is long—split it or add a subheading so readers can process the concept in steps.",
     };

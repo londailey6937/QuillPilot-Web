@@ -80,22 +80,24 @@ export const UserMenu: React.FC<UserMenuProps> = ({ onAuthRequired }) => {
       <button
         onClick={onAuthRequired}
         style={{
-          padding: "8px 16px",
+          padding: "12px 32px",
           backgroundColor: "#ffffff",
           color: "#2c3e50",
-          border: "2px solid #ef8432",
-          borderRadius: "20px",
+          border: "3px solid #ef8432",
+          borderRadius: "30px",
           cursor: "pointer",
-          fontSize: "14px",
+          fontSize: "16px",
           fontWeight: "600",
-          transition: "background-color 0.2s",
+          transition: "all 0.2s",
         }}
-        onMouseEnter={(e) =>
-          (e.currentTarget.style.backgroundColor = "#f7e6d0")
-        }
-        onMouseLeave={(e) =>
-          (e.currentTarget.style.backgroundColor = "#ffffff")
-        }
+        onMouseEnter={(e) => {
+          e.currentTarget.style.backgroundColor = "#fef5e7";
+          e.currentTarget.style.transform = "translateY(-1px)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.backgroundColor = "#ffffff";
+          e.currentTarget.style.transform = "translateY(0)";
+        }}
       >
         Sign In
       </button>
