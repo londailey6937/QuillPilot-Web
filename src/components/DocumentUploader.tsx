@@ -86,7 +86,7 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
     // Only enforce limit for free tier
     if (accessLevel !== "free") return true;
 
-    const uploadKey = "tomeiq_upload_count";
+    const uploadKey = "quillpilot_upload_count";
     const uploadCount = parseInt(localStorage.getItem(uploadKey) || "0", 10);
 
     if (uploadCount >= 3) {
@@ -117,7 +117,7 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
     }
     lastIncrementTime.current = now;
 
-    const uploadKey = "tomeiq_upload_count";
+    const uploadKey = "quillpilot_upload_count";
     const uploadCount = parseInt(localStorage.getItem(uploadKey) || "0", 10);
     localStorage.setItem(uploadKey, String(uploadCount + 1));
 
@@ -133,6 +133,14 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
         `📊 Free tier: All 3 uploads used. Upgrade to Premium for unlimited uploads.`
       );
     }
+  };
+
+  // TEMPORARY: Reset upload count for testing
+  const resetUploadCount = () => {
+    const uploadKey = "quillpilot_upload_count";
+    localStorage.setItem(uploadKey, "0");
+    alert("✅ Upload count reset to 0");
+    console.log("🔄 Upload count reset to 0");
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -506,46 +514,74 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
         style={{ display: "none" }}
         id="document-upload-input"
       />
-      <label
-        htmlFor="document-upload-input"
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          gap: "8px",
-          padding: "12px 24px",
-          backgroundColor: "white",
-          color: disabled || isProcessing ? "#9ca3af" : "#c16659",
-          border:
-            disabled || isProcessing
-              ? "1.5px solid #d1d5db"
-              : "1.5px solid #c16659",
-          borderRadius: "20px",
-          cursor: disabled || isProcessing ? "not-allowed" : "pointer",
-          fontWeight: "600",
-          fontSize: "14px",
-          transition: "all 0.2s",
-          opacity: disabled ? 0.6 : 1,
-        }}
-        onMouseEnter={(e) => {
-          if (!disabled && !isProcessing) {
-            e.currentTarget.style.backgroundColor = "#f7e6d0";
-          }
-        }}
-        onMouseLeave={(e) => {
-          if (!disabled && !isProcessing) {
-            e.currentTarget.style.backgroundColor = "#ffffff";
-          }
-        }}
-      >
-        {isProcessing ? (
-          <>
-            <span className="upload-spinner"></span>
-            Processing...
-          </>
-        ) : (
-          <>📄 Upload Document</>
+      <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+        <label
+          htmlFor="document-upload-input"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "8px",
+            padding: "12px 24px",
+            backgroundColor: "white",
+            color: disabled || isProcessing ? "#9ca3af" : "#c16659",
+            border:
+              disabled || isProcessing
+                ? "1.5px solid #d1d5db"
+                : "1.5px solid #c16659",
+            borderRadius: "20px",
+            cursor: disabled || isProcessing ? "not-allowed" : "pointer",
+            fontWeight: "600",
+            fontSize: "14px",
+            transition: "all 0.2s",
+            opacity: disabled ? 0.6 : 1,
+          }}
+          onMouseEnter={(e) => {
+            if (!disabled && !isProcessing) {
+              e.currentTarget.style.backgroundColor = "#f7e6d0";
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!disabled && !isProcessing) {
+              e.currentTarget.style.backgroundColor = "#ffffff";
+            }
+          }}
+        >
+          {isProcessing ? (
+            <>
+              <span className="upload-spinner"></span>
+              Processing...
+            </>
+          ) : (
+            <>📄 Upload Document</>
+          )}
+        </label>
+
+        {/* TEMPORARY: Reset button for testing */}
+        {accessLevel === "free" && (
+          <button
+            onClick={resetUploadCount}
+            style={{
+              padding: "8px 16px",
+              backgroundColor: "#fee2e2",
+              color: "#991b1b",
+              border: "1.5px solid #f87171",
+              borderRadius: "20px",
+              cursor: "pointer",
+              fontWeight: "600",
+              fontSize: "12px",
+              transition: "all 0.2s",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = "#fecaca";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = "#fee2e2";
+            }}
+          >
+            🔄 Reset Count
+          </button>
         )}
-      </label>
+      </div>
       <style>{`
         .upload-spinner {
           width: 16px;

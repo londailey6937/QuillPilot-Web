@@ -217,7 +217,7 @@ export const WriterMode: React.FC<WriterModeProps> = ({
     }
   };
 
-  const handleExport = () => {
+  const handleExportHtml = () => {
     if (!editableText.trim()) {
       alert("Nothing to export yet. Add content before exporting.");
       return;
@@ -230,10 +230,48 @@ export const WriterMode: React.FC<WriterModeProps> = ({
         analysis: analysisResult || undefined,
       });
     } catch (error) {
-      console.error("WriterMode export failed", error);
-      alert("Failed to export draft. Please try again.");
+      console.error("WriterMode HTML export failed", error);
+      alert("Failed to export HTML. Please try again.");
     }
   };
+
+  const handleExportDocx = async () => {
+    if (!editableText.trim()) {
+      alert("Nothing to export yet. Add content before exporting.");
+      return;
+    }
+
+    try {
+      const { exportToDocx } = await import("@/utils/docxExport");
+      await exportToDocx({
+        text: editableText,
+        html: null, // Writer mode uses plain text
+        fileName: fileName || "writer-mode-draft",
+        analysis: analysisResult || undefined,
+        includeHighlights: true,
+      });
+    } catch (error) {
+      console.error("WriterMode DOCX export failed", error);
+      alert("Failed to export DOCX. Please try again.");
+    }
+  };
+
+  // Handle keyboard shortcut for save (Cmd+S / Ctrl+S)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
+      const modKey = isMac ? e.metaKey : e.ctrlKey;
+
+      // Intercept Cmd+S / Ctrl+S to save as DOCX instead of webpage
+      if (modKey && e.key.toLowerCase() === "s") {
+        e.preventDefault();
+        handleExportDocx();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [editableText, fileName, analysisResult]);
 
   return (
     <div
@@ -283,10 +321,16 @@ export const WriterMode: React.FC<WriterModeProps> = ({
               </button>
             )}
             <button
-              className="px-3 md:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm md:text-base whitespace-nowrap"
-              onClick={handleExport}
+              className="px-3 md:px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm md:text-base whitespace-nowrap"
+              onClick={handleExportDocx}
             >
-              {isCompactView ? "Export" : "Export Text"}
+              {isCompactView ? "📥 DOCX" : "📥 Export DOCX"}
+            </button>
+            <button
+              className="px-3 md:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm md:text-base whitespace-nowrap"
+              onClick={handleExportHtml}
+            >
+              {isCompactView ? "🌐 HTML" : "🌐 Export HTML"}
             </button>
           </div>
         </div>

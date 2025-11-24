@@ -6,15 +6,807 @@
 
 ## Table of Contents
 
-1. [Spacing Analysis Reference](#spacing-analysis-reference)
-2. [Dual Coding Analysis Reference](#dual-coding-analysis-reference)
-3. [Export Formats Guide](#export-formats-guide)
-4. [Domain Libraries Explained](#domain-libraries-explained)
-5. [Concept Matching Strategy](#concept-matching-strategy)
-6. [Access Tiers & Features](#access-tiers--features)
-7. [Writer Mode Workflow](#writer-mode-workflow)
-8. [Color Coding System](#color-coding-system)
-9. [Technical Specifications](#technical-specifications)
+1. [Complete Analysis Metrics (33 Total)](#complete-analysis-metrics-33-total)
+2. [Auto-Analysis Explained](#auto-analysis-explained)
+3. [Spacing Analysis Reference](#spacing-analysis-reference)
+4. [Dual Coding Analysis Reference](#dual-coding-analysis-reference)
+5. [Export Formats Guide](#export-formats-guide)
+6. [Domain Libraries Explained](#domain-libraries-explained)
+7. [Concept Matching Strategy](#concept-matching-strategy)
+8. [Access Tiers & Features](#access-tiers--features)
+9. [Writer Mode Workflow](#writer-mode-workflow)
+10. [Color Coding System](#color-coding-system)
+11. [Technical Specifications](#technical-specifications)
+
+---
+
+## Complete Analysis Metrics (33 Total)
+
+QuillPilot analyzes your manuscript across **33 different writing dimensions** to provide comprehensive feedback. Here's what each metric measures:
+
+### Core Writing Fundamentals (5 Metrics)
+
+1. **Pacing & Flow** - Paragraph length variety and rhythm
+
+   - Analyzes compact (<60 words), balanced (60-160), and extended (>160 words) paragraphs
+   - Target: 40-60% balanced paragraphs with good variety
+   - Score: 35-98 based on balance and distribution
+
+2. **Show vs Tell** - Sensory details and immersive writing
+
+   - Identifies paragraphs needing more sensory description
+   - Detects abstract "telling" that could be concrete "showing"
+   - Target: <20% of paragraphs flagged for improvement
+
+3. **Character Development** - Character arcs and emotional trajectories
+
+   - Tracks all characters and their mention frequency
+   - Identifies protagonist(s) and arc types (growth, fall, flat)
+   - Provides emotional trajectory charts showing character emotions over time
+
+4. **Theme Depth** - Recurring themes and symbolic patterns
+
+   - Detects 12 theme clusters (identity, power, love, loss, etc.)
+   - Tracks theme frequency and intensity
+   - Identifies dominant theme and symbolic patterns
+
+5. **Genre Conventions** - Genre-specific tropes and story beats
+   - Detects genre (Romance, Thriller, Fantasy, Mystery, SciFi, Horror, etc.)
+   - Identifies tropes (e.g., Enemies to Lovers, Ticking Clock, Chosen One)
+   - Tracks story beats (Meet Cute, Dark Night of the Soul, etc.)
+   - Measures convention adherence vs. subversion
+
+### Prose Quality (7 Metrics)
+
+6. **Word Choice & Variety** - Vocabulary richness
+
+   - Unique words / total words ratio
+   - Detects overused words (mentioned >5 times per 1000 words)
+   - Target: >25% vocabulary richness
+
+7. **Dialogue & Attribution** - Speaker clarity
+
+   - Counts dialogue lines, tagged vs. untagged
+   - Tracks unique speakers
+   - Flags unclear speaker attribution
+
+8. **Active Voice Usage** - Sentence strength
+
+   - Detects passive voice patterns ("was/were [verb]")
+   - Calculates passive voice percentage
+   - Target: <10% passive voice
+
+9. **Adverb Economy** - Verb strength
+
+   - Counts total adverbs and weak adverbs (very, really, quite)
+   - Measures density per 1000 words
+   - Target: <15 adverbs per 1000 words
+
+10. **Sentence Variety** - Reading rhythm
+
+    - Analyzes sentence length distribution
+    - Categorizes as short (<10), medium (10-20), long (>20 words)
+    - Target: 30% short, 50% medium, 20% long
+
+11. **Readability** - Audience appropriateness
+
+    - Flesch-Kincaid grade level
+    - Flesch Reading Ease score
+    - Average sentence length and syllables per word
+    - Target: 8th-10th grade for most fiction
+
+12. **Emotional Pacing** - Tension and release rhythm
+    - Tracks emotional intensity throughout manuscript
+    - Identifies peaks, valleys, and emotional progression
+    - Maps dominant emotions by section
+
+### Advanced Narrative Analysis (6 Metrics)
+
+13. **POV Consistency** - Point of view control
+
+    - Detects POV shifts and potential head-hops
+    - Identifies dominant POV (first, third limited, third omniscient)
+    - Counts perspective changes
+
+14. **Originality (Cliché Avoidance)** - Fresh language
+
+    - Detects 100+ common clichés
+    - Categorizes by type (metaphors, descriptions, dialogue)
+    - Measures density per 1000 words
+
+15. **Direct Prose (Filtering Words)** - Narrative immediacy
+
+    - Detects filter words (saw, heard, felt, seemed, realized)
+    - Counts by type
+    - Target: <10 per 1000 words for immersive prose
+
+16. **Backstory Balance** - Flashback management
+
+    - Identifies backstory sections
+    - Calculates percentage of total manuscript
+    - Flags excessive backstory in opening chapters
+    - Target: <20% overall, <15% in first chapters
+
+17. **Dialogue-to-Narrative Balance** - Genre-appropriate pacing
+
+    - Measures dialogue %, description %, action %
+    - Compares to genre targets (e.g., Thriller: 40% dialogue, 30% description, 30% action)
+    - Provides genre-specific recommendations
+
+18. **Scene vs Sequel Structure** - Story rhythm
+    - Identifies scenes (action/conflict) vs. sequels (reflection/decision)
+    - Calculates scene:sequel ratio
+    - Measures average lengths
+    - Target: 2-3:1 scene:sequel ratio for most fiction
+
+### Deep Fiction Analysis (8 Metrics)
+
+19. **Conflict Tracking** - Tension maintenance
+
+    - Detects internal, external, and interpersonal conflicts
+    - Measures conflict density per 1000 words
+    - Calculates average intensity
+    - Identifies low-conflict sections
+
+20. **Sensory Balance** - Multi-sensory immersion
+    - Tracks sight, sound, touch, smell, taste details
+    - Calculates percentage for each sense
+    - Target: Balanced sensory palette (not 80%+ visual)
+
+21-32. **12 Core Fiction Elements** - Narrative completeness
+Each scored individually (0-100): - **Plot** - Story structure and progression - **Setting** - World-building and atmosphere - **Dialogue** - Conversation quality and purpose - **Description** - Scene and character visualization - **Conflict** - Obstacles and tension - **Stakes** - What's at risk / consequences - **Voice** - Narrative style and tone - **Subtext** - Underlying meaning and implications - **Foreshadowing** - Setup and payoff - **Symbolism** - Deeper meaning layers - **Imagery** - Vivid sensory writing - **Resonance** - Emotional impact and memorability
+
+33. **Fiction Elements Balance** - Overall narrative health
+    - Measures balance across all 12 elements
+    - Identifies strong elements and weak areas
+    - Provides holistic narrative assessment
+
+---
+
+## Auto-Analysis Explained
+
+### What Triggers Auto-Analysis?
+
+Auto-analysis runs automatically in two scenarios:
+
+#### 1. **On Document Upload** (All Tiers)
+
+When you upload a document with 200+ words:
+
+- **Free Tier**: Runs basic analysis (Pacing & Show vs Tell only)
+- **Premium/Professional**: Runs full 33-metric analysis
+
+#### 2. **While Typing in Writer Mode** (Professional Tier Only)
+
+When auto-analysis toggle is enabled:
+
+- Waits 3 seconds after you stop typing
+- Requires minimum 200 words
+- Re-runs full analysis with updated text
+- Updates inline indicators and analysis panel in real-time
+
+### Why the 3-Second Delay?
+
+The debounced delay prevents performance issues:
+
+- Running 33 analyses per keystroke would freeze the editor
+- 3 seconds ensures you've paused, not just mid-sentence
+- Balances responsiveness with system performance
+
+### What You'll See After Auto-Analysis
+
+**In the Editor:**
+
+- Color-coded paragraph spacing indicators
+- Yellow callout boxes for show-vs-tell suggestions
+- Inline recommendations with priority badges
+
+**In Analysis Panel:**
+
+- 33 writing metrics with scores
+- Character list with emotional arcs
+- Theme clusters detected
+- Genre tropes identified
+- Specific recommendations with examples
+- "Jump to location" links for each issue
+
+### Enabling/Disabling Auto-Analysis
+
+Toggle the "Auto-analyze" checkbox near the Analyze button:
+
+- ✅ **On**: Re-analyzes 3 seconds after typing stops
+- ❌ **Off**: Manual analysis only (click Analyze button)
+
+**Note:** Auto-analysis is only available in Professional tier with Writer Mode access.
+
+---
+
+## Writing Metrics Explained (All 33 Metrics in Detail)
+
+The Analysis Panel displays **Writing Metrics** - here's what each one measures and how to improve it:
+
+### 📊 Core Story Fundamentals
+
+#### 1. **Pacing & Flow**
+
+**What it measures:** Paragraph length variety and narrative rhythm
+
+**How it's scored:**
+
+- Analyzes compact (<60 words), balanced (60-160), extended (>160 words) paragraphs
+- Best scores: 40-60% balanced paragraphs with good variety
+- Range: 35-98
+
+**What you'll see:**
+
+- Number of compact, balanced, and extended paragraphs
+- Distribution analysis
+
+**How to improve:**
+
+- Mix short punchy paragraphs with longer flowing ones
+- Break up walls of text >160 words
+- Expand thin paragraphs <60 words with details
+- Aim for variety: action scenes use shorter paragraphs, reflection uses longer
+
+#### 2. **Show vs Tell**
+
+**What it measures:** Sensory details and immersive writing techniques
+
+**How it's scored:**
+
+- Identifies paragraphs needing more sensory description
+- Counts "telling" that could be "showing"
+- Target: <20% of paragraphs flagged
+
+**What you'll see:**
+
+- Number of areas needing more sensory details
+- Yellow callout boxes suggesting visuals/descriptions
+
+**How to improve:**
+
+- Replace "She was angry" with "Her fists clenched"
+- Add sensory details: what characters see, hear, smell, touch, taste
+- Use action and dialogue to reveal emotions
+- Show character reactions instead of stating feelings
+
+#### 3. **Character Development**
+
+**What it measures:** Character arcs, emotional trajectories, and presence
+
+**How it's scored:**
+
+- Tracks all character mentions
+- Identifies protagonist(s) and arc types
+- Measures emotional progression
+- Range: 0-100 based on arc depth
+
+**What you'll see:**
+
+- Total characters detected
+- Protagonist identification
+- Character arcs: Growth, Fall, or Flat
+- Emotional trajectory charts
+
+**How to improve:**
+
+- Give protagonists clear goals and obstacles
+- Show character change through actions, not just statements
+- Track emotional progression from beginning to end
+- Ensure supporting characters have purpose beyond serving plot
+
+#### 4. **Theme Depth**
+
+**What it measures:** Recurring themes and symbolic patterns
+
+**How it's scored:**
+
+- Detects 12 theme clusters (identity, power, love, loss, etc.)
+- Tracks frequency and intensity
+- Identifies dominant theme
+- Range: 0-100 based on thematic richness
+
+**What you'll see:**
+
+- Primary themes detected
+- Dominant theme
+- Symbolic patterns found
+- Theme frequency and intensity percentages
+
+**How to improve:**
+
+- Weave themes through character decisions and plot events
+- Use symbolism to reinforce themes subtly
+- Revisit themes in different contexts
+- Don't state themes explicitly - let them emerge
+
+#### 5. **Genre Conventions**
+
+**What it measures:** Genre-specific tropes and story beats
+
+**How it's scored:**
+
+- Detects genre (Romance, Thriller, Fantasy, Mystery, etc.)
+- Identifies tropes (Enemies to Lovers, Ticking Clock, Chosen One)
+- Tracks story beats completion
+- Measures convention adherence vs. subversion
+- Range: 0-100
+
+**What you'll see:**
+
+- Genre identification
+- Convention adherence score
+- Subversion score
+- Trope overuse warning
+- Detected tropes with strength percentages
+- Story beats present vs. missing
+
+**How to improve:**
+
+- Include expected genre beats readers anticipate
+- Subvert 1-2 tropes to feel fresh
+- Don't overuse the same trope repeatedly
+- Balance meeting expectations with surprising readers
+
+### ✍️ Prose Quality Metrics
+
+#### 6. **Word Choice & Variety**
+
+**What it measures:** Vocabulary richness and word repetition
+
+**How it's scored:**
+
+- Unique words ÷ total words × 300 (capped at 100)
+- Flags overused words (>5 times per 1000 words)
+- Target: >25% vocabulary richness
+
+**What you'll see:**
+
+- Total and unique word counts
+- Vocabulary richness percentage
+- List of overused words
+
+**How to improve:**
+
+- Use a thesaurus for overused words
+- Vary description methods
+- Don't repeat distinctive words close together
+- Build vocabulary through reading
+
+#### 7. **Dialogue & Attribution**
+
+**What it measures:** Speaker clarity in dialogue
+
+**How it's scored:**
+
+- Tagged lines ÷ total dialogue lines × 100
+- Tracks unique speakers
+- Range: 0-100 (50 if no dialogue)
+
+**What you'll see:**
+
+- Total dialogue lines
+- Tagged vs. untagged lines
+- Number of unique speakers
+
+**How to improve:**
+
+- Add dialogue tags every 3-4 exchanges
+- Use action beats to identify speakers
+- Vary tags beyond "said" occasionally
+- Ensure readers always know who's speaking
+
+#### 8. **Active Voice Usage**
+
+**What it measures:** Sentence strength and directness
+
+**How it's scored:**
+
+- Detects passive voice ("was/were [verb]")
+- Score: 100 - (passive % × 2)
+- Target: <10% passive voice
+
+**What you'll see:**
+
+- Passive voice count and percentage
+- Rating: Excellent (<10%), Good (10-20%), Needs Work (>20%)
+
+**How to improve:**
+
+- Change "The door was opened by John" to "John opened the door"
+- Put subject before verb
+- Use passive voice intentionally for specific effects
+- Strong subjects + strong verbs = active voice
+
+#### 9. **Adverb Economy**
+
+**What it measures:** Verb strength and modifier overuse
+
+**How it's scored:**
+
+- Score: 100 - (adverb density × 2)
+- Flags weak adverbs (very, really, quite, etc.)
+- Target: <15 per 1000 words
+
+**What you'll see:**
+
+- Total adverbs
+- Density per 1000 words
+- Weak adverb count
+
+**How to improve:**
+
+- Replace "ran quickly" with "sprinted"
+- Replace "very big" with "enormous"
+- Cut weak intensifiers (very, really, quite)
+- Use strong verbs that don't need modification
+
+#### 10. **Sentence Variety**
+
+**What it measures:** Reading rhythm and flow
+
+**How it's scored:**
+
+- Analyzes short (<10), medium (10-20), long (>20 words)
+- Calculates variety score based on distribution
+- Target: 30% short, 50% medium, 20% long
+
+**What you'll see:**
+
+- Average sentence length
+- Counts for short, medium, long sentences
+- Variety score
+
+**How to improve:**
+
+- Mix sentence lengths intentionally
+- Use short sentences for impact: "He ran."
+- Use long sentences for complexity and flow
+- Vary especially in dialogue and action
+
+#### 11. **Readability**
+
+**What it measures:** Audience appropriateness
+
+**How it's scored:**
+
+- Flesch-Kincaid grade level
+- Flesch Reading Ease (0-100)
+- Penalizes being too complex OR too simple
+- Target: 8th-10th grade for most fiction
+
+**What you'll see:**
+
+- Grade level
+- Reading ease score
+- Interpretation
+- Average sentence length
+- Average syllables per word
+
+**How to improve:**
+
+- Too complex? Shorten sentences, simplify vocabulary
+- Too simple? Add sentence variety, richer vocabulary
+- Match target audience reading level
+- Test with actual readers
+
+#### 12. **Emotional Pacing**
+
+**What it measures:** Tension and release rhythm
+
+**How it's scored:**
+
+- Tracks emotional intensity throughout
+- Identifies peaks, valleys, flat sections
+- Range: Based on average intensity × 2
+
+**What you'll see:**
+
+- Average emotional intensity
+- Number of emotional peaks and valleys
+- Dominant emotions
+- Pacing issues flagged
+
+**How to improve:**
+
+- Alternate high-tension and low-tension scenes
+- Build to emotional peaks gradually
+- Give readers breathing room after intense scenes
+- Vary emotional intensity - not all high or all flat
+
+### 🎯 Advanced Narrative Techniques
+
+#### 13. **POV Consistency**
+
+**What it measures:** Point of view control and perspective shifts
+
+**How it's scored:**
+
+- Tracks POV shifts and head-hops
+- Identifies dominant POV
+- Range: 0-100 based on consistency
+
+**What you'll see:**
+
+- Dominant POV (first, third limited, omniscient)
+- Number of POV shifts
+- Consistency score
+- Potential head-hop locations
+
+**How to improve:**
+
+- Stick to one character's perspective per scene
+- Use scene breaks for POV changes
+- Avoid "head-hopping" mid-scene
+- Be intentional about omniscient narrative
+
+#### 14. **Originality (Cliché Avoidance)**
+
+**What it measures:** Fresh vs. overused language
+
+**How it's scored:**
+
+- Detects 100+ common clichés
+- Score: 100 - (density × 20)
+- Target: <5 clichés per manuscript
+
+**What you'll see:**
+
+- Cliché count and density
+- Most common cliché categories
+- Specific phrases flagged
+
+**How to improve:**
+
+- Replace "white as snow" with unique comparisons
+- Find fresh ways to express ideas
+- Avoid tired metaphors and descriptions
+- Create original imagery
+
+#### 15. **Direct Prose (Filtering Words)**
+
+**What it measures:** Narrative immediacy vs. distance
+
+**How it's scored:**
+
+- Detects filter words (saw, heard, felt, seemed, realized)
+- Score: 100 - (density × 5)
+- Target: <10 per 1000 words
+
+**What you'll see:**
+
+- Filtering word count and density
+- Most common filter types
+- Direct vs. filtered prose rating
+
+**How to improve:**
+
+- Change "She saw the door open" to "The door opened"
+- Change "He heard a noise" to "A crash echoed"
+- Remove perception filters for immersion
+- Show events directly, not through character perception layer
+
+#### 16. **Backstory Balance**
+
+**What it measures:** Flashback management and pacing
+
+**How it's scored:**
+
+- Identifies backstory sections
+- Score: 100 - (percentage × 2)
+- Target: <20% overall, <15% in opening
+
+**What you'll see:**
+
+- Number of backstory sections
+- Total backstory percentage
+- Opening chapters backstory percentage
+- Heavy backstory warnings
+
+**How to improve:**
+
+- Weave backstory gradually through dialogue
+- Don't dump backstory in opening chapters
+- Reveal past only when relevant to present
+- Use flashbacks sparingly and purposefully
+
+#### 17. **Dialogue-to-Narrative Balance**
+
+**What it measures:** Genre-appropriate content mix
+
+**How it's scored:**
+
+- Measures dialogue %, description %, action %
+- Compares to genre targets
+- Range: Based on deviation from targets
+
+**What you'll see:**
+
+- Current percentages for each type
+- Genre-specific targets
+- Balance rating
+
+**How to improve:**
+
+- Thriller: 40% dialogue, 30% description, 30% action
+- Literary: 30% dialogue, 50% description, 20% action
+- Romance: 50% dialogue, 30% description, 20% action
+- Match your genre expectations
+
+#### 18. **Scene vs Sequel Structure**
+
+**What it measures:** Action/reflection rhythm (Scene-Sequel units)
+
+**How it's scored:**
+
+- Identifies scenes (conflict/action) vs. sequels (reflection/decision)
+- Calculates ratio and averages
+- Target: 2-3:1 scene:sequel ratio
+
+**What you'll see:**
+
+- Scene count
+- Sequel count
+- Scene:sequel ratio
+- Average lengths for each
+
+**How to improve:**
+
+- Scene: Goal → Conflict → Disaster
+- Sequel: Reaction → Dilemma → Decision
+- Follow action scenes with reflection moments
+- Don't skip emotional processing
+
+### 🔍 Deep Fiction Analysis
+
+#### 19. **Conflict Tracking**
+
+**What it measures:** Tension maintenance throughout
+
+**How it's scored:**
+
+- Detects internal, external, interpersonal conflicts
+- Base 40 + density×10 + intensity/2
+- Identifies low-conflict sections
+
+**What you'll see:**
+
+- Total conflicts
+- Types: Internal, External, Interpersonal
+- Conflict density per 1000 words
+- Average intensity
+- Low-conflict section warnings
+
+**How to improve:**
+
+- Include conflict in every scene
+- Vary conflict types
+- Escalate conflicts progressively
+- Don't let tension drop for too long
+
+#### 20. **Sensory Balance**
+
+**What it measures:** Multi-sensory immersion depth
+
+**How it's scored:**
+
+- Tracks sight, sound, touch, smell, taste
+- Rates balance (Excellent/Good/Visual-heavy)
+- Penalizes >60% visual
+
+**What you'll see:**
+
+- Total sensory details
+- Percentage for each sense
+- Balance rating
+
+**How to improve:**
+
+- Add sounds: dialogue, ambient noise, music
+- Add textures: rough wood, smooth silk
+- Add smells: cooking, perfume, decay
+- Add tastes when relevant
+- Don't rely solely on visual description
+
+#### 21-32. **12 Core Fiction Elements**
+
+Each element scored 0-100 individually:
+
+**21. Plot** - Story structure and causality
+
+- Events build on each other logically
+- Clear beginning, middle, end
+- Cause and effect relationships
+
+**22. Setting** - World-building and atmosphere
+
+- Vivid sense of place
+- Consistent world rules
+- Atmosphere matches tone
+
+**23. Dialogue** - Conversation quality
+
+- Sounds natural and purposeful
+- Reveals character
+- Advances plot or deepens relationships
+
+**24. Description** - Scene visualization
+
+- Paints pictures without slowing pacing
+- Uses specific details
+- Engages multiple senses
+
+**25. Conflict** - Obstacles and tension
+
+- Present in every scene
+- Escalates toward climax
+- Multiple conflict types
+
+**26. Stakes** - What's at risk
+
+- Clear consequences
+- Personal significance to protagonist
+- Escalating importance
+
+**27. Voice** - Narrative style
+
+- Distinctive tone
+- Consistent throughout
+- Matches genre and character
+
+**28. Subtext** - Underlying meaning
+
+- Says one thing, means another
+- Implications beyond surface
+- Emotional undercurrents
+
+**29. Foreshadowing** - Setup and payoff
+
+- Early hints of later events
+- Satisfying revelations
+- Fair to readers
+
+**30. Symbolism** - Deeper meaning layers
+
+- Objects/events represent themes
+- Patterns reinforce meaning
+- Not heavy-handed
+
+**31. Imagery** - Vivid sensory writing
+
+- Concrete specific details
+- Fresh comparisons
+- Evocative language
+
+**32. Resonance** - Emotional impact
+
+- Memorable moments
+- Emotional authenticity
+- Reader connection
+
+#### 33. **Fiction Elements Balance**
+
+**What it measures:** Overall narrative health
+
+**How it's scored:**
+
+- Calculates balance across all 12 elements
+- Identifies strongest and weakest areas
+- Range: 0-100
+
+**What you'll see:**
+
+- Overall balance score
+- Strong elements list
+- Weak elements list
+
+**How to improve:**
+
+- Focus on weakest elements first
+- Don't let one element dominate others
+- Balanced stories feel more complete
+- Maintain strengths while improving weaknesses
 
 ---
 

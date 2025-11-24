@@ -39,6 +39,7 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
   highlightPosition,
   searchWord,
   searchOccurrence,
+  onSave,
   readOnly,
   concepts,
   onConceptClick,
@@ -66,6 +67,7 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
       <CustomEditor
         content={startContent}
         onUpdate={handleUpdate}
+        onSave={onSave}
         isEditable={!readOnly}
         showSpacingIndicators={showSpacingIndicators}
         showVisualSuggestions={showVisualSuggestions}

@@ -61,7 +61,7 @@ Consider adding: Concept map showing...
 - Prompts to restore on page reload
 - Preserves template mode state
 
-**Storage key:** `tomeiq_autosave`
+**Storage key:** `quillpilot_autosave`
 
 **Stored data:**
 
@@ -310,9 +310,11 @@ interface DashboardProps {
 ### New localStorage Keys
 
 ```typescript
-"tomeiq_autosave"; // Full document state
-"tomeiq_custom_domains"; // Custom domain list
-"tomeiq_last_custom_domain"; // Last used custom domain
+"quillpilot_autosave"; // Full document state
+"quillpilot_custom_domains"; // Custom domain list
+"quillpilot_last_custom_domain"; // Last used custom domain
+"quillpilot_upload_count"; // Free tier upload counter
+"quillpilot_claude_api_key"; // Claude API key for AI templates
 ```
 
 ---

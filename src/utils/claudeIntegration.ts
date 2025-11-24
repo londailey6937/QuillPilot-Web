@@ -168,21 +168,21 @@ export async function processClaudePrompts(
  * Get stored Claude API key
  */
 export function getStoredClaudeKey(): string | null {
-  return localStorage.getItem("tomeiq_claude_api_key");
+  return localStorage.getItem("quillpilot_claude_api_key");
 }
 
 /**
  * Store Claude API key
  */
 export function storeClaudeKey(apiKey: string): void {
-  localStorage.setItem("tomeiq_claude_api_key", apiKey);
+  localStorage.setItem("quillpilot_claude_api_key", apiKey);
 }
 
 /**
  * Clear stored Claude API key
  */
-export function clearClaudeKey(): void {
-  localStorage.removeItem("tomeiq_claude_api_key");
+export function clearStoredClaudeKey(): void {
+  localStorage.removeItem("quillpilot_claude_api_key");
 }
 
 /**

@@ -3328,7 +3328,7 @@ export const ChapterAnalysisDashboard: React.FC<{
     accessLevel === "free"
       ? principles.filter(
           (p: any) =>
-            p.principle === "spacedRepetition" || p.principle === "dualCoding"
+            p.principleId === "pacing" || p.principleId === "dualCoding"
         )
       : principles;
 

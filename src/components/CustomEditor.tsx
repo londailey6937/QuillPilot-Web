@@ -5,6 +5,7 @@ import { DualCodingAnalyzer } from "@/utils/dualCodingAnalyzer";
 interface CustomEditorProps {
   content: string;
   onUpdate?: (content: { html: string; text: string }) => void;
+  onSave?: () => void;
   isEditable?: boolean;
   className?: string;
   style?: React.CSSProperties;
@@ -37,6 +38,7 @@ type TextMatch = {
 export const CustomEditor: React.FC<CustomEditorProps> = ({
   content,
   onUpdate,
+  onSave,
   isEditable = true,
   className,
   style,
@@ -872,6 +874,12 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
 
       // Handle modifier+key shortcuts
       switch (e.key.toLowerCase()) {
+        case "s":
+          e.preventDefault();
+          if (onSave) {
+            onSave();
+          }
+          break;
         case "b":
           e.preventDefault();
           formatText("bold");
@@ -909,7 +917,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           break;
       }
     },
-    [formatText, performUndo, performRedo, firstLineIndent, leftMargin]
+    [formatText, performUndo, performRedo, firstLineIndent, leftMargin, onSave]
   );
 
   // Update format state

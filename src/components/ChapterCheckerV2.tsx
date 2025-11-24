@@ -613,7 +613,7 @@ export const ChapterCheckerV2: React.FC = () => {
       return;
     }
     try {
-      const autosaved = localStorage.getItem("tomeiq_autosave");
+      const autosaved = localStorage.getItem("quillpilot_autosave");
       if (!autosaved) {
         return;
       }
@@ -621,7 +621,7 @@ export const ChapterCheckerV2: React.FC = () => {
       if (!saved || !saved.timestamp) {
         return;
       }
-      const skipToken = localStorage.getItem("tomeiq_autosave_skip");
+      const skipToken = localStorage.getItem("quillpilot_autosave_skip");
       if (skipToken && skipToken === saved.timestamp) {
         return;
       }
@@ -951,7 +951,7 @@ export const ChapterCheckerV2: React.FC = () => {
     // Auto-save to localStorage
     try {
       localStorage.setItem(
-        "tomeiq_autosave",
+        "quillpilot_autosave",
         JSON.stringify({
           content: updatedData,
           fileName: fileName || "untitled",
@@ -1019,7 +1019,10 @@ export const ChapterCheckerV2: React.FC = () => {
       return;
     }
     if (pendingAutosave.timestamp) {
-      localStorage.setItem("tomeiq_autosave_skip", pendingAutosave.timestamp);
+      localStorage.setItem(
+        "quillpilot_autosave_skip",
+        pendingAutosave.timestamp
+      );
     }
     setPendingAutosave(null);
   };
@@ -2114,8 +2117,9 @@ export const ChapterCheckerV2: React.FC = () => {
                       <button
                         onClick={() => {
                           try {
-                            const autosaved =
-                              localStorage.getItem("tomeiq_autosave");
+                            const autosaved = localStorage.getItem(
+                              "quillpilot_autosave"
+                            );
                             if (autosaved) {
                               const saved = JSON.parse(autosaved);
                               const savedTime = new Date(
@@ -2421,6 +2425,9 @@ export const ChapterCheckerV2: React.FC = () => {
                       searchText={
                         chapterData.originalPlainText ?? chapterData.plainText
                       }
+                      onSave={
+                        viewMode === "writer" ? handleExportDocx : undefined
+                      }
                       leftMargin={leftMargin}
                       rightMargin={rightMargin}
                       firstLineIndent={firstLineIndent}
@@ -2485,7 +2492,7 @@ export const ChapterCheckerV2: React.FC = () => {
                                   isTemplateMode: isTemplateMode,
                                 };
                                 localStorage.setItem(
-                                  "tomeiq_autosave",
+                                  "quillpilot_autosave",
                                   JSON.stringify(saveData)
                                 );
                                 const time = new Date().toLocaleTimeString();
@@ -3156,7 +3163,7 @@ export const ChapterCheckerV2: React.FC = () => {
                                 );
                                 setSelectedDomain("custom");
                                 localStorage.setItem(
-                                  "tomeiq_last_custom_domain",
+                                  "quillpilot_last_custom_domain",
                                   savedDomain.name
                                 );
                               }
