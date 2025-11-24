@@ -18,24 +18,86 @@
     <path d="M 47 45 Q 37 40, 40 35" fill="none" stroke="url(#quillGradient)" stroke-width="1.5" opacity="0.7"/>
     <path d="M 48 50 Q 38 45, 41 40" fill="none" stroke="url(#quillGradient)" stroke-width="1.5" opacity="0.7"/>
     <path d="M 48 55 Q 38 50, 41 45" fill="none" stroke="url(#quillGradient)" stroke-width="1.5" opacity="0.7"/>
-    
+
     <!-- Feather vanes (right side - pointing backward/upward) -->
     <path d="M 55 35 Q 65 30, 62 25" fill="none" stroke="url(#quillGradient)" stroke-width="1.5" opacity="0.7"/>
     <path d="M 54 40 Q 64 35, 61 30" fill="none" stroke="url(#quillGradient)" stroke-width="1.5" opacity="0.7"/>
     <path d="M 53 45 Q 63 40, 60 35" fill="none" stroke="url(#quillGradient)" stroke-width="1.5" opacity="0.7"/>
     <path d="M 52 50 Q 62 45, 59 40" fill="none" stroke="url(#quillGradient)" stroke-width="1.5" opacity="0.7"/>
-    <path d="M 52 55 Q 62 50, 59 45" fill="none" stroke="url(#quillGradient)" stroke-width="1.5" opacity="0.7"/>
-    
-    <!-- Main quill shaft -->
+    <path d="M 52 55 Q 62 50, 59 45" fill="none" stroke="url(#quillGradient)" stroke-width="1.5" opacity="0.7"/>    <!-- Main quill shaft -->
     <path d="M 50 20 L 50 60" stroke="#2c3e50" stroke-width="3" stroke-linecap="round"/>
-    
+
     <!-- Nib -->
     <path d="M 50 60 L 48 75 L 50 78 L 52 75 Z" fill="#2c3e50"/>
-    
+
     <!-- Nib split -->
     <line x1="50" y1="60" x2="50" y2="75" stroke="#ef8432" stroke-width="0.5"/>
-    
+
     <!-- Ink dot -->
     <circle cx="50" cy="82" r="2" fill="#ef8432" opacity="0.8"/>
   </g>
+</svg>
+      stroke-width="1"
+    />
+    <line
+      x1="58"
+      y1="38"
+      x2="42"
+      y2="62"
+      stroke="#2c3e50"
+      stroke-width="1"
+    />
+
+    <!-- Radial connections from center -->
+    <line
+      x1="50"
+      y1="50"
+      x2="35"
+      y2="35"
+      stroke="#ef8432"
+      stroke-width="1"
+    />
+    <line
+      x1="50"
+      y1="50"
+      x2="65"
+      y2="35"
+      stroke="#ef8432"
+      stroke-width="1"
+    />
+    <line
+      x1="50"
+      y1="50"
+      x2="65"
+      y2="65"
+      stroke="#ef8432"
+      stroke-width="1"
+    />
+    <line
+      x1="50"
+      y1="50"
+      x2="35"
+      y2="65"
+      stroke="#ef8432"
+      stroke-width="1"
+    />
+  </g>
+
+  <!-- Neural nodes -->
+  <circle cx="50" cy="50" r="3" fill="#ef8432" />
+  <circle cx="35" cy="35" r="2.5" fill="#2c3e50" />
+  <circle cx="65" cy="35" r="2.5" fill="#2c3e50" />
+  <circle cx="65" cy="65" r="2.5" fill="#2c3e50" />
+  <circle cx="35" cy="65" r="2.5" fill="#2c3e50" />
+
+  <!-- Central intelligence core -->
+  <circle
+    cx="50"
+    cy="50"
+    r="8"
+    fill="none"
+    stroke="#ef8432"
+    stroke-width="1.5"
+    opacity="0.8"
+  />
 </svg>

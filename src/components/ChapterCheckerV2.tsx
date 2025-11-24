@@ -451,12 +451,22 @@ export const ChapterCheckerV2: React.FC = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState("");
+  const [autoAnalysisEnabled, setAutoAnalysisEnabled] = useState(false);
+  const autoAnalysisTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // UI state
   const [viewMode, setViewMode] = useState<"analysis" | "writer">("analysis");
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
   const [isReferenceLibraryModalOpen, setIsReferenceLibraryModalOpen] =
     useState(false);
+
+  // Ruler and margin state
+  const [leftMargin, setLeftMargin] = useState(48); // pixels
+  const [rightMargin, setRightMargin] = useState(48); // pixels
+  const [firstLineIndent, setFirstLineIndent] = useState(96); // pixels
+  const [isDragging, setIsDragging] = useState<
+    "left" | "right" | "indent" | null
+  >(null);
   const [isNavigationOpen, setIsNavigationOpen] = useState(false);
   const [highlightedConceptId, setHighlightedConceptId] = useState<
     string | null
@@ -668,8 +678,12 @@ export const ChapterCheckerV2: React.FC = () => {
 
     setAccessLevel(level);
 
+    // Automatically switch to writer mode when professional tier is selected
+    if (level === "professional") {
+      setViewMode("writer");
+    }
     // If switching away from professional tier while in writer mode, switch to analysis
-    if (level !== "professional" && viewMode === "writer") {
+    else if (viewMode === "writer") {
       setViewMode("analysis");
     }
   };
@@ -693,6 +707,76 @@ export const ChapterCheckerV2: React.FC = () => {
     setHighlightedConceptId(null);
     setCurrentMentionIndex(0);
   };
+
+  // Margin drag handlers
+  const handleMarginDragStart = (
+    type: "left" | "right" | "indent",
+    e: React.MouseEvent
+  ) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(type);
+  };
+
+  useEffect(() => {
+    if (!isDragging) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      // Get the 800px ruler content area (not the full-width container)
+      const rulerContainer = document.querySelector(
+        "[data-ruler-container]"
+      ) as HTMLElement;
+      if (!rulerContainer) return;
+
+      // Find the 800px content div - it's the child of the centered wrapper
+      const centerWrapper = rulerContainer.querySelector("div") as HTMLElement;
+      if (!centerWrapper) return;
+
+      const rulerContent = centerWrapper.querySelector("div") as HTMLElement;
+      if (!rulerContent) return;
+
+      const rect = rulerContent.getBoundingClientRect();
+      const relativeX = Math.max(0, e.clientX - rect.left);
+
+      // Constrain to ruler bounds
+      const maxWidth = Math.min(rect.width, 800);
+      const constrainedX = Math.max(0, Math.min(relativeX, maxWidth));
+
+      if (isDragging === "left") {
+        // Left margin: 0 to 200px
+        const newLeft = Math.max(0, Math.min(constrainedX, 200));
+        setLeftMargin(newLeft);
+        // Ensure indent stays after left margin
+        if (firstLineIndent < newLeft) {
+          setFirstLineIndent(newLeft);
+        }
+      } else if (isDragging === "right") {
+        // Right margin: measured from right edge
+        const fromRight = maxWidth - constrainedX;
+        setRightMargin(Math.max(0, Math.min(fromRight, 200)));
+      } else if (isDragging === "indent") {
+        // First line indent: must be after left margin and before right margin
+        setFirstLineIndent(
+          Math.max(leftMargin, Math.min(constrainedX, maxWidth - rightMargin))
+        );
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(null);
+    };
+
+    document.addEventListener("mousemove", handleMouseMove, true);
+    document.addEventListener("mouseup", handleMouseUp, true);
+
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove, true);
+      document.removeEventListener("mouseup", handleMouseUp, true);
+    };
+  }, [isDragging, leftMargin, rightMargin, firstLineIndent]);
 
   const shouldShowBackToTop = windowScrolled || contentScrolled;
   const isStackedLayout = layoutMode === "tablet";
@@ -876,6 +960,21 @@ export const ChapterCheckerV2: React.FC = () => {
       );
     } catch (error) {
       console.error("Failed to auto-save:", error);
+    }
+
+    // Trigger auto-analysis if enabled (debounced 3 seconds after typing stops)
+    if (autoAnalysisEnabled && !isAnalyzing) {
+      if (autoAnalysisTimerRef.current) {
+        clearTimeout(autoAnalysisTimerRef.current);
+      }
+      autoAnalysisTimerRef.current = setTimeout(() => {
+        const wordCount =
+          updatedData.plainText?.trim().split(/\s+/).length || 0;
+        if (wordCount >= 200) {
+          console.log("🔄 Auto-triggering analysis after typing stopped...");
+          handleAnalyzeChapter();
+        }
+      }, 3000); // 3 second delay after user stops typing
     }
   };
 
@@ -1874,136 +1973,53 @@ export const ChapterCheckerV2: React.FC = () => {
                 scrollMarginTop: "140px",
               }}
             >
-              <div
-                style={{
-                  display: "flex",
-                  gap: "8px",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flexWrap: "wrap",
-                }}
-              >
-                <DocumentUploader
-                  onDocumentLoad={handleDocumentLoad}
-                  disabled={isAnalyzing}
-                  accessLevel={accessLevel}
-                />
+              {/* Hide buttons in writer mode when starting fresh - just show editor */}
+              {!(viewMode === "writer" && !chapterData) && (
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "8px",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <DocumentUploader
+                    onDocumentLoad={handleDocumentLoad}
+                    disabled={isAnalyzing}
+                    accessLevel={accessLevel}
+                  />
 
-                {chapterData && !isAnalyzing && (
-                  <>
-                    <button
-                      onClick={handleClear}
-                      style={{
-                        padding: "8px 14px",
-                        backgroundColor: "white",
-                        color: "#2c3e50",
-                        border: "1.5px solid #e0c392",
-                        borderRadius: "12px",
-                        cursor: "pointer",
-                        fontSize: "13px",
-                        fontWeight: "600",
-                        textAlign: "center",
-                        transition: "background-color 0.2s",
-                        flexShrink: 0,
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = "#f7e6d0";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = "white";
-                      }}
-                    >
-                      🗑️ Clear
-                    </button>
-
-                    <button
-                      onClick={handleExportDocx}
-                      style={{
-                        padding: "8px 14px",
-                        backgroundColor: "white",
-                        color: "#2c3e50",
-                        border: "1.5px solid #e0c392",
-                        borderRadius: "12px",
-                        cursor: "pointer",
-                        fontSize: "13px",
-                        fontWeight: "600",
-                        textAlign: "center",
-                        transition: "background-color 0.2s",
-                        flexShrink: 0,
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = "#f7e6d0";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = "white";
-                      }}
-                    >
-                      📥 Export DOCX
-                    </button>
-
-                    <button
-                      onClick={handleExportHtml}
-                      style={{
-                        padding: "8px 14px",
-                        backgroundColor: "white",
-                        color: "#2c3e50",
-                        border: "1.5px solid #e0c392",
-                        borderRadius: "12px",
-                        cursor: "pointer",
-                        fontSize: "13px",
-                        fontWeight: "600",
-                        textAlign: "center",
-                        transition: "background-color 0.2s",
-                        flexShrink: 0,
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = "#f7e6d0";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = "white";
-                      }}
-                      title="Export as styled HTML document"
-                    >
-                      🌐 Export HTML
-                    </button>
-
+                  {!chapterData && !isAnalyzing && viewMode === "writer" && (
                     <button
                       onClick={() => {
-                        try {
-                          const autosaved =
-                            localStorage.getItem("tomeiq_autosave");
-                          if (autosaved) {
-                            const saved = JSON.parse(autosaved);
-                            const savedTime = new Date(
-                              saved.timestamp
-                            ).toLocaleString();
-                            const clear = window.confirm(
-                              `💾 Auto-save Status\n\nLast saved: ${savedTime}\nFile: ${saved.fileName}\n\nClick OK to clear auto-saved data, or Cancel to keep it.`
-                            );
-                            if (clear) {
-                              localStorage.removeItem("tomeiq_autosave");
-                              alert("🗑️ Auto-saved data cleared!");
-                            }
-                          } else {
-                            alert(
-                              "ℹ️ No auto-saved data found.\n\nYour work is automatically saved as you edit in Writer Mode."
-                            );
-                          }
-                        } catch (error) {
-                          alert("⚠️ Error checking auto-save status");
-                        }
+                        // Start with blank document - properly initialize for editor
+                        const blankContent = "";
+                        setChapterText(blankContent);
+                        setChapterData({
+                          html: "",
+                          plainText: blankContent,
+                          originalPlainText: blankContent,
+                          isHybridDocx: false,
+                          imageCount: 0,
+                          editorHtml: "",
+                        });
+                        // Set view mode to writer to show editor
+                        setViewMode("writer");
                       }}
                       style={{
-                        padding: "8px 14px",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "8px",
+                        padding: "12px 24px",
                         backgroundColor: "white",
-                        color: "#2c3e50",
-                        border: "1.5px solid #e0c392",
-                        borderRadius: "12px",
+                        color: "#ef8432",
+                        border: "1.5px solid #ef8432",
+                        borderRadius: "20px",
                         cursor: "pointer",
-                        fontSize: "13px",
                         fontWeight: "600",
-                        textAlign: "center",
-                        transition: "background-color 0.2s",
+                        fontSize: "14px",
+                        transition: "all 0.2s",
                         flexShrink: 0,
                       }}
                       onMouseEnter={(e) => {
@@ -2012,13 +2028,142 @@ export const ChapterCheckerV2: React.FC = () => {
                       onMouseLeave={(e) => {
                         e.currentTarget.style.backgroundColor = "white";
                       }}
-                      title="Check auto-save status"
                     >
-                      💾 Auto-save info
+                      ✍️ Start Writing
                     </button>
-                  </>
-                )}
-              </div>
+                  )}
+
+                  {chapterData && !isAnalyzing && (
+                    <>
+                      <button
+                        onClick={handleClear}
+                        style={{
+                          padding: "8px 14px",
+                          backgroundColor: "white",
+                          color: "#2c3e50",
+                          border: "1.5px solid #e0c392",
+                          borderRadius: "12px",
+                          cursor: "pointer",
+                          fontSize: "13px",
+                          fontWeight: "600",
+                          textAlign: "center",
+                          transition: "background-color 0.2s",
+                          flexShrink: 0,
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = "#f7e6d0";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = "white";
+                        }}
+                      >
+                        🗑️ Clear
+                      </button>
+
+                      <button
+                        onClick={handleExportDocx}
+                        style={{
+                          padding: "8px 14px",
+                          backgroundColor: "white",
+                          color: "#2c3e50",
+                          border: "1.5px solid #e0c392",
+                          borderRadius: "12px",
+                          cursor: "pointer",
+                          fontSize: "13px",
+                          fontWeight: "600",
+                          textAlign: "center",
+                          transition: "background-color 0.2s",
+                          flexShrink: 0,
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = "#f7e6d0";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = "white";
+                        }}
+                      >
+                        📥 Export DOCX
+                      </button>
+
+                      <button
+                        onClick={handleExportHtml}
+                        style={{
+                          padding: "8px 14px",
+                          backgroundColor: "white",
+                          color: "#2c3e50",
+                          border: "1.5px solid #e0c392",
+                          borderRadius: "12px",
+                          cursor: "pointer",
+                          fontSize: "13px",
+                          fontWeight: "600",
+                          textAlign: "center",
+                          transition: "background-color 0.2s",
+                          flexShrink: 0,
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = "#f7e6d0";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = "white";
+                        }}
+                        title="Export as styled HTML document"
+                      >
+                        🌐 Export HTML
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          try {
+                            const autosaved =
+                              localStorage.getItem("tomeiq_autosave");
+                            if (autosaved) {
+                              const saved = JSON.parse(autosaved);
+                              const savedTime = new Date(
+                                saved.timestamp
+                              ).toLocaleString();
+                              const clear = window.confirm(
+                                `💾 Auto-save Status\n\nLast saved: ${savedTime}\nFile: ${saved.fileName}\n\nClick OK to clear auto-saved data, or Cancel to keep it.`
+                              );
+                              if (clear) {
+                                localStorage.removeItem("tomeiq_autosave");
+                                alert("🗑️ Auto-saved data cleared!");
+                              }
+                            } else {
+                              alert(
+                                "ℹ️ No auto-saved data found.\n\nYour work is automatically saved as you edit in Writer Mode."
+                              );
+                            }
+                          } catch (error) {
+                            alert("⚠️ Error checking auto-save status");
+                          }
+                        }}
+                        style={{
+                          padding: "8px 14px",
+                          backgroundColor: "white",
+                          color: "#2c3e50",
+                          border: "1.5px solid #e0c392",
+                          borderRadius: "12px",
+                          cursor: "pointer",
+                          fontSize: "13px",
+                          fontWeight: "600",
+                          textAlign: "center",
+                          transition: "background-color 0.2s",
+                          flexShrink: 0,
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = "#f7e6d0";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = "white";
+                        }}
+                        title="Check auto-save status"
+                      >
+                        💾 Auto-save info
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
@@ -2053,8 +2198,213 @@ export const ChapterCheckerV2: React.FC = () => {
                     flexDirection: "column",
                     minHeight: 0,
                     overflow: "hidden",
+                    position: "relative",
                   }}
                 >
+                  {/* Horizontal Ruler with margin indicators - aligned with 800px editor */}
+                  <div
+                    data-ruler-container
+                    style={{
+                      height: "40px",
+                      backgroundColor: "#f5f5f5",
+                      borderBottom: "1px solid #e0c392",
+                      display: "flex",
+                      alignItems: "flex-end",
+                      paddingBottom: "4px",
+                      position: "relative",
+                      flexShrink: 0,
+                      userSelect: isDragging ? "none" : "auto",
+                      cursor: isDragging ? "ew-resize" : "default",
+                    }}
+                  >
+                    {/* Ruler markings */}
+                    <div
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        position: "relative",
+                        display: "flex",
+                        justifyContent: "center",
+                      }}
+                    >
+                      {/* Center content area matching editor width (800px) */}
+                      <div
+                        style={{
+                          width: "800px",
+                          maxWidth: "calc(100% - 40px)",
+                          height: "100%",
+                          position: "relative",
+                          margin: "0 20px",
+                        }}
+                      >
+                        {/* Ruler background */}
+                        <div
+                          style={{
+                            position: "absolute",
+                            left: 0,
+                            right: 0,
+                            top: 0,
+                            bottom: 0,
+                            background:
+                              "linear-gradient(to right, #e5e7eb 0%, #e5e7eb 1px, transparent 1px)",
+                            backgroundSize: "40px 100%",
+                          }}
+                        />
+
+                        {/* Ruler tick marks every inch (assuming ~96 DPI) */}
+                        {Array.from({ length: 9 }, (_, i) => i).map((inch) => (
+                          <div
+                            key={inch}
+                            style={{
+                              position: "absolute",
+                              left: `${(inch / 8) * 100}%`,
+                              height: "100%",
+                              display: "flex",
+                              flexDirection: "column",
+                              alignItems: "center",
+                              justifyContent: "flex-end",
+                            }}
+                          >
+                            <div
+                              style={{
+                                fontSize: "10px",
+                                color: "#6b7280",
+                                marginBottom: "2px",
+                              }}
+                            >
+                              {inch}
+                            </div>
+                            <div
+                              style={{
+                                width: "2px",
+                                height: "14px",
+                                backgroundColor: "#9ca3af",
+                              }}
+                            />
+                          </div>
+                        ))}
+
+                        {/* Left margin indicator - DRAGGABLE */}
+                        <div
+                          style={{
+                            position: "absolute",
+                            left: `${leftMargin}px`,
+                            top: 0,
+                            bottom: 0,
+                            width: "0",
+                            borderLeft: "2px solid #ef8432",
+                            pointerEvents: "all",
+                          }}
+                          title="Left Margin (drag to adjust)"
+                        >
+                          <div
+                            style={{
+                              position: "absolute",
+                              top: "2px",
+                              left: "-6px",
+                              width: "12px",
+                              height: "12px",
+                              backgroundColor: "#ef8432",
+                              border: "2px solid #fff",
+                              borderRadius: "50%",
+                              cursor: "ew-resize",
+                              boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+                            }}
+                            onMouseDown={(e) =>
+                              handleMarginDragStart("left", e)
+                            }
+                          />
+                        </div>
+
+                        {/* Right margin indicator - DRAGGABLE */}
+                        <div
+                          style={{
+                            position: "absolute",
+                            right: `${rightMargin}px`,
+                            top: 0,
+                            bottom: 0,
+                            width: "0",
+                            borderRight: "2px solid #ef8432",
+                            pointerEvents: "all",
+                          }}
+                          title="Right Margin (drag to adjust)"
+                        >
+                          <div
+                            style={{
+                              position: "absolute",
+                              top: "2px",
+                              right: "-6px",
+                              width: "12px",
+                              height: "12px",
+                              backgroundColor: "#ef8432",
+                              border: "2px solid #fff",
+                              borderRadius: "50%",
+                              cursor: "ew-resize",
+                              boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+                            }}
+                            onMouseDown={(e) =>
+                              handleMarginDragStart("right", e)
+                            }
+                          />
+                        </div>
+
+                        {/* First line indent indicator - DRAGGABLE */}
+                        <div
+                          style={{
+                            position: "absolute",
+                            left: `${firstLineIndent}px`,
+                            bottom: "4px",
+                            width: "0",
+                            height: "10px",
+                            borderLeft: "2px dashed #2c3e50",
+                            pointerEvents: "all",
+                          }}
+                          title="First Line Indent (drag to adjust)"
+                        >
+                          <div
+                            style={{
+                              position: "absolute",
+                              bottom: "-6px",
+                              left: "-5px",
+                              width: 0,
+                              height: 0,
+                              borderLeft: "5px solid transparent",
+                              borderRight: "5px solid transparent",
+                              borderTop: "8px solid #2c3e50",
+                              cursor: "ew-resize",
+                            }}
+                            onMouseDown={(e) =>
+                              handleMarginDragStart("indent", e)
+                            }
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Placeholder text overlay - only show when content is empty */}
+                  {(!chapterData.plainText ||
+                    chapterData.plainText.trim() === "") && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: "140px",
+                        left: "50%",
+                        transform: "translateX(-50%)",
+                        color: "#9ca3af",
+                        fontSize: "18px",
+                        fontStyle: "italic",
+                        pointerEvents: "none",
+                        zIndex: 10,
+                        textAlign: "center",
+                        width: "100%",
+                        padding: "0 20px",
+                      }}
+                    >
+                      The page will expand as you write...
+                    </div>
+                  )}
+
                   <div style={{ flex: 1, minHeight: 0, position: "relative" }}>
                     <DocumentEditor
                       key={fileName} // Force new component instance when file changes
@@ -2071,6 +2421,9 @@ export const ChapterCheckerV2: React.FC = () => {
                       searchText={
                         chapterData.originalPlainText ?? chapterData.plainText
                       }
+                      leftMargin={leftMargin}
+                      rightMargin={rightMargin}
+                      firstLineIndent={firstLineIndent}
                       onTextChange={(text) => {
                         if (viewMode === "writer" && !tierFeatures.writerMode) {
                           setUpgradeFeature("Writer Mode");
@@ -2158,7 +2511,84 @@ export const ChapterCheckerV2: React.FC = () => {
                     />
                   </div>
                 </div>
+              ) : viewMode === "writer" ? (
+                // Writer mode with no document - show Start Writing prompt
+                <div
+                  style={{
+                    flex: 1,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "#2c3e50",
+                    flexDirection: "column",
+                    gap: "1.5rem",
+                    padding: "2rem",
+                  }}
+                >
+                  <div style={{ fontSize: "64px" }}>✍️</div>
+                  <div style={{ fontSize: "20px", fontWeight: "600" }}>
+                    Ready to write?
+                  </div>
+                  <div
+                    style={{
+                      fontSize: "14px",
+                      color: "#6b7280",
+                      textAlign: "center",
+                      maxWidth: "400px",
+                      marginBottom: "1rem",
+                    }}
+                  >
+                    Click the button below to begin crafting your story, or
+                    upload an existing document to continue editing.
+                  </div>
+                  <button
+                    onClick={() => {
+                      // Start with blank document
+                      const blankContent = "";
+                      setChapterText(blankContent);
+                      setChapterData({
+                        html: "",
+                        plainText: blankContent,
+                        originalPlainText: blankContent,
+                        isHybridDocx: false,
+                        imageCount: 0,
+                        editorHtml: "",
+                      });
+                      setViewMode("writer");
+                    }}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      padding: "16px 32px",
+                      backgroundColor: "#ef8432",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "24px",
+                      cursor: "pointer",
+                      fontWeight: "600",
+                      fontSize: "16px",
+                      transition: "all 0.2s",
+                      boxShadow: "0 4px 12px rgba(239, 132, 50, 0.3)",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = "#d97326";
+                      e.currentTarget.style.transform = "translateY(-2px)";
+                      e.currentTarget.style.boxShadow =
+                        "0 6px 16px rgba(239, 132, 50, 0.4)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = "#ef8432";
+                      e.currentTarget.style.transform = "translateY(0)";
+                      e.currentTarget.style.boxShadow =
+                        "0 4px 12px rgba(239, 132, 50, 0.3)";
+                    }}
+                  >
+                    ✍️ Start Writing
+                  </button>
+                </div>
               ) : (
+                // Analysis mode with no document
                 <div
                   style={{
                     flex: 1,
@@ -2181,1204 +2611,1226 @@ export const ChapterCheckerV2: React.FC = () => {
         </div>
 
         {/* Right: Analysis Panel (responsive: 40% desktop, 30% laptop) */}
-        <div
-          className="app-panel"
-          style={{
-            flex: isStackedLayout
-              ? "1 1 100%"
-              : layoutMode === "desktop"
-              ? "40 1 0"
-              : "30 1 0",
-            maxWidth: "100%",
-            minWidth: analysisMinWidth,
-            display: "flex",
-            flexDirection: "column",
-            marginTop: isStackedLayout ? "16px" : 0,
-            backgroundColor: "transparent",
-            background: "transparent",
-            border: "none",
-            borderRadius: 0,
-            boxShadow: "none",
-            padding: 0,
-            overflow: "hidden",
-            minHeight: 0,
-          }}
-        >
-          {!tierFeatures.fullAnalysis ? (
-            <div
-              ref={analysisControlsRef}
-              className="app-panel"
-              style={{
-                flex: 1,
-                minHeight: 0,
-                overflow: "auto",
-                padding: chapterData ? "18px" : "22px",
-                display: "flex",
-                flexDirection: "column",
-                gap: "16px",
-                justifyContent: "flex-start",
-                backgroundColor: "#f5e6d3",
-                border: "1.5px solid #ef8432",
-                boxShadow: "0 12px 24px rgba(15,23,42,0.08)",
-              }}
-            >
-              <h2 style={{ margin: 0, fontSize: "20px", fontWeight: 700 }}>
-                Analysis Controls
-              </h2>
-              <ul
-                style={{
-                  margin: 0,
-                  paddingLeft: "20px",
-                  color: "#2c3e50",
-                  fontSize: "13px",
-                  lineHeight: 1.6,
-                  listStyleType: "disc",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "12px",
-                }}
-              >
-                <li>
-                  <strong style={{ color: "#111827" }}>
-                    Tier 1 · Free Writer
-                  </strong>
-                  <p style={{ margin: "4px 0" }}>
-                    Upload manuscripts up to 200 pages to get instant pacing
-                    analysis and show-vs-tell insights for your creative
-                    writing.
-                  </p>
-                  <ul
-                    style={{
-                      margin: 0,
-                      paddingLeft: "18px",
-                      lineHeight: 1.6,
-                      listStyleType: "circle",
-                    }}
-                  >
-                    <li>
-                      <strong>Usage limit:</strong> 3 manuscript uploads (no
-                      signup required).
-                    </li>
-                    <li>
-                      <strong>Upload limit:</strong> Up to 200 pages per
-                      manuscript (short stories, novellas, or novel chapters).
-                    </li>
-                    <li>
-                      Pacing analysis shows paragraph density and rhythm
-                      patterns.
-                    </li>
-                    <li>
-                      Show-vs-tell detection highlights opportunities for
-                      sensory details and immersive description.
-                    </li>
-                    <li>
-                      Genre auto-detection for fantasy, mystery, romance,
-                      sci-fi, and more.
-                    </li>
-                    <li>
-                      <strong>Save analyses:</strong> Sign up for free to save
-                      up to 3 manuscripts.
-                    </li>
-                  </ul>
-                </li>
-
-                <li>
-                  <strong style={{ color: "#111827" }}>
-                    Tier 2 · Premium Author
-                  </strong>
-                  <p style={{ margin: "4px 0" }}>
-                    Complete manuscript analysis up to 650 pages with advanced
-                    writing insights and export capabilities for serious
-                    authors.
-                  </p>
-                  <ul
-                    style={{
-                      margin: 0,
-                      paddingLeft: "18px",
-                      lineHeight: 1.6,
-                      listStyleType: "circle",
-                    }}
-                  >
-                    <li>
-                      <strong>Upload limit:</strong> Up to 650 pages
-                      (full-length novels, memoirs, creative nonfiction books).
-                    </li>
-                    <li>
-                      Detailed pacing scores with rhythm analysis throughout
-                      your manuscript.
-                    </li>
-                    <li>
-                      Show-vs-tell heatmaps identify where to add sensory
-                      immersion.
-                    </li>
-                    <li>
-                      Auto-generated writing recommendations with specific
-                      improvement suggestions.
-                    </li>
-                    <li>
-                      Export results as DOCX, JSON, or HTML for revision
-                      planning and beta reader sharing.
-                    </li>
-                    <li>
-                      Create and save custom genre profiles for specialized
-                      fiction subgenres.
-                    </li>
-                  </ul>
-                </li>
-
-                <li>
-                  <strong style={{ color: "#111827" }}>
-                    Tier 3 · Professional Writer
-                  </strong>
-                  <p style={{ margin: "4px 0" }}>
-                    Everything in Premium plus Writer Mode for real-time
-                    editing, unlimited analyses (up to 1,000 pages), perfect for
-                    professional authors and writing teams.
-                  </p>
-                  <ul
-                    style={{
-                      margin: 0,
-                      paddingLeft: "18px",
-                      lineHeight: 1.6,
-                      listStyleType: "circle",
-                    }}
-                  >
-                    <li>
-                      <strong>Upload limit:</strong> Up to 1,000 pages (epic
-                      fantasy series, comprehensive memoirs, anthology
-                      collections).
-                    </li>
-                    <li>
-                      Writer Mode: Full word processor with live analysis
-                      updates as you draft and revise.
-                    </li>
-                    <li>
-                      Unlimited manuscript analyses with no upload restrictions
-                      or quotas.
-                    </li>
-                    <li>
-                      Priority support with faster response times for urgent
-                      deadlines.
-                    </li>
-                    <li>
-                      Advanced formatting tools and collaborative features for
-                      writing teams.
-                    </li>
-                    <li>
-                      Version tracking and comprehensive export options for
-                      agent/editor submission workflows.
-                    </li>
-                  </ul>
-                </li>
-              </ul>
-
-              <div
-                style={{
-                  marginTop: "16px",
-                  paddingTop: "16px",
-                  borderTop: "1px solid #e0c392",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "8px",
-                }}
-              >
-                <strong style={{ fontSize: "14px", color: "#111827" }}>
-                  Ready for more?
-                </strong>
-                <p style={{ margin: 0, fontSize: "13px", color: "#2c3e50" }}>
-                  Upgrade to Premium for full manuscript analysis with detailed
-                  pacing insights, show-vs-tell detection, and exportable
-                  revision reports.
-                </p>
-                <button
-                  onClick={() => {
-                    setShowTierTwoPreview(true);
-                  }}
-                  style={{
-                    alignSelf: "flex-start",
-                    padding: "10px 20px",
-                    backgroundColor: "white",
-                    color: "#2c3e50",
-                    border: "1.5px solid #2c3e50",
-                    borderRadius: "20px",
-                    fontSize: "13px",
-                    fontWeight: 600,
-                    cursor: "pointer",
-                    transition: "background-color 0.2s",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = "#f7e6d0";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = "white";
-                  }}
-                >
-                  Preview Tier 2 Features
-                </button>
-              </div>
-
-              {!chapterData && (
-                <div
-                  style={{
-                    marginTop: "16px",
-                    fontSize: "13px",
-                    color: "#2c3e50",
-                    backgroundColor: "#e0c392",
-                    padding: "12px",
-                    borderRadius: "20px",
-                  }}
-                >
-                  Upload a manuscript to see pacing analysis and show-vs-tell
-                  insights for your creative writing.
-                </div>
-              )}
-            </div>
-          ) : (
-            <div
-              style={{
-                flex: 1,
-                display: "flex",
-                flexDirection: "column",
-                gap: "16px",
-                minHeight: 0,
-                padding: 0,
-                margin: 0,
-              }}
-            >
+        {/* Hide sidebar in writer mode when there's no analysis yet - give full page to editor */}
+        {!(viewMode === "writer" && !analysis) && (
+          <div
+            className="app-panel"
+            style={{
+              flex: isStackedLayout
+                ? "1 1 100%"
+                : layoutMode === "desktop"
+                ? "40 1 0"
+                : "30 1 0",
+              maxWidth: "100%",
+              minWidth: analysisMinWidth,
+              display: "flex",
+              flexDirection: "column",
+              marginTop: isStackedLayout ? "16px" : 0,
+              backgroundColor: "transparent",
+              background: "transparent",
+              border: "none",
+              borderRadius: 0,
+              boxShadow: "none",
+              padding: 0,
+              overflow: "hidden",
+              minHeight: 0,
+            }}
+          >
+            {!tierFeatures.fullAnalysis ? (
               <div
                 ref={analysisControlsRef}
                 className="app-panel"
                 style={{
-                  padding: "16px",
+                  flex: 1,
+                  minHeight: 0,
+                  overflow: "auto",
+                  padding: chapterData ? "18px" : "22px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "16px",
+                  justifyContent: "flex-start",
                   backgroundColor: "#f5e6d3",
-                  background: "#f5e6d3",
-                  border: "1.5px solid #e0c392",
-                  boxShadow: "0 10px 25px rgba(15,23,42,0.08)",
+                  border: "1.5px solid #ef8432",
+                  boxShadow: "0 12px 24px rgba(15,23,42,0.08)",
                 }}
               >
-                <h2 style={{ margin: "0 0 6px 0", fontSize: "18px" }}>
+                <h2 style={{ margin: 0, fontSize: "20px", fontWeight: 700 }}>
                   Analysis Controls
                 </h2>
-                <p
+                <ul
                   style={{
-                    margin: "0 0 12px 0",
-                    fontSize: "13px",
+                    margin: 0,
+                    paddingLeft: "20px",
                     color: "#2c3e50",
+                    fontSize: "13px",
+                    lineHeight: 1.6,
+                    listStyleType: "disc",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "12px",
                   }}
                 >
-                  Select the domain that best matches your chapter content for
-                  accurate concept recognition and analysis.
-                </p>
-
-                <div style={{ marginBottom: "16px" }}>
-                  <label
-                    style={{
-                      display: "block",
-                      fontSize: "12px",
-                      fontWeight: "600",
-                      marginBottom: "4px",
-                      color: "#2c3e50",
-                    }}
-                  >
-                    Detected Genre:
-                  </label>{" "}
-                  {!showDomainSelector ? (
-                    <div
+                  <li>
+                    <strong style={{ color: "#111827" }}>
+                      Tier 1 · Free Writer
+                    </strong>
+                    <p style={{ margin: "4px 0" }}>
+                      Upload manuscripts up to 200 pages to get instant pacing
+                      analysis and show-vs-tell insights for your creative
+                      writing.
+                    </p>
+                    <ul
                       style={{
-                        width: "100%",
-                        padding: "12px",
-                        border: selectedDomain
-                          ? "2px solid #ef8432"
-                          : "2px solid #c16659",
-                        borderRadius: "20px",
-                        fontSize: "14px",
-                        backgroundColor: "white",
-                        color: selectedDomain ? "#ef8432" : "#c16659",
-                        fontWeight: "600",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        gap: "8px",
+                        margin: 0,
+                        paddingLeft: "18px",
+                        lineHeight: 1.6,
+                        listStyleType: "circle",
                       }}
                     >
-                      {selectedDomain === "none" ? (
-                        <>
-                          <span>📝 None / General Content</span>
-                          <div
-                            style={{
-                              display: "flex",
-                              gap: "6px",
-                              alignItems: "center",
-                            }}
-                          >
-                            <span
-                              style={{ fontSize: "12px", fontWeight: "normal" }}
-                            >
-                              ✓ Manual selection
-                            </span>
-                            <button
-                              onClick={() => setShowDomainSelector(true)}
-                              disabled={isAnalyzing}
-                              style={{
-                                padding: "4px 10px",
-                                backgroundColor: "white",
-                                color: "#2c3e50",
-                                border: "1.5px solid #2c3e50",
-                                borderRadius: "16px",
-                                fontSize: "11px",
-                                fontWeight: "600",
-                                cursor: isAnalyzing ? "not-allowed" : "pointer",
-                                opacity: isAnalyzing ? 0.5 : 1,
-                                transition: "background-color 0.2s",
-                              }}
-                              onMouseEnter={(e) => {
-                                if (!isAnalyzing)
-                                  e.currentTarget.style.backgroundColor =
-                                    "#f7e6d0";
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.backgroundColor = "white";
-                              }}
-                            >
-                              Change
-                            </button>
-                          </div>
-                        </>
-                      ) : selectedDomain ? (
-                        <>
-                          <span>
-                            {selectedDomain === "custom" ? (
-                              <>🎨 {customDomainName || "Custom Domain"}</>
-                            ) : (
-                              <>
-                                {
-                                  sortedDomains.find(
-                                    (d) => d.id === selectedDomain
-                                  )?.icon
-                                }{" "}
-                                {sortedDomains.find(
-                                  (d) => d.id === selectedDomain
-                                )?.label || selectedDomain}
-                              </>
-                            )}
-                          </span>
-                          <div
-                            style={{
-                              display: "flex",
-                              gap: "6px",
-                              alignItems: "center",
-                            }}
-                          >
-                            <span
-                              style={{ fontSize: "12px", fontWeight: "normal" }}
-                            >
-                              {selectedDomain === "custom"
-                                ? "✓ Custom"
-                                : "✓ Auto-detected"}
-                            </span>
-                            <button
-                              onClick={() => setShowDomainSelector(true)}
-                              disabled={isAnalyzing}
-                              style={{
-                                padding: "4px 10px",
-                                backgroundColor: "white",
-                                color: "#2c3e50",
-                                border: "1.5px solid #2c3e50",
-                                borderRadius: "16px",
-                                fontSize: "11px",
-                                fontWeight: "600",
-                                cursor: isAnalyzing ? "not-allowed" : "pointer",
-                                opacity: isAnalyzing ? 0.5 : 1,
-                                transition: "background-color 0.2s",
-                              }}
-                              onMouseEnter={(e) => {
-                                if (!isAnalyzing)
-                                  e.currentTarget.style.backgroundColor =
-                                    "#f7e6d0";
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.backgroundColor = "white";
-                              }}
-                            >
-                              Change
-                            </button>
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <span>⚠️ Domain not detected: upload document</span>
-                          <div style={{ display: "flex", gap: "6px" }}>
-                            <button
-                              onClick={() => setShowDomainSelector(true)}
-                              style={{
-                                padding: "4px 12px",
-                                backgroundColor: "white",
-                                color: "#2c3e50",
-                                border: "1.5px solid #2c3e50",
-                                borderRadius: "16px",
-                                fontSize: "12px",
-                                fontWeight: "600",
-                                cursor: "pointer",
-                                transition: "background-color 0.2s",
-                              }}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.backgroundColor =
-                                  "#f7e6d0";
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.backgroundColor = "white";
-                              }}
-                            >
-                              Select Domain
-                            </button>
-                            <button
-                              onClick={() => {
-                                // Check access level for custom domains
-                                const features = ACCESS_TIERS[accessLevel];
-                                if (!features.customGenres) {
-                                  setUpgradeFeature("Custom Domains");
-                                  setUpgradeTarget("premium");
-                                  setShowUpgradePrompt(true);
-                                  return;
-                                }
-                                setShowCustomDomainDialog(true);
-                              }}
-                              style={{
-                                padding: "4px 12px",
-                                backgroundColor: "#f2ebe3",
-                                color: "#2c3e50",
-                                border: "1.5px solid #2c3e50",
-                                borderRadius: "16px",
-                                fontSize: "12px",
-                                fontWeight: "600",
-                                cursor: ACCESS_TIERS[accessLevel].customGenres
-                                  ? "pointer"
-                                  : "not-allowed",
-                                transition: "background-color 0.2s",
-                                opacity: ACCESS_TIERS[accessLevel].customGenres
-                                  ? 1
-                                  : 0.6,
-                              }}
-                              onMouseEnter={(e) => {
-                                if (ACCESS_TIERS[accessLevel].customGenres)
-                                  e.currentTarget.style.backgroundColor =
-                                    "#e0d5c7";
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.backgroundColor =
-                                  "#f2ebe3";
-                              }}
-                            >
-                              Create Custom{" "}
-                              {!ACCESS_TIERS[accessLevel].customGenres && "🔒"}
-                            </button>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  ) : (
-                    <div
+                      <li>
+                        <strong>Usage limit:</strong> 3 manuscript uploads (no
+                        signup required).
+                      </li>
+                      <li>
+                        <strong>Upload limit:</strong> Up to 200 pages per
+                        manuscript (short stories, novellas, or novel chapters).
+                      </li>
+                      <li>
+                        Pacing analysis shows paragraph density and rhythm
+                        patterns.
+                      </li>
+                      <li>
+                        Show-vs-tell detection highlights opportunities for
+                        sensory details and immersive description.
+                      </li>
+                      <li>
+                        Genre auto-detection for fantasy, mystery, romance,
+                        sci-fi, and more.
+                      </li>
+                      <li>
+                        <strong>Save analyses:</strong> Sign up for free to save
+                        up to 3 manuscripts.
+                      </li>
+                    </ul>
+                  </li>
+
+                  <li>
+                    <strong style={{ color: "#111827" }}>
+                      Tier 2 · Premium Author
+                    </strong>
+                    <p style={{ margin: "4px 0" }}>
+                      Complete manuscript analysis up to 650 pages with advanced
+                      writing insights and export capabilities for serious
+                      authors.
+                    </p>
+                    <ul
                       style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "8px",
+                        margin: 0,
+                        paddingLeft: "18px",
+                        lineHeight: 1.6,
+                        listStyleType: "circle",
                       }}
                     >
-                      <select
-                        value={selectedDomain || ""}
-                        onChange={(e) => {
-                          const value = e.target.value;
+                      <li>
+                        <strong>Upload limit:</strong> Up to 650 pages
+                        (full-length novels, memoirs, creative nonfiction
+                        books).
+                      </li>
+                      <li>
+                        Detailed pacing scores with rhythm analysis throughout
+                        your manuscript.
+                      </li>
+                      <li>
+                        Show-vs-tell heatmaps identify where to add sensory
+                        immersion.
+                      </li>
+                      <li>
+                        Auto-generated writing recommendations with specific
+                        improvement suggestions.
+                      </li>
+                      <li>
+                        Export results as DOCX, JSON, or HTML for revision
+                        planning and beta reader sharing.
+                      </li>
+                      <li>
+                        Create and save custom genre profiles for specialized
+                        fiction subgenres.
+                      </li>
+                    </ul>
+                  </li>
 
-                          // Handle "none" selection - clear domain
-                          if (value === "none") {
-                            setSelectedDomain("none");
-                            setDetectedDomain(null);
-                            setShowDomainSelector(false);
-                            return;
-                          }
+                  <li>
+                    <strong style={{ color: "#111827" }}>
+                      Tier 3 · Professional Writer
+                    </strong>
+                    <p style={{ margin: "4px 0" }}>
+                      Everything in Premium plus Writer Mode for real-time
+                      editing, unlimited analyses (up to 1,000 pages), perfect
+                      for professional authors and writing teams.
+                    </p>
+                    <ul
+                      style={{
+                        margin: 0,
+                        paddingLeft: "18px",
+                        lineHeight: 1.6,
+                        listStyleType: "circle",
+                      }}
+                    >
+                      <li>
+                        <strong>Upload limit:</strong> Up to 1,000 pages (epic
+                        fantasy series, comprehensive memoirs, anthology
+                        collections).
+                      </li>
+                      <li>
+                        Writer Mode: Full word processor with live analysis
+                        updates as you draft and revise.
+                      </li>
+                      <li>
+                        Unlimited manuscript analyses with no upload
+                        restrictions or quotas.
+                      </li>
+                      <li>
+                        Priority support with faster response times for urgent
+                        deadlines.
+                      </li>
+                      <li>
+                        Advanced formatting tools and collaborative features for
+                        writing teams.
+                      </li>
+                      <li>
+                        Version tracking and comprehensive export options for
+                        agent/editor submission workflows.
+                      </li>
+                    </ul>
+                  </li>
+                </ul>
 
-                          // Check if it's a saved custom domain
-                          if (value.startsWith("custom:")) {
-                            const domainName = value.substring(7); // Remove "custom:" prefix
-                            const savedDomain = getCustomDomain(domainName);
-                            if (savedDomain) {
-                              setCustomDomainName(savedDomain.name);
-                              setCustomConcepts(
-                                convertToConceptDefinitions(savedDomain)
-                              );
-                              setSelectedDomain("custom");
-                              localStorage.setItem(
-                                "tomeiq_last_custom_domain",
-                                savedDomain.name
-                              );
-                            }
-                          } else {
-                            setSelectedDomain(value as Domain);
-                          }
-                          setShowDomainSelector(false);
-                        }}
-                        disabled={isAnalyzing}
-                        style={{
-                          width: "100%",
-                          padding: "10px",
-                          border: "2px solid #2c3e50",
-                          borderRadius: "20px",
-                          fontSize: "14px",
-                          outline: "none",
-                        }}
-                      >
-                        <option value="">-- Select a domain --</option>
-                        <option value="none">📝 None / General Content</option>
-                        {sortedDomains.map((domain) => (
-                          <option key={domain.id} value={domain.id}>
-                            {domain.icon} {domain.label}
-                          </option>
-                        ))}
-                        {/* Show saved custom domains if user has access */}
-                        {ACCESS_TIERS[accessLevel].customGenres &&
-                          loadCustomDomains().length > 0 && (
-                            <>
-                              <option disabled>──────────</option>
-                              <optgroup label="📁 Your Custom Domains">
-                                {loadCustomDomains().map((domain) => (
-                                  <option
-                                    key={`custom:${domain.name}`}
-                                    value={`custom:${domain.name}`}
-                                  >
-                                    🎨 {domain.name}
-                                  </option>
-                                ))}
-                              </optgroup>
-                            </>
-                          )}
-                      </select>
-                      <div style={{ display: "flex", gap: "6px" }}>
-                        <button
-                          onClick={() => setShowDomainSelector(false)}
-                          style={{
-                            flex: 1,
-                            padding: "6px",
-                            backgroundColor: "white",
-                            color: "#2c3e50",
-                            border: "1.5px solid #2c3e50",
-                            borderRadius: "16px",
-                            fontSize: "12px",
-                            fontWeight: "600",
-                            cursor: "pointer",
-                            transition: "background-color 0.2s",
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor = "#f7e6d0";
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = "white";
-                          }}
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          onClick={() => {
-                            // Check access level for custom domains
-                            const features = ACCESS_TIERS[accessLevel];
-                            if (!features.customGenres) {
-                              setUpgradeFeature("Custom Domains");
-                              setUpgradeTarget("premium");
-                              setShowUpgradePrompt(true);
-                              setShowDomainSelector(false);
-                              return;
-                            }
-                            setShowCustomDomainDialog(true);
-                          }}
-                          style={{
-                            flex: 1,
-                            padding: "6px",
-                            backgroundColor: "#f2ebe3",
-                            color: "#2c3e50",
-                            border: "1.5px solid #2c3e50",
-                            borderRadius: "16px",
-                            fontSize: "12px",
-                            fontWeight: "600",
-                            cursor: ACCESS_TIERS[accessLevel].customGenres
-                              ? "pointer"
-                              : "not-allowed",
-                            transition: "background-color 0.2s",
-                            opacity: ACCESS_TIERS[accessLevel].customGenres
-                              ? 1
-                              : 0.6,
-                          }}
-                          onMouseEnter={(e) => {
-                            if (ACCESS_TIERS[accessLevel].customGenres)
-                              e.currentTarget.style.backgroundColor = "#e0d5c7";
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = "#f2ebe3";
-                          }}
-                        >
-                          Create Custom{" "}
-                          {!ACCESS_TIERS[accessLevel].customGenres && "🔒"}
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <button
-                  onClick={handleAnalyzeChapter}
-                  disabled={
-                    !chapterText.trim() ||
-                    isAnalyzing ||
-                    (!selectedDomain && selectedDomain !== "none")
-                  }
+                <div
                   style={{
-                    width: "100%",
-                    padding: "12px",
-                    backgroundColor: "white",
-                    color:
-                      chapterText.trim() &&
-                      !isAnalyzing &&
-                      (selectedDomain || selectedDomain === "none")
-                        ? "#ef8432"
-                        : "#2c3e50",
-                    border:
-                      chapterText.trim() &&
-                      !isAnalyzing &&
-                      (selectedDomain || selectedDomain === "none")
-                        ? "2px solid #ef8432"
-                        : "2px solid #e0c392",
-                    borderRadius: "20px",
-                    fontSize: "16px",
-                    fontWeight: "600",
-                    cursor:
-                      chapterText.trim() &&
-                      !isAnalyzing &&
-                      (selectedDomain || selectedDomain === "none")
-                        ? "pointer"
-                        : "not-allowed",
-                    transition: "background-color 0.2s",
-                  }}
-                  onMouseEnter={(e) => {
-                    if (
-                      chapterText.trim() &&
-                      !isAnalyzing &&
-                      (selectedDomain || selectedDomain === "none")
-                    )
-                      e.currentTarget.style.backgroundColor = "#f7e6d0";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = "white";
+                    marginTop: "16px",
+                    paddingTop: "16px",
+                    borderTop: "1px solid #e0c392",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "8px",
                   }}
                 >
-                  {isAnalyzing ? "⏳ Analyzing..." : "🔍 Analyze Book"}
-                </button>
-
-                {/* Free tier info */}
-                {accessLevel === "free" && chapterText && !isAnalyzing && (
-                  <div
+                  <strong style={{ fontSize: "14px", color: "#111827" }}>
+                    Ready for more?
+                  </strong>
+                  <p style={{ margin: 0, fontSize: "13px", color: "#2c3e50" }}>
+                    Upgrade to Premium for full manuscript analysis with
+                    detailed pacing insights, show-vs-tell detection, and
+                    exportable revision reports.
+                  </p>
+                  <button
+                    onClick={() => {
+                      setShowTierTwoPreview(true);
+                    }}
                     style={{
-                      marginTop: "12px",
-                      padding: "12px",
+                      alignSelf: "flex-start",
+                      padding: "10px 20px",
                       backgroundColor: "white",
-                      borderLeft: "4px solid #2c3e50",
+                      color: "#2c3e50",
+                      border: "1.5px solid #2c3e50",
                       borderRadius: "20px",
                       fontSize: "13px",
-                      lineHeight: 1.6,
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontWeight: "600",
-                        marginBottom: "6px",
-                        color: "#2c3e50",
-                      }}
-                    >
-                      🎁 Free Preview Available
-                    </div>
-                    <div style={{ color: "#1e3a8a" }}>
-                      <strong>Spacing Analysis:</strong> See optimal concept
-                      repetition patterns for better retention.
-                      <br />
-                      <strong>Dual Coding:</strong> Get AI suggestions for where
-                      to add visuals, diagrams, and illustrations.
-                      <br />
-                      <br />
-                      <span style={{ fontSize: "12px", opacity: 0.9 }}>
-                        💡 Upgrade to Premium for full 10-principle analysis
-                        with concept graphs, pattern recognition, and detailed
-                        recommendations.
-                      </span>
-                    </div>
-                  </div>
-                )}
-
-                {error && (
-                  <div
-                    style={{
-                      marginTop: "12px",
-                      padding: "12px",
-                      backgroundColor: "white",
-                      color: "#991b1b",
-                      borderRadius: "20px",
-                      fontSize: "14px",
-                    }}
-                  >
-                    ⚠️ {error}
-                  </div>
-                )}
-
-                {progress && (
-                  <div
-                    style={{
-                      marginTop: "12px",
-                      padding: "12px",
-                      backgroundColor: "white",
-                      color: "#2c3e50",
-                      borderRadius: "20px",
-                      fontSize: "14px",
-                    }}
-                  >
-                    {progress}
-                  </div>
-                )}
-              </div>
-
-              {/* Writer Mode Toggle - Show when document is uploaded, even before analysis */}
-              {chapterData &&
-                !analysis &&
-                ACCESS_TIERS[accessLevel].writerMode && (
-                  <div
-                    className="app-panel"
-                    style={{
-                      padding: "16px",
-                      backgroundColor: "#f5e6d3",
-                      border: "1.5px solid #e0c392",
-                      boxShadow: "0 10px 25px rgba(15,23,42,0.08)",
-                      marginTop: "16px",
-                    }}
-                  >
-                    <h3
-                      style={{
-                        margin: "0 0 12px 0",
-                        fontSize: "16px",
-                        color: "#2c3e50",
-                      }}
-                    >
-                      ✍️ Start Writing
-                    </h3>
-                    <p
-                      style={{
-                        margin: "0 0 12px 0",
-                        fontSize: "13px",
-                        color: "#64748b",
-                      }}
-                    >
-                      Your document is ready! Switch to Writer Mode to start
-                      editing with the full word processor.
-                    </p>
-                    <button
-                      onClick={() => setViewMode("writer")}
-                      style={{
-                        width: "100%",
-                        padding: "12px 16px",
-                        backgroundColor: "#10b981",
-                        color: "white",
-                        border: "none",
-                        borderRadius: "8px",
-                        cursor: "pointer",
-                        fontSize: "15px",
-                        fontWeight: "600",
-                        transition: "all 0.2s",
-                        boxShadow: "0 2px 8px rgba(16, 185, 129, 0.3)",
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = "#059669";
-                        e.currentTarget.style.transform = "translateY(-1px)";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = "#10b981";
-                        e.currentTarget.style.transform = "translateY(0)";
-                      }}
-                    >
-                      🚀 Open Writer Mode
-                    </button>
-                  </div>
-                )}
-
-              {/* Analysis Results */}
-              {analysis && (
-                <div
-                  ref={analysisPanelRef}
-                  className="app-panel"
-                  style={{
-                    flex: 1,
-                    overflow: "auto",
-                    padding: "16px",
-                    backgroundColor:
-                      viewMode === "analysis" ? "#ead6c1" : "#f5e0c4",
-                    border:
-                      viewMode === "analysis"
-                        ? "1.5px solid #e0c392"
-                        : "1.5px solid #f7d8a8",
-                  }}
-                >
-                  <div
-                    style={{
-                      marginBottom: "16px",
-                      display: "flex",
-                      gap: "8px",
-                    }}
-                  >
-                    <button
-                      onClick={() => {
-                        setViewMode("analysis");
-                        // Clear highlight position when switching to analysis mode
-                        // to prevent unwanted jumps
-                        setHighlightPosition(null);
-                      }}
-                      style={{
-                        flex: 1,
-                        padding: "12px 16px",
-                        backgroundColor:
-                          viewMode === "analysis" ? "#ef8432" : "#fef5e7",
-                        color: viewMode === "analysis" ? "white" : "#2c3e50",
-                        border:
-                          viewMode === "analysis"
-                            ? "2px solid #ef8432"
-                            : "2px solid #e0c392",
-                        borderRadius: "8px",
-                        cursor: "pointer",
-                        fontSize: "15px",
-                        fontWeight: viewMode === "analysis" ? "700" : "600",
-                        transition: "all 0.2s",
-                        boxShadow:
-                          viewMode === "analysis"
-                            ? "0 2px 8px rgba(239, 132, 50, 0.3)"
-                            : "none",
-                      }}
-                      onMouseEnter={(e) => {
-                        if (viewMode !== "analysis") {
-                          e.currentTarget.style.backgroundColor = "#f7e6d0";
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (viewMode !== "analysis") {
-                          e.currentTarget.style.backgroundColor = "#fef5e7";
-                        }
-                      }}
-                    >
-                      📊 Analysis Mode
-                      {viewMode === "analysis" && " ✓"}
-                    </button>
-                    <button
-                      onClick={() => {
-                        // Check access for Writer Mode
-                        const features = ACCESS_TIERS[accessLevel];
-                        if (!features.writerMode) {
-                          setUpgradeFeature("Writer Mode");
-                          setUpgradeTarget("professional");
-                          setShowUpgradePrompt(true);
-                          return;
-                        }
-                        setViewMode("writer");
-                      }}
-                      style={{
-                        flex: 1,
-                        padding: "12px 16px",
-                        backgroundColor:
-                          viewMode === "writer" ? "#ef8432" : "#fef5e7",
-                        color: viewMode === "writer" ? "white" : "#2c3e50",
-                        border:
-                          viewMode === "writer"
-                            ? "2px solid #ef8432"
-                            : "2px solid #e0c392",
-                        borderRadius: "8px",
-                        cursor: ACCESS_TIERS[accessLevel].writerMode
-                          ? "pointer"
-                          : "not-allowed",
-                        fontSize: "15px",
-                        fontWeight: viewMode === "writer" ? "700" : "600",
-                        transition: "all 0.2s",
-                        boxShadow:
-                          viewMode === "writer"
-                            ? "0 2px 8px rgba(239, 132, 50, 0.3)"
-                            : "none",
-                        opacity: ACCESS_TIERS[accessLevel].writerMode ? 1 : 0.6,
-                      }}
-                      onMouseEnter={(e) => {
-                        if (
-                          viewMode !== "writer" &&
-                          ACCESS_TIERS[accessLevel].writerMode
-                        ) {
-                          e.currentTarget.style.backgroundColor = "#f7e6d0";
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (viewMode !== "writer") {
-                          e.currentTarget.style.backgroundColor = "#fef5e7";
-                        }
-                      }}
-                    >
-                      ✍️ Writer Mode
-                      {viewMode === "writer" && " ✓"}
-                      {!ACCESS_TIERS[accessLevel].writerMode && " 👑"}
-                    </button>
-                  </div>
-
-                  <button
-                    onClick={handleExport}
-                    disabled={!ACCESS_TIERS[accessLevel].exportResults}
-                    style={{
-                      width: "100%",
-                      padding: "8px",
-                      backgroundColor: "white",
-                      color: ACCESS_TIERS[accessLevel].exportResults
-                        ? "#2c3e50"
-                        : "#2c3e50",
-                      border: ACCESS_TIERS[accessLevel].exportResults
-                        ? "1.5px solid #2c3e50"
-                        : "1.5px solid #e0c392",
-                      borderRadius: "20px",
-                      cursor: ACCESS_TIERS[accessLevel].exportResults
-                        ? "pointer"
-                        : "not-allowed",
-                      fontSize: "14px",
-                      fontWeight: "600",
-                      marginBottom: "16px",
+                      fontWeight: 600,
+                      cursor: "pointer",
                       transition: "background-color 0.2s",
                     }}
                     onMouseEnter={(e) => {
-                      if (ACCESS_TIERS[accessLevel].exportResults)
+                      e.currentTarget.style.backgroundColor = "#f7e6d0";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = "white";
+                    }}
+                  >
+                    Preview Tier 2 Features
+                  </button>
+                </div>
+
+                {!chapterData && (
+                  <div
+                    style={{
+                      marginTop: "16px",
+                      fontSize: "13px",
+                      color: "#2c3e50",
+                      backgroundColor: "#e0c392",
+                      padding: "12px",
+                      borderRadius: "20px",
+                    }}
+                  >
+                    Upload a manuscript to see pacing analysis and show-vs-tell
+                    insights for your creative writing.
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div
+                style={{
+                  flex: 1,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "16px",
+                  minHeight: 0,
+                  padding: 0,
+                  margin: 0,
+                }}
+              >
+                <div
+                  ref={analysisControlsRef}
+                  className="app-panel"
+                  style={{
+                    padding: "16px",
+                    backgroundColor: "#f5e6d3",
+                    background: "#f5e6d3",
+                    border: "1.5px solid #e0c392",
+                    boxShadow: "0 10px 25px rgba(15,23,42,0.08)",
+                  }}
+                >
+                  <h2 style={{ margin: "0 0 6px 0", fontSize: "18px" }}>
+                    Analysis Controls
+                  </h2>
+                  <p
+                    style={{
+                      margin: "0 0 12px 0",
+                      fontSize: "13px",
+                      color: "#2c3e50",
+                    }}
+                  >
+                    Select the domain that best matches your chapter content for
+                    accurate concept recognition and analysis.
+                  </p>
+
+                  <div style={{ marginBottom: "16px" }}>
+                    <label
+                      style={{
+                        display: "block",
+                        fontSize: "12px",
+                        fontWeight: "600",
+                        marginBottom: "4px",
+                        color: "#2c3e50",
+                      }}
+                    >
+                      Detected Genre:
+                    </label>{" "}
+                    {!showDomainSelector ? (
+                      <div
+                        style={{
+                          width: "100%",
+                          padding: "12px",
+                          border: selectedDomain
+                            ? "2px solid #ef8432"
+                            : "2px solid #c16659",
+                          borderRadius: "20px",
+                          fontSize: "14px",
+                          backgroundColor: "white",
+                          color: selectedDomain ? "#ef8432" : "#c16659",
+                          fontWeight: "600",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          gap: "8px",
+                        }}
+                      >
+                        {selectedDomain === "none" ? (
+                          <>
+                            <span>📝 None / General Content</span>
+                            <div
+                              style={{
+                                display: "flex",
+                                gap: "6px",
+                                alignItems: "center",
+                              }}
+                            >
+                              <span
+                                style={{
+                                  fontSize: "12px",
+                                  fontWeight: "normal",
+                                }}
+                              >
+                                ✓ Manual selection
+                              </span>
+                              <button
+                                onClick={() => setShowDomainSelector(true)}
+                                disabled={isAnalyzing}
+                                style={{
+                                  padding: "4px 10px",
+                                  backgroundColor: "white",
+                                  color: "#2c3e50",
+                                  border: "1.5px solid #2c3e50",
+                                  borderRadius: "16px",
+                                  fontSize: "11px",
+                                  fontWeight: "600",
+                                  cursor: isAnalyzing
+                                    ? "not-allowed"
+                                    : "pointer",
+                                  opacity: isAnalyzing ? 0.5 : 1,
+                                  transition: "background-color 0.2s",
+                                }}
+                                onMouseEnter={(e) => {
+                                  if (!isAnalyzing)
+                                    e.currentTarget.style.backgroundColor =
+                                      "#f7e6d0";
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.backgroundColor =
+                                    "white";
+                                }}
+                              >
+                                Change
+                              </button>
+                            </div>
+                          </>
+                        ) : selectedDomain ? (
+                          <>
+                            <span>
+                              {selectedDomain === "custom" ? (
+                                <>🎨 {customDomainName || "Custom Domain"}</>
+                              ) : (
+                                <>
+                                  {
+                                    sortedDomains.find(
+                                      (d) => d.id === selectedDomain
+                                    )?.icon
+                                  }{" "}
+                                  {sortedDomains.find(
+                                    (d) => d.id === selectedDomain
+                                  )?.label || selectedDomain}
+                                </>
+                              )}
+                            </span>
+                            <div
+                              style={{
+                                display: "flex",
+                                gap: "6px",
+                                alignItems: "center",
+                              }}
+                            >
+                              <span
+                                style={{
+                                  fontSize: "12px",
+                                  fontWeight: "normal",
+                                }}
+                              >
+                                {selectedDomain === "custom"
+                                  ? "✓ Custom"
+                                  : "✓ Auto-detected"}
+                              </span>
+                              <button
+                                onClick={() => setShowDomainSelector(true)}
+                                disabled={isAnalyzing}
+                                style={{
+                                  padding: "4px 10px",
+                                  backgroundColor: "white",
+                                  color: "#2c3e50",
+                                  border: "1.5px solid #2c3e50",
+                                  borderRadius: "16px",
+                                  fontSize: "11px",
+                                  fontWeight: "600",
+                                  cursor: isAnalyzing
+                                    ? "not-allowed"
+                                    : "pointer",
+                                  opacity: isAnalyzing ? 0.5 : 1,
+                                  transition: "background-color 0.2s",
+                                }}
+                                onMouseEnter={(e) => {
+                                  if (!isAnalyzing)
+                                    e.currentTarget.style.backgroundColor =
+                                      "#f7e6d0";
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.backgroundColor =
+                                    "white";
+                                }}
+                              >
+                                Change
+                              </button>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <span>⚠️ Domain not detected: upload document</span>
+                            <div style={{ display: "flex", gap: "6px" }}>
+                              <button
+                                onClick={() => setShowDomainSelector(true)}
+                                style={{
+                                  padding: "4px 12px",
+                                  backgroundColor: "white",
+                                  color: "#2c3e50",
+                                  border: "1.5px solid #2c3e50",
+                                  borderRadius: "16px",
+                                  fontSize: "12px",
+                                  fontWeight: "600",
+                                  cursor: "pointer",
+                                  transition: "background-color 0.2s",
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.backgroundColor =
+                                    "#f7e6d0";
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.backgroundColor =
+                                    "white";
+                                }}
+                              >
+                                Select Domain
+                              </button>
+                              <button
+                                onClick={() => {
+                                  // Check access level for custom domains
+                                  const features = ACCESS_TIERS[accessLevel];
+                                  if (!features.customGenres) {
+                                    setUpgradeFeature("Custom Domains");
+                                    setUpgradeTarget("premium");
+                                    setShowUpgradePrompt(true);
+                                    return;
+                                  }
+                                  setShowCustomDomainDialog(true);
+                                }}
+                                style={{
+                                  padding: "4px 12px",
+                                  backgroundColor: "#f2ebe3",
+                                  color: "#2c3e50",
+                                  border: "1.5px solid #2c3e50",
+                                  borderRadius: "16px",
+                                  fontSize: "12px",
+                                  fontWeight: "600",
+                                  cursor: ACCESS_TIERS[accessLevel].customGenres
+                                    ? "pointer"
+                                    : "not-allowed",
+                                  transition: "background-color 0.2s",
+                                  opacity: ACCESS_TIERS[accessLevel]
+                                    .customGenres
+                                    ? 1
+                                    : 0.6,
+                                }}
+                                onMouseEnter={(e) => {
+                                  if (ACCESS_TIERS[accessLevel].customGenres)
+                                    e.currentTarget.style.backgroundColor =
+                                      "#e0d5c7";
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.backgroundColor =
+                                    "#f2ebe3";
+                                }}
+                              >
+                                Create Custom{" "}
+                                {!ACCESS_TIERS[accessLevel].customGenres &&
+                                  "🔒"}
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    ) : (
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "8px",
+                        }}
+                      >
+                        <select
+                          value={selectedDomain || ""}
+                          onChange={(e) => {
+                            const value = e.target.value;
+
+                            // Handle "none" selection - clear domain
+                            if (value === "none") {
+                              setSelectedDomain("none");
+                              setDetectedDomain(null);
+                              setShowDomainSelector(false);
+                              return;
+                            }
+
+                            // Check if it's a saved custom domain
+                            if (value.startsWith("custom:")) {
+                              const domainName = value.substring(7); // Remove "custom:" prefix
+                              const savedDomain = getCustomDomain(domainName);
+                              if (savedDomain) {
+                                setCustomDomainName(savedDomain.name);
+                                setCustomConcepts(
+                                  convertToConceptDefinitions(savedDomain)
+                                );
+                                setSelectedDomain("custom");
+                                localStorage.setItem(
+                                  "tomeiq_last_custom_domain",
+                                  savedDomain.name
+                                );
+                              }
+                            } else {
+                              setSelectedDomain(value as Domain);
+                            }
+                            setShowDomainSelector(false);
+                          }}
+                          disabled={isAnalyzing}
+                          style={{
+                            width: "100%",
+                            padding: "10px",
+                            border: "2px solid #2c3e50",
+                            borderRadius: "20px",
+                            fontSize: "14px",
+                            outline: "none",
+                          }}
+                        >
+                          <option value="">-- Select a domain --</option>
+                          <option value="none">
+                            📝 None / General Content
+                          </option>
+                          {sortedDomains.map((domain) => (
+                            <option key={domain.id} value={domain.id}>
+                              {domain.icon} {domain.label}
+                            </option>
+                          ))}
+                          {/* Show saved custom domains if user has access */}
+                          {ACCESS_TIERS[accessLevel].customGenres &&
+                            loadCustomDomains().length > 0 && (
+                              <>
+                                <option disabled>──────────</option>
+                                <optgroup label="📁 Your Custom Domains">
+                                  {loadCustomDomains().map((domain) => (
+                                    <option
+                                      key={`custom:${domain.name}`}
+                                      value={`custom:${domain.name}`}
+                                    >
+                                      🎨 {domain.name}
+                                    </option>
+                                  ))}
+                                </optgroup>
+                              </>
+                            )}
+                        </select>
+                        <div style={{ display: "flex", gap: "6px" }}>
+                          <button
+                            onClick={() => setShowDomainSelector(false)}
+                            style={{
+                              flex: 1,
+                              padding: "6px",
+                              backgroundColor: "white",
+                              color: "#2c3e50",
+                              border: "1.5px solid #2c3e50",
+                              borderRadius: "16px",
+                              fontSize: "12px",
+                              fontWeight: "600",
+                              cursor: "pointer",
+                              transition: "background-color 0.2s",
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = "#f7e6d0";
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = "white";
+                            }}
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={() => {
+                              // Check access level for custom domains
+                              const features = ACCESS_TIERS[accessLevel];
+                              if (!features.customGenres) {
+                                setUpgradeFeature("Custom Domains");
+                                setUpgradeTarget("premium");
+                                setShowUpgradePrompt(true);
+                                setShowDomainSelector(false);
+                                return;
+                              }
+                              setShowCustomDomainDialog(true);
+                            }}
+                            style={{
+                              flex: 1,
+                              padding: "6px",
+                              backgroundColor: "#f2ebe3",
+                              color: "#2c3e50",
+                              border: "1.5px solid #2c3e50",
+                              borderRadius: "16px",
+                              fontSize: "12px",
+                              fontWeight: "600",
+                              cursor: ACCESS_TIERS[accessLevel].customGenres
+                                ? "pointer"
+                                : "not-allowed",
+                              transition: "background-color 0.2s",
+                              opacity: ACCESS_TIERS[accessLevel].customGenres
+                                ? 1
+                                : 0.6,
+                            }}
+                            onMouseEnter={(e) => {
+                              if (ACCESS_TIERS[accessLevel].customGenres)
+                                e.currentTarget.style.backgroundColor =
+                                  "#e0d5c7";
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = "#f2ebe3";
+                            }}
+                          >
+                            Create Custom{" "}
+                            {!ACCESS_TIERS[accessLevel].customGenres && "🔒"}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <button
+                    onClick={handleAnalyzeChapter}
+                    disabled={
+                      !chapterText.trim() ||
+                      isAnalyzing ||
+                      (!selectedDomain && selectedDomain !== "none")
+                    }
+                    style={{
+                      width: "100%",
+                      padding: "12px",
+                      backgroundColor: "white",
+                      color:
+                        chapterText.trim() &&
+                        !isAnalyzing &&
+                        (selectedDomain || selectedDomain === "none")
+                          ? "#ef8432"
+                          : "#2c3e50",
+                      border:
+                        chapterText.trim() &&
+                        !isAnalyzing &&
+                        (selectedDomain || selectedDomain === "none")
+                          ? "2px solid #ef8432"
+                          : "2px solid #e0c392",
+                      borderRadius: "20px",
+                      fontSize: "16px",
+                      fontWeight: "600",
+                      cursor:
+                        chapterText.trim() &&
+                        !isAnalyzing &&
+                        (selectedDomain || selectedDomain === "none")
+                          ? "pointer"
+                          : "not-allowed",
+                      transition: "background-color 0.2s",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (
+                        chapterText.trim() &&
+                        !isAnalyzing &&
+                        (selectedDomain || selectedDomain === "none")
+                      )
                         e.currentTarget.style.backgroundColor = "#f7e6d0";
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.backgroundColor = "white";
                     }}
                   >
-                    📥 Export JSON{" "}
-                    {!ACCESS_TIERS[accessLevel].exportResults && "🔒"}
+                    {isAnalyzing ? "⏳ Analyzing..." : "🔍 Analyze Book"}
                   </button>
 
-                  {viewMode === "writer" && analysis && (
+                  {/* Auto-Analysis Toggle */}
+                  {chapterData && analysis && !isAnalyzing && (
                     <button
-                      onClick={() => setShowTemplateSelector(true)}
+                      onClick={() =>
+                        setAutoAnalysisEnabled(!autoAnalysisEnabled)
+                      }
+                      style={{
+                        width: "100%",
+                        marginTop: "8px",
+                        padding: "8px 12px",
+                        backgroundColor: autoAnalysisEnabled
+                          ? "#ef8432"
+                          : "white",
+                        color: autoAnalysisEnabled ? "white" : "#2c3e50",
+                        border: `1.5px solid ${
+                          autoAnalysisEnabled ? "#ef8432" : "#e0c392"
+                        }`,
+                        borderRadius: "20px",
+                        fontSize: "13px",
+                        fontWeight: "600",
+                        cursor: "pointer",
+                        transition: "all 0.2s",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "6px",
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!autoAnalysisEnabled) {
+                          e.currentTarget.style.backgroundColor = "#f7e6d0";
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!autoAnalysisEnabled) {
+                          e.currentTarget.style.backgroundColor = "white";
+                        }
+                      }}
+                      title={
+                        autoAnalysisEnabled
+                          ? "Auto-analysis is ON - will re-analyze 3 seconds after you stop typing"
+                          : "Click to enable auto-analysis"
+                      }
+                    >
+                      {autoAnalysisEnabled ? "✓" : ""} 🔄 Auto-Analysis{" "}
+                      {autoAnalysisEnabled ? "ON" : "OFF"}
+                    </button>
+                  )}
+
+                  {/* Free tier info */}
+                  {accessLevel === "free" && chapterText && !isAnalyzing && (
+                    <div
+                      style={{
+                        marginTop: "12px",
+                        padding: "12px",
+                        backgroundColor: "white",
+                        borderLeft: "4px solid #2c3e50",
+                        borderRadius: "20px",
+                        fontSize: "13px",
+                        lineHeight: 1.6,
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontWeight: "600",
+                          marginBottom: "6px",
+                          color: "#2c3e50",
+                        }}
+                      >
+                        🎁 Free Preview Available
+                      </div>
+                      <div style={{ color: "#1e3a8a" }}>
+                        <strong>Spacing Analysis:</strong> See optimal concept
+                        repetition patterns for better retention.
+                        <br />
+                        <strong>Dual Coding:</strong> Get AI suggestions for
+                        where to add visuals, diagrams, and illustrations.
+                        <br />
+                        <br />
+                        <span style={{ fontSize: "12px", opacity: 0.9 }}>
+                          💡 Upgrade to Premium for full 10-principle analysis
+                          with concept graphs, pattern recognition, and detailed
+                          recommendations.
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {error && (
+                    <div
+                      style={{
+                        marginTop: "12px",
+                        padding: "12px",
+                        backgroundColor: "white",
+                        color: "#991b1b",
+                        borderRadius: "20px",
+                        fontSize: "14px",
+                      }}
+                    >
+                      ⚠️ {error}
+                    </div>
+                  )}
+
+                  {progress && (
+                    <div
+                      style={{
+                        marginTop: "12px",
+                        padding: "12px",
+                        backgroundColor: "white",
+                        color: "#2c3e50",
+                        borderRadius: "20px",
+                        fontSize: "14px",
+                      }}
+                    >
+                      {progress}
+                    </div>
+                  )}
+                </div>
+
+                {/* Analysis Results */}
+                {analysis && (
+                  <div
+                    ref={analysisPanelRef}
+                    className="app-panel"
+                    style={{
+                      flex: 1,
+                      overflow: "auto",
+                      padding: "16px",
+                      backgroundColor:
+                        viewMode === "analysis" ? "#ead6c1" : "#f5e0c4",
+                      border:
+                        viewMode === "analysis"
+                          ? "1.5px solid #e0c392"
+                          : "1.5px solid #f7d8a8",
+                    }}
+                  >
+                    <div
+                      style={{
+                        marginBottom: "16px",
+                        display: "flex",
+                        gap: "8px",
+                      }}
+                    >
+                      <button
+                        onClick={() => {
+                          setViewMode("analysis");
+                          // Clear highlight position when switching to analysis mode
+                          // to prevent unwanted jumps
+                          setHighlightPosition(null);
+                        }}
+                        style={{
+                          flex: 1,
+                          padding: "12px 16px",
+                          backgroundColor:
+                            viewMode === "analysis" ? "#ef8432" : "#fef5e7",
+                          color: viewMode === "analysis" ? "white" : "#2c3e50",
+                          border:
+                            viewMode === "analysis"
+                              ? "2px solid #ef8432"
+                              : "2px solid #e0c392",
+                          borderRadius: "8px",
+                          cursor: "pointer",
+                          fontSize: "15px",
+                          fontWeight: viewMode === "analysis" ? "700" : "600",
+                          transition: "all 0.2s",
+                          boxShadow:
+                            viewMode === "analysis"
+                              ? "0 2px 8px rgba(239, 132, 50, 0.3)"
+                              : "none",
+                        }}
+                        onMouseEnter={(e) => {
+                          if (viewMode !== "analysis") {
+                            e.currentTarget.style.backgroundColor = "#f7e6d0";
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (viewMode !== "analysis") {
+                            e.currentTarget.style.backgroundColor = "#fef5e7";
+                          }
+                        }}
+                      >
+                        📊 Analysis Mode
+                        {viewMode === "analysis" && " ✓"}
+                      </button>
+                      <button
+                        onClick={() => {
+                          // Check access for Writer Mode
+                          const features = ACCESS_TIERS[accessLevel];
+                          if (!features.writerMode) {
+                            setUpgradeFeature("Writer Mode");
+                            setUpgradeTarget("professional");
+                            setShowUpgradePrompt(true);
+                            return;
+                          }
+                          setViewMode("writer");
+                        }}
+                        style={{
+                          flex: 1,
+                          padding: "12px 16px",
+                          backgroundColor:
+                            viewMode === "writer" ? "#ef8432" : "#fef5e7",
+                          color: viewMode === "writer" ? "white" : "#2c3e50",
+                          border:
+                            viewMode === "writer"
+                              ? "2px solid #ef8432"
+                              : "2px solid #e0c392",
+                          borderRadius: "8px",
+                          cursor: ACCESS_TIERS[accessLevel].writerMode
+                            ? "pointer"
+                            : "not-allowed",
+                          fontSize: "15px",
+                          fontWeight: viewMode === "writer" ? "700" : "600",
+                          transition: "all 0.2s",
+                          boxShadow:
+                            viewMode === "writer"
+                              ? "0 2px 8px rgba(239, 132, 50, 0.3)"
+                              : "none",
+                          opacity: ACCESS_TIERS[accessLevel].writerMode
+                            ? 1
+                            : 0.6,
+                        }}
+                        onMouseEnter={(e) => {
+                          if (
+                            viewMode !== "writer" &&
+                            ACCESS_TIERS[accessLevel].writerMode
+                          ) {
+                            e.currentTarget.style.backgroundColor = "#f7e6d0";
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (viewMode !== "writer") {
+                            e.currentTarget.style.backgroundColor = "#fef5e7";
+                          }
+                        }}
+                      >
+                        ✍️ Writer Mode
+                        {viewMode === "writer" && " ✓"}
+                        {!ACCESS_TIERS[accessLevel].writerMode && " 👑"}
+                      </button>
+                    </div>
+
+                    <button
+                      onClick={handleExport}
+                      disabled={!ACCESS_TIERS[accessLevel].exportResults}
                       style={{
                         width: "100%",
                         padding: "8px",
                         backgroundColor: "white",
-                        color: "#f7d8a8",
-                        border: "1.5px solid #f7d8a8",
+                        color: ACCESS_TIERS[accessLevel].exportResults
+                          ? "#2c3e50"
+                          : "#2c3e50",
+                        border: ACCESS_TIERS[accessLevel].exportResults
+                          ? "1.5px solid #2c3e50"
+                          : "1.5px solid #e0c392",
                         borderRadius: "20px",
-                        cursor: "pointer",
+                        cursor: ACCESS_TIERS[accessLevel].exportResults
+                          ? "pointer"
+                          : "not-allowed",
                         fontSize: "14px",
                         fontWeight: "600",
                         marginBottom: "16px",
+                        transition: "background-color 0.2s",
+                      }}
+                      onMouseEnter={(e) => {
+                        if (ACCESS_TIERS[accessLevel].exportResults)
+                          e.currentTarget.style.backgroundColor = "#f7e6d0";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = "white";
                       }}
                     >
-                      🤖 Generate AI Template
+                      📥 Export JSON{" "}
+                      {!ACCESS_TIERS[accessLevel].exportResults && "🔒"}
                     </button>
-                  )}
 
-                  {viewMode === "analysis" ? (
-                    <>
-                      {!ACCESS_TIERS[accessLevel].fullAnalysis && (
-                        <InlineUpgradePrompt
-                          targetLevel="premium"
-                          feature="Full Manuscript Analysis"
-                          description="Unlock comprehensive pacing analysis, show-vs-tell insights, dialogue balance, and detailed writing recommendations for your entire manuscript."
-                          onUpgrade={() => {
-                            setUpgradeFeature("Full Analysis");
-                            setUpgradeTarget("premium");
-                            setShowUpgradePrompt(true);
+                    {viewMode === "writer" && analysis && (
+                      <button
+                        onClick={() => setShowTemplateSelector(true)}
+                        style={{
+                          width: "100%",
+                          padding: "8px",
+                          backgroundColor: "white",
+                          color: "#2c3e50",
+                          border: "1.5px solid #e0c392",
+                          borderRadius: "20px",
+                          cursor: "pointer",
+                          fontSize: "14px",
+                          fontWeight: "600",
+                          marginBottom: "16px",
+                          transition: "background-color 0.2s",
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = "#f7e6d0";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = "white";
+                        }}
+                      >
+                        🤖 Generate AI Template
+                      </button>
+                    )}
+
+                    {viewMode === "analysis" ? (
+                      <>
+                        {!ACCESS_TIERS[accessLevel].fullAnalysis && (
+                          <InlineUpgradePrompt
+                            targetLevel="premium"
+                            feature="Full Manuscript Analysis"
+                            description="Unlock comprehensive pacing analysis, show-vs-tell insights, dialogue balance, and detailed writing recommendations for your entire manuscript."
+                            onUpgrade={() => {
+                              setUpgradeFeature("Full Analysis");
+                              setUpgradeTarget("premium");
+                              setShowUpgradePrompt(true);
+                            }}
+                          />
+                        )}
+                        <ChapterAnalysisDashboard
+                          analysis={analysis}
+                          concepts={analysis.conceptGraph?.concepts || []}
+                          onConceptClick={handleConceptClick}
+                          highlightedConceptId={highlightedConceptId}
+                          currentMentionIndex={currentMentionIndex}
+                          accessLevel={accessLevel}
+                          hasDomain={
+                            selectedDomain !== "none" && selectedDomain !== null
+                          }
+                          activeDomain={selectedDomain}
+                          relationships={
+                            analysis.conceptGraph?.relationships || []
+                          }
+                          generalConcepts={
+                            selectedDomain === "none"
+                              ? generalConcepts
+                              : undefined
+                          }
+                          onGeneralConceptClick={(position, term) => {
+                            setHighlightPosition(position);
+                            setSearchWord(term);
+                            setSearchOccurrence(0);
                           }}
                         />
-                      )}
-                      <ChapterAnalysisDashboard
-                        analysis={analysis}
-                        concepts={analysis.conceptGraph?.concepts || []}
-                        onConceptClick={handleConceptClick}
-                        highlightedConceptId={highlightedConceptId}
-                        currentMentionIndex={currentMentionIndex}
-                        accessLevel={accessLevel}
-                        hasDomain={
-                          selectedDomain !== "none" && selectedDomain !== null
-                        }
-                        activeDomain={selectedDomain}
-                        relationships={
-                          analysis.conceptGraph?.relationships || []
-                        }
-                        generalConcepts={
-                          selectedDomain === "none"
-                            ? generalConcepts
-                            : undefined
-                        }
-                        onGeneralConceptClick={(position, term) => {
-                          setHighlightPosition(position);
-                          setSearchWord(term);
-                          setSearchOccurrence(0);
+                      </>
+                    ) : (
+                      <div
+                        style={{
+                          padding: "20px",
+                          backgroundColor: "transparent",
+                          borderRadius: "24px",
+                          overflowY: "auto",
+                          overflowX: "hidden",
+                          maxHeight: "calc(100vh - 220px)",
+                          WebkitOverflowScrolling: "touch",
                         }}
-                      />
-                    </>
-                  ) : (
-                    <div
-                      style={{
-                        padding: "20px",
-                        backgroundColor: "transparent",
-                        borderRadius: "24px",
-                        overflowY: "auto",
-                        overflowX: "hidden",
-                        maxHeight: "calc(100vh - 220px)",
-                        WebkitOverflowScrolling: "touch",
-                      }}
-                      tabIndex={0}
-                    >
-                      <h3 className="section-header">✍️ Writing Suggestions</h3>
+                        tabIndex={0}
+                      >
+                        <h3 className="section-header">
+                          ✍️ Writing Suggestions
+                        </h3>
 
-                      {/* Principle Scores */}
-                      <div style={{ marginBottom: "24px" }}>
-                        <h4
-                          style={{
-                            fontSize: "14px",
-                            fontWeight: "600",
-                            marginBottom: "12px",
-                            color: "#2c3e50",
-                          }}
-                        >
-                          Writing Metrics
-                        </h4>
-                        {analysis.principles
-                          ?.slice(0, 5)
-                          .map((principle: any) => (
-                            <div
-                              key={principle.principle}
-                              style={{
-                                marginBottom: "8px",
-                                padding: "8px 12px",
-                                backgroundColor: "#fef5e7",
-                                borderRadius: "20px",
-                                display: "flex",
-                                justifyContent: "space-between",
-                                alignItems: "center",
-                              }}
-                            >
-                              <span
-                                style={{ fontSize: "13px", fontWeight: "500" }}
-                              >
-                                {principle.principle
-                                  .replace(/([A-Z])/g, " $1")
-                                  .trim()}
-                              </span>
-                              <span
-                                style={{
-                                  fontSize: "14px",
-                                  fontWeight: "600",
-                                  color:
-                                    principle.score > 70
-                                      ? "#10b981"
-                                      : principle.score > 50
-                                      ? "#f59e0b"
-                                      : "#ef4444",
-                                }}
-                              >
-                                {Math.round(principle.score)}/100
-                              </span>
-                            </div>
-                          ))}
-                      </div>
-
-                      {/* Recommendations */}
-                      <div>
-                        <h4
-                          style={{
-                            fontSize: "14px",
-                            fontWeight: "600",
-                            marginBottom: "12px",
-                            color: "#2c3e50",
-                          }}
-                        >
-                          Top Recommendations
-                        </h4>
-                        {analysis.recommendations
-                          ?.slice(0, 8)
-                          .map((rec: any) => (
-                            <div
-                              key={rec.id}
-                              style={{
-                                marginBottom: "12px",
-                                padding: "12px",
-                                backgroundColor: "#fff",
-                                border: `2px solid ${
-                                  rec.priority === "high"
-                                    ? "#ef4444"
-                                    : rec.priority === "medium"
-                                    ? "#f59e0b"
-                                    : "#e0c392"
-                                }`,
-                                borderRadius: "20px",
-                              }}
-                            >
+                        {/* Principle Scores */}
+                        <div style={{ marginBottom: "24px" }}>
+                          <h4
+                            style={{
+                              fontSize: "14px",
+                              fontWeight: "600",
+                              marginBottom: "12px",
+                              color: "#2c3e50",
+                            }}
+                          >
+                            Writing Metrics
+                          </h4>
+                          {analysis.principles
+                            ?.slice(0, 5)
+                            .map((principle: any) => (
                               <div
+                                key={principle.principle}
                                 style={{
+                                  marginBottom: "8px",
+                                  padding: "8px 12px",
+                                  backgroundColor: "#fef5e7",
+                                  borderRadius: "20px",
                                   display: "flex",
-                                  alignItems: "start",
-                                  gap: "8px",
-                                  marginBottom: "6px",
+                                  justifyContent: "space-between",
+                                  alignItems: "center",
                                 }}
                               >
                                 <span
                                   style={{
-                                    fontSize: "10px",
-                                    fontWeight: "600",
-                                    padding: "2px 6px",
-                                    borderRadius: "16px",
-                                    backgroundColor:
-                                      rec.priority === "high"
-                                        ? "#fee2e2"
-                                        : rec.priority === "medium"
-                                        ? "#fef3c7"
-                                        : "#f2ebe3",
-                                    color:
-                                      rec.priority === "high"
-                                        ? "#991b1b"
-                                        : rec.priority === "medium"
-                                        ? "#92400e"
-                                        : "#2c3e50",
-                                    textTransform: "uppercase",
-                                  }}
-                                >
-                                  {rec.priority}
-                                </span>
-                                <h5
-                                  style={{
-                                    margin: 0,
                                     fontSize: "13px",
-                                    fontWeight: "600",
-                                    flex: 1,
+                                    fontWeight: "500",
                                   }}
                                 >
-                                  {rec.title}
-                                </h5>
+                                  {principle.principle
+                                    .replace(/([A-Z])/g, " $1")
+                                    .trim()}
+                                </span>
+                                <span
+                                  style={{
+                                    fontSize: "14px",
+                                    fontWeight: "600",
+                                    color:
+                                      principle.score > 70
+                                        ? "#10b981"
+                                        : principle.score > 50
+                                        ? "#f59e0b"
+                                        : "#ef4444",
+                                  }}
+                                >
+                                  {Math.round(principle.score)}/100
+                                </span>
                               </div>
-                              <p
+                            ))}
+                        </div>
+
+                        {/* Recommendations */}
+                        <div>
+                          <h4
+                            style={{
+                              fontSize: "14px",
+                              fontWeight: "600",
+                              marginBottom: "12px",
+                              color: "#2c3e50",
+                            }}
+                          >
+                            Top Recommendations
+                          </h4>
+                          {analysis.recommendations
+                            ?.slice(0, 8)
+                            .map((rec: any) => (
+                              <div
+                                key={rec.id}
                                 style={{
-                                  margin: "0",
-                                  fontSize: "12px",
-                                  color: "#2c3e50",
-                                  lineHeight: "1.5",
+                                  marginBottom: "12px",
+                                  padding: "12px",
+                                  backgroundColor: "#fff",
+                                  border: `2px solid ${
+                                    rec.priority === "high"
+                                      ? "#ef4444"
+                                      : rec.priority === "medium"
+                                      ? "#f59e0b"
+                                      : "#e0c392"
+                                  }`,
+                                  borderRadius: "20px",
                                 }}
                               >
-                                {rec.description}
-                              </p>
-                            </div>
-                          ))}
-                      </div>
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    alignItems: "start",
+                                    gap: "8px",
+                                    marginBottom: "6px",
+                                  }}
+                                >
+                                  <span
+                                    style={{
+                                      fontSize: "10px",
+                                      fontWeight: "600",
+                                      padding: "2px 6px",
+                                      borderRadius: "16px",
+                                      backgroundColor:
+                                        rec.priority === "high"
+                                          ? "#fee2e2"
+                                          : rec.priority === "medium"
+                                          ? "#fef3c7"
+                                          : "#f2ebe3",
+                                      color:
+                                        rec.priority === "high"
+                                          ? "#991b1b"
+                                          : rec.priority === "medium"
+                                          ? "#92400e"
+                                          : "#2c3e50",
+                                      textTransform: "uppercase",
+                                    }}
+                                  >
+                                    {rec.priority}
+                                  </span>
+                                  <h5
+                                    style={{
+                                      margin: 0,
+                                      fontSize: "13px",
+                                      fontWeight: "600",
+                                      flex: 1,
+                                    }}
+                                  >
+                                    {rec.title}
+                                  </h5>
+                                </div>
+                                <p
+                                  style={{
+                                    margin: "0",
+                                    fontSize: "12px",
+                                    color: "#2c3e50",
+                                    lineHeight: "1.5",
+                                  }}
+                                >
+                                  {rec.description}
+                                </p>
+                              </div>
+                            ))}
+                        </div>
 
-                      {/* Missing Concepts - Removed in MVP */}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+                        {/* Missing Concepts - Removed in MVP */}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {shouldShowBackToTop && (
           <button
@@ -3662,7 +4114,7 @@ export const ChapterCheckerV2: React.FC = () => {
                   color: "#2c3e50",
                 }}
               >
-                🤖 Select Template Type
+                🤖 Generate AI Template
               </h2>
               <p
                 style={{
@@ -3672,9 +4124,8 @@ export const ChapterCheckerV2: React.FC = () => {
                   lineHeight: "1.6",
                 }}
               >
-                Choose a template that matches your content type. Each template
-                provides structured prompts for AI assistance and manual
-                writing.
+                Choose a template type below. You can manually fill in the
+                template or use Claude AI to auto-generate content.
               </p>
             </div>
 
@@ -3691,9 +4142,9 @@ export const ChapterCheckerV2: React.FC = () => {
                   key={template.id}
                   style={{
                     padding: "20px",
-                    backgroundColor: "#ffffff",
-                    border: "2px solid #e0c392",
-                    borderRadius: "24px",
+                    backgroundColor: "#fef5e7",
+                    border: "1.5px solid #e0c392",
+                    borderRadius: "20px",
                   }}
                 >
                   <div
@@ -3774,19 +4225,20 @@ export const ChapterCheckerV2: React.FC = () => {
                       style={{
                         flex: 1,
                         padding: "10px",
-                        backgroundColor: "#f2ebe3",
+                        backgroundColor: "white",
                         color: "#2c3e50",
-                        border: "1px solid #e0c392",
+                        border: "1.5px solid #e0c392",
                         borderRadius: "20px",
                         fontSize: "13px",
                         fontWeight: "600",
                         cursor: "pointer",
+                        transition: "background-color 0.2s",
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = "#e0c392";
+                        e.currentTarget.style.backgroundColor = "#f7e6d0";
                       }}
                       onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = "#f2ebe3";
+                        e.currentTarget.style.backgroundColor = "white";
                       }}
                     >
                       📝 Manual Template
@@ -3801,19 +4253,22 @@ export const ChapterCheckerV2: React.FC = () => {
                       style={{
                         flex: 1,
                         padding: "10px",
-                        backgroundColor: "#2c3e50",
-                        color: "#2c3e50",
-                        border: "1.5px solid #2c3e50",
+                        backgroundColor: "#ef8432",
+                        color: "white",
+                        border: "1.5px solid #ef8432",
                         borderRadius: "20px",
                         fontSize: "13px",
                         fontWeight: "600",
                         cursor: "pointer",
+                        transition: "all 0.2s",
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = "#2c3e50";
+                        e.currentTarget.style.backgroundColor = "#d97326";
+                        e.currentTarget.style.borderColor = "#d97326";
                       }}
                       onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = "#2c3e50";
+                        e.currentTarget.style.backgroundColor = "#ef8432";
+                        e.currentTarget.style.borderColor = "#ef8432";
                       }}
                     >
                       🤖 Generate with Claude AI

@@ -809,7 +809,7 @@ export function NavigationMenu({
               color: "#9ca3af",
             }}
           >
-            Evidence-based learning science at your fingertips
+            Craft compelling stories with confidence
           </p>
         </div>
       </div>

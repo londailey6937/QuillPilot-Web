@@ -15,15 +15,15 @@ export interface Template {
 }
 
 /**
- * Academic Educational Content Template
- * Focused on learning principles (spacing, dual coding)
+ * Fiction Writing Template
+ * Focused on narrative elements and storytelling techniques
  */
 const academicTemplate: Template = {
-  id: "academic",
-  name: "Academic/Educational Content",
+  id: "fiction",
+  name: "Fiction Writing",
   description:
-    "For textbooks, courses, and educational materials with learning principle optimization",
-  icon: "📚",
+    "For novels, short stories, and creative narratives with character and plot development",
+  icon: "📖",
   category: "academic",
   generateTemplate: (analysis, chapterText) => {
     const spacingScore =
@@ -195,14 +195,14 @@ const employeeManualTemplate: Template = {
 };
 
 /**
- * General Content Template
- * Flexible structure for articles, guides, and general writing
+ * Non-Fiction Writing Template
+ * For articles, guides, memoirs, and informational writing
  */
 const generalContentTemplate: Template = {
-  id: "general",
-  name: "General Content",
-  description: "For articles, blog posts, guides, and general-purpose writing",
-  icon: "📝",
+  id: "nonfiction",
+  name: "Non-Fiction Writing",
+  description: "For articles, memoirs, essays, and informational content",
+  icon: "✍️",
   category: "general",
   generateTemplate: (analysis, chapterText) => {
     const cognitiveLoad =
@@ -323,9 +323,8 @@ const generalContentTemplate: Template = {
  * Template Library - All available templates
  */
 export const TEMPLATE_LIBRARY: Template[] = [
-  academicTemplate,
-  employeeManualTemplate,
-  generalContentTemplate,
+  academicTemplate, // Fiction Writing
+  generalContentTemplate, // Non-Fiction Writing
 ];
 
 /**

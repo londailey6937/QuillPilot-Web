@@ -24,6 +24,9 @@ interface DocumentEditorProps {
   concepts?: string[];
   onConceptClick?: (concept: string) => void;
   isFreeMode?: boolean;
+  leftMargin?: number;
+  rightMargin?: number;
+  firstLineIndent?: number;
 }
 
 export const DocumentEditor: React.FC<DocumentEditorProps> = ({
@@ -41,6 +44,9 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
   onConceptClick,
   isFreeMode = false,
   viewMode,
+  leftMargin = 48,
+  rightMargin = 48,
+  firstLineIndent = 96,
 }) => {
   // Determine initial content: prefer HTML if available, otherwise text
   const startContent = htmlContent || initialText;
@@ -67,6 +73,9 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
         onConceptClick={onConceptClick}
         isFreeMode={isFreeMode}
         viewMode={viewMode as "analysis" | "writer" | undefined}
+        leftMargin={leftMargin}
+        rightMargin={rightMargin}
+        firstLineIndent={firstLineIndent}
         style={{ flex: 1, minHeight: 0 }}
       />
     </div>

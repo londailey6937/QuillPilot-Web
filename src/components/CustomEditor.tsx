@@ -14,6 +14,9 @@ interface CustomEditorProps {
   onConceptClick?: (concept: string) => void;
   isFreeMode?: boolean;
   viewMode?: "analysis" | "writer";
+  leftMargin?: number;
+  rightMargin?: number;
+  firstLineIndent?: number;
 }
 
 interface AnalysisData {
@@ -43,6 +46,9 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   onConceptClick,
   isFreeMode = false,
   viewMode = "analysis",
+  leftMargin = 48,
+  rightMargin = 48,
+  firstLineIndent = 96,
 }) => {
   const editorRef = useRef<HTMLDivElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -292,6 +298,22 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           }, 100);
         });
       });
+    } else if (editorRef.current && !content) {
+      // Initialize empty editor with a paragraph
+      editorRef.current.innerHTML = `<p><br></p>`;
+
+      // Place cursor in the paragraph
+      const range = document.createRange();
+      const sel = window.getSelection();
+      const firstP = editorRef.current.querySelector("p");
+      if (firstP) {
+        range.setStart(firstP, 0);
+        range.collapse(true);
+        sel?.removeAllRanges();
+        sel?.addRange(range);
+      }
+
+      setIsLoading(false);
     } else {
       setIsLoading(false);
     }
@@ -827,6 +849,15 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
       const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
       const modKey = isMac ? e.metaKey : e.ctrlKey;
 
+      // Handle Tab key for indentation
+      if (e.key === "Tab") {
+        e.preventDefault();
+        document.execCommand("insertHTML", false, "\u00A0\u00A0\u00A0\u00A0"); // 4 non-breaking spaces
+        return;
+      }
+
+      // Only handle keyboard shortcuts with modifier keys
+      // All other keys (including Enter) pass through for natural behavior and auto-repeat
       if (!modKey) return;
 
       switch (e.key.toLowerCase()) {
@@ -867,7 +898,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           break;
       }
     },
-    [formatText, performUndo, performRedo]
+    [formatText, performUndo, performRedo, firstLineIndent, leftMargin]
   );
 
   // Update format state
@@ -1656,6 +1687,8 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
             minHeight: "300px",
             maxWidth: "800px",
             margin: "20px auto",
+            paddingLeft: `${leftMargin}px`,
+            paddingRight: `${rightMargin}px`,
             border: isEditable ? "2px solid #10b981" : "1px solid #d1d5db",
             backgroundColor: isEditable ? "#ffffff" : "#fafafa",
             boxShadow: isEditable
@@ -1677,7 +1710,9 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
 
       <style>{`
         .editor-content p {
-          margin: 1em 0;
+          margin: 0.5em 0;
+          line-height: 1.2;
+          text-indent: ${firstLineIndent - leftMargin}px;
         }
         .editor-content p:first-child {
           margin-top: 0;
