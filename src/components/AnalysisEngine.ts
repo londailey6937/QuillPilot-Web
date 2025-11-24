@@ -20,6 +20,7 @@ import {
   extractParagraphs,
 } from "@/utils/spacingInsights";
 import { DualCodingAnalyzer } from "@/utils/dualCodingAnalyzer";
+import { SensoryDetailAnalyzer } from "@/utils/sensoryDetailAnalyzer";
 import { analyzeCharacters } from "@/utils/characterAnalyzer";
 import type { CharacterAnalysisResult } from "@/utils/characterAnalyzer";
 import { analyzeThemes } from "@/utils/themeAnalyzer";
@@ -84,15 +85,15 @@ export class AnalysisEngine {
         else balancedCount++;
       });
 
-      onProgress?.("analyzing-visuals", "Analyzing show vs tell");
+      onProgress?.("analyzing-visuals", "Analyzing sensory detail density");
 
-      // Analyze dual-coding for each paragraph
+      // Analyze sensory detail density for each paragraph
       let suggestionCount = 0;
       paragraphs.forEach((para, index) => {
         const prevPara = index > 0 ? paragraphs[index - 1].text : "";
         const nextPara =
           index < paragraphs.length - 1 ? paragraphs[index + 1].text : "";
-        const suggestions = DualCodingAnalyzer.analyzeParagraph(
+        const suggestions = SensoryDetailAnalyzer.analyzeParagraph(
           para.text,
           index,
           prevPara,
@@ -185,8 +186,8 @@ export class AnalysisEngine {
         extended: extendedCount,
       };
 
-      // Create dual-coding analysis object for scoring
-      const dualCodingAnalysis = {
+      // Create sensory detail analysis object for scoring
+      const sensoryAnalysis = {
         suggestionCount,
         totalParagraphs: paragraphs.length,
       };
@@ -227,11 +228,11 @@ export class AnalysisEngine {
         },
         {
           principleId: "dualCoding",
-          principle: "Show vs Tell",
-          score: this.calculateDualCodingScore(dualCodingAnalysis),
+          principle: "Sensory Detail Density",
+          score: this.calculateSensoryDetailScore(sensoryAnalysis),
           weight: 1.0,
           details: [
-            `${dualCodingAnalysis.suggestionCount} areas could use more sensory details`,
+            `${sensoryAnalysis.suggestionCount} paragraphs need more sensory details`,
           ],
           suggestions: [],
         },
@@ -1061,22 +1062,31 @@ export class AnalysisEngine {
   }
 
   /**
-   * Calculate dual-coding (show vs tell) score
+   * Calculate sensory detail density score
    */
-  private static calculateDualCodingScore(dualCodingAnalysis: any): number {
-    // Lower suggestion count = better showing
-    const suggestionCount = dualCodingAnalysis.suggestionCount || 0;
-    const totalParagraphs = dualCodingAnalysis.totalParagraphs || 1;
+  private static calculateSensoryDetailScore(sensoryAnalysis: any): number {
+    // Lower suggestion count = better sensory density
+    const suggestionCount = sensoryAnalysis.suggestionCount || 0;
+    const totalParagraphs = sensoryAnalysis.totalParagraphs || 1;
 
     const suggestionRatio = suggestionCount / totalParagraphs;
 
-    // Score based on ratio of paragraphs needing more description
-    if (suggestionRatio < 0.1) return 95;
-    if (suggestionRatio < 0.2) return 85;
-    if (suggestionRatio < 0.3) return 75;
-    if (suggestionRatio < 0.4) return 65;
-    if (suggestionRatio < 0.5) return 55;
-    return 45;
+    // Score based on ratio of paragraphs needing more sensory details
+    // Lower ratio = higher score (fewer paragraphs need improvement)
+    if (suggestionRatio < 0.1) return 95; // <10% need improvement
+    if (suggestionRatio < 0.2) return 85; // 10-20%
+    if (suggestionRatio < 0.3) return 75; // 20-30%
+    if (suggestionRatio < 0.4) return 65; // 30-40%
+    if (suggestionRatio < 0.5) return 55; // 40-50%
+    return 45; // >50% need improvement
+  }
+
+  /**
+   * Calculate dual-coding (show vs tell) score
+   * @deprecated - replaced by calculateSensoryDetailScore
+   */
+  private static calculateDualCodingScore(dualCodingAnalysis: any): number {
+    return this.calculateSensoryDetailScore(dualCodingAnalysis);
   }
 
   /**

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { analyzeParagraphSpacing, countWords } from "@/utils/spacingInsights";
-import { DualCodingAnalyzer } from "@/utils/dualCodingAnalyzer";
+import { SensoryDetailAnalyzer } from "@/utils/sensoryDetailAnalyzer";
 
 interface CustomEditorProps {
   content: string;
@@ -135,9 +135,9 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
             });
           }
 
-          // Also analyze dual-coding for sampled paragraphs with 50+ words
+          // Also analyze sensory details for sampled paragraphs with 50+ words
           if (wordCount >= 50) {
-            const suggestions = DualCodingAnalyzer.analyzeParagraph(
+            const suggestions = SensoryDetailAnalyzer.analyzeParagraph(
               para,
               index
             );
@@ -161,14 +161,17 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           });
         }
 
-        // For large docs, analyze dual-coding for paragraphs with 50+ words
+        // For large docs, analyze sensory details for paragraphs with 50+ words
         // For normal docs, analyze all paragraphs with >10 chars
         const shouldAnalyzeDualCoding = isLarge
           ? wordCount >= 50
           : para.length >= 10;
 
         if (shouldAnalyzeDualCoding) {
-          const suggestions = DualCodingAnalyzer.analyzeParagraph(para, index);
+          const suggestions = SensoryDetailAnalyzer.analyzeParagraph(
+            para,
+            index
+          );
           if (suggestions.length > 0) {
             visualsData.push({ index, suggestions });
           }

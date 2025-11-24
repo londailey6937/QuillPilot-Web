@@ -32,11 +32,11 @@ QuillPilot analyzes your manuscript across **33 different writing dimensions** t
    - Target: 40-60% balanced paragraphs with good variety
    - Score: 35-98 based on balance and distribution
 
-2. **Show vs Tell** - Sensory details and immersive writing
+2. **Sensory Detail Density** - Immersive sensory language
 
-   - Identifies paragraphs needing more sensory description
-   - Detects abstract "telling" that could be concrete "showing"
-   - Target: <20% of paragraphs flagged for improvement
+   - Tracks visual, auditory, tactile, olfactory, and gustatory words
+   - Measures percentage of sensory language per paragraph
+   - Target: >12% sensory word density
 
 3. **Character Development** - Character arcs and emotional trajectories
 
@@ -253,43 +253,40 @@ The Analysis Panel displays **Writing Metrics** - here's what each one measures 
 - Expand thin paragraphs <60 words with details
 - Aim for variety: action scenes use shorter paragraphs, reflection uses longer
 
-#### 2. **Show vs Tell**
+#### 2. **Sensory Detail Density**
 
-**What it measures:** Sensory details and immersive writing techniques
+**What it measures:** Immersive sensory language across all five senses
 
 **How it's scored:**
 
-- Identifies paragraphs needing more sensory description
-- Counts "telling" that could be "showing"
-- Target: <20% of paragraphs flagged
+- Tracks visual, auditory, tactile, olfactory, and gustatory words
+- Measures percentage of sensory words in each paragraph
+- Target: >12% sensory word density
+- Score based on % of paragraphs below threshold
 
 **What you'll see:**
 
-- Number of areas needing more sensory details
-- **Yellow callout boxes** with specific suggestions:
-  - **"Add sensory details to show the scene"** - Contains spatial/structural language that needs sensory grounding
-  - **"Show this action instead of telling about it"** - Process or sequence descriptions that could be dramatized
-  - **"Dramatize this exposition through scene"** - Comparisons or explanations that need active demonstration
-  - **"Replace abstract telling with concrete sensory details"** - Abstract concepts needing concrete examples
-  - **"Add immersive, sensory language"** - Dense explanatory text lacking sensory engagement
+- Yellow callout boxes on low-sensory paragraphs (<12% density)
+- Specific sense recommendations (e.g., "No visual details found")
+- Density percentages and missing senses identified
 
-**How the analyzer detects "telling":**
+**Sensory word categories:**
 
-QuillPilot identifies five types of abstract writing that benefit from sensory details:
-
-1. **Spatial/structural language** (above, below, left, right, structure, arrangement) - Flags scenes described geometrically without sensory grounding
-2. **Process descriptions** (first, then, next, begins, leads to) - Detects sequential telling that could be shown through action
-3. **Quantitative/comparison language** (more, less, greater, higher, contrast) - Identifies abstract comparisons needing dramatization
-4. **Abstract concepts** (theory, principle, relationship, means, represents) - Finds conceptual telling that needs concrete examples
-5. **Technical/explanatory density** - Detects paragraphs heavy with exposition lacking immersive language
+1. **Visual** (200+ words): see, look, watch, gaze, color, bright, dark, shimmer, gleam, red, blue, pale, vivid, shadow
+2. **Auditory** (150+ words): hear, listen, sound, voice, echo, whisper, shout, scream, buzz, click, crash, silent, loud
+3. **Olfactory** (50+ words): smell, scent, aroma, stench, sniff, fresh, musty, smoky, floral, earthy
+4. **Tactile** (100+ words): feel, touch, smooth, rough, soft, hard, warm, cold, wet, dry, pain, ache, grasp, stroke
+5. **Gustatory** (40+ words): taste, flavor, lick, sweet, salty, sour, bitter, delicious, eat, drink
 
 **How to improve:**
 
-- Replace "She was angry" with "Her fists clenched"
-- Add sensory details: what characters see, hear, smell, touch, taste
-- Use action and dialogue to reveal emotions
-- Show character reactions instead of stating feelings
-- Ground spatial descriptions with sensory details (not just "the room was large" but "footsteps echoed across the marble floor")
+- Add visual details: colors, shapes, movement, light/shadow
+- Include sounds: dialogue, environmental noise, silence
+- Use tactile sensations: temperature, texture, physical feeling
+- Incorporate smells: especially for memory and atmosphere
+- Mention taste: in eating scenes or metaphorically
+- Aim for 3-5 sensory details per paragraph in descriptive passages
+- Use sensory language in action scenes to ground readers
 
 #### 3. **Character Development**
 

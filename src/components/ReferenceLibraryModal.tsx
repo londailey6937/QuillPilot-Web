@@ -21,7 +21,7 @@ export function ReferenceLibraryModal({
 
   const sections = {
     spacing: "Pacing & Flow",
-    dualCoding: "Show vs Tell",
+    dualCoding: "Sensory Detail Density",
     export: "Export Formats",
     domains: "Genre Libraries",
     tiers: "Access Tiers",
@@ -272,7 +272,7 @@ export function ReferenceLibraryModal({
                 className="quickstart-card"
                 style={{ borderRadius: "1rem" }}
               >
-                <h4>Show vs Tell Analysis Reference</h4>
+                <h4>Sensory Detail Density Analysis Reference</h4>
 
                 <h3
                   style={{
@@ -281,13 +281,13 @@ export function ReferenceLibraryModal({
                     color: "#374151",
                   }}
                 >
-                  What is Show vs Tell?
+                  What is Sensory Detail Density?
                 </h3>
                 <p style={{ marginBottom: "1rem", lineHeight: "1.6" }}>
-                  <strong>Show Don't Tell</strong> is the cornerstone of
-                  immersive fiction. Instead of stating facts about characters
-                  or situations, effective fiction uses sensory details,
-                  actions, and dialogue to let readers experience the story.
+                  <strong>Sensory Detail Density</strong> measures how much
+                  immersive, sensory language appears in your writing. Effective
+                  fiction engages readers through the five senses, making scenes
+                  vivid and memorable rather than abstract and distant.
                 </p>
 
                 <h3
@@ -297,7 +297,7 @@ export function ReferenceLibraryModal({
                     color: "#374151",
                   }}
                 >
-                  Types of Sensory Details
+                  The Five Senses in Writing
                 </h3>
                 <table
                   style={{
