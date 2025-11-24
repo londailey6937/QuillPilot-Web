@@ -86,11 +86,13 @@ const PRINCIPLE_NAME_MAP: Record<string, string> = {
 const CharacterArcTrajectory: React.FC<{ characterAnalysis: any }> = ({
   characterAnalysis,
 }) => {
-  // Filter to major characters only (protagonist or major role with enough mentions)
+  // Filter to major characters (protagonist, major, or supporting with enough mentions)
   const majorCharacters = characterAnalysis.characters.filter(
     (char: any) =>
-      (char.role === "protagonist" || char.role === "major") &&
-      char.totalMentions >= 5
+      (char.role === "protagonist" ||
+        char.role === "major" ||
+        char.role === "supporting") &&
+      char.totalMentions >= 3 // Lowered from 5 to include more characters
   );
 
   if (majorCharacters.length === 0) {

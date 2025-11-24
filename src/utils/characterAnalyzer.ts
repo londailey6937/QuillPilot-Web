@@ -318,17 +318,22 @@ function determineArcType(trajectory: {
     (trajectory.early > trajectory.middle &&
       trajectory.middle > trajectory.late);
 
-  // Lowered threshold from 20 to 15 for better detection
-  // Also consider progressive change through middle
-  if (totalChange > 15 || (totalChange > 10 && hasProgression)) {
-    return "dynamic"; // Significant change or clear progression
+  // Debug logging
+  console.log(
+    `[Arc Detection] early:${trajectory.early} mid:${trajectory.middle} late:${trajectory.late} | change:${totalChange} | progression:${hasProgression}`
+  );
+
+  // Very sensitive thresholds optimized for 3-value sentiment system (25, 50, 75)
+  // Maximum possible change is 50 points, typical changes are 0-25 points
+  if (totalChange >= 8 || (totalChange >= 4 && hasProgression)) {
+    return "dynamic"; // Any detectable emotional change
   }
 
-  if (totalChange < 8) {
-    return "flat"; // Little change (lowered from 10)
+  if (totalChange === 0) {
+    return "flat"; // Absolutely no change
   }
 
-  return "unclear"; // Moderate change
+  return "unclear"; // Very subtle change (1-7 points without progression)
 }
 
 /**
