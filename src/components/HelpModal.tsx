@@ -300,9 +300,9 @@ function QuickStartSection() {
           <h4>What Gets Analyzed</h4>
           <ul className="quickstart-list">
             <li>
-              <strong>30+ Fiction Elements:</strong> Show vs Tell, pacing,
-              dialogue, POV consistency, character development, theme depth, and
-              more
+              <strong>30+ Fiction Elements:</strong> Sensory detail density,
+              pacing, dialogue, POV consistency, character development, theme
+              depth, and more
             </li>
             <li>
               <strong>Character Analysis:</strong> Character arcs, emotional
@@ -346,7 +346,7 @@ function OverviewSection() {
           <ul className="quickstart-list">
             <li>
               <strong>Writing Craft:</strong> 30+ fiction elements including
-              pacing, dialogue, POV, show vs tell, and prose style
+              pacing, dialogue, POV, sensory detail density, and prose style
             </li>
             <li>
               <strong>Characters:</strong> Character development, emotional
@@ -508,7 +508,7 @@ function OverallScoreSection() {
           <ul className="quickstart-list">
             <li>Character development and arc strength</li>
             <li>Pacing and narrative flow</li>
-            <li>Show vs Tell balance</li>
+            <li>Sensory Detail Density</li>
             <li>Conflict presence and intensity</li>
             <li>Dialogue quality and authenticity</li>
             <li>POV consistency</li>
@@ -988,20 +988,21 @@ const fictionRecommendationTypes = [
 // Fiction Elements data
 const fictionElementsData = [
   {
-    name: "1. Show vs Tell",
+    name: "1. Sensory Detail Density",
     definition:
-      "Revealing story through action, dialogue, and sensory details rather than exposition",
-    why: "Showing creates immersive experiences; telling distances readers from the story",
+      "Percentage of sensory words creating immersive, concrete experiences through sight, sound, smell, touch, and taste",
+    why: "Sensory details show rather than tell, creating vivid scenes that engage readers' senses",
     evaluated: [
-      "Ratio of action/dialogue to exposition",
-      "Use of sensory details (sight, sound, smell, touch, taste)",
-      "Physical reactions instead of emotional labels",
-      "Character actions revealing personality",
+      "Visual words (shimmer, gleaming, shadowy)",
+      "Auditory words (whisper, thunder, crackling)",
+      "Olfactory words (fragrant, musty, acrid)",
+      "Tactile words (rough, silky, cold)",
+      "Gustatory words (bitter, sweet, tangy)",
     ],
     ranges: {
-      high: "Vivid, immersive scenes with strong sensory grounding",
-      medium: "Mix of showing and telling, could be more immersive",
-      low: "Heavy exposition, lacking sensory engagement",
+      high: "Rich sensory engagement (>12% density) across multiple senses",
+      medium: "Moderate sensory detail (8-12%), could add more variety",
+      low: "Limited sensory language (<8%), needs concrete descriptions",
     },
   },
   {

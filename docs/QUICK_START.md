@@ -12,13 +12,13 @@
 - Full image support (upload & paste)
 - Working keyboard shortcuts (Cmd+B/I/U/K/F/Z)
 - Inline color-coded analysis indicators
-- Real-time spacing and dual-coding insights
+- Real-time spacing and sensory detail insights
 - Import DOCX files with formatting preserved
 
 ✅ **Core Analysis Features**
 
 - **Spacing & Pacing Analysis**: Paragraph-by-paragraph cognitive load assessment
-- **Dual-Coding Suggestions**: AI-powered visual opportunity detection
+- **Sensory Detail Density**: Tracks 540+ sensory words across 5 senses
 - Smart sidebar with detailed analysis cards
 - Up to 5,000 words per document (~20 pages)
 - Save up to 3 analyzed documents

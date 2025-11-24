@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Test Mammoth HTML</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 40px;
+        max-width: 800px;
+        margin: 0 auto;
+      }
+      .test-content {
+        border: 2px solid #ccc;
+        padding: 20px;
+        background: white;
+      }
+      .test-content p {
+        margin: 10px 0;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Test Mammoth HTML Rendering</h1>
+
+    <h2>Exact HTML from Mammoth:</h2>
+    <div class="test-content" id="mammoth-content">
+      <p>
+        <strong><em>The </em>FIRELIGHT</strong>
+      </p>
+      <p><strong>FAIRY BOOK</strong></p>
+      <p>
+        <strong><em>By </em>HENRY BESTON</strong>
+      </p>
+    </div>
+
+    <h2>Plain Text Version:</h2>
+    <div class="test-content">
+      <p>The FIRELIGHT</p>
+      <p>FAIRY BOOK</p>
+      <p>By HENRY BESTON</p>
+    </div>
+
+    <script>
+      console.log(
+        "First paragraph HTML:",
+        document.querySelector("#mammoth-content p:first-child").innerHTML
+      );
+      console.log(
+        "First paragraph text:",
+        document.querySelector("#mammoth-content p:first-child").textContent
+      );
+    </script>
+  </body>
+</html>

@@ -9,7 +9,7 @@
 1. [Complete Analysis Metrics (33 Total)](#complete-analysis-metrics-33-total)
 2. [Auto-Analysis Explained](#auto-analysis-explained)
 3. [Spacing Analysis Reference](#spacing-analysis-reference)
-4. [Dual Coding Analysis Reference](#dual-coding-analysis-reference)
+4. [Sensory Detail Density Analysis Reference](#sensory-detail-density-analysis-reference)
 5. [Export Formats Guide](#export-formats-guide)
 6. [Domain Libraries Explained](#domain-libraries-explained)
 7. [Concept Matching Strategy](#concept-matching-strategy)
@@ -173,7 +173,7 @@ Auto-analysis runs automatically in two scenarios:
 
 When you upload a document with 200+ words:
 
-- **Free Tier**: Runs basic analysis (Pacing & Show vs Tell only)
+- **Free Tier**: Runs basic analysis (Pacing & Sensory Detail Density only)
 - **Premium/Professional**: Runs full 33-metric analysis
 
 #### 2. **While Typing in Writer Mode** (Professional Tier Only)
@@ -881,50 +881,61 @@ The dashed lines between paragraphs mark "spacing targets" - ideal locations whe
 
 ---
 
-## Dual Coding Analysis Reference
+## Sensory Detail Density Analysis Reference
 
-### What is Dual Coding?
+### What is Sensory Detail Density?
 
-**Dual coding** combines verbal (text) and visual (images, diagrams) representations to enhance learning and memory retention.
+**Sensory detail density** measures the percentage of sensory words in your prose that create immersive, concrete experiences for readers. Rather than telling readers what happens, sensory details show through sight, sound, smell, touch, and taste.
 
-### Visual Suggestion Types
+### Five Sensory Categories (540+ Words Tracked)
 
-The analyzer detects passages that would benefit from visuals and suggests specific formats:
+The analyzer tracks sensory language across all five senses:
 
-| Visual Type         | When Suggested                    | Example Text Patterns                      |
-| ------------------- | --------------------------------- | ------------------------------------------ |
-| 📊 **Diagram**      | Spatial relationships, structures | "consists of three layers", "connected to" |
-| 🧭 **Flowchart**    | Processes, sequences, steps       | "first step", "then proceed", "finally"    |
-| 📈 **Graph**        | Data, trends, comparisons         | "increased by 40%", "correlation between"  |
-| 🎨 **Illustration** | Physical descriptions             | "shaped like", "appears as", "resembles"   |
-| 🧠 **Concept Map**  | Abstract relationships            | "relates to", "category of", "consists of" |
+| Sense Category           | Word Count | Example Words                                    |
+| ------------------------ | ---------- | ------------------------------------------------ |
+| 👁️ **Visual (Sight)**    | 200+ words | shimmer, gleaming, shadowy, vibrant, translucent |
+| 👂 **Auditory (Sound)**  | 150+ words | whisper, thunder, crackling, melodic, resonant   |
+| 👃 **Olfactory (Smell)** | 50+ words  | fragrant, musty, acrid, earthy, pungent          |
+| ✋ **Tactile (Touch)**   | 100+ words | rough, silky, cold, prickly, clammy              |
+| 👅 **Gustatory (Taste)** | 40+ words  | bitter, sweet, tangy, savory, bland              |
 
-### Priority Levels
+### Density Thresholds
 
-Each suggestion has a priority indicating urgency:
+Each paragraph is analyzed for sensory word density:
 
-| Priority            | Badge Color | Meaning                                           | When Assigned                                  |
-| ------------------- | ----------- | ------------------------------------------------- | ---------------------------------------------- |
-| **High Priority**   | 🔴 Red      | Critical - Complex content suffers without visual | Dense technical passages, multi-step processes |
-| **Medium Priority** | 🟡 Orange   | Beneficial - Would improve comprehension          | Comparisons, moderate complexity               |
-| **Low Priority**    | ⚪ Gray     | Optional - Minor enhancement                      | Simple descriptions, supplementary details     |
+| Density Range | Priority Level  | Badge Color | Meaning                                                   |
+| ------------- | --------------- | ----------- | --------------------------------------------------------- |
+| **<5%**       | High Priority   | 🔴 Red      | Very low sensory detail, needs concrete descriptions      |
+| **5-8%**      | Medium Priority | 🟡 Orange   | Low sensory detail, consider adding more sensory language |
+| **8-12%**     | Low Priority    | ⚪ Gray     | Moderate sensory detail, could benefit from enhancement   |
+| **>12%**      | Good            | ✅ Green    | Strong sensory engagement                                 |
 
-### How Dual Coding Scores Are Calculated
+**Target**: Aim for at least 12% sensory word density across your manuscript. Descriptive passages may reach 15-20%, while dialogue-heavy scenes naturally have lower density.
+
+### How Sensory Detail Scores Are Calculated
 
 **Score Range: 0-100**
 
-- **80-100 (High)**: Excellent visual support with diagrams/images for complex concepts
-- **50-79 (Medium)**: Some visual elements present but opportunities missed
-- **0-49 (Low)**: Text-heavy with little to no visual representation
+Score is based on the ratio of paragraphs needing more sensory details:
 
-### Dual Coding Callouts Structure
+- **95 (Excellent)**: <10% of paragraphs need improvement
+- **85 (Very Good)**: 10-20% of paragraphs need improvement
+- **75 (Good)**: 20-30% of paragraphs need improvement
+- **65 (Fair)**: 30-40% of paragraphs need improvement
+- **55 (Needs Work)**: 40-50% of paragraphs need improvement
+- **45 (Poor)**: >50% of paragraphs need improvement
+
+### Sensory Detail Callouts Structure
 
 When you see a yellow callout box in Writer Mode or exports, it contains:
 
-1. **Icon + Title**: Visual type (e.g., "📊 Diagram - High Priority")
-2. **Reason**: Why this visual is needed (e.g., "Complex spatial relationships detected")
-3. **Context**: Quote from your text triggering the suggestion
-4. **Suggested Action**: Specific recommendation (e.g., "Create a diagram showing the three-layer architecture")
+1. **Icon + Title**: Sensory detail alert with priority level
+2. **Reason**: Which senses are missing (e.g., "Missing auditory, olfactory, and tactile details")
+3. **Context**: The paragraph lacking sensory richness
+4. **Current Density**: Percentage of sensory words in the paragraph
+5. **Suggested Action**: Specific recommendation to add sensory details from missing categories
+
+**Pro Tip**: A well-rounded scene engages multiple senses, not just sight. Try adding sound, smell, or tactile details to create immersive experiences.
 
 ---
 
@@ -947,7 +958,7 @@ When you see a yellow callout box in Writer Mode or exports, it contains:
 - Analysis summary (scores + brief summaries)
 - Key recommendations (top 3 high-priority)
 - Full chapter text with spacing indicators
-- Dual-coding callouts inline
+- Sensory detail callouts inline
 - Color-coded badges
 
 **How to Use:**
@@ -975,7 +986,7 @@ When you see a yellow callout box in Writer Mode or exports, it contains:
 - Document title
 - Analysis summary with colored scoring
 - Spacing indicators (blue/orange/red shaded paragraphs)
-- Dual-coding callouts (yellow shaded boxes)
+- Sensory detail callouts (yellow shaded boxes)
 - Full chapter text
 
 **Color Coding:**
@@ -983,7 +994,7 @@ When you see a yellow callout box in Writer Mode or exports, it contains:
 - Blue background = Good spacing
 - Orange background = Compact spacing warning
 - Red background = Extended spacing warning
-- Yellow background = Dual-coding suggestion
+- Yellow background = Sensory detail suggestion
 
 **How to Use:**
 
@@ -1170,7 +1181,7 @@ You can now **Report False Positives** directly from the concept list. Look for 
 - ✅ **3 document uploads** (no login required)
 - ✅ Up to 200 pages per document
 - ✅ Spacing analysis (full)
-- ✅ Dual coding analysis (full)
+- ✅ Sensory detail density analysis (full)
 - ✅ Upload DOCX/OBT files
 - ✅ View analysis dashboard
 - ✅ Access all built-in domains
@@ -1180,7 +1191,7 @@ You can now **Report False Positives** directly from the concept list. Look for 
 - ❌ No Writer Mode (no editing capabilities)
 - ❌ No rich text editor
 - ❌ No custom domains
-- ❌ Limited to spacing + dual coding only
+- ❌ Limited to spacing + sensory detail density only
 
 **Best for:** Trying out the tool, quick checks, students
 
@@ -1239,7 +1250,7 @@ You can now **Report False Positives** directly from the concept list. Look for 
 - Tables, links, and alignment controls
 - Keyboard shortcuts (Cmd/Ctrl+B, I, U, K, F, Z)
 - Real-time spacing indicators update as you type
-- Live dual-coding callouts appear inline
+- Live sensory detail callouts appear inline
 - Search and highlight concept mentions
 - Find & replace functionality
 - Undo/redo with 50-state history
@@ -1268,7 +1279,7 @@ You can now **Report False Positives** directly from the concept list. Look for 
 │  Editable Document (65%)   │  Analysis Panel (35%)  │
 │  [Formatting Toolbar]      │                        │
 │                            │  • Spacing Overview    │
-│  [Edit your text here...]  │  • Dual Coding Alerts  │
+│  [Edit your text here...]  │  • Sensory Detail Alerts │
 │                            │  • Concept Mentions    │
 │  [Live indicators appear]  │  • Search/Highlight    │
 │                            │  • Statistics          │
@@ -1307,7 +1318,7 @@ You can now **Report False Positives** directly from the concept list. Look for 
 - Toggle spacing indicators on/off
 - Dashed lines show paragraph boundaries
 - Color badges (cream/tan backgrounds) indicate paragraph health
-- Toggle dual-coding visual callouts on/off
+- Toggle sensory detail visual callouts on/off
 - Yellow boxes appear inline showing suggestions
 - Priority badges (high/medium/low) guide urgency
 - Real-time updates as you type
@@ -1384,7 +1395,7 @@ You can now **Report False Positives** directly from the concept list. Look for 
 | Light Tan (#F7E6D0) | Orange (#EF8432) | Too compact (<60 words)              |
 | Pale Tan (#F5EAD9)  | Orange (#EF8432) | Too extended (>160 words)            |
 
-### Dual Coding Callouts
+### Sensory Detail Callouts
 
 | Background             | Border           | Priority Badge                          |
 | ---------------------- | ---------------- | --------------------------------------- |
@@ -1529,13 +1540,13 @@ A: Common causes:
 - Very short or very long paragraphs
 - Lack of review/summary sections
 
-**Q: Why is my dual coding score low?**
+**Q: Why is my sensory detail score low?**
 A: Common causes:
 
-- No images, diagrams, or visual elements
-- Text-heavy descriptions of visual concepts
-- Processes described without flowcharts
-- Data presented without graphs
+- Telling emotions instead of showing reactions
+- Lack of sensory details (sight, sound, smell, touch, taste)
+- Character traits stated rather than demonstrated
+- Summarizing events instead of dramatizing scenes
 
 **Q: Can I disagree with a recommendation?**
 A: Yes! The analyzer uses heuristics that may not fit your pedagogical approach. Use professional judgment.

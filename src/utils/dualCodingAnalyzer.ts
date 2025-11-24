@@ -239,7 +239,7 @@ export class DualCodingAnalyzer {
     let textToAnalyze = text;
     if (text.length > 500000) {
       console.warn(
-        "[DualCodingAnalyzer] Text too large, analyzing first 500k chars only."
+        "[SensoryDetailAnalyzer] Text too large, analyzing first 500k chars only."
       );
       textToAnalyze = text.substring(0, 500000);
     }
@@ -255,7 +255,7 @@ export class DualCodingAnalyzer {
         : inferredHtml;
 
     console.log(
-      "[DualCodingAnalyzer] isHtml:",
+      "[SensoryDetailAnalyzer] isHtml:",
       isHtml,
       "text length:",
       textToAnalyze.length
@@ -296,7 +296,7 @@ export class DualCodingAnalyzer {
       }
 
       console.log(
-        "[DualCodingAnalyzer] Extracted",
+        "[SensoryDetailAnalyzer] Extracted",
         paragraphs.length,
         "HTML paragraphs"
       );
@@ -305,7 +305,7 @@ export class DualCodingAnalyzer {
       const plainParagraphs = textToAnalyze.split(/\n\n+/);
       let currentPosition = 0;
 
-      console.log("[DualCodingAnalyzer] Plain text mode");
+      console.log("[SensoryDetailAnalyzer] Plain text mode");
       console.log("  Total paragraphs from split:", plainParagraphs.length);
       console.log("  Text preview:", textToAnalyze.substring(0, 300));
 
@@ -321,7 +321,7 @@ export class DualCodingAnalyzer {
       });
 
       console.log(
-        "[DualCodingAnalyzer] Extracted",
+        "[SensoryDetailAnalyzer] Extracted",
         paragraphs.length,
         "plain text paragraphs"
       );

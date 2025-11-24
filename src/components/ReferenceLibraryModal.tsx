@@ -371,16 +371,20 @@ export function ReferenceLibraryModal({
                 </h3>
                 <ul style={{ marginBottom: "1rem", paddingLeft: "1.5rem" }}>
                   <li style={{ marginBottom: "0.5rem" }}>
-                    <strong>High Priority</strong> 🔴 - Critical: Telling where
-                    showing would create emotional impact
+                    <strong>High Priority</strong> 🔴 - &lt;5% sensory density:
+                    Very low sensory detail, needs concrete descriptions
                   </li>
                   <li style={{ marginBottom: "0.5rem" }}>
-                    <strong>Medium Priority</strong> 🟡 - Beneficial: Passages
-                    that would benefit from sensory details
+                    <strong>Medium Priority</strong> 🟡 - 5-8% sensory density:
+                    Low sensory detail, consider adding more sensory language
                   </li>
                   <li style={{ marginBottom: "0.5rem" }}>
-                    <strong>Low Priority</strong> ⚪ - Optional: Minor
-                    enhancements for polish
+                    <strong>Low Priority</strong> ⚪ - 8-12% sensory density:
+                    Moderate sensory detail, could benefit from enhancement
+                  </li>
+                  <li style={{ marginBottom: "0.5rem" }}>
+                    <strong>Good</strong> ✅ - &gt;12% sensory density: Strong
+                    sensory engagement
                   </li>
                 </ul>
 
@@ -391,22 +395,85 @@ export function ReferenceLibraryModal({
                     color: "#374151",
                   }}
                 >
-                  How Show vs Tell Scores Are Calculated
+                  How Sensory Detail Scores Are Calculated
                 </h3>
+                <p style={{ marginBottom: "1rem", lineHeight: "1.6" }}>
+                  Score is based on the ratio of paragraphs needing more sensory
+                  details:
+                </p>
                 <ul style={{ marginBottom: "1rem", paddingLeft: "1.5rem" }}>
                   <li style={{ marginBottom: "0.5rem" }}>
-                    <strong>80-100 (High):</strong> Excellent balance of showing
-                    with rich sensory details and immersive writing
+                    <strong>95 (Excellent):</strong> &lt;10% of paragraphs need
+                    improvement
                   </li>
                   <li style={{ marginBottom: "0.5rem" }}>
-                    <strong>50-79 (Medium):</strong> Some showing present but
-                    relies too heavily on telling
+                    <strong>85 (Very Good):</strong> 10-20% of paragraphs need
+                    improvement
                   </li>
                   <li style={{ marginBottom: "0.5rem" }}>
-                    <strong>0-49 (Low):</strong> Predominantly telling with
-                    minimal sensory engagement
+                    <strong>75 (Good):</strong> 20-30% of paragraphs need
+                    improvement
+                  </li>
+                  <li style={{ marginBottom: "0.5rem" }}>
+                    <strong>65 (Fair):</strong> 30-40% of paragraphs need
+                    improvement
+                  </li>
+                  <li style={{ marginBottom: "0.5rem" }}>
+                    <strong>55 (Needs Work):</strong> 40-50% of paragraphs need
+                    improvement
+                  </li>
+                  <li style={{ marginBottom: "0.5rem" }}>
+                    <strong>45 (Poor):</strong> &gt;50% of paragraphs need
+                    improvement
                   </li>
                 </ul>
+                <p style={{ marginBottom: "1rem", lineHeight: "1.6" }}>
+                  <strong>Target:</strong> Aim for at least 12% sensory word
+                  density across your manuscript. Strong descriptive passages
+                  may reach 15-20%, while dialogue-heavy scenes naturally have
+                  lower density.
+                </p>
+
+                <h3
+                  style={{
+                    marginTop: "1.5rem",
+                    marginBottom: "0.5rem",
+                    color: "#374151",
+                  }}
+                >
+                  Five Sensory Categories
+                </h3>
+                <p style={{ marginBottom: "1rem", lineHeight: "1.6" }}>
+                  The analyzer tracks 540+ sensory words across five categories:
+                </p>
+                <ul style={{ marginBottom: "1rem", paddingLeft: "1.5rem" }}>
+                  <li style={{ marginBottom: "0.5rem" }}>
+                    <strong>Visual (200+ words):</strong> shimmer, gleaming,
+                    shadowy, vibrant, translucent, flickering
+                  </li>
+                  <li style={{ marginBottom: "0.5rem" }}>
+                    <strong>Auditory (150+ words):</strong> whisper, thunder,
+                    crackling, melodic, resonant, muffled
+                  </li>
+                  <li style={{ marginBottom: "0.5rem" }}>
+                    <strong>Olfactory (50+ words):</strong> fragrant, musty,
+                    acrid, earthy, pungent, aromatic
+                  </li>
+                  <li style={{ marginBottom: "0.5rem" }}>
+                    <strong>Tactile (100+ words):</strong> rough, silky, cold,
+                    prickly, clammy, velvety
+                  </li>
+                  <li style={{ marginBottom: "0.5rem" }}>
+                    <strong>Gustatory (40+ words):</strong> bitter, sweet,
+                    tangy, savory, bland, zesty
+                  </li>
+                </ul>
+                <p style={{ marginBottom: "1rem", lineHeight: "1.6" }}>
+                  <strong>Pro Tip:</strong> The analyzer identifies which senses
+                  are missing from each paragraph. A well-rounded scene engages
+                  multiple senses, not just sight. Try adding sound, smell, or
+                  tactile details to create immersive experiences.
+                </p>
               </section>
             </div>
           </div>
@@ -473,7 +540,7 @@ export function ReferenceLibraryModal({
                     <li>Blue background = Compact spacing (too brief)</li>
                     <li>Green background = Balanced spacing (ideal)</li>
                     <li>Orange background = Extended spacing (too long)</li>
-                    <li>Yellow background = Dual-coding suggestion</li>
+                    <li>Yellow background = Sensory detail suggestion</li>
                   </ul>
                 </div>
 
@@ -746,8 +813,8 @@ export function ReferenceLibraryModal({
                       (paragraph-by-paragraph)
                     </li>
                     <li>
-                      ✅ <strong>Show vs Tell Detection</strong> (identifies
-                      where showing would improve impact)
+                      ✅ <strong>Sensory Detail Density</strong> (identifies
+                      passages lacking sensory engagement)
                     </li>
                     <li>
                       ✅ Color-coded indicators throughout your manuscript
@@ -996,7 +1063,7 @@ export function ReferenceLibraryModal({
                     on/off, dashed lines show paragraph boundaries
                   </li>
                   <li style={{ marginBottom: "0.5rem" }}>
-                    <strong>Show vs Tell Controls:</strong> Toggle craft
+                    <strong>Sensory Detail Controls:</strong> Toggle craft
                     callouts on/off, yellow boxes appear inline
                   </li>
                   <li style={{ marginBottom: "0.5rem" }}>
@@ -1968,7 +2035,7 @@ export function ReferenceLibraryModal({
                   </ul>
 
                   <p style={{ marginBottom: "0.5rem", fontWeight: "600" }}>
-                    Q: Why is my show vs tell score low?
+                    Q: Why is my sensory detail score low?
                   </p>
                   <p
                     style={{

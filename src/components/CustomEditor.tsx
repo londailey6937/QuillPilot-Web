@@ -1739,6 +1739,51 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
         .editor-content p:first-child {
           margin-top: 0;
         }
+        /* Center images */
+        .editor-content img {
+          display: block !important;
+          margin-left: auto !important;
+          margin-right: auto !important;
+          margin-top: 1em !important;
+          margin-bottom: 1em !important;
+          max-width: 100%;
+        }
+        /* Center paragraphs containing images */
+        .editor-content p > img {
+          display: block !important;
+          margin-left: auto !important;
+          margin-right: auto !important;
+        }
+        /* Center title paragraphs that only contain bold/strong text */
+        .editor-content p:has(> strong:only-child),
+        .editor-content p:has(> em:only-child),
+        .editor-content p:has(> strong > em:only-child) {
+          text-align: center;
+          text-indent: 0 !important;
+        }
+        /* Center short paragraphs (likely titles/headings) - under 100 characters */
+        .editor-content p:has(> strong) {
+          /* Only center if it's short text (title-like) */
+        }
+        /* Reset body text to left-align with indent */
+        .editor-content p:not(:has(> strong:only-child)):not(:has(> em:only-child)):not(:has(> strong > em:only-child)) {
+          text-align: left;
+        }
+        /* Center paragraphs that only contain images */
+        .editor-content p:has(> img:only-child) {
+          text-align: center;
+          text-indent: 0 !important;
+        }
+        /* Center copyright/boilerplate text (all caps, short lines) */
+        .editor-content p:has(> strong:only-child):not(:has(em)),
+        .editor-content p > strong:only-child {
+          text-align: center;
+        }
+        /* Also center paragraphs with strong at start and only a few words (likely titles) */
+        .editor-content p > strong:first-child:last-child {
+          display: block;
+          text-align: center;
+        }
         .editor-content h1 {
           font-size: 2em;
           font-weight: bold;

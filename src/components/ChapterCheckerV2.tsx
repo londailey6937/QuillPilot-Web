@@ -880,7 +880,9 @@ export const ChapterCheckerV2: React.FC = () => {
       !autoAnalyzeFeatures.fullAnalysis &&
       normalizedPlainText.trim().length >= 200
     ) {
-      console.log("🆓 Free tier: Auto-running spacing + dual coding analysis");
+      console.log(
+        "🆓 Free tier: Auto-running spacing + sensory detail analysis"
+      );
 
       // Run tier one analysis immediately
       const tierOneAnalysis = buildTierOneAnalysisSummary({

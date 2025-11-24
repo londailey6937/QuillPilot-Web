@@ -452,8 +452,8 @@ export function NavigationMenu({
             features={[
               {
                 icon: "👁️",
-                title: "Show vs Tell",
-                desc: "Visual storytelling analysis",
+                title: "Sensory Detail Density",
+                desc: "Tracks 540+ sensory words across 5 senses",
               },
               {
                 icon: "💬",

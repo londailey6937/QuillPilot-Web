@@ -244,10 +244,22 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
         imageCount,
       };
 
+      console.log("Sample story loaded:", {
+        fileName,
+        htmlLength: htmlResult.value.length,
+        plainTextLength: textResult.value.length,
+        htmlPreview: htmlResult.value.substring(0, 500),
+        plainTextPreview: textResult.value.substring(0, 200),
+      });
+
       incrementUploadCount();
       onDocumentLoad(payload);
     } catch (error) {
       console.error("Error loading sample story:", error);
+      console.error("Error details:", {
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      });
       alert(
         "Failed to load sample story. Please try again or upload your own document."
       );
