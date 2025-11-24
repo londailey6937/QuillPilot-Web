@@ -821,11 +821,12 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   // Handle paste with images
   const handlePaste = useCallback(
     (e: React.ClipboardEvent) => {
-      const items = e.clipboardData.items;
+      e.preventDefault();
 
+      // Check for images first
+      const items = e.clipboardData.items;
       for (let i = 0; i < items.length; i++) {
         if (items[i].type.indexOf("image") !== -1) {
-          e.preventDefault();
           const blob = items[i].getAsFile();
           if (!blob) continue;
 
@@ -838,6 +839,13 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           reader.readAsDataURL(blob);
           return;
         }
+      }
+
+      // Get plain text and insert it
+      const text = e.clipboardData.getData("text/plain");
+      if (text) {
+        document.execCommand("insertText", false, text);
+        setTimeout(() => handleInput(), 0);
       }
     },
     [handleInput]
@@ -856,10 +864,13 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
         return;
       }
 
-      // Only handle keyboard shortcuts with modifier keys
-      // All other keys (including Enter) pass through for natural behavior and auto-repeat
-      if (!modKey) return;
+      // Only process keyboard shortcuts that use modifier keys
+      // Let all other keys pass through without preventDefault for natural auto-repeat
+      if (!modKey) {
+        return; // Don't prevent default - let browser handle naturally
+      }
 
+      // Handle modifier+key shortcuts
       switch (e.key.toLowerCase()) {
         case "b":
           e.preventDefault();
