@@ -135,24 +135,24 @@ const CharacterArcTrajectory: React.FC<{ characterAnalysis: any }> = ({
           <CartesianGrid strokeDasharray="3 3" stroke="#333" />
           <XAxis
             dataKey="stage"
-            stroke="#999"
-            tick={{ fill: "#999" }}
+            stroke="#ccc"
+            tick={{ fill: "#ccc", fontSize: 14 }}
             label={{
               value: "Story Progression",
               position: "insideBottom",
               offset: -5,
-              style: { fill: "#999" },
+              style: { fill: "#fff", fontSize: 14, fontWeight: 500 },
             }}
           />
           <YAxis
-            stroke="#999"
-            tick={{ fill: "#999" }}
+            stroke="#ccc"
+            tick={{ fill: "#ccc", fontSize: 14 }}
             domain={[0, 100]}
             label={{
               value: "Emotional Sentiment",
               angle: -90,
               position: "insideLeft",
-              style: { fill: "#999" },
+              style: { fill: "#fff", fontSize: 14, fontWeight: 500 },
             }}
           />
           <Tooltip
@@ -167,7 +167,11 @@ const CharacterArcTrajectory: React.FC<{ characterAnalysis: any }> = ({
             wrapperStyle={{ paddingTop: "20px" }}
             iconType="line"
             formatter={(value) => (
-              <span style={{ color: "#ccc" }}>{value}</span>
+              <span
+                style={{ color: "#fff", fontSize: "14px", fontWeight: 500 }}
+              >
+                {value}
+              </span>
             )}
           />
           {majorCharacters.map((char: any, idx: number) => (
