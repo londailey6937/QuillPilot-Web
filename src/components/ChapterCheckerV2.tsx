@@ -2427,9 +2427,6 @@ export const ChapterCheckerV2: React.FC = () => {
                       searchText={
                         chapterData.originalPlainText ?? chapterData.plainText
                       }
-                      onSave={
-                        viewMode === "writer" ? handleExportDocx : undefined
-                      }
                       leftMargin={leftMargin}
                       rightMargin={rightMargin}
                       firstLineIndent={firstLineIndent}

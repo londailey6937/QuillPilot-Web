@@ -198,7 +198,7 @@ export function NavigationMenu({
             <button
               onClick={() => {
                 window.open(
-                  "https://github.com/londailey6937/Chapter-Analysis/issues/new",
+                  "https://github.com/londailey6937/QuillPilot/issues",
                   "_blank"
                 );
                 onClose();
