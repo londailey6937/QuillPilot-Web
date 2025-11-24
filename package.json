@@ -1,6 +1,6 @@
 {
   "name": "quillpilot",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "AI-Powered Creative Writing Analysis Tool",
   "type": "module",
   "engines": {
