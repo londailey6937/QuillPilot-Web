@@ -143,6 +143,119 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
     console.log("🔄 Upload count reset to 0");
   };
 
+  const loadSampleStory = async () => {
+    if (!checkUploadLimit()) {
+      return;
+    }
+
+    setIsProcessing(true);
+
+    try {
+      const response = await fetch("/sample-story.docx");
+      if (!response.ok) {
+        throw new Error("Failed to load sample story");
+      }
+
+      const arrayBuffer = await response.arrayBuffer();
+      const file = new File([arrayBuffer], "The Firelight Fairy Book.docx", {
+        type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      });
+
+      // Process the file using the same logic as handleFileChange
+      const fileName = file.name;
+      const fileType = "docx";
+
+      const sourceBuffer = arrayBuffer;
+      const htmlBuffer = sourceBuffer.slice(0);
+      const textBuffer = sourceBuffer.slice(0);
+
+      let imageCount = 0;
+      const htmlResult = await mammoth.convertToHtml(
+        { arrayBuffer: htmlBuffer },
+        {
+          convertImage: mammoth.images.imgElement((image) => {
+            imageCount += 1;
+            return image.read("base64").then((base64String) => {
+              const buffer = base64ToArrayBuffer(base64String);
+              const detectedType = detectMimeType(buffer);
+
+              if (
+                ["image/png", "image/jpeg", "image/gif", "image/webp"].includes(
+                  detectedType
+                )
+              ) {
+                return {
+                  src: `data:${detectedType};base64,${base64String}`,
+                  alt: `Embedded image ${imageCount} (${detectedType})`,
+                  class: "mammoth-image",
+                };
+              }
+
+              const isExplicitWmf =
+                detectedType === "image/x-wmf" ||
+                detectedType === "image/x-emf" ||
+                image.contentType?.includes("wmf") ||
+                image.contentType?.includes("emf");
+
+              if (isExplicitWmf || !detectedType) {
+                try {
+                  const convertedSrc = wmfToPng(buffer);
+                  if (convertedSrc) {
+                    return {
+                      src: convertedSrc,
+                      alt: `Embedded Equation/Image ${imageCount} (Converted)`,
+                      class: "mammoth-image wmf-converted",
+                    };
+                  }
+                } catch (err) {
+                  // Silently handle WMF conversion errors
+                }
+
+                if (isExplicitWmf) {
+                  return {
+                    src: getPlaceholderSvg("WMF/EMF"),
+                    alt: `Embedded Equation/Image ${imageCount} (Conversion Failed)`,
+                    class: "mammoth-image wmf-failed",
+                  };
+                }
+              }
+
+              const finalMime = image.contentType || "image/png";
+              return {
+                src: `data:${finalMime};base64,${base64String}`,
+                alt: `Embedded image ${imageCount} (${finalMime})`,
+                class: "mammoth-image",
+              };
+            });
+          }),
+        }
+      );
+
+      const textResult = await mammoth.extractRawText({
+        arrayBuffer: textBuffer,
+      });
+
+      const payload: UploadedDocumentPayload = {
+        fileName,
+        fileType,
+        format: "html",
+        content: htmlResult.value,
+        plainText: textResult.value,
+        imageCount,
+      };
+
+      incrementUploadCount();
+      onDocumentLoad(payload);
+    } catch (error) {
+      console.error("Error loading sample story:", error);
+      alert(
+        "Failed to load sample story. Please try again or upload your own document."
+      );
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -581,6 +694,36 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
             🔄 Reset Count
           </button>
         )}
+
+        {/* Sample Story Button */}
+        <button
+          onClick={loadSampleStory}
+          disabled={disabled || isProcessing}
+          style={{
+            padding: "10px 24px",
+            backgroundColor: "#ffffff",
+            color: "#8b5a3c",
+            border: "1.5px solid #c16659",
+            borderRadius: "20px",
+            cursor: disabled || isProcessing ? "not-allowed" : "pointer",
+            fontWeight: "600",
+            fontSize: "14px",
+            transition: "all 0.2s",
+            opacity: disabled || isProcessing ? 0.6 : 1,
+          }}
+          onMouseEnter={(e) => {
+            if (!disabled && !isProcessing) {
+              e.currentTarget.style.backgroundColor = "#fef3e7";
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!disabled && !isProcessing) {
+              e.currentTarget.style.backgroundColor = "#ffffff";
+            }
+          }}
+        >
+          📖 Use Our Sample Story
+        </button>
       </div>
       <style>{`
         .upload-spinner {

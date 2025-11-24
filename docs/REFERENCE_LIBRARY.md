@@ -241,6 +241,10 @@ The Analysis Panel displays **Writing Metrics** - here's what each one measures 
 
 - Number of compact, balanced, and extended paragraphs
 - Distribution analysis
+- **Inline pill indicators** next to each paragraph in Writer Mode:
+  - **"Expand detail"** - paragraph < 60 words (compact, may feel rushed)
+  - **"On target"** - paragraph 60-160 words (balanced, good pacing)
+  - **"Consider splitting"** - paragraph > 160 words (too long, may overwhelm readers)
 
 **How to improve:**
 
@@ -262,7 +266,22 @@ The Analysis Panel displays **Writing Metrics** - here's what each one measures 
 **What you'll see:**
 
 - Number of areas needing more sensory details
-- Yellow callout boxes suggesting visuals/descriptions
+- **Yellow callout boxes** with specific suggestions:
+  - **"Add sensory details to show the scene"** - Contains spatial/structural language that needs sensory grounding
+  - **"Show this action instead of telling about it"** - Process or sequence descriptions that could be dramatized
+  - **"Dramatize this exposition through scene"** - Comparisons or explanations that need active demonstration
+  - **"Replace abstract telling with concrete sensory details"** - Abstract concepts needing concrete examples
+  - **"Add immersive, sensory language"** - Dense explanatory text lacking sensory engagement
+
+**How the analyzer detects "telling":**
+
+QuillPilot identifies five types of abstract writing that benefit from sensory details:
+
+1. **Spatial/structural language** (above, below, left, right, structure, arrangement) - Flags scenes described geometrically without sensory grounding
+2. **Process descriptions** (first, then, next, begins, leads to) - Detects sequential telling that could be shown through action
+3. **Quantitative/comparison language** (more, less, greater, higher, contrast) - Identifies abstract comparisons needing dramatization
+4. **Abstract concepts** (theory, principle, relationship, means, represents) - Finds conceptual telling that needs concrete examples
+5. **Technical/explanatory density** - Detects paragraphs heavy with exposition lacking immersive language
 
 **How to improve:**
 
@@ -270,6 +289,7 @@ The Analysis Panel displays **Writing Metrics** - here's what each one measures 
 - Add sensory details: what characters see, hear, smell, touch, taste
 - Use action and dialogue to reveal emotions
 - Show character reactions instead of stating feelings
+- Ground spatial descriptions with sensory details (not just "the room was large" but "footsteps echoed across the marble floor")
 
 #### 3. **Character Development**
 

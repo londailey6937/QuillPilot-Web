@@ -1,13 +1,13 @@
 /**
- * Dual Coding Analyzer
- * Identifies locations in text where visual aids (images, diagrams) should be added
+ * Show vs Tell Analyzer (formerly Dual Coding Analyzer)
+ * Identifies locations in text where sensory details and immersive writing should be added
  */
 
 export interface VisualSuggestion {
   position: number;
   paragraph: string;
   reason: string;
-  visualType: string; // "diagram", "chart", "graph", "illustration", "concept-map"
+  visualType: string; // "sensory-scene", "action", "dramatize", "concrete-details", "immersive"
   priority: "high" | "medium" | "low";
   context: string; // Surrounding text for context
 }
@@ -100,8 +100,8 @@ export class DualCodingAnalyzer {
       suggestions.push({
         position: position,
         paragraph: trimmedPara.substring(0, 150) + "...",
-        reason: "Contains spatial/structural descriptions",
-        visualType: "diagram",
+        reason: "Add sensory details to show the scene",
+        visualType: "sensory-scene",
         priority: spatialMatches >= 4 ? "high" : "medium",
         context: this.getContext(prevPara, trimmedPara, nextPara),
       });
@@ -123,8 +123,8 @@ export class DualCodingAnalyzer {
       suggestions.push({
         position: position,
         paragraph: trimmedPara.substring(0, 150) + "...",
-        reason: "Describes a process or sequence",
-        visualType: "flowchart",
+        reason: "Show this action instead of telling about it",
+        visualType: "action",
         priority: processMatches >= 4 ? "high" : "medium",
         context: this.getContext(prevPara, trimmedPara, nextPara),
       });
@@ -147,8 +147,8 @@ export class DualCodingAnalyzer {
       suggestions.push({
         position: position,
         paragraph: trimmedPara.substring(0, 150) + "...",
-        reason: "Contains quantitative data or comparisons",
-        visualType: "graph",
+        reason: "Dramatize this exposition through scene",
+        visualType: "dramatize",
         priority: quantMatches >= 4 ? "high" : "medium",
         context: this.getContext(prevPara, trimmedPara, nextPara),
       });
@@ -175,8 +175,8 @@ export class DualCodingAnalyzer {
       suggestions.push({
         position: position,
         paragraph: trimmedPara.substring(0, 150) + "...",
-        reason: "Explains abstract concepts",
-        visualType: "concept-map",
+        reason: "Replace abstract telling with concrete sensory details",
+        visualType: "concrete-details",
         priority: "medium",
         context: this.getContext(prevPara, trimmedPara, nextPara),
       });
@@ -192,8 +192,8 @@ export class DualCodingAnalyzer {
       suggestions.push({
         position: position,
         paragraph: trimmedPara.substring(0, 150) + "...",
-        reason: "High density of technical terms",
-        visualType: "illustration",
+        reason: "Add immersive, sensory language",
+        visualType: "immersive",
         priority: technicalDensity > 0.2 ? "high" : "medium",
         context: this.getContext(prevPara, trimmedPara, nextPara),
       });
@@ -215,8 +215,8 @@ export class DualCodingAnalyzer {
       suggestions.push({
         position: position,
         paragraph: trimmedPara.substring(0, 150) + "...",
-        reason: "Describes system or components",
-        visualType: "diagram",
+        reason: "Add sensory details to show the scene",
+        visualType: "sensory-scene",
         priority: "medium",
         context: this.getContext(prevPara, trimmedPara, nextPara),
       });

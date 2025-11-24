@@ -206,7 +206,8 @@ export function ReferenceLibraryModal({
                       </td>
                       <td style={{ padding: "0.5rem" }}>60-160 words</td>
                       <td style={{ padding: "0.5rem" }}>
-                        Optimal paragraph length for readability
+                        <strong>"On target"</strong> - Optimal paragraph length
+                        for readability, balanced pacing
                       </td>
                     </tr>
                     <tr>
@@ -215,7 +216,8 @@ export function ReferenceLibraryModal({
                       </td>
                       <td style={{ padding: "0.5rem" }}>&lt;60 words</td>
                       <td style={{ padding: "0.5rem" }}>
-                        Fast-paced, good for action or dialogue
+                        <strong>"Expand detail"</strong> - Fast-paced, may feel
+                        rushed; consider adding examples or explanation
                       </td>
                     </tr>
                     <tr>
@@ -224,7 +226,8 @@ export function ReferenceLibraryModal({
                       </td>
                       <td style={{ padding: "0.5rem" }}>&gt;160 words</td>
                       <td style={{ padding: "0.5rem" }}>
-                        Slower pace, may need breaking up for clarity
+                        <strong>"Consider splitting"</strong> - Too long, may
+                        overwhelm readers; split or add subheading
                       </td>
                     </tr>
                   </tbody>
