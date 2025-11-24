@@ -346,7 +346,8 @@ export const GENRE_DEFINITIONS: Record<Genre, GenreDefinition> = {
   screenplay: {
     id: "screenplay",
     name: "Screenplay",
-    description: "Film and television scripts with scene direction and dialogue",
+    description:
+      "Film and television scripts with scene direction and dialogue",
     keywords: [
       "int.",
       "ext.",
@@ -427,9 +428,12 @@ export function detectGenre(text: string): Genre | null {
   const sortedScores = Object.entries(scores).sort((a, b) => b[1] - a[1]);
   const topGenre = sortedScores[0];
 
+  // Debug logging
+  console.log("[Genre Detection] Top 3 scores:", sortedScores.slice(0, 3));
+
   // Require minimum score and lead over second place
-  const minScore = 5;
-  const minLead = 1.5;
+  const minScore = 3; // Lowered from 5 to detect genres with fewer keyword matches
+  const minLead = 1.3; // Lowered from 1.5 to be less strict about lead requirement
   const secondPlace = sortedScores[1];
 
   if (
@@ -437,8 +441,12 @@ export function detectGenre(text: string): Genre | null {
     topGenre[1] >= minScore &&
     (!secondPlace || topGenre[1] >= secondPlace[1] * minLead)
   ) {
+    console.log(
+      `[Genre Detection] Detected: ${topGenre[0]} (score: ${topGenre[1]})`
+    );
     return topGenre[0] as Genre;
   }
 
+  console.log("[Genre Detection] No genre detected (below threshold)");
   return null;
 }

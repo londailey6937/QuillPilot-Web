@@ -201,6 +201,7 @@ function isInDialogue(context: string): boolean {
 
 /**
  * Calculate sentiment score for text context
+ * Enhanced to be more sensitive for screenplay format
  */
 function calculateSentiment(text: string): "positive" | "negative" | "neutral" {
   const words = text.toLowerCase().split(/\s+/);
@@ -212,19 +213,21 @@ function calculateSentiment(text: string): "positive" | "negative" | "neutral" {
     if (NEGATIVE_WORDS.has(word)) negativeCount++;
   }
 
-  if (positiveCount > negativeCount) return "positive";
-  if (negativeCount > positiveCount) return "negative";
+  // More sensitive - even 1-2 emotional words matter in context
+  if (positiveCount > negativeCount && positiveCount > 0) return "positive";
+  if (negativeCount > positiveCount && negativeCount > 0) return "negative";
   return "neutral";
 }
 
 /**
  * Get sentiment as numeric score (0-100)
+ * Enhanced range for better arc detection
  */
 function sentimentToScore(
   sentiment: "positive" | "negative" | "neutral"
 ): number {
-  if (sentiment === "positive") return 70;
-  if (sentiment === "negative") return 30;
+  if (sentiment === "positive") return 75; // Increased from 70
+  if (sentiment === "negative") return 25; // Decreased from 30
   return 50;
 }
 
@@ -236,7 +239,7 @@ function extractCharacterMentions(
   characterName: string
 ): CharacterMention[] {
   const mentions: CharacterMention[] = [];
-  const contextRadius = 100; // characters before/after
+  const contextRadius = 200; // Expanded from 100 to capture more emotional context (important for screenplays)
 
   // Find all occurrences
   const regex = new RegExp(`\\b${characterName}\\b`, "gi");
@@ -305,10 +308,26 @@ function determineArcType(trajectory: {
   middle: number;
   late: number;
 }): "dynamic" | "flat" | "unclear" {
-  const change = Math.abs(trajectory.late - trajectory.early);
+  const totalChange = Math.abs(trajectory.late - trajectory.early);
+  const midChange = Math.abs(trajectory.middle - trajectory.early);
 
-  if (change > 20) return "dynamic"; // Significant change
-  if (change < 10) return "flat"; // Little change
+  // Check for consistent progression (not just start-end change)
+  const hasProgression =
+    (trajectory.early < trajectory.middle &&
+      trajectory.middle < trajectory.late) ||
+    (trajectory.early > trajectory.middle &&
+      trajectory.middle > trajectory.late);
+
+  // Lowered threshold from 20 to 15 for better detection
+  // Also consider progressive change through middle
+  if (totalChange > 15 || (totalChange > 10 && hasProgression)) {
+    return "dynamic"; // Significant change or clear progression
+  }
+
+  if (totalChange < 8) {
+    return "flat"; // Little change (lowered from 10)
+  }
+
   return "unclear"; // Moderate change
 }
 
