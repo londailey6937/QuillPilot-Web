@@ -35,6 +35,68 @@ type TextMatch = {
   end: number;
 };
 
+interface TextNodeMap {
+  node: Text;
+  start: number;
+  end: number;
+}
+
+const extractTextWithMap = (root: Node) => {
+  let text = "";
+  const map: TextNodeMap[] = [];
+
+  const traverse = (node: Node) => {
+    if (node.nodeType === Node.TEXT_NODE) {
+      const content = node.textContent || "";
+      if (content.length > 0) {
+        map.push({
+          node: node as Text,
+          start: text.length,
+          end: text.length + content.length,
+        });
+        text += content;
+      }
+    } else if (node.nodeType === Node.ELEMENT_NODE) {
+      const tagName = (node as Element).tagName;
+      const isBlock = [
+        "P",
+        "DIV",
+        "H1",
+        "H2",
+        "H3",
+        "H4",
+        "H5",
+        "H6",
+        "LI",
+        "BR",
+        "UL",
+        "OL",
+        "BLOCKQUOTE",
+        "PRE",
+        "TR",
+      ].includes(tagName);
+
+      if (tagName === "BR") {
+        text += "\n";
+        return;
+      }
+
+      if (isBlock && text.length > 0 && !text.endsWith("\n")) {
+        text += "\n";
+      }
+
+      node.childNodes.forEach(traverse);
+
+      if (isBlock && text.length > 0 && !text.endsWith("\n")) {
+        text += "\n";
+      }
+    }
+  };
+
+  traverse(root);
+  return { text, map };
+};
+
 export const CustomEditor: React.FC<CustomEditorProps> = ({
   content,
   onUpdate,
@@ -68,6 +130,9 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   const historyRef = useRef<string[]>([]);
   const historyIndexRef = useRef(-1);
   const isUndoRedoRef = useRef(false);
+  const textMapRef = useRef<{ fullText: string; map: TextNodeMap[] } | null>(
+    null
+  );
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -561,51 +626,6 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     setTimeout(() => handleInput(), 0);
   }, [handleInput]);
 
-  const createRangeFromOffsets = useCallback((start: number, end: number) => {
-    if (!editorRef.current || start === end) return null;
-
-    const walker = document.createTreeWalker(
-      editorRef.current,
-      NodeFilter.SHOW_TEXT,
-      null
-    );
-
-    let charIndex = 0;
-    let currentNode = walker.nextNode() as Text | null;
-    let rangeStartNode: Text | null = null;
-    let rangeStartOffset = 0;
-    let rangeEndNode: Text | null = null;
-    let rangeEndOffset = 0;
-
-    while (currentNode) {
-      const textLength = currentNode.textContent?.length ?? 0;
-      const nextIndex = charIndex + textLength;
-
-      if (!rangeStartNode && start >= charIndex && start <= nextIndex) {
-        rangeStartNode = currentNode;
-        rangeStartOffset = start - charIndex;
-      }
-
-      if (!rangeEndNode && end >= charIndex && end <= nextIndex) {
-        rangeEndNode = currentNode;
-        rangeEndOffset = end - charIndex;
-        break;
-      }
-
-      charIndex = nextIndex;
-      currentNode = walker.nextNode() as Text | null;
-    }
-
-    if (rangeStartNode && rangeEndNode) {
-      const range = document.createRange();
-      range.setStart(rangeStartNode, rangeStartOffset);
-      range.setEnd(rangeEndNode, rangeEndOffset);
-      return range;
-    }
-
-    return null;
-  }, []);
-
   const findAllMatches = useCallback(() => {
     if (!editorRef.current || !findText) {
       setFindMatches([]);
@@ -613,7 +633,10 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
       return [] as TextMatch[];
     }
 
-    const content = editorRef.current.innerText.toLowerCase();
+    const { text, map } = extractTextWithMap(editorRef.current);
+    textMapRef.current = { fullText: text, map };
+
+    const content = text.toLowerCase();
     const search = findText.toLowerCase();
     const matches: TextMatch[] = [];
 
@@ -622,7 +645,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
       const foundAt = content.indexOf(search, index);
       if (foundAt === -1) break;
       matches.push({ start: foundAt, end: foundAt + findText.length });
-      index = foundAt + 1; // allow overlaps
+      index = foundAt + findText.length; // Avoid overlapping matches
     }
 
     setFindMatches(matches);
@@ -686,13 +709,33 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
         ? 0
         : Math.min(currentMatchIndex, matches.length - 1);
     const match = matches[safeIndex];
-    const range = createRangeFromOffsets(match.start, match.end);
 
-    if (!range) {
+    // Ensure map is available
+    if (!textMapRef.current) {
+      const { text, map } = extractTextWithMap(editorRef.current);
+      textMapRef.current = { fullText: text, map };
+    }
+
+    const { map } = textMapRef.current;
+
+    // Find start node
+    const startNodeEntry = map.find(
+      (n) => n.start <= match.start && n.end > match.start
+    );
+    // Find end node
+    const endNodeEntry = map.find(
+      (n) => n.start < match.end && n.end >= match.end
+    );
+
+    if (!startNodeEntry || !endNodeEntry) {
       setFindMatches([]);
       setCurrentMatchIndex(-1);
       return;
     }
+
+    const range = document.createRange();
+    range.setStart(startNodeEntry.node, match.start - startNodeEntry.start);
+    range.setEnd(endNodeEntry.node, match.end - endNodeEntry.start);
 
     range.deleteContents();
     range.insertNode(document.createTextNode(replaceText));
@@ -707,7 +750,6 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     findMatches,
     currentMatchIndex,
     findAllMatches,
-    createRangeFromOffsets,
     handleInput,
   ]);
 
@@ -715,56 +757,35 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   const replaceInText = useCallback(() => {
     if (!editorRef.current || !findText) return;
 
-    const walker = document.createTreeWalker(
-      editorRef.current,
-      NodeFilter.SHOW_TEXT,
-      null
-    );
+    const { text, map } = extractTextWithMap(editorRef.current);
+    const content = text.toLowerCase();
+    const search = findText.toLowerCase();
+    const matches: TextMatch[] = [];
 
-    const nodesToProcess: {
-      node: Text;
-      matches: Array<{ start: number; end: number }>;
-    }[] = [];
-
-    let nodeCount = 0;
-    const MAX_NODES = 500;
-
-    let currentNode = walker.nextNode() as Text;
-    while (currentNode && nodeCount < MAX_NODES) {
-      const text = currentNode.textContent || "";
-      const matches: Array<{ start: number; end: number }> = [];
-
-      let searchIndex = 0;
-      while (searchIndex < text.length) {
-        const index = text
-          .toLowerCase()
-          .indexOf(findText.toLowerCase(), searchIndex);
-        if (index === -1) break;
-
-        matches.push({ start: index, end: index + findText.length });
-        searchIndex = index + 1;
-      }
-
-      if (matches.length > 0) {
-        nodesToProcess.push({ node: currentNode, matches });
-      }
-
-      currentNode = walker.nextNode() as Text;
-      nodeCount++;
+    let index = 0;
+    while (index < content.length) {
+      const foundAt = content.indexOf(search, index);
+      if (foundAt === -1) break;
+      matches.push({ start: foundAt, end: foundAt + findText.length });
+      index = foundAt + findText.length;
     }
 
-    nodesToProcess.reverse();
+    // Process matches in reverse order to preserve indices
+    [...matches].reverse().forEach((match) => {
+      const startNodeEntry = map.find(
+        (n) => n.start <= match.start && n.end > match.start
+      );
+      const endNodeEntry = map.find(
+        (n) => n.start < match.end && n.end >= match.end
+      );
 
-    nodesToProcess.forEach(({ node, matches }) => {
-      const text = node.textContent || "";
-      let newText = text;
-
-      [...matches].reverse().forEach(({ start, end }) => {
-        newText =
-          newText.substring(0, start) + replaceText + newText.substring(end);
-      });
-
-      node.textContent = newText;
+      if (startNodeEntry && endNodeEntry) {
+        const range = document.createRange();
+        range.setStart(startNodeEntry.node, match.start - startNodeEntry.start);
+        range.setEnd(endNodeEntry.node, match.end - endNodeEntry.start);
+        range.deleteContents();
+        range.insertNode(document.createTextNode(replaceText));
+      }
     });
 
     setFindMatches([]);

@@ -19,6 +19,13 @@ import type { Genre } from "@/data/genreRegistry";
 import { detectGenre, getAvailableGenres } from "@/data/genreRegistry";
 import type { ConceptDefinition } from "@/data/conceptLibraryRegistry";
 import {
+  supabase,
+  getCurrentUser,
+  getUserProfile,
+  saveAnalysis,
+  getSavedAnalyses,
+} from "@/utils/supabase";
+import {
   loadCustomDomains,
   saveCustomDomain,
   getCustomDomain,
@@ -45,12 +52,6 @@ import {
 import { AnimatedLogo } from "./AnimatedLogo";
 import { AuthModal } from "./AuthModal";
 import { UserMenu } from "./UserMenu";
-import {
-  supabase,
-  saveAnalysis,
-  getCurrentUser,
-  getSavedAnalyses,
-} from "@/utils/supabase";
 import { ServerAnalysisTest } from "./ServerAnalysisTest";
 
 const HEADING_LENGTH_LIMIT = 120;
@@ -406,6 +407,7 @@ const deriveSectionsFromText = (rawText: string): Section[] => {
 export const ChapterCheckerV2: React.FC = () => {
   // Access control state
   const [accessLevel, setAccessLevel] = useState<AccessLevel>("free");
+  const [userProfile, setUserProfile] = useState<any>(null);
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   const [showTierTwoPreview, setShowTierTwoPreview] = useState(false);
   const [upgradeTarget, setUpgradeTarget] = useState<
@@ -581,6 +583,46 @@ export const ChapterCheckerV2: React.FC = () => {
     return () => window.removeEventListener("resize", updateLayout);
   }, []);
 
+  // Sync user profile and access level from Supabase
+  useEffect(() => {
+    const loadUserProfile = async () => {
+      const user = await getCurrentUser();
+      if (user) {
+        const profile = await getUserProfile();
+        if (profile) {
+          setUserProfile(profile);
+          // Only set access level from profile if user is authenticated
+          // This prevents dropdown changes from overriding actual subscription
+          if (profile.access_level) {
+            setAccessLevel(profile.access_level as AccessLevel);
+          }
+        }
+      }
+    };
+
+    loadUserProfile();
+
+    // Listen for auth state changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (session?.user) {
+        const profile = await getUserProfile();
+        if (profile) {
+          setUserProfile(profile);
+          if (profile.access_level) {
+            setAccessLevel(profile.access_level as AccessLevel);
+          }
+        }
+      } else {
+        setUserProfile(null);
+        setAccessLevel("free");
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
   // Load saved custom domains on startup
   useEffect(() => {
     try {
@@ -658,6 +700,18 @@ export const ChapterCheckerV2: React.FC = () => {
   }, []);
 
   const handleAccessLevelChange = async (level: AccessLevel) => {
+    // Prevent changing tiers if user has a paid subscription
+    if (
+      userProfile &&
+      (userProfile.access_level === "premium" ||
+        userProfile.access_level === "professional")
+    ) {
+      alert(
+        "Your tier is managed by your subscription. Please contact support to change your plan."
+      );
+      return;
+    }
+
     // In demo mode (no Supabase), allow free tier switching
     // If Supabase is configured and switching to premium/professional, check auth
     const supabaseConfigured =
@@ -670,8 +724,18 @@ export const ChapterCheckerV2: React.FC = () => {
     ) {
       const user = await getCurrentUser();
       if (!user) {
-        // User not authenticated - show auth modal
-        setIsAuthModalOpen(true);
+        // User not authenticated - show upgrade/auth modal
+        setShowTierTwoPreview(true);
+        setUpgradeTarget(level === "premium" ? "premium" : "professional");
+        return;
+      }
+
+      // Check if user's profile allows this tier
+      const profile = await getUserProfile();
+      if (profile && profile.access_level === "free") {
+        // User is authenticated but doesn't have access
+        setShowTierTwoPreview(true);
+        setUpgradeTarget(level === "premium" ? "premium" : "professional");
         return;
       }
     }
@@ -1771,30 +1835,54 @@ export const ChapterCheckerV2: React.FC = () => {
                   backgroundColor: "#f7e6d0",
                 }}
               >
-              <span
-                style={{
-                  fontSize: "0.875rem",
-                  opacity: 0.9,
-                  whiteSpace: "nowrap",
-                }}
-              >
-                Access Tier:
-              </span>
-              <CustomDropdown
-                value={accessLevel}
-                onChange={(value) =>
-                  handleAccessLevelChange(value as AccessLevel)
-                }
-                options={[
-                  { value: "free", label: "Free (Spacing + Dual Coding)" },
-                  { value: "premium", label: "Premium (Full Analysis)" },
-                  {
-                    value: "professional",
-                    label: "Professional (Writer Mode)",
-                  },
-                ]}
-              />
-            </div>
+                <span
+                  style={{
+                    fontSize: "0.875rem",
+                    opacity: 0.9,
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  Access Tier:
+                </span>
+                {userProfile &&
+                (userProfile.access_level === "premium" ||
+                  userProfile.access_level === "professional") ? (
+                  <span
+                    style={{
+                      fontSize: "0.875rem",
+                      fontWeight: "600",
+                      color: "#2c3e50",
+                      padding: "6px 30px 6px 12px",
+                      backgroundColor: "#fef5e7",
+                      border: "1.5px solid #2c3e50",
+                      borderRadius: "16px",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {accessLevel === "premium"
+                      ? "Tier 2 (Full Analysis)"
+                      : "Tier 3 (Pro + Unlimited)"}
+                  </span>
+                ) : (
+                  <CustomDropdown
+                    value={accessLevel}
+                    onChange={(value) =>
+                      handleAccessLevelChange(value as AccessLevel)
+                    }
+                    options={[
+                      { value: "free", label: "Tier 1 (Limited Analysis)" },
+                      {
+                        value: "premium",
+                        label: "Tier 2 (Full Analysis)",
+                      },
+                      {
+                        value: "professional",
+                        label: "Tier 3 (Pro + Unlimited)",
+                      },
+                    ]}
+                  />
+                )}
+              </div>
             </div>
 
             {/* Save Button (only show if analysis exists and user has access) */}
@@ -2217,7 +2305,7 @@ export const ChapterCheckerV2: React.FC = () => {
                     position: "relative",
                   }}
                 >
-                  {/* Horizontal Ruler with margin indicators - aligned with 800px editor */}
+                  {/* Horizontal Ruler with margin indicators - only show when there's actual content */}
                   <div
                     data-ruler-container
                     style={{
@@ -2688,7 +2776,7 @@ export const ChapterCheckerV2: React.FC = () => {
                 >
                   <li>
                     <strong style={{ color: "#111827" }}>
-                      Tier 1 · Free Writer
+                      Tier 1 · Limited Analysis
                     </strong>
                     <p style={{ margin: "4px 0" }}>
                       Upload manuscripts up to 200 pages to get instant pacing
@@ -2732,7 +2820,7 @@ export const ChapterCheckerV2: React.FC = () => {
 
                   <li>
                     <strong style={{ color: "#111827" }}>
-                      Tier 2 · Premium Author
+                      Tier 2 · Full Analysis
                     </strong>
                     <p style={{ margin: "4px 0" }}>
                       Complete manuscript analysis up to 650 pages with advanced
@@ -2773,6 +2861,34 @@ export const ChapterCheckerV2: React.FC = () => {
                         fiction subgenres.
                       </li>
                     </ul>
+                    <button
+                      onClick={() => {
+                        setUpgradeFeature("Premium Author");
+                        setUpgradeTarget("premium");
+                        setShowUpgradePrompt(true);
+                      }}
+                      style={{
+                        marginTop: "12px",
+                        marginLeft: "18px",
+                        padding: "8px 16px",
+                        backgroundColor: "white",
+                        color: "#2c3e50",
+                        border: "1.5px solid #ef8432",
+                        borderRadius: "20px",
+                        fontSize: "13px",
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        transition: "background-color 0.2s",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = "#f7e6d0";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = "white";
+                      }}
+                    >
+                      Upgrade
+                    </button>
                   </li>
 
                   <li>
@@ -2818,53 +2934,36 @@ export const ChapterCheckerV2: React.FC = () => {
                         agent/editor submission workflows.
                       </li>
                     </ul>
+                    <button
+                      onClick={() => {
+                        setUpgradeFeature("Professional Writer");
+                        setUpgradeTarget("professional");
+                        setShowUpgradePrompt(true);
+                      }}
+                      style={{
+                        marginTop: "12px",
+                        marginLeft: "18px",
+                        padding: "8px 16px",
+                        backgroundColor: "white",
+                        color: "#2c3e50",
+                        border: "1.5px solid #ef8432",
+                        borderRadius: "20px",
+                        fontSize: "13px",
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        transition: "background-color 0.2s",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = "#f7e6d0";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = "white";
+                      }}
+                    >
+                      Upgrade
+                    </button>
                   </li>
                 </ul>
-
-                <div
-                  style={{
-                    marginTop: "16px",
-                    paddingTop: "16px",
-                    borderTop: "1px solid #e0c392",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "8px",
-                  }}
-                >
-                  <strong style={{ fontSize: "14px", color: "#111827" }}>
-                    Ready for more?
-                  </strong>
-                  <p style={{ margin: 0, fontSize: "13px", color: "#2c3e50" }}>
-                    Upgrade to Premium for full manuscript analysis with
-                    detailed pacing insights, show-vs-tell detection, and
-                    exportable revision reports.
-                  </p>
-                  <button
-                    onClick={() => {
-                      setShowTierTwoPreview(true);
-                    }}
-                    style={{
-                      alignSelf: "flex-start",
-                      padding: "10px 20px",
-                      backgroundColor: "white",
-                      color: "#2c3e50",
-                      border: "1.5px solid #2c3e50",
-                      borderRadius: "20px",
-                      fontSize: "13px",
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      transition: "background-color 0.2s",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = "#f7e6d0";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = "white";
-                    }}
-                  >
-                    Preview Tier 2 Features
-                  </button>
-                </div>
 
                 {!chapterData && (
                   <div

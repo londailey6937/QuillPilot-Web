@@ -12,6 +12,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({ onAuthRequired }) => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isHovered, setIsHovered] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -81,7 +82,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({ onAuthRequired }) => {
         onClick={onAuthRequired}
         style={{
           padding: "12px 32px",
-          backgroundColor: "#ffffff",
+          backgroundColor: isHovered ? "#f7e6d0" : "#fef5e7",
           color: "#2c3e50",
           border: "3px solid #ef8432",
           borderRadius: "30px",
@@ -89,15 +90,10 @@ export const UserMenu: React.FC<UserMenuProps> = ({ onAuthRequired }) => {
           fontSize: "16px",
           fontWeight: "600",
           transition: "all 0.2s",
+          transform: isHovered ? "translateY(-1px)" : "translateY(0)",
         }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.backgroundColor = "#fef5e7";
-          e.currentTarget.style.transform = "translateY(-1px)";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.backgroundColor = "#ffffff";
-          e.currentTarget.style.transform = "translateY(0)";
-        }}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
       >
         Sign In
       </button>
@@ -127,24 +123,16 @@ export const UserMenu: React.FC<UserMenuProps> = ({ onAuthRequired }) => {
           (e.currentTarget.style.backgroundColor = "#ffffff")
         }
       >
-        <div
+        <img
+          src="/favicon.svg"
+          alt="User"
           style={{
             width: "32px",
             height: "32px",
-            backgroundColor: "#2c3e50",
             borderRadius: "50%",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: "white",
-            fontWeight: "600",
-            fontSize: "14px",
+            objectFit: "cover",
           }}
-        >
-          {profile?.full_name?.[0]?.toUpperCase() ||
-            user.email?.[0]?.toUpperCase() ||
-            "U"}
-        </div>
+        />
         <span
           style={{
             fontSize: "14px",
@@ -217,17 +205,19 @@ export const UserMenu: React.FC<UserMenuProps> = ({ onAuthRequired }) => {
             >
               {user.email}
             </p>
-            <p
-              style={{
-                margin: "4px 0 0",
-                fontSize: "12px",
-                color: "#ef8432",
-                fontWeight: "700",
-                textTransform: "capitalize",
-              }}
-            >
-              {profile?.access_level || "free"} plan
-            </p>
+            {profile?.access_level && profile.access_level !== "free" && (
+              <p
+                style={{
+                  margin: "4px 0 0",
+                  fontSize: "12px",
+                  color: "#ef8432",
+                  fontWeight: "700",
+                  textTransform: "capitalize",
+                }}
+              >
+                {profile.access_level} plan
+              </p>
+            )}
           </div>
 
           <div style={{ padding: "8px 0" }}>

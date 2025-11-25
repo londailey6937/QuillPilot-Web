@@ -237,7 +237,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               style={{
                 width: "100%",
                 padding: "8px 16px",
-                backgroundColor: loading ? "#e2e8f0" : "#ffffff",
+                backgroundColor: loading ? "#e2e8f0" : "#fef5e7",
                 color: loading ? "#64748b" : "#2c3e50",
                 border: loading ? "none" : "2px solid #ef8432",
                 borderRadius: "20px",
@@ -250,7 +250,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 if (!loading) e.currentTarget.style.backgroundColor = "#f7e6d0";
               }}
               onMouseLeave={(e) => {
-                if (!loading) e.currentTarget.style.backgroundColor = "#ffffff";
+                if (!loading) e.currentTarget.style.backgroundColor = "#fef5e7";
               }}
             >
               {loading

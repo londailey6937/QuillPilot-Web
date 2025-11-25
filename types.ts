@@ -49,7 +49,7 @@ export const ACCESS_TIERS: Record<AccessLevel, AccessFeatures> = {
     exportResults: true,
     conceptGraphs: true,
     customGenres: true,
-    writerMode: false,
+    writerMode: true,
     unlimitedAnalyses: false,
     prioritySupport: false,
     maxPages: 650, // Full textbook (typical undergraduate textbook)

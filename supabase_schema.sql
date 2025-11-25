@@ -3,7 +3,7 @@ CREATE TABLE public.profiles (
   id UUID REFERENCES auth.users(id) PRIMARY KEY,
   email TEXT UNIQUE NOT NULL,
   full_name TEXT,
-  access_level TEXT NOT NULL DEFAULT 'free' CHECK (access_level IN ('free', 'standard', 'professional')),
+  access_level TEXT NOT NULL DEFAULT 'free' CHECK (access_level IN ('free', 'premium', 'professional')),
   stripe_customer_id TEXT UNIQUE,
   stripe_subscription_id TEXT,
   subscription_status TEXT CHECK (subscription_status IN ('active', 'canceled', 'past_due', 'trialing', NULL)),

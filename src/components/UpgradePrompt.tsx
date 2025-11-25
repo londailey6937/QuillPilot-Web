@@ -17,30 +17,38 @@ export const UpgradePrompt: React.FC<UpgradePromptProps> = ({
   onDismiss,
 }) => {
   const premiumFeatures = [
-    "✓ Full 10-Principle Learning Analysis",
-    "✓ Complete Concept Graphs & Relationships",
-    "✓ Detailed Pattern Recognition",
-    "✓ Export Results (DOCX, JSON)",
-    "✓ All Visualization Charts",
-    "✓ Comprehensive Recommendations",
+    "✓ Upload limit: Up to 650 pages",
+    "✓ Detailed pacing scores with rhythm analysis",
+    "✓ Show-vs-tell heatmaps",
+    "✓ Auto-generated writing recommendations",
+    "✓ Export results (DOCX, JSON, HTML)",
+    "✓ Create custom genre profiles",
   ];
 
   const professionalFeatures = [
     "✓ Everything in Premium, plus:",
-    "✓ Writer Mode with Live Analysis",
-    "✓ Unlimited Document Analyses",
-    "✓ 1,000 Page Upload Limit (Single Book)",
-    "✓ Priority Support",
+    "✓ Upload limit: Up to 1,000 pages",
+    "✓ Writer Mode with live analysis updates",
+    "✓ Unlimited manuscript analyses",
+    "✓ Priority support",
+    "✓ Advanced formatting and collaboration tools",
   ];
 
   const features =
     targetLevel === "premium" ? premiumFeatures : professionalFeatures;
   const price = targetLevel === "premium" ? "$9.99/mo" : "$19.99/mo";
-  const tierName = targetLevel === "premium" ? "Premium" : "Professional";
+  const tierName =
+    targetLevel === "premium" ? "Premium Author" : "Professional Writer";
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-6 relative border-2 border-gray-200">
+      <div
+        className="rounded-3xl shadow-2xl max-w-md w-full p-6 relative"
+        style={{
+          backgroundColor: "#fef5e7",
+          border: "2px solid #e0c392",
+        }}
+      >
         {onDismiss && (
           <button
             onClick={onDismiss}
@@ -63,38 +71,42 @@ export const UpgradePrompt: React.FC<UpgradePromptProps> = ({
         )}
 
         <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-purple-400 to-cyan-400 rounded-full mb-4">
-            <svg
-              className="w-8 h-8 text-white"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M13 10V3L4 14h7v7l9-11h-7z"
-              />
-            </svg>
+          <div
+            className="inline-flex items-center justify-center w-16 h-16 rounded-full mb-4"
+            style={{
+              backgroundColor: "#ef8432",
+            }}
+          >
+            <span className="text-3xl text-white">
+              {targetLevel === "premium" ? "📚" : "✍️"}
+            </span>
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+          <h2 className="text-2xl font-bold mb-2" style={{ color: "#2c3e50" }}>
             Upgrade to {tierName}
           </h2>
-          <p className="text-gray-600">
+          <p style={{ color: "#374151" }}>
             Unlock <strong>{feature}</strong> and more
           </p>
         </div>
 
-        <div className="bg-white border-2 border-gray-200 rounded-3xl p-4 mb-6">
+        <div
+          className="rounded-3xl p-4 mb-6"
+          style={{
+            backgroundColor: "#f7e6d0",
+            border: "2px solid #e0c392",
+          }}
+        >
           <div className="flex items-baseline justify-center mb-4">
-            <span className="text-4xl font-bold text-gray-900">{price}</span>
+            <span className="text-4xl font-bold" style={{ color: "#2c3e50" }}>
+              {price}
+            </span>
           </div>
           <ul className="space-y-3">
             {features.map((feature, index) => (
               <li
                 key={index}
-                className="flex items-start text-sm text-gray-700"
+                className="flex items-start text-sm"
+                style={{ color: "#2c3e50" }}
               >
                 <span className="mr-2">{feature}</span>
               </li>
@@ -127,7 +139,7 @@ export const UpgradePrompt: React.FC<UpgradePromptProps> = ({
               style={{
                 backgroundColor: "white",
                 color: "#6b7280",
-                border: "1px solid #d1d5db",
+                border: "1px solid #e0c392",
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.backgroundColor = "#f7e6d0";
@@ -136,7 +148,7 @@ export const UpgradePrompt: React.FC<UpgradePromptProps> = ({
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.backgroundColor = "white";
-                e.currentTarget.style.borderColor = "#d1d5db";
+                e.currentTarget.style.borderColor = "#e0c392";
                 e.currentTarget.style.color = "#6b7280";
               }}
             >
@@ -145,7 +157,7 @@ export const UpgradePrompt: React.FC<UpgradePromptProps> = ({
           )}
         </div>
 
-        <p className="text-xs text-gray-500 text-center mt-4">
+        <p className="text-xs text-center mt-4" style={{ color: "#6b7280" }}>
           7-day free trial • Cancel anytime
         </p>
       </div>
@@ -166,16 +178,27 @@ export const InlineUpgradePrompt: React.FC<InlineUpgradePromptProps> = ({
   description,
   onUpgrade,
 }) => {
-  const tierName = targetLevel === "premium" ? "Premium" : "Professional";
-  const icon = targetLevel === "premium" ? "🔒" : "👑";
+  const tierName =
+    targetLevel === "premium" ? "Premium Author" : "Professional Writer";
+  const icon = targetLevel === "premium" ? "📚" : "✍️";
 
   return (
-    <div className="bg-white border-2 border-gray-300 rounded-3xl p-6 my-4">
+    <div
+      className="rounded-3xl p-6 my-4"
+      style={{
+        backgroundColor: "#fef5e7",
+        border: "2px solid #e0c392",
+      }}
+    >
       <div className="flex items-start gap-4">
         <div className="text-3xl">{icon}</div>
         <div className="flex-1">
-          <h3 className="text-lg font-bold text-gray-900 mb-2">{feature}</h3>
-          <p className="text-gray-700 mb-4">{description}</p>
+          <h3 className="text-lg font-bold mb-2" style={{ color: "#2c3e50" }}>
+            {feature}
+          </h3>
+          <p className="mb-4" style={{ color: "#374151" }}>
+            {description}
+          </p>
           <button
             onClick={onUpgrade}
             className="px-6 py-2 rounded-full font-semibold transition-all"

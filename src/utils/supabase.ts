@@ -16,7 +16,7 @@ export interface Profile {
   id: string;
   email: string;
   full_name?: string;
-  access_level: "free" | "standard" | "professional";
+  access_level: "free" | "premium" | "professional";
   stripe_customer_id?: string;
   stripe_subscription_id?: string;
   subscription_status?: "active" | "canceled" | "past_due" | "trialing";
@@ -54,7 +54,7 @@ export const getUserProfile = async (): Promise<Profile | null> => {
     .from("profiles")
     .select("*")
     .eq("id", user.id)
-    .single();
+    .maybeSingle();
 
   if (error) {
     console.error("Error fetching profile:", error);
