@@ -8,6 +8,46 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
 export const isSupabaseConfigured =
   supabaseUrl.startsWith("https://") && supabaseAnonKey.length > 20;
 
+// Clear any corrupted session data on initial load
+if (typeof window !== "undefined" && isSupabaseConfigured) {
+  try {
+    // Check if there's a session that might be corrupted
+    const keys = Object.keys(localStorage);
+    const hasSupabaseAuth = keys.some(
+      (k) => k.includes("supabase") && k.includes("auth")
+    );
+
+    if (hasSupabaseAuth) {
+      console.log("🔍 Found existing Supabase auth data");
+
+      // Try to validate it quickly - if it takes too long, clear it
+      const testPromise = fetch(supabaseUrl + "/auth/v1/user", {
+        headers: {
+          apikey: supabaseAnonKey,
+        },
+      })
+        .then((r) => r.ok)
+        .catch(() => false);
+
+      Promise.race([
+        testPromise,
+        new Promise((resolve) => setTimeout(() => resolve(false), 2000)),
+      ]).then((isValid) => {
+        if (!isValid) {
+          console.warn("⚠️ Clearing potentially corrupted auth data");
+          keys.forEach((k) => {
+            if (k.includes("supabase")) {
+              localStorage.removeItem(k);
+            }
+          });
+        }
+      });
+    }
+  } catch (e) {
+    console.error("Error checking auth data:", e);
+  }
+}
+
 // Create Supabase client
 export const supabase = isSupabaseConfigured
   ? createClient(supabaseUrl, supabaseAnonKey, {
@@ -53,17 +93,27 @@ export interface SavedAnalysis {
 // Authentication Functions
 // ============================================================================
 
+// Track if we've had repeated failures to avoid spamming
+let sessionFailureCount = 0;
+const MAX_FAILURES = 3;
+
 /**
  * Get the current user session with timeout
  */
 export const getCurrentUser = async () => {
   if (!isSupabaseConfigured) return null;
 
+  // If we've failed too many times, stop trying
+  if (sessionFailureCount >= MAX_FAILURES) {
+    console.warn("⚠️ Supabase session check disabled due to repeated failures");
+    return null;
+  }
+
   try {
-    // Add timeout to prevent infinite loading
+    // Reduced timeout to 5 seconds for faster failure
     const sessionPromise = supabase.auth.getSession();
     const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error("Session fetch timeout")), 3000)
+      setTimeout(() => reject(new Error("Session fetch timeout")), 5000)
     );
 
     const result = await Promise.race([sessionPromise, timeoutPromise]);
@@ -73,9 +123,29 @@ export const getCurrentUser = async () => {
     } = result as Awaited<typeof sessionPromise>;
 
     if (error) throw error;
+
+    // Success - reset failure count
+    sessionFailureCount = 0;
     return session?.user ?? null;
   } catch (error) {
-    console.error("Error getting current user:", error);
+    sessionFailureCount++;
+    console.error(
+      `Error getting current user (${sessionFailureCount}/${MAX_FAILURES}):`,
+      error
+    );
+
+    // If session fetch fails repeatedly, clear local storage to reset state
+    if (error instanceof Error && error.message.includes("timeout")) {
+      localStorage.removeItem("supabase.auth.token");
+    }
+
+    // After max failures, suggest manual reset
+    if (sessionFailureCount >= MAX_FAILURES) {
+      console.error(
+        "🚨 Supabase connection failed. Run window.emergencyReset() to clear auth state, or check your .env credentials."
+      );
+    }
+
     return null;
   }
 };
@@ -133,9 +203,50 @@ export const signIn = async (email: string, password: string) => {
 export const signOut = async () => {
   if (!isSupabaseConfigured) return;
 
-  const { error } = await supabase.auth.signOut();
-  if (error) throw error;
+  try {
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
+  } catch (error) {
+    console.error("Error signing out from server:", error);
+    // Force clear local session even if server call fails
+    localStorage.clear();
+    sessionStorage.clear();
+    // Reload to reset app state
+    window.location.reload();
+  }
 };
+
+/**
+ * Emergency session reset - clears all local auth data and reloads
+ * Can be called from browser console: window.emergencyReset()
+ */
+export const emergencyReset = () => {
+  console.log("🚨 Emergency session reset - clearing all local data...");
+
+  // Reset failure counter
+  sessionFailureCount = 0;
+
+  localStorage.clear();
+  sessionStorage.clear();
+  // Clear any Supabase-specific storage keys
+  const storageKeys = Object.keys(localStorage);
+  storageKeys.forEach((key) => {
+    if (key.includes("supabase")) {
+      localStorage.removeItem(key);
+    }
+  });
+  console.log("✅ Local data cleared. Reloading...");
+  window.location.reload();
+};
+
+// Expose emergency reset to window for console access
+if (typeof window !== "undefined") {
+  (window as any).emergencyReset = emergencyReset;
+  (window as any).resetSupabaseFailures = () => {
+    sessionFailureCount = 0;
+    console.log("✅ Supabase failure count reset");
+  };
+}
 
 /**
  * Send password reset email

@@ -14,7 +14,13 @@ import { UpgradePrompt, InlineUpgradePrompt } from "./UpgradePrompt";
 import { TierTwoPreview } from "./TierTwoPreview";
 import { MissingConceptSuggestions } from "./MissingConceptSuggestions";
 import { ChapterAnalysis, Section } from "@/types";
-import { AccessLevel, ACCESS_TIERS } from "../../types";
+import {
+  AccessLevel,
+  ACCESS_TIERS,
+  TESTER_EMAILS,
+  isTesterEmail,
+  canUseFeature,
+} from "../../types";
 import type { Genre } from "@/data/genreRegistry";
 import { detectGenre, getAvailableGenres } from "@/data/genreRegistry";
 import type { ConceptDefinition } from "@/data/conceptLibraryRegistry";
@@ -477,6 +483,7 @@ export const ChapterCheckerV2: React.FC = () => {
   const [highlightPosition, setHighlightPosition] = useState<number | null>(
     null
   );
+  const [layoutVersion, setLayoutVersion] = useState(0); // Force re-render of positioned elements
   const [searchWord, setSearchWord] = useState<string | null>(null);
   const [searchOccurrence, setSearchOccurrence] = useState<number>(0); // Which occurrence to find
   const [scrollToTopSignal, setScrollToTopSignal] = useState(0);
@@ -592,10 +599,21 @@ export const ChapterCheckerV2: React.FC = () => {
           const profile = await getUserProfile();
           if (profile) {
             setUserProfile(profile);
-            // Only set access level from profile if user is authenticated
-            // This prevents dropdown changes from overriding actual subscription
-            if (profile.access_level) {
-              setAccessLevel(profile.access_level as AccessLevel);
+            // Check if user is a tester - testers get full access
+            const isTester = TESTER_EMAILS.includes(
+              profile.email.toLowerCase()
+            );
+
+            if (isTester) {
+              // Testers can manually switch tiers for testing
+              console.log("🔓 Tester access granted:", profile.email);
+              // Keep current accessLevel (allows manual tier switching)
+            } else {
+              // Non-testers: Only set access level from profile if authenticated
+              // This prevents dropdown changes from overriding actual subscription
+              if (profile.access_level) {
+                setAccessLevel(profile.access_level as AccessLevel);
+              }
             }
           }
         }
@@ -616,7 +634,12 @@ export const ChapterCheckerV2: React.FC = () => {
           const profile = await getUserProfile();
           if (profile) {
             setUserProfile(profile);
-            if (profile.access_level) {
+            const isTester = TESTER_EMAILS.includes(
+              profile.email.toLowerCase()
+            );
+
+            if (!isTester && profile.access_level) {
+              // Only update tier for non-testers
               setAccessLevel(profile.access_level as AccessLevel);
             }
           }
@@ -631,6 +654,11 @@ export const ChapterCheckerV2: React.FC = () => {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // Force layout recalculation when tier or view mode changes
+  useEffect(() => {
+    setLayoutVersion((prev) => prev + 1);
+  }, [accessLevel, viewMode]);
 
   // Load saved custom domains on startup
   useEffect(() => {
@@ -709,7 +737,31 @@ export const ChapterCheckerV2: React.FC = () => {
   }, []);
 
   const handleAccessLevelChange = async (level: AccessLevel) => {
-    // Prevent changing tiers if user has a paid subscription
+    // Check if user is a tester - testers can switch freely
+    const isTester = isTesterEmail(userProfile?.email);
+
+    // TEMPORARY BYPASS: If userProfile is null (auth issues), allow switching in dev mode
+    const isDevelopmentBypass = !userProfile && import.meta.env.DEV;
+
+    if (isTester || isDevelopmentBypass) {
+      // Testers or dev mode: Allow free tier switching for testing
+      console.log(
+        "🔓 " + (isTester ? "Tester" : "Dev mode") + " switching to:",
+        level
+      );
+      setAccessLevel(level);
+
+      // Automatically switch to writer mode when professional tier is selected
+      if (level === "professional") {
+        setViewMode("writer");
+      } else if (level !== "professional" && viewMode === "writer") {
+        // If switching away from professional tier while in writer mode, switch to analysis
+        setViewMode("analysis");
+      }
+      return;
+    }
+
+    // Non-testers: Prevent changing tiers if user has a paid subscription
     if (
       userProfile &&
       (userProfile.access_level === "premium" ||
@@ -1203,15 +1255,42 @@ export const ChapterCheckerV2: React.FC = () => {
       }
     }
 
-    // Check access level - block free tier, redirect to upgrade
-    const features = ACCESS_TIERS[accessLevel];
-    if (!features.fullAnalysis) {
-      setUpgradeFeature("Full 10-Principle Analysis");
-      setUpgradeTarget("premium");
-      setShowUpgradePrompt(true);
-      return;
+    // FEATURE RESTRICTION: Check if user is a tester first
+    const isTester = isTesterEmail(userProfile?.email);
+
+    // TEMPORARY BYPASS: If userProfile is null (auth issues), treat as tester for development
+    const isDevelopmentBypass = !userProfile && import.meta.env.DEV;
+
+    console.log("🔍 Analysis Access Check:", {
+      email: userProfile?.email,
+      isTester,
+      isDevelopmentBypass,
+      accessLevel,
+      userProfileExists: !!userProfile,
+    });
+
+    if (!isTester && !isDevelopmentBypass) {
+      // Non-testers: Check access level and block if needed
+      const features = ACCESS_TIERS[accessLevel];
+      if (!features.fullAnalysis) {
+        setUpgradeFeature("Full 10-Principle Analysis");
+        setUpgradeTarget("premium");
+        setShowUpgradePrompt(true);
+        return;
+      }
+
+      // Even with premium/professional tier, non-testers can't use it yet
+      if (accessLevel !== "free") {
+        alert(
+          "🔒 Premium and Professional features are coming soon!\n\n" +
+            "You can see the interface, but full functionality is not yet available for non-tester accounts.\n\n" +
+            "For now, only free tier features are accessible."
+        );
+        return;
+      }
     }
 
+    // Testers: Full access to all features regardless of tier
     // Premium/Professional tier: Run full analysis
     setIsAnalyzing(true);
     setError(null);
@@ -1454,6 +1533,17 @@ export const ChapterCheckerV2: React.FC = () => {
       return;
     }
 
+    // FEATURE RESTRICTION: Only testers can export
+    const isTester = isTesterEmail(userProfile?.email);
+    if (!isTester) {
+      alert(
+        "🔒 Export features are coming soon!\n\n" +
+          "This feature is currently available only to testers.\n\n" +
+          "Full export functionality will be available in the next release."
+      );
+      return;
+    }
+
     try {
       const { exportToDocx } = await import("@/utils/docxExport");
       const richHtmlContent =
@@ -1486,6 +1576,17 @@ export const ChapterCheckerV2: React.FC = () => {
   const handleExportHtml = () => {
     if (!chapterData) {
       alert("No document to export");
+      return;
+    }
+
+    // FEATURE RESTRICTION: Only testers can export
+    const isTester = isTesterEmail(userProfile?.email);
+    if (!isTester) {
+      alert(
+        "🔒 Export features are coming soon!\n\n" +
+          "This feature is currently available only to testers.\n\n" +
+          "Full export functionality will be available in the next release."
+      );
       return;
     }
 
@@ -1880,6 +1981,7 @@ export const ChapterCheckerV2: React.FC = () => {
                       onMouseLeave={(e) => {
                         e.currentTarget.style.backgroundColor = "white";
                       }}
+                      title="Clear document"
                     >
                       🗑️
                     </button>
@@ -1988,7 +2090,7 @@ export const ChapterCheckerV2: React.FC = () => {
               </div>
 
               {/* Mode Toggle Buttons - Show when document is loaded */}
-              {chapterData && (
+              {chapterData && accessLevel === "professional" && (
                 <div
                   style={{
                     display: "flex",
@@ -2023,11 +2125,17 @@ export const ChapterCheckerV2: React.FC = () => {
                   </button>
                   <button
                     onClick={() => {
-                      const features = ACCESS_TIERS[accessLevel];
-                      if (!features.writerMode) {
-                        setUpgradeFeature("Writer Mode");
-                        setUpgradeTarget("professional");
-                        setShowUpgradePrompt(true);
+                      // FEATURE RESTRICTION: Only testers can use Writer Mode
+                      const isTester = isTesterEmail(userProfile?.email);
+                      const isDevelopmentBypass =
+                        !userProfile && import.meta.env.DEV;
+
+                      if (!isTester && !isDevelopmentBypass) {
+                        alert(
+                          "🔒 Writer Mode is coming soon!\n\n" +
+                            "This professional-tier feature is currently available only to testers.\n\n" +
+                            "Full Writer Mode functionality will be available in the next release."
+                        );
                         return;
                       }
                       setViewMode("writer");
@@ -2042,19 +2150,15 @@ export const ChapterCheckerV2: React.FC = () => {
                           ? "2px solid #ef8432"
                           : "2px solid #e0c392",
                       borderRadius: "20px",
-                      cursor: ACCESS_TIERS[accessLevel].writerMode
-                        ? "pointer"
-                        : "not-allowed",
+                      cursor: "pointer",
                       fontSize: "13px",
                       fontWeight: viewMode === "writer" ? "700" : "600",
                       transition: "all 0.2s",
-                      opacity: ACCESS_TIERS[accessLevel].writerMode ? 1 : 0.6,
                       whiteSpace: "nowrap",
                     }}
                   >
                     ✍️ Writer
                     {viewMode === "writer" && " ✓"}
-                    {!ACCESS_TIERS[accessLevel].writerMode && " 👑"}
                   </button>
                 </div>
               )}
@@ -2561,7 +2665,7 @@ export const ChapterCheckerV2: React.FC = () => {
 
                   <div style={{ flex: 1, minHeight: 0, position: "relative" }}>
                     <DocumentEditor
-                      key={fileName} // Force new component instance when file changes
+                      key={`${fileName}-${layoutVersion}`} // Force remount when file changes or layout changes (tier/mode switch)
                       initialText={
                         chapterData.originalPlainText ?? chapterData.plainText
                       }
@@ -3656,6 +3760,7 @@ export const ChapterCheckerV2: React.FC = () => {
                       {!ACCESS_TIERS[accessLevel].exportResults && "🔒"}
                     </button>
 
+                    {/* Generate AI Template - only in Writer Mode */}
                     {viewMode === "writer" && analysis && (
                       <button
                         onClick={() => setShowTemplateSelector(true)}
