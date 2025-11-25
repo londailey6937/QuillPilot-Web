@@ -1829,6 +1829,78 @@ export const ChapterCheckerV2: React.FC = () => {
               {/* User Menu / Auth */}
               <UserMenu onAuthRequired={() => setIsAuthModalOpen(true)} />
 
+              {/* Mode Toggle Buttons - Show when document is loaded */}
+              {chapterData && (
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "8px",
+                    alignItems: "center",
+                  }}
+                >
+                  <button
+                    onClick={() => {
+                      setViewMode("analysis");
+                      setHighlightPosition(null);
+                    }}
+                    style={{
+                      padding: "8px 16px",
+                      backgroundColor:
+                        viewMode === "analysis" ? "#ef8432" : "#fef5e7",
+                      color: viewMode === "analysis" ? "white" : "#2c3e50",
+                      border:
+                        viewMode === "analysis"
+                          ? "2px solid #ef8432"
+                          : "2px solid #e0c392",
+                      borderRadius: "20px",
+                      cursor: "pointer",
+                      fontSize: "13px",
+                      fontWeight: viewMode === "analysis" ? "700" : "600",
+                      transition: "all 0.2s",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    📊 Analysis
+                    {viewMode === "analysis" && " ✓"}
+                  </button>
+                  <button
+                    onClick={() => {
+                      const features = ACCESS_TIERS[accessLevel];
+                      if (!features.writerMode) {
+                        setUpgradeFeature("Writer Mode");
+                        setUpgradeTarget("professional");
+                        setShowUpgradePrompt(true);
+                        return;
+                      }
+                      setViewMode("writer");
+                    }}
+                    style={{
+                      padding: "8px 16px",
+                      backgroundColor:
+                        viewMode === "writer" ? "#ef8432" : "#fef5e7",
+                      color: viewMode === "writer" ? "white" : "#2c3e50",
+                      border:
+                        viewMode === "writer"
+                          ? "2px solid #ef8432"
+                          : "2px solid #e0c392",
+                      borderRadius: "20px",
+                      cursor: ACCESS_TIERS[accessLevel].writerMode
+                        ? "pointer"
+                        : "not-allowed",
+                      fontSize: "13px",
+                      fontWeight: viewMode === "writer" ? "700" : "600",
+                      transition: "all 0.2s",
+                      opacity: ACCESS_TIERS[accessLevel].writerMode ? 1 : 0.6,
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    ✍️ Writer
+                    {viewMode === "writer" && " ✓"}
+                    {!ACCESS_TIERS[accessLevel].writerMode && " 👑"}
+                  </button>
+                </div>
+              )}
+
               {/* Access Level Selector (for demo purposes) */}
               <div
                 style={{
@@ -2724,8 +2796,8 @@ export const ChapterCheckerV2: React.FC = () => {
         </div>
 
         {/* Right: Analysis Panel (responsive: 40% desktop, 30% laptop) */}
-        {/* Hide sidebar in writer mode when there's no analysis yet - give full page to editor */}
-        {!(viewMode === "writer" && !analysis) && (
+        {/* Hide sidebar in writer mode for professional tier - give full page to editor */}
+        {!(viewMode === "writer" && accessLevel === "professional") && (
           <div
             className="app-panel"
             style={{
@@ -3581,111 +3653,6 @@ export const ChapterCheckerV2: React.FC = () => {
                           : "1.5px solid #f7d8a8",
                     }}
                   >
-                    <div
-                      style={{
-                        marginBottom: "16px",
-                        display: "flex",
-                        gap: "8px",
-                      }}
-                    >
-                      <button
-                        onClick={() => {
-                          setViewMode("analysis");
-                          // Clear highlight position when switching to analysis mode
-                          // to prevent unwanted jumps
-                          setHighlightPosition(null);
-                        }}
-                        style={{
-                          flex: 1,
-                          padding: "12px 16px",
-                          backgroundColor:
-                            viewMode === "analysis" ? "#ef8432" : "#fef5e7",
-                          color: viewMode === "analysis" ? "white" : "#2c3e50",
-                          border:
-                            viewMode === "analysis"
-                              ? "2px solid #ef8432"
-                              : "2px solid #e0c392",
-                          borderRadius: "8px",
-                          cursor: "pointer",
-                          fontSize: "15px",
-                          fontWeight: viewMode === "analysis" ? "700" : "600",
-                          transition: "all 0.2s",
-                          boxShadow:
-                            viewMode === "analysis"
-                              ? "0 2px 8px rgba(239, 132, 50, 0.3)"
-                              : "none",
-                        }}
-                        onMouseEnter={(e) => {
-                          if (viewMode !== "analysis") {
-                            e.currentTarget.style.backgroundColor = "#f7e6d0";
-                          }
-                        }}
-                        onMouseLeave={(e) => {
-                          if (viewMode !== "analysis") {
-                            e.currentTarget.style.backgroundColor = "#fef5e7";
-                          }
-                        }}
-                      >
-                        📊 Analysis Mode
-                        {viewMode === "analysis" && " ✓"}
-                      </button>
-                      <button
-                        onClick={() => {
-                          // Check access for Writer Mode
-                          const features = ACCESS_TIERS[accessLevel];
-                          if (!features.writerMode) {
-                            setUpgradeFeature("Writer Mode");
-                            setUpgradeTarget("professional");
-                            setShowUpgradePrompt(true);
-                            return;
-                          }
-                          setViewMode("writer");
-                        }}
-                        style={{
-                          flex: 1,
-                          padding: "12px 16px",
-                          backgroundColor:
-                            viewMode === "writer" ? "#ef8432" : "#fef5e7",
-                          color: viewMode === "writer" ? "white" : "#2c3e50",
-                          border:
-                            viewMode === "writer"
-                              ? "2px solid #ef8432"
-                              : "2px solid #e0c392",
-                          borderRadius: "8px",
-                          cursor: ACCESS_TIERS[accessLevel].writerMode
-                            ? "pointer"
-                            : "not-allowed",
-                          fontSize: "15px",
-                          fontWeight: viewMode === "writer" ? "700" : "600",
-                          transition: "all 0.2s",
-                          boxShadow:
-                            viewMode === "writer"
-                              ? "0 2px 8px rgba(239, 132, 50, 0.3)"
-                              : "none",
-                          opacity: ACCESS_TIERS[accessLevel].writerMode
-                            ? 1
-                            : 0.6,
-                        }}
-                        onMouseEnter={(e) => {
-                          if (
-                            viewMode !== "writer" &&
-                            ACCESS_TIERS[accessLevel].writerMode
-                          ) {
-                            e.currentTarget.style.backgroundColor = "#f7e6d0";
-                          }
-                        }}
-                        onMouseLeave={(e) => {
-                          if (viewMode !== "writer") {
-                            e.currentTarget.style.backgroundColor = "#fef5e7";
-                          }
-                        }}
-                      >
-                        ✍️ Writer Mode
-                        {viewMode === "writer" && " ✓"}
-                        {!ACCESS_TIERS[accessLevel].writerMode && " 👑"}
-                      </button>
-                    </div>
-
                     <button
                       onClick={handleExport}
                       disabled={!ACCESS_TIERS[accessLevel].exportResults}
