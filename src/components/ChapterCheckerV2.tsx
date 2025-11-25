@@ -1314,6 +1314,11 @@ export const ChapterCheckerV2: React.FC = () => {
             setGeneralConcepts([]); // Clear if domain is selected
           }
 
+          // Force layout recalculation for pills/boxes positioning
+          requestAnimationFrame(() => {
+            window.dispatchEvent(new Event("resize"));
+          });
+
           // DEBUG: Show first mention positions for all concepts
           const concepts = e.data.result?.conceptGraph?.concepts || [];
           console.log("🔍 === CONCEPT FIRST MENTION POSITIONS ===");
@@ -1614,220 +1619,370 @@ export const ChapterCheckerV2: React.FC = () => {
             border: "1px solid #e0c392",
             boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
             borderRadius: "24px",
+            position: "relative",
           }}
         >
           <div
             style={{
               display: "flex",
-              flexWrap: "wrap",
-              alignItems: "center",
-              justifyContent: "space-between",
+              flexDirection: "column",
               gap: "1rem",
             }}
           >
-            {/* Left: Logo and Brand */}
+            {/* Top row: Logo and Stats */}
             <div
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: "0.5rem",
-                flex: "0 1 auto",
-                minWidth: "280px",
+                justifyContent: "space-between",
               }}
             >
-              <button
-                onClick={() => setIsNavigationOpen(true)}
-                style={{
-                  padding: "8px 16px",
-                  backgroundColor: "#f7e6d0",
-                  color: "#2c3e50",
-                  border: "2px solid #ef8432",
-                  borderRadius: "20px",
-                  cursor: "pointer",
-                  fontSize: "18px",
-                }}
-              >
-                ☰
-              </button>
-
-              <div style={{ minWidth: 0 }}>
-                <h1
-                  style={{
-                    margin: 0,
-                    fontSize: "1.5rem",
-                    color: "#2c3e50",
-                    fontWeight: "700",
-                    lineHeight: "1.2",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.5rem",
-                  }}
-                >
-                  Quill
-                  <span style={{ fontStyle: "italic", fontWeight: "700" }}>
-                    Pilot
-                  </span>
-                  <AnimatedLogo size={60} animate={true} />
-                </h1>
-                <p
-                  style={{
-                    margin: 0,
-                    fontSize: "0.875rem",
-                    opacity: 1,
-                    color: "#2c3e50",
-                  }}
-                >
-                  AI-Powered Creative Writing Analysis
-                </p>
-                <p
-                  style={{
-                    margin: "0.25rem 0 0 0",
-                    fontSize: "0.75rem",
-                    opacity: 1,
-                    color: "#2c3e50",
-                  }}
-                >
-                  For Fiction • Novels • Short Stories • Creative Nonfiction •
-                  Screenplays
-                </p>
-              </div>
-            </div>
-
-            {/* Document Stats in Header - Centered */}
-            {fileName && (
+              {/* Left: Logo and Brand */}
               <div
                 style={{
-                  fontSize: "13px",
-                  color: "#2c3e50",
                   display: "flex",
-                  flexDirection: "column",
-                  gap: "6px",
                   alignItems: "center",
-                  justifyContent: "center",
-                  textAlign: "center",
-                  minWidth: "240px",
-                  padding: "10px 18px",
-                  backgroundColor: "#f5ead9",
-                  borderRadius: "12px",
-                  border: "1.5px solid #e0c392",
-                  flex: "1 1 auto",
-                  maxWidth: "500px",
+                  gap: "0.5rem",
+                  flex: "0 1 auto",
+                  minWidth: "280px",
                 }}
               >
-                <span style={{ fontWeight: "600", fontSize: "14px" }}>
-                  📄 {fileName}
-                </span>
-                <div
+                <button
+                  onClick={() => setIsNavigationOpen(true)}
                   style={{
-                    display: "flex",
-                    gap: "8px",
-                    fontSize: "12px",
-                    flexWrap: "wrap",
-                    justifyContent: "center",
+                    padding: "8px 16px",
+                    backgroundColor: "#f7e6d0",
+                    color: "#2c3e50",
+                    border: "2px solid #ef8432",
+                    borderRadius: "20px",
+                    cursor: "pointer",
+                    fontSize: "18px",
                   }}
                 >
-                  <span style={{ fontWeight: 500 }}>
-                    {wordCount.toLocaleString()} words
+                  ☰
+                </button>
+
+                <div style={{ minWidth: 0 }}>
+                  <h1
+                    style={{
+                      margin: 0,
+                      fontSize: "1.5rem",
+                      color: "#2c3e50",
+                      fontWeight: "700",
+                      lineHeight: "1.2",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                    }}
+                  >
+                    Quill
+                    <span style={{ fontStyle: "italic", fontWeight: "700" }}>
+                      Pilot
+                    </span>
+                    <AnimatedLogo size={60} animate={true} />
+                  </h1>
+                  <p
+                    style={{
+                      margin: 0,
+                      fontSize: "0.875rem",
+                      opacity: 1,
+                      color: "#2c3e50",
+                    }}
+                  >
+                    AI-Powered Creative Writing Analysis
+                  </p>
+                  <p
+                    style={{
+                      margin: "0.25rem 0 0 0",
+                      fontSize: "0.75rem",
+                      opacity: 1,
+                      color: "#2c3e50",
+                    }}
+                  >
+                    For Fiction • Novels • Short Stories • Creative Nonfiction •
+                    Screenplays
+                  </p>
+                </div>
+              </div>
+
+              {/* Document Stats in Header - Centered */}
+              {fileName && (
+                <div
+                  style={{
+                    fontSize: "13px",
+                    color: "#2c3e50",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "6px",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    textAlign: "center",
+                    minWidth: "240px",
+                    padding: "10px 18px",
+                    backgroundColor: "#f5ead9",
+                    borderRadius: "12px",
+                    border: "1.5px solid #e0c392",
+                    maxWidth: "500px",
+                    margin: "0 auto",
+                  }}
+                >
+                  <span style={{ fontWeight: "600", fontSize: "14px" }}>
+                    📄 {fileName}
                   </span>
-                  <span style={{ color: "#9ca3af" }}>•</span>
-                  <span style={{ fontWeight: 500 }}>
-                    {Math.ceil(wordCount / 250).toLocaleString()} pages
-                  </span>
-                  <span style={{ color: "#9ca3af" }}>•</span>
-                  <span style={{ fontWeight: 500 }}>
-                    {charCount.toLocaleString()} chars
-                  </span>
-                  <span style={{ color: "#9ca3af" }}>•</span>
-                  <span style={{ fontWeight: 500 }}>
-                    {(() => {
-                      const totalMinutes = Math.ceil(wordCount / 200);
-                      const hours = Math.floor(totalMinutes / 60);
-                      const minutes = totalMinutes % 60;
-                      if (hours > 0) {
-                        return `~${hours}h ${minutes}m read`;
-                      }
-                      return `~${minutes}m read`;
-                    })()}
-                  </span>
-                  {readingLevel > 0 && (
-                    <>
-                      <span style={{ color: "#9ca3af" }}>•</span>
-                      <span style={{ fontWeight: 500 }}>
-                        Grade {readingLevel}
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: "8px",
+                      fontSize: "12px",
+                      flexWrap: "wrap",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <span style={{ fontWeight: 500 }}>
+                      {wordCount.toLocaleString()} words
+                    </span>
+                    <span style={{ color: "#9ca3af" }}>•</span>
+                    <span style={{ fontWeight: 500 }}>
+                      {Math.ceil(wordCount / 250).toLocaleString()} pages
+                    </span>
+                    <span style={{ color: "#9ca3af" }}>•</span>
+                    <span style={{ fontWeight: 500 }}>
+                      {charCount.toLocaleString()} chars
+                    </span>
+                    <span style={{ color: "#9ca3af" }}>•</span>
+                    <span style={{ fontWeight: 500 }}>
+                      {(() => {
+                        const totalMinutes = Math.ceil(wordCount / 200);
+                        const hours = Math.floor(totalMinutes / 60);
+                        const minutes = totalMinutes % 60;
+                        if (hours > 0) {
+                          return `~${hours}h ${minutes}m read`;
+                        }
+                        return `~${minutes}m read`;
+                      })()}
+                    </span>
+                    {readingLevel > 0 && (
+                      <>
+                        <span style={{ color: "#9ca3af" }}>•</span>
+                        <span style={{ fontWeight: 500 }}>
+                          Grade {readingLevel}
+                        </span>
+                      </>
+                    )}
+                  </div>
+                  {selectedDomain && selectedDomain !== "none" && (
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: "8px",
+                        fontSize: "12px",
+                        flexWrap: "wrap",
+                        justifyContent: "center",
+                        marginTop: "4px",
+                        padding: "6px 12px",
+                        backgroundColor: "#fef5e7",
+                        borderRadius: "12px",
+                        border: "1px solid #f7d8a8",
+                      }}
+                    >
+                      <span style={{ fontWeight: 500, color: "#64748b" }}>
+                        Genre:
                       </span>
-                    </>
+                      <span
+                        style={{
+                          fontWeight: 600,
+                          color: "#ef8432",
+                          textTransform: "capitalize",
+                        }}
+                      >
+                        {selectedDomain === "custom"
+                          ? customDomainName || "Custom"
+                          : selectedDomain}
+                      </span>
+                    </div>
+                  )}
+                  {analysis && (
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: "8px",
+                        fontSize: "12px",
+                        flexWrap: "wrap",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontWeight: 600,
+                          color:
+                            analysis.overallScore > 70
+                              ? "#10b981"
+                              : analysis.overallScore > 50
+                              ? "#f59e0b"
+                              : "#ef4444",
+                        }}
+                      >
+                        Overall Score: {Math.round(analysis.overallScore)}/100
+                      </span>
+                    </div>
                   )}
                 </div>
-                {selectedDomain && selectedDomain !== "none" && (
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: "8px",
-                      fontSize: "12px",
-                      flexWrap: "wrap",
-                      justifyContent: "center",
-                      marginTop: "4px",
-                      padding: "6px 12px",
-                      backgroundColor: "#fef5e7",
-                      borderRadius: "12px",
-                      border: "1px solid #f7d8a8",
-                    }}
-                  >
-                    <span style={{ fontWeight: 500, color: "#64748b" }}>
-                      Genre:
-                    </span>
-                    <span
-                      style={{
-                        fontWeight: 600,
-                        color: "#ef8432",
-                        textTransform: "capitalize",
-                      }}
-                    >
-                      {selectedDomain === "custom"
-                        ? customDomainName || "Custom"
-                        : selectedDomain}
-                    </span>
-                  </div>
-                )}
-                {analysis && (
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: "8px",
-                      fontSize: "12px",
-                      flexWrap: "wrap",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <span
-                      style={{
-                        fontWeight: 600,
-                        color:
-                          analysis.overallScore > 70
-                            ? "#10b981"
-                            : analysis.overallScore > 50
-                            ? "#f59e0b"
-                            : "#ef4444",
-                      }}
-                    >
-                      Overall Score: {Math.round(analysis.overallScore)}/100
-                    </span>
-                  </div>
-                )}
-              </div>
-            )}
+              )}
+            </div>
 
-            {/* Right side: User Menu and Access Tier */}
+            {/* Bottom row: Action buttons, User Menu, Mode toggles */}
             <div
               style={{
                 display: "flex",
                 alignItems: "center",
+                justifyContent: "center",
                 gap: "0.75rem",
-                flex: "0 0 auto",
+                flexWrap: "wrap",
               }}
             >
-              {/* User Menu / Auth */}
-              <UserMenu onAuthRequired={() => setIsAuthModalOpen(true)} />
+              {/* Document Actions - Always visible */}
+              <div
+                style={{
+                  display: "flex",
+                  gap: "6px",
+                  alignItems: "center",
+                  flexWrap: "wrap",
+                }}
+              >
+                <DocumentUploader
+                  onDocumentLoad={handleDocumentLoad}
+                  disabled={isAnalyzing}
+                  accessLevel={accessLevel}
+                />
+
+                {chapterData && !isAnalyzing && (
+                  <>
+                    <button
+                      onClick={handleClear}
+                      style={{
+                        padding: "6px 12px",
+                        backgroundColor: "white",
+                        color: "#2c3e50",
+                        border: "1.5px solid #e0c392",
+                        borderRadius: "12px",
+                        cursor: "pointer",
+                        fontSize: "12px",
+                        fontWeight: "600",
+                        transition: "all 0.2s",
+                        whiteSpace: "nowrap",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = "#f7e6d0";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = "white";
+                      }}
+                    >
+                      🗑️
+                    </button>
+
+                    <button
+                      onClick={handleExportDocx}
+                      style={{
+                        padding: "6px 12px",
+                        backgroundColor: "white",
+                        color: "#2c3e50",
+                        border: "1.5px solid #e0c392",
+                        borderRadius: "12px",
+                        cursor: "pointer",
+                        fontSize: "12px",
+                        fontWeight: "600",
+                        transition: "all 0.2s",
+                        whiteSpace: "nowrap",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = "#f7e6d0";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = "white";
+                      }}
+                      title="Export DOCX"
+                    >
+                      📥
+                    </button>
+
+                    <button
+                      onClick={handleExportHtml}
+                      style={{
+                        padding: "6px 12px",
+                        backgroundColor: "white",
+                        color: "#2c3e50",
+                        border: "1.5px solid #e0c392",
+                        borderRadius: "12px",
+                        cursor: "pointer",
+                        fontSize: "12px",
+                        fontWeight: "600",
+                        transition: "all 0.2s",
+                        whiteSpace: "nowrap",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = "#f7e6d0";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = "white";
+                      }}
+                      title="Export HTML"
+                    >
+                      🌐
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        try {
+                          const autosaved = localStorage.getItem(
+                            "quillpilot_autosave"
+                          );
+                          if (autosaved) {
+                            const saved = JSON.parse(autosaved);
+                            const savedTime = new Date(
+                              saved.timestamp
+                            ).toLocaleString();
+                            const clear = window.confirm(
+                              `💾 Auto-save Status\n\nLast saved: ${savedTime}\nFile: ${saved.fileName}\n\nClick OK to clear auto-saved data, or Cancel to keep it.`
+                            );
+                            if (clear) {
+                              localStorage.removeItem("quillpilot_autosave");
+                              alert("🗑️ Auto-saved data cleared!");
+                            }
+                          } else {
+                            alert(
+                              "ℹ️ No auto-saved data found.\n\nYour work is automatically saved as you edit in Writer Mode."
+                            );
+                          }
+                        } catch (error) {
+                          alert("⚠️ Error checking auto-save status");
+                        }
+                      }}
+                      style={{
+                        padding: "6px 12px",
+                        backgroundColor: "white",
+                        color: "#2c3e50",
+                        border: "1.5px solid #e0c392",
+                        borderRadius: "12px",
+                        cursor: "pointer",
+                        fontSize: "12px",
+                        fontWeight: "600",
+                        transition: "all 0.2s",
+                        whiteSpace: "nowrap",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = "#f7e6d0";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = "white";
+                      }}
+                      title="Auto-save info"
+                    >
+                      💾
+                    </button>
+                  </>
+                )}
+              </div>
 
               {/* Mode Toggle Buttons - Show when document is loaded */}
               {chapterData && (
@@ -1901,6 +2056,51 @@ export const ChapterCheckerV2: React.FC = () => {
                 </div>
               )}
 
+              {/* Save Button (only show if analysis exists and user has access) */}
+              {analysis && accessLevel !== "free" && (
+                <>
+                  <button
+                    onClick={handleSaveAnalysis}
+                    disabled={isSaving}
+                    style={{
+                      padding: "8px 16px",
+                      backgroundColor: isSaving ? "#e2e8f0" : "#ffffff",
+                      color: isSaving ? "#64748b" : "#2c3e50",
+                      border: isSaving ? "none" : "2px solid #ef8432",
+                      borderRadius: "20px",
+                      cursor: isSaving ? "not-allowed" : "pointer",
+                      fontSize: "14px",
+                      fontWeight: "600",
+                      whiteSpace: "nowrap",
+                      transition: "background-color 0.2s",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isSaving)
+                        e.currentTarget.style.backgroundColor = "#f7e6d0";
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isSaving)
+                        e.currentTarget.style.backgroundColor = "#ffffff";
+                    }}
+                  >
+                    {isSaving ? "Saving..." : "💾 Save Analysis"}
+                  </button>
+                  {saveMessage && (
+                    <span
+                      style={{
+                        fontSize: "12px",
+                        color: saveMessage.includes("✅")
+                          ? "#10b981"
+                          : "#ef4444",
+                        fontWeight: "600",
+                      }}
+                    >
+                      {saveMessage}
+                    </span>
+                  )}
+                </>
+              )}
+
               {/* Access Level Selector (for demo purposes) */}
               <div
                 style={{
@@ -1964,52 +2164,10 @@ export const ChapterCheckerV2: React.FC = () => {
                   />
                 )}
               </div>
-            </div>
 
-            {/* Save Button (only show if analysis exists and user has access) */}
-            {analysis && accessLevel !== "free" && (
-              <div
-                style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}
-              >
-                <button
-                  onClick={handleSaveAnalysis}
-                  disabled={isSaving}
-                  style={{
-                    padding: "8px 16px",
-                    backgroundColor: isSaving ? "#e2e8f0" : "#ffffff",
-                    color: isSaving ? "#64748b" : "#2c3e50",
-                    border: isSaving ? "none" : "2px solid #ef8432",
-                    borderRadius: "20px",
-                    cursor: isSaving ? "not-allowed" : "pointer",
-                    fontSize: "14px",
-                    fontWeight: "600",
-                    whiteSpace: "nowrap",
-                    transition: "background-color 0.2s",
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isSaving)
-                      e.currentTarget.style.backgroundColor = "#f7e6d0";
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isSaving)
-                      e.currentTarget.style.backgroundColor = "#ffffff";
-                  }}
-                >
-                  {isSaving ? "Saving..." : "💾 Save Analysis"}
-                </button>
-                {saveMessage && (
-                  <span
-                    style={{
-                      fontSize: "12px",
-                      color: saveMessage.includes("✅") ? "#10b981" : "#ef4444",
-                      fontWeight: "600",
-                    }}
-                  >
-                    {saveMessage}
-                  </span>
-                )}
-              </div>
-            )}
+              {/* User Menu / Auth - Far Right */}
+              <UserMenu onAuthRequired={() => setIsAuthModalOpen(true)} />
+            </div>
           </div>
         </header>
       </div>
@@ -2154,202 +2312,10 @@ export const ChapterCheckerV2: React.FC = () => {
               ref={documentHeaderRef}
               style={{
                 padding: "16px",
+                paddingTop: "8px",
                 scrollMarginTop: "140px",
               }}
-            >
-              {/* Hide buttons in writer mode when starting fresh - just show editor */}
-              {!(viewMode === "writer" && !chapterData) && (
-                <div
-                  style={{
-                    display: "flex",
-                    gap: "8px",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flexWrap: "wrap",
-                  }}
-                >
-                  <DocumentUploader
-                    onDocumentLoad={handleDocumentLoad}
-                    disabled={isAnalyzing}
-                    accessLevel={accessLevel}
-                  />
-
-                  {!chapterData && !isAnalyzing && viewMode === "writer" && (
-                    <button
-                      onClick={() => {
-                        // Start with blank document - properly initialize for editor
-                        const blankContent = "";
-                        setChapterText(blankContent);
-                        setChapterData({
-                          html: "",
-                          plainText: blankContent,
-                          originalPlainText: blankContent,
-                          isHybridDocx: false,
-                          imageCount: 0,
-                          editorHtml: "",
-                        });
-                        // Set view mode to writer to show editor
-                        setViewMode("writer");
-                      }}
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "8px",
-                        padding: "12px 24px",
-                        backgroundColor: "white",
-                        color: "#ef8432",
-                        border: "1.5px solid #ef8432",
-                        borderRadius: "20px",
-                        cursor: "pointer",
-                        fontWeight: "600",
-                        fontSize: "14px",
-                        transition: "all 0.2s",
-                        flexShrink: 0,
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = "#f7e6d0";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = "white";
-                      }}
-                    >
-                      ✍️ Start Writing
-                    </button>
-                  )}
-
-                  {chapterData && !isAnalyzing && (
-                    <>
-                      <button
-                        onClick={handleClear}
-                        style={{
-                          padding: "8px 14px",
-                          backgroundColor: "white",
-                          color: "#2c3e50",
-                          border: "1.5px solid #e0c392",
-                          borderRadius: "12px",
-                          cursor: "pointer",
-                          fontSize: "13px",
-                          fontWeight: "600",
-                          textAlign: "center",
-                          transition: "background-color 0.2s",
-                          flexShrink: 0,
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = "#f7e6d0";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = "white";
-                        }}
-                      >
-                        🗑️ Clear
-                      </button>
-
-                      <button
-                        onClick={handleExportDocx}
-                        style={{
-                          padding: "8px 14px",
-                          backgroundColor: "white",
-                          color: "#2c3e50",
-                          border: "1.5px solid #e0c392",
-                          borderRadius: "12px",
-                          cursor: "pointer",
-                          fontSize: "13px",
-                          fontWeight: "600",
-                          textAlign: "center",
-                          transition: "background-color 0.2s",
-                          flexShrink: 0,
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = "#f7e6d0";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = "white";
-                        }}
-                      >
-                        📥 Export DOCX
-                      </button>
-
-                      <button
-                        onClick={handleExportHtml}
-                        style={{
-                          padding: "8px 14px",
-                          backgroundColor: "white",
-                          color: "#2c3e50",
-                          border: "1.5px solid #e0c392",
-                          borderRadius: "12px",
-                          cursor: "pointer",
-                          fontSize: "13px",
-                          fontWeight: "600",
-                          textAlign: "center",
-                          transition: "background-color 0.2s",
-                          flexShrink: 0,
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = "#f7e6d0";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = "white";
-                        }}
-                        title="Export as styled HTML document"
-                      >
-                        🌐 Export HTML
-                      </button>
-
-                      <button
-                        onClick={() => {
-                          try {
-                            const autosaved = localStorage.getItem(
-                              "quillpilot_autosave"
-                            );
-                            if (autosaved) {
-                              const saved = JSON.parse(autosaved);
-                              const savedTime = new Date(
-                                saved.timestamp
-                              ).toLocaleString();
-                              const clear = window.confirm(
-                                `💾 Auto-save Status\n\nLast saved: ${savedTime}\nFile: ${saved.fileName}\n\nClick OK to clear auto-saved data, or Cancel to keep it.`
-                              );
-                              if (clear) {
-                                localStorage.removeItem("tomeiq_autosave");
-                                alert("🗑️ Auto-saved data cleared!");
-                              }
-                            } else {
-                              alert(
-                                "ℹ️ No auto-saved data found.\n\nYour work is automatically saved as you edit in Writer Mode."
-                              );
-                            }
-                          } catch (error) {
-                            alert("⚠️ Error checking auto-save status");
-                          }
-                        }}
-                        style={{
-                          padding: "8px 14px",
-                          backgroundColor: "white",
-                          color: "#2c3e50",
-                          border: "1.5px solid #e0c392",
-                          borderRadius: "12px",
-                          cursor: "pointer",
-                          fontSize: "13px",
-                          fontWeight: "600",
-                          textAlign: "center",
-                          transition: "background-color 0.2s",
-                          flexShrink: 0,
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = "#f7e6d0";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = "white";
-                        }}
-                        title="Check auto-save status"
-                      >
-                        💾 Auto-save info
-                      </button>
-                    </>
-                  )}
-                </div>
-              )}
-            </div>
+            ></div>
           </div>
 
           <div
