@@ -185,11 +185,11 @@ const resolveLayoutMode = (width: number): LayoutMode => {
   if (width <= 1024) {
     return "tablet";
   }
-  // Laptop: 1025-1680px (13-16 inch laptops)
-  if (width <= 1680) {
+  // Laptop: 1025-1920px (13-16 inch laptops)
+  if (width <= 1920) {
     return "laptop";
   }
-  // Desktop: >1680px (27 inch and larger monitors)
+  // Desktop: >1920px (27 inch and larger monitors)
   return "desktop";
 };
 
