@@ -1,5 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
-import { supabase, getCurrentUser, getUserProfile } from "@/utils/supabase";
+import {
+  supabase,
+  getCurrentUser,
+  getUserProfile,
+  signOut,
+  isSupabaseConfigured,
+} from "@/utils/supabase";
 import type { User } from "@supabase/supabase-js";
 import type { Profile } from "@/utils/supabase";
 
@@ -12,24 +18,72 @@ export const UserMenu: React.FC<UserMenuProps> = ({ onAuthRequired }) => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [isHovered, setIsHovered] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    checkUser();
+    let mounted = true;
 
+    const initAuth = async () => {
+      if (!isSupabaseConfigured) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        // Set a safety timeout
+        const timeoutId = setTimeout(() => {
+          if (mounted) {
+            console.warn("UserMenu: Loading timeout, stopping spinner");
+            setLoading(false);
+          }
+        }, 4000);
+
+        const currentUser = await getCurrentUser();
+
+        clearTimeout(timeoutId);
+
+        if (!mounted) return;
+
+        setUser(currentUser);
+        if (currentUser) {
+          const userProfile = await getUserProfile();
+          if (mounted) {
+            setProfile(userProfile);
+          }
+        }
+        setLoading(false);
+      } catch (error) {
+        console.error("UserMenu: Error initializing auth:", error);
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    initAuth();
+
+    // Listen for auth state changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!mounted) return;
+
       setUser(session?.user ?? null);
       if (session?.user) {
-        loadProfile();
+        getUserProfile().then((userProfile) => {
+          if (mounted) {
+            setProfile(userProfile);
+          }
+        });
       } else {
         setProfile(null);
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   useEffect(() => {
@@ -48,31 +102,20 @@ export const UserMenu: React.FC<UserMenuProps> = ({ onAuthRequired }) => {
     };
   }, [isOpen]);
 
-  const checkUser = async () => {
-    setLoading(true);
-    const currentUser = await getCurrentUser();
-    setUser(currentUser);
-    if (currentUser) {
-      await loadProfile();
-    }
-    setLoading(false);
-  };
-
-  const loadProfile = async () => {
-    const userProfile = await getUserProfile();
-    setProfile(userProfile);
-  };
-
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    setIsOpen(false);
+    try {
+      await signOut();
+      setUser(null);
+      setProfile(null);
+      setIsOpen(false);
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
   };
 
   if (loading) {
     return (
-      <div className="text-sm text-gray-500">
-        <div className="animate-pulse">Loading...</div>
-      </div>
+      <div className="text-sm text-gray-500 animate-pulse">Loading...</div>
     );
   }
 
@@ -80,20 +123,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({ onAuthRequired }) => {
     return (
       <button
         onClick={onAuthRequired}
-        style={{
-          padding: "12px 32px",
-          backgroundColor: isHovered ? "#f7e6d0" : "#fef5e7",
-          color: "#2c3e50",
-          border: "3px solid #ef8432",
-          borderRadius: "30px",
-          cursor: "pointer",
-          fontSize: "16px",
-          fontWeight: "600",
-          transition: "all 0.2s",
-          transform: isHovered ? "translateY(-1px)" : "translateY(0)",
-        }}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
+        className="px-8 py-3 bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50] border-2 border-[#ef8432] rounded-full font-semibold transition-all"
       >
         Sign In
       </button>
@@ -101,46 +131,14 @@ export const UserMenu: React.FC<UserMenuProps> = ({ onAuthRequired }) => {
   }
 
   return (
-    <div style={{ position: "relative" }} ref={menuRef}>
+    <div className="relative" ref={menuRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "0.5rem",
-          padding: "4px 12px 4px 4px",
-          backgroundColor: "#ffffff",
-          border: "2px solid #ef8432",
-          borderRadius: "24px",
-          cursor: "pointer",
-          transition: "all 0.2s",
-          color: "#2c3e50",
-        }}
-        onMouseEnter={(e) =>
-          (e.currentTarget.style.backgroundColor = "#f7e6d0")
-        }
-        onMouseLeave={(e) =>
-          (e.currentTarget.style.backgroundColor = "#ffffff")
-        }
+        className="flex items-center gap-2 px-3 py-1 pl-1 bg-white hover:bg-[#f7e6d0] border-2 border-[#ef8432] rounded-full transition-colors"
       >
-        <img
-          src="/favicon.svg"
-          alt="User"
-          style={{
-            width: "32px",
-            height: "32px",
-            borderRadius: "50%",
-            objectFit: "cover",
-          }}
-        />
-        <span
-          style={{
-            fontSize: "14px",
-            fontWeight: "600",
-            color: "#2c3e50",
-          }}
-        >
-          {profile?.full_name || user.email}
+        <img src="/favicon.svg" alt="User" className="w-8 h-8 rounded-full" />
+        <span className="text-sm font-semibold text-[#2c3e50] max-w-[120px] truncate">
+          {profile?.full_name || user.email?.split("@")[0]}
         </span>
         <svg
           width="16"
@@ -149,100 +147,30 @@ export const UserMenu: React.FC<UserMenuProps> = ({ onAuthRequired }) => {
           fill="none"
           stroke="currentColor"
           strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          style={{
-            transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
-            transition: "transform 0.2s",
-          }}
+          className={`transition-transform ${isOpen ? "rotate-180" : ""}`}
         >
           <path d="M6 9l6 6 6-6" />
         </svg>
       </button>
 
       {isOpen && (
-        <div
-          style={{
-            position: "absolute",
-            right: 0,
-            marginTop: "8px",
-            width: "260px",
-            backgroundColor: "white",
-            borderRadius: "12px",
-            boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
-            border: "2px solid #ef8432",
-            padding: "0",
-            zIndex: 50,
-            overflow: "hidden",
-          }}
-        >
-          <div
-            style={{
-              padding: "12px 16px",
-              borderBottom: "1px solid #ef8432",
-              backgroundColor: "#f7e6d0",
-            }}
-          >
-            <p
-              style={{
-                margin: 0,
-                fontSize: "14px",
-                fontWeight: "600",
-                color: "#2c3e50",
-              }}
-            >
+        <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-xl border-2 border-[#ef8432] overflow-hidden z-50">
+          <div className="p-4 bg-[#f7e6d0] border-b border-[#ef8432]">
+            <p className="font-semibold text-[#2c3e50] text-sm">
               {profile?.full_name || "User"}
             </p>
-            <p
-              style={{
-                margin: "4px 0 0",
-                fontSize: "12px",
-                color: "#4b5563",
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-              }}
-            >
-              {user.email}
-            </p>
+            <p className="text-xs text-gray-600 truncate mt-1">{user.email}</p>
             {profile?.access_level && profile.access_level !== "free" && (
-              <p
-                style={{
-                  margin: "4px 0 0",
-                  fontSize: "12px",
-                  color: "#ef8432",
-                  fontWeight: "700",
-                  textTransform: "capitalize",
-                }}
-              >
-                {profile.access_level} plan
-              </p>
+              <div className="mt-2 inline-block px-2 py-1 bg-[#ef8432] text-white text-xs font-bold rounded uppercase">
+                {profile.access_level}
+              </div>
             )}
           </div>
 
-          <div style={{ padding: "8px 0" }}>
+          <div className="py-2">
             <button
               onClick={handleSignOut}
-              style={{
-                width: "100%",
-                textAlign: "left",
-                padding: "10px 16px",
-                fontSize: "14px",
-                color: "#2c3e50",
-                backgroundColor: "transparent",
-                border: "none",
-                cursor: "pointer",
-                fontWeight: "500",
-                transition: "all 0.2s",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = "#f7e6d0";
-                e.currentTarget.style.color = "#ef8432";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = "transparent";
-                e.currentTarget.style.color = "#2c3e50";
-              }}
+              className="w-full text-left px-4 py-2.5 text-sm text-[#2c3e50] hover:bg-[#f7e6d0] hover:text-[#ef8432] font-medium transition-colors"
             >
               Sign Out
             </button>

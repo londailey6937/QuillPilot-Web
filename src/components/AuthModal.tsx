@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { supabase, isSupabaseConfigured } from "@/utils/supabase";
+import { signIn, signUp, isSupabaseConfigured } from "@/utils/supabase";
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -22,38 +22,16 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   if (!isOpen) return null;
 
-  // Show configuration message if Supabase is not configured
+  // Show demo mode message if Supabase is not configured
   if (!isSupabaseConfigured) {
     return (
-      <div
-        style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: "rgba(0, 0, 0, 0.5)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          zIndex: 1000,
-        }}
-        onClick={onClose}
-      >
-        <div
-          style={{
-            backgroundColor: "#fff",
-            padding: "32px",
-            borderRadius: "12px",
-            maxWidth: "400px",
-            textAlign: "center",
-          }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <h2 style={{ marginBottom: "16px", color: "#2c3e50" }}>
-            🎉 Running in Demo Mode
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 p-8 text-center">
+          <div className="text-5xl mb-4">🎉</div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">
+            Running in Demo Mode
           </h2>
-          <p style={{ color: "#666", marginBottom: "24px", lineHeight: "1.6" }}>
+          <p className="text-gray-600 mb-6 leading-relaxed">
             QuillPilot is running in free demo mode. You can use all free-tier
             features without signing up!
             <br />
@@ -63,16 +41,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           </p>
           <button
             onClick={onClose}
-            style={{
-              padding: "10px 24px",
-              backgroundColor: "#10b981",
-              color: "#fff",
-              border: "none",
-              borderRadius: "8px",
-              cursor: "pointer",
-              fontSize: "14px",
-              fontWeight: "600",
-            }}
+            className="px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg transition-colors"
           >
             Got it!
           </button>
@@ -89,46 +58,37 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
     try {
       if (mode === "signup") {
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              full_name: fullName,
-            },
-          },
-        });
-
-        if (error) throw error;
-
+        await signUp(email, password, fullName);
         setMessage(
           "Account created! Please check your email to confirm your account."
         );
+        // Reset form
+        setEmail("");
+        setPassword("");
+        setFullName("");
+        // Close after showing message
         setTimeout(() => {
           onClose();
         }, 3000);
       } else {
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-
-        if (error) throw error;
-
+        await signIn(email, password);
         setMessage("Login successful!");
+        // Call success callback and close
         setTimeout(() => {
           onSuccess();
           onClose();
         }, 1000);
       }
     } catch (err: any) {
-      setError(err.message || "An error occurred");
+      console.error("Auth error:", err);
+      setError(err.message || "An error occurred during authentication");
     } finally {
       setLoading(false);
     }
   };
 
-  const resetForm = () => {
+  const switchMode = () => {
+    setMode(mode === "login" ? "signup" : "login");
     setEmail("");
     setPassword("");
     setFullName("");
@@ -136,91 +96,84 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setMessage(null);
   };
 
-  const switchMode = () => {
-    resetForm();
-    setMode(mode === "login" ? "signup" : "login");
-  };
-
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full overflow-hidden">
-        <div
-          className="flex justify-between items-center p-6"
-          style={{
-            backgroundColor: "#f7e6d0",
-            borderBottom: "2px solid #ef8432",
-          }}
-        >
-          <h2 className="text-2xl font-bold" style={{ color: "#2c3e50" }}>
-            {mode === "login" ? "Sign In" : "Create Account"}
+      <div className="bg-white rounded-xl shadow-xl max-w-md w-full overflow-hidden">
+        {/* Header */}
+        <div className="bg-[#f7e6d0] border-b-2 border-[#ef8432] p-6 flex justify-between items-center">
+          <h2 className="text-2xl font-bold text-[#2c3e50]">
+            {mode === "login" ? "Welcome Back" : "Create Account"}
           </h2>
           <button
             onClick={onClose}
-            className="text-2xl transition-colors"
-            style={{
-              color: "#2c3e50",
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = "#ef8432")}
-            onMouseLeave={(e) => (e.currentTarget.style.color = "#2c3e50")}
+            className="text-3xl text-[#2c3e50] hover:text-[#ef8432] transition-colors leading-none"
+            aria-label="Close"
           >
             ×
           </button>
         </div>
 
+        {/* Body */}
         <div className="p-6">
+          {/* Error Message */}
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded">
+            <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
               {error}
             </div>
           )}
 
+          {/* Success Message */}
           {message && (
-            <div className="mb-4 p-3 bg-green-50 border border-green-200 text-green-700 rounded">
+            <div className="mb-4 p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg">
               {message}
             </div>
           )}
 
+          {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Full Name (signup only) */}
             {mode === "signup" && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Full Name
                 </label>
                 <input
                   type="text"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#ef8432] focus:border-[#ef8432]"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ef8432] focus:border-transparent"
+                  placeholder="Your name"
                   required
                 />
               </div>
             )}
 
+            {/* Email */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Email
               </label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#ef8432] focus:border-[#ef8432]"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ef8432] focus:border-transparent"
+                placeholder="you@example.com"
                 required
               />
             </div>
 
+            {/* Password */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Password
               </label>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#ef8432] focus:border-[#ef8432]"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ef8432] focus:border-transparent"
+                placeholder="••••••••"
                 minLength={6}
                 required
               />
@@ -231,27 +184,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               )}
             </div>
 
+            {/* Submit Button */}
             <button
               type="submit"
               disabled={loading}
-              style={{
-                width: "100%",
-                padding: "8px 16px",
-                backgroundColor: loading ? "#e2e8f0" : "#fef5e7",
-                color: loading ? "#64748b" : "#2c3e50",
-                border: loading ? "none" : "2px solid #ef8432",
-                borderRadius: "20px",
-                cursor: loading ? "not-allowed" : "pointer",
-                fontSize: "14px",
-                fontWeight: "600",
-                transition: "background-color 0.2s",
-              }}
-              onMouseEnter={(e) => {
-                if (!loading) e.currentTarget.style.backgroundColor = "#f7e6d0";
-              }}
-              onMouseLeave={(e) => {
-                if (!loading) e.currentTarget.style.backgroundColor = "#fef5e7";
-              }}
+              className={`w-full py-3 px-4 rounded-lg font-semibold transition-all ${
+                loading
+                  ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  : "bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50] border-2 border-[#ef8432]"
+              }`}
             >
               {loading
                 ? "Processing..."
@@ -261,20 +202,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             </button>
           </form>
 
-          <div className="mt-4 text-center">
+          {/* Switch Mode */}
+          <div className="mt-6 text-center">
             <button
               onClick={switchMode}
-              style={{
-                color: "#ef8432",
-                textDecoration: "underline",
-                backgroundColor: "transparent",
-                border: "none",
-                cursor: "pointer",
-                fontSize: "14px",
-                padding: "4px",
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = "#2c3e50")}
-              onMouseLeave={(e) => (e.currentTarget.style.color = "#ef8432")}
+              className="text-[#ef8432] hover:text-[#2c3e50] font-medium transition-colors"
             >
               {mode === "login"
                 ? "Need an account? Sign up"
@@ -282,10 +214,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             </button>
           </div>
 
-          <div className="mt-4 pt-4 border-t border-gray-200">
+          {/* Terms */}
+          <div className="mt-6 pt-4 border-t border-gray-200">
             <p className="text-xs text-gray-500 text-center">
-              By signing {mode === "login" ? "in" : "up"}, you agree to save
-              your analysis data securely.
+              By {mode === "login" ? "signing in" : "creating an account"}, you
+              agree to securely save your analysis data.
             </p>
           </div>
         </div>
