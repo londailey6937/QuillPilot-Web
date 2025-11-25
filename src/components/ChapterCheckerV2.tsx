@@ -586,17 +586,22 @@ export const ChapterCheckerV2: React.FC = () => {
   // Sync user profile and access level from Supabase
   useEffect(() => {
     const loadUserProfile = async () => {
-      const user = await getCurrentUser();
-      if (user) {
-        const profile = await getUserProfile();
-        if (profile) {
-          setUserProfile(profile);
-          // Only set access level from profile if user is authenticated
-          // This prevents dropdown changes from overriding actual subscription
-          if (profile.access_level) {
-            setAccessLevel(profile.access_level as AccessLevel);
+      try {
+        const user = await getCurrentUser();
+        if (user) {
+          const profile = await getUserProfile();
+          if (profile) {
+            setUserProfile(profile);
+            // Only set access level from profile if user is authenticated
+            // This prevents dropdown changes from overriding actual subscription
+            if (profile.access_level) {
+              setAccessLevel(profile.access_level as AccessLevel);
+            }
           }
         }
+      } catch (error) {
+        console.error("Error loading user profile:", error);
+        // Don't block app if profile loading fails
       }
     };
 
@@ -606,17 +611,21 @@ export const ChapterCheckerV2: React.FC = () => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (session?.user) {
-        const profile = await getUserProfile();
-        if (profile) {
-          setUserProfile(profile);
-          if (profile.access_level) {
-            setAccessLevel(profile.access_level as AccessLevel);
+      try {
+        if (session?.user) {
+          const profile = await getUserProfile();
+          if (profile) {
+            setUserProfile(profile);
+            if (profile.access_level) {
+              setAccessLevel(profile.access_level as AccessLevel);
+            }
           }
+        } else {
+          setUserProfile(null);
+          setAccessLevel("free");
         }
-      } else {
-        setUserProfile(null);
-        setAccessLevel("free");
+      } catch (error) {
+        console.error("Error loading profile on auth change:", error);
       }
     });
 
