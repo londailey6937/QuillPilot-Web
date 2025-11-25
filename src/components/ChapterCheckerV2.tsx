@@ -1705,8 +1705,8 @@ export const ChapterCheckerV2: React.FC = () => {
           position: "sticky",
           top: 0,
           zIndex: 60,
-          padding: "16px",
-          paddingBottom: "16px",
+          padding: "15px",
+          paddingBottom: "0px",
           backgroundColor: "#dce4ec",
           marginBottom: 0,
         }}
@@ -2407,24 +2407,6 @@ export const ChapterCheckerV2: React.FC = () => {
             overflow: "hidden",
           }}
         >
-          <div
-            className="app-panel"
-            style={{
-              padding: 0,
-              backgroundColor: "#f5ead9",
-              background: "#f5ead9",
-            }}
-          >
-            <div
-              ref={documentHeaderRef}
-              style={{
-                padding: "16px",
-                paddingTop: "8px",
-                scrollMarginTop: "140px",
-              }}
-            ></div>
-          </div>
-
           <div
             className="app-panel"
             style={{
