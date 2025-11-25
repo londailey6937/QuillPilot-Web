@@ -1634,7 +1634,9 @@ export const ChapterCheckerV2: React.FC = () => {
               style={{
                 display: "flex",
                 alignItems: "center",
-                justifyContent: "space-between",
+                justifyContent: "center",
+                position: "relative",
+                minHeight: "100px",
               }}
             >
               {/* Left: Logo and Brand */}
@@ -1643,6 +1645,8 @@ export const ChapterCheckerV2: React.FC = () => {
                   display: "flex",
                   alignItems: "center",
                   gap: "0.5rem",
+                  position: "absolute",
+                  left: 0,
                   flex: "0 1 auto",
                   minWidth: "280px",
                 }}
@@ -1723,7 +1727,6 @@ export const ChapterCheckerV2: React.FC = () => {
                     borderRadius: "12px",
                     border: "1.5px solid #e0c392",
                     maxWidth: "500px",
-                    margin: "0 auto",
                   }}
                 >
                   <span style={{ fontWeight: "600", fontSize: "14px" }}>
