@@ -502,8 +502,8 @@ export const ChapterCheckerV2: React.FC = () => {
   });
 
   const statisticsText =
-    chapterData?.originalPlainText ??
     chapterData?.plainText ??
+    chapterData?.originalPlainText ??
     chapterText ??
     "";
   const wordCount = useMemo(
@@ -530,6 +530,8 @@ export const ChapterCheckerV2: React.FC = () => {
       0.39 * (wordCount / sentences) + 11.8 * (syllables / wordCount) - 15.59;
     return Math.max(0, Math.round(grade * 10) / 10);
   }, [statisticsText, wordCount]);
+
+  const hasDocumentStats = statisticsText.trim().length > 0;
 
   const autosaveTimestampLabel = useMemo(() => {
     if (!pendingAutosave?.timestamp) {
@@ -1810,29 +1812,31 @@ export const ChapterCheckerV2: React.FC = () => {
                 </div>
               </div>
 
-              {/* Document Stats in Header - Centered */}
-              {fileName && (
-                <div
-                  style={{
-                    fontSize: "13px",
-                    color: "#2c3e50",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "6px",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    textAlign: "center",
-                    minWidth: "240px",
-                    padding: "10px 18px",
-                    backgroundColor: "#f5ead9",
-                    borderRadius: "12px",
-                    border: "1.5px solid #e0c392",
-                    maxWidth: "500px",
-                  }}
-                >
-                  <span style={{ fontWeight: "600", fontSize: "14px" }}>
-                    📄 {fileName}
-                  </span>
+              {/* Document Specs in Header - Centered */}
+              <div
+                style={{
+                  fontSize: "13px",
+                  color: "#2c3e50",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "6px",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  textAlign: "center",
+                  minWidth: "240px",
+                  padding: "10px 18px",
+                  backgroundColor: "#f5ead9",
+                  borderRadius: "12px",
+                  border: "1.5px solid #e0c392",
+                  maxWidth: "500px",
+                }}
+              >
+                <span style={{ fontWeight: "600", fontSize: "14px" }}>
+                  📄{" "}
+                  {fileName ||
+                    (hasDocumentStats ? "Untitled Document" : "Document Specs")}
+                </span>
+                {hasDocumentStats ? (
                   <div
                     style={{
                       display: "flex",
@@ -1874,7 +1878,21 @@ export const ChapterCheckerV2: React.FC = () => {
                       </>
                     )}
                   </div>
-                  {selectedDomain && selectedDomain !== "none" && (
+                ) : (
+                  <div
+                    style={{
+                      fontSize: "12px",
+                      color: "#64748b",
+                      textAlign: "center",
+                    }}
+                  >
+                    Upload a manuscript or start writing to see live document
+                    stats.
+                  </div>
+                )}
+                {hasDocumentStats &&
+                  selectedDomain &&
+                  selectedDomain !== "none" && (
                     <div
                       style={{
                         display: "flex",
@@ -1905,33 +1923,32 @@ export const ChapterCheckerV2: React.FC = () => {
                       </span>
                     </div>
                   )}
-                  {analysis && (
-                    <div
+                {hasDocumentStats && analysis && (
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: "8px",
+                      fontSize: "12px",
+                      flexWrap: "wrap",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <span
                       style={{
-                        display: "flex",
-                        gap: "8px",
-                        fontSize: "12px",
-                        flexWrap: "wrap",
-                        justifyContent: "center",
+                        fontWeight: 600,
+                        color:
+                          analysis.overallScore > 70
+                            ? "#10b981"
+                            : analysis.overallScore > 50
+                            ? "#f59e0b"
+                            : "#ef4444",
                       }}
                     >
-                      <span
-                        style={{
-                          fontWeight: 600,
-                          color:
-                            analysis.overallScore > 70
-                              ? "#10b981"
-                              : analysis.overallScore > 50
-                              ? "#f59e0b"
-                              : "#ef4444",
-                        }}
-                      >
-                        Overall Score: {Math.round(analysis.overallScore)}/100
-                      </span>
-                    </div>
-                  )}
-                </div>
-              )}
+                      Overall Score: {Math.round(analysis.overallScore)}/100
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Bottom row: Action buttons, User Menu, Mode toggles */}
