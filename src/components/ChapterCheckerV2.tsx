@@ -2053,6 +2053,34 @@ export const ChapterCheckerV2: React.FC = () => {
                       🌐
                     </button>
 
+                    {viewMode === "writer" &&
+                      accessLevel === "professional" && (
+                        <button
+                          onClick={() => setShowTemplateSelector(true)}
+                          style={{
+                            padding: "6px 12px",
+                            backgroundColor: "white",
+                            color: "#2c3e50",
+                            border: "1.5px solid #e0c392",
+                            borderRadius: "12px",
+                            cursor: "pointer",
+                            fontSize: "12px",
+                            fontWeight: "600",
+                            transition: "all 0.2s",
+                            whiteSpace: "nowrap",
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = "#f7e6d0";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = "white";
+                          }}
+                          title="Generate AI Template"
+                        >
+                          🤖
+                        </button>
+                      )}
+
                     <button
                       onClick={() => {
                         try {
