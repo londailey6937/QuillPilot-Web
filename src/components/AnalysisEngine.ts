@@ -13,6 +13,8 @@ import type {
   AnalysisMetrics,
   Section,
   LearningPrinciple,
+  Character,
+  CharacterMapping,
 } from "../types";
 
 import {
@@ -65,7 +67,9 @@ export class AnalysisEngine {
   static async analyzeChapter(
     chapter: Chapter,
     onProgress?: (step: string, detail?: string) => void,
-    genre: string = "general"
+    genre: string = "general",
+    userCharacters?: Character[],
+    characterMappings?: CharacterMapping[]
   ): Promise<ChapterAnalysis> {
     try {
       onProgress?.("analyzing-pacing", "Analyzing paragraph pacing");
@@ -104,9 +108,11 @@ export class AnalysisEngine {
 
       onProgress?.("analyzing-characters", "Analyzing character development");
 
-      // Analyze character arcs
+      // Analyze character arcs (use user-defined characters if available)
       const characterAnalysis: CharacterAnalysisResult = analyzeCharacters(
-        chapter.content
+        chapter.content,
+        userCharacters,
+        characterMappings
       );
 
       onProgress?.("analyzing-themes", "Detecting themes and symbols");

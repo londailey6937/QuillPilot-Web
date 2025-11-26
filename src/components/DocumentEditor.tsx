@@ -1,5 +1,6 @@
 import React from "react";
 import { CustomEditor } from "./CustomEditor";
+import { Character, CharacterMapping } from "../types";
 
 interface DocumentEditorProps {
   initialText: string;
@@ -27,6 +28,11 @@ interface DocumentEditorProps {
   leftMargin?: number;
   rightMargin?: number;
   firstLineIndent?: number;
+  // Tier 3 - Character management
+  characters?: Character[];
+  onCharacterLink?: (textOccurrence: string, characterId: string) => void;
+  onOpenCharacterManager?: () => void;
+  isProfessionalTier?: boolean;
 }
 
 export const DocumentEditor: React.FC<DocumentEditorProps> = ({
@@ -48,6 +54,10 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
   leftMargin = 48,
   rightMargin = 48,
   firstLineIndent = 96,
+  characters,
+  onCharacterLink,
+  onOpenCharacterManager,
+  isProfessionalTier = false,
 }) => {
   // Determine initial content: prefer HTML if available, otherwise text
   const startContent = htmlContent || initialText;
@@ -78,6 +88,10 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
         leftMargin={leftMargin}
         rightMargin={rightMargin}
         firstLineIndent={firstLineIndent}
+        characters={characters}
+        onCharacterLink={onCharacterLink}
+        onOpenCharacterManager={onOpenCharacterManager}
+        isProfessionalTier={isProfessionalTier}
         style={{ flex: 1, minHeight: 0 }}
       />
     </div>

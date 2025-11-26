@@ -1,6 +1,6 @@
 // Web Worker for offloading chapter analysis to avoid blocking UI
 import { AnalysisEngine } from "../components/AnalysisEngine";
-import type { Chapter } from "@/types";
+import type { Chapter, Character, CharacterMapping } from "@/types";
 import type { Domain, ConceptDefinition } from "@/data/conceptLibraryRegistry";
 
 interface IncomingMessage {
@@ -9,6 +9,8 @@ interface IncomingMessage {
     domain?: Domain;
     includeCrossDomain?: boolean;
     customConcepts?: ConceptDefinition[];
+    userCharacters?: Character[];
+    characterMappings?: CharacterMapping[];
   };
 }
 
@@ -50,6 +52,8 @@ self.onmessage = async (evt: MessageEvent<IncomingMessage>) => {
   const { chapter, options } = evt.data;
   const {
     domain = "general", // Default genre for creative writing
+    userCharacters,
+    characterMappings,
   } = options || {};
 
   const runnerStartedAt =
@@ -87,11 +91,13 @@ self.onmessage = async (evt: MessageEvent<IncomingMessage>) => {
   try {
     reportProgress("analysis-start", "Starting analysis pipeline");
 
-    // Run simplified analysis with genre parameter
+    // Run simplified analysis with genre parameter and character data
     const result = await AnalysisEngine.analyzeChapter(
       chapter,
       reportProgress,
-      domain // Pass as genre parameter
+      domain as string,
+      userCharacters,
+      characterMappings
     );
 
     const durationMs =

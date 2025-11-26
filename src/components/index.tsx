@@ -339,5 +339,6 @@ export default ChapterInput;
 export { HelpModal } from "./HelpModal";
 export { ReferenceLibraryModal } from "./ReferenceLibraryModal";
 export { NavigationMenu } from "./NavigationMenu";
+export { QuickStartModal } from "./QuickStartModal";
 export { WriterMode } from "./WriterMode";
 export { AnimatedLogo } from "./AnimatedLogo";

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import type { ChapterAnalysis } from "@/types";
 import { exportToHtml } from "@/utils/htmlExport";
+import { exportToPdf } from "@/utils/pdfExport";
 
 interface WriterModeProps {
   extractedText: string;
@@ -256,6 +257,26 @@ export const WriterMode: React.FC<WriterModeProps> = ({
     }
   };
 
+  const handleExportPdf = async () => {
+    if (!editableText.trim()) {
+      alert("Nothing to export yet. Add content before exporting.");
+      return;
+    }
+
+    try {
+      await exportToPdf({
+        text: editableText,
+        fileName: fileName || "writer-mode-draft",
+        analysis: analysisResult || undefined,
+        includeAnalysis: true,
+        format: "manuscript",
+      });
+    } catch (error) {
+      console.error("WriterMode PDF export failed", error);
+      alert("Failed to export PDF. Please try again.");
+    }
+  };
+
   // Handle keyboard shortcut for save (Cmd+S / Ctrl+S)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -325,6 +346,12 @@ export const WriterMode: React.FC<WriterModeProps> = ({
               onClick={handleExportDocx}
             >
               {isCompactView ? "📥 DOCX" : "📥 Export DOCX"}
+            </button>
+            <button
+              className="px-3 md:px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm md:text-base whitespace-nowrap"
+              onClick={handleExportPdf}
+            >
+              {isCompactView ? "📄 PDF" : "📄 Export PDF"}
             </button>
             <button
               className="px-3 md:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm md:text-base whitespace-nowrap"

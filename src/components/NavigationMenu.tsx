@@ -6,6 +6,7 @@ interface NavigationMenuProps {
   onClose: () => void;
   onOpenHelp: () => void;
   onOpenReferenceLibrary: () => void;
+  onOpenQuickStart: () => void;
 }
 
 /**
@@ -23,6 +24,7 @@ export function NavigationMenu({
   onClose,
   onOpenHelp,
   onOpenReferenceLibrary,
+  onOpenQuickStart,
 }: NavigationMenuProps): JSX.Element | null {
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
 
@@ -130,7 +132,7 @@ export function NavigationMenu({
           >
             <button
               onClick={() => {
-                onOpenHelp();
+                onOpenQuickStart();
                 onClose();
               }}
               style={{

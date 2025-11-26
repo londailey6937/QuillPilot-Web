@@ -3,6 +3,8 @@
  * Tracks character mentions, emotional trajectory, and development throughout manuscript
  */
 
+import type { Character, CharacterMapping } from "../../types";
+
 export interface CharacterMention {
   name: string;
   position: number;
@@ -405,8 +407,166 @@ function determineRole(
 
 /**
  * Main character analysis function
+ * Prioritizes user-defined characters and mappings over automatic detection
  */
-export function analyzeCharacters(text: string): CharacterAnalysisResult {
+export function analyzeCharacters(
+  text: string,
+  userCharacters?: Character[],
+  characterMappings?: CharacterMapping[]
+): CharacterAnalysisResult {
+  // If user has defined characters (Tier 3), use those
+  if (userCharacters && userCharacters.length > 0) {
+    return analyzeWithUserCharacters(text, userCharacters, characterMappings);
+  }
+
+  // Otherwise fall back to automatic detection
+  return analyzeWithAutoDetection(text);
+}
+
+/**
+ * Analyze using user-defined characters (Tier 3 feature)
+ */
+function analyzeWithUserCharacters(
+  text: string,
+  userCharacters: Character[],
+  characterMappings: CharacterMapping[] = []
+): CharacterAnalysisResult {
+  const characters: CharacterProfile[] = [];
+
+  for (const char of userCharacters) {
+    // Build list of names to search for (character name + linked names + mapped names)
+    const searchNames = new Set([char.name, ...char.linkedNames]);
+
+    // Add any text occurrences mapped to this character
+    const mappedNames = characterMappings
+      .filter((m) => m.characterId === char.id)
+      .map((m) => m.textOccurrence);
+    mappedNames.forEach((name) => searchNames.add(name));
+
+    // Find all mentions of this character (any of their names)
+    const allMentions: CharacterMention[] = [];
+    for (const searchName of searchNames) {
+      const mentions = extractCharacterMentions(text, searchName);
+      allMentions.push(...mentions);
+    }
+
+    // Sort mentions by position
+    allMentions.sort((a, b) => a.position - b.position);
+
+    if (allMentions.length === 0) continue;
+
+    const trajectory = calculateEmotionalTrajectory(allMentions);
+    const arcType = determineArcType(trajectory);
+    const developmentScore = calculateDevelopmentScore(
+      arcType,
+      trajectory,
+      allMentions.length
+    );
+
+    const dialogueMentions = allMentions.filter((m) => m.inDialogue).length;
+    const dialogueRatio =
+      allMentions.length > 0 ? dialogueMentions / allMentions.length : 0;
+
+    // Map user-defined role to analysis role
+    const analysisRole =
+      char.role === "protagonist" || char.role === "antagonist"
+        ? "protagonist"
+        : char.role === "deuteragonist" ||
+          char.role === "love-interest" ||
+          char.role === "mentor"
+        ? "major"
+        : char.role === "supporting" ||
+          char.role === "sidekick" ||
+          char.role === "foil"
+        ? "supporting"
+        : "minor";
+
+    characters.push({
+      name: char.name,
+      mentions: allMentions,
+      totalMentions: allMentions.length,
+      firstAppearance: allMentions[0]?.position || 0,
+      lastAppearance: allMentions[allMentions.length - 1]?.position || 0,
+      emotionalTrajectory: trajectory,
+      dialogueRatio,
+      role: analysisRole as "protagonist" | "major" | "supporting" | "minor",
+      arcType,
+      developmentScore,
+    });
+  }
+
+  // Sort by mention count (most mentioned first)
+  characters.sort((a, b) => b.totalMentions - a.totalMentions);
+
+  // Identify protagonists
+  const protagonists = characters
+    .filter((c) => c.role === "protagonist")
+    .map((c) => c.name);
+
+  // Calculate average development
+  const averageDevelopment =
+    characters.length > 0
+      ? Math.round(
+          characters.reduce((sum, c) => sum + c.developmentScore, 0) /
+            characters.length
+        )
+      : 0;
+
+  // Generate recommendations based on character analysis
+  const recommendations: string[] = [];
+
+  if (characters.length === 0) {
+    recommendations.push(
+      "No character mentions found in the text. Make sure your characters appear in the story."
+    );
+  } else {
+    const protagonists = characters.filter((c) => c.role === "protagonist");
+
+    if (protagonists.length === 0) {
+      recommendations.push(
+        "No protagonist defined. Consider marking your main character as protagonist."
+      );
+    }
+
+    const flatProtagonists = protagonists.filter((c) => c.arcType === "flat");
+    if (flatProtagonists.length > 0) {
+      recommendations.push(
+        `${flatProtagonists[0].name} shows little emotional change. Consider adding character development.`
+      );
+    }
+
+    if (averageDevelopment < 50) {
+      recommendations.push(
+        "Character development scores are low. Add more emotional depth and transformation."
+      );
+    }
+
+    // Check for characters with very few mentions
+    const underutilized = characters.filter((c) => c.totalMentions < 5);
+    if (underutilized.length > 0 && underutilized.length < characters.length) {
+      recommendations.push(
+        `Some characters (${underutilized
+          .map((c) => c.name)
+          .join(
+            ", "
+          )}) have very few mentions. Consider giving them more presence or removing them.`
+      );
+    }
+  }
+
+  return {
+    characters,
+    protagonists,
+    totalCharacters: characters.length,
+    averageDevelopment,
+    recommendations,
+  };
+}
+
+/**
+ * Analyze using automatic character detection (Free/Premium tiers)
+ */
+function analyzeWithAutoDetection(text: string): CharacterAnalysisResult {
   // Extract character names
   const characterNames = extractCharacterNames(text);
 

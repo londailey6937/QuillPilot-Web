@@ -10,9 +10,12 @@ import { ChapterAnalysisDashboard } from "./VisualizationComponents";
 import { HelpModal } from "./HelpModal";
 import { ReferenceLibraryModal } from "./ReferenceLibraryModal";
 import { NavigationMenu } from "./NavigationMenu";
+import { QuickStartModal } from "./QuickStartModal";
 import { UpgradePrompt, InlineUpgradePrompt } from "./UpgradePrompt";
 import { TierTwoPreview } from "./TierTwoPreview";
 import { MissingConceptSuggestions } from "./MissingConceptSuggestions";
+import { CharacterManager } from "./CharacterManager";
+import { DarkModeToggle } from "./ThemeProvider";
 import { ChapterAnalysis, Section } from "@/types";
 import {
   AccessLevel,
@@ -20,6 +23,8 @@ import {
   TESTER_EMAILS,
   isTesterEmail,
   canUseFeature,
+  Character,
+  CharacterMapping,
 } from "../../types";
 import type { Genre } from "@/data/genreRegistry";
 import { detectGenre, getAvailableGenres } from "@/data/genreRegistry";
@@ -40,6 +45,7 @@ import {
 import AnalysisWorker from "@/workers/analysisWorker?worker";
 import { buildTierOneAnalysisSummary } from "@/utils/tierOneAnalysis";
 import { exportToHtml } from "@/utils/htmlExport";
+import { exportToPdf } from "@/utils/pdfExport";
 import {
   TEMPLATE_LIBRARY,
   getTemplateById,
@@ -467,6 +473,7 @@ export const ChapterCheckerV2: React.FC = () => {
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
   const [isReferenceLibraryModalOpen, setIsReferenceLibraryModalOpen] =
     useState(false);
+  const [isQuickStartModalOpen, setIsQuickStartModalOpen] = useState(false);
 
   // Ruler and margin state
   const [leftMargin, setLeftMargin] = useState(48); // pixels
@@ -494,6 +501,14 @@ export const ChapterCheckerV2: React.FC = () => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
+
+  // Character management (Tier 3)
+  const [characters, setCharacters] = useState<Character[]>([]);
+  const [characterMappings, setCharacterMappings] = useState<
+    CharacterMapping[]
+  >([]);
+  const [isCharacterManagerOpen, setIsCharacterManagerOpen] = useState(false);
+
   const [layoutMode, setLayoutMode] = useState<LayoutMode>(() => {
     if (typeof window === "undefined") {
       return "desktop";
@@ -711,6 +726,30 @@ export const ChapterCheckerV2: React.FC = () => {
       console.error("Error loading auto-saved work:", error);
     }
   }, [chapterData]);
+
+  // Load characters from localStorage (Tier 3)
+  useEffect(() => {
+    if (accessLevel === "professional") {
+      try {
+        const savedCharacters = localStorage.getItem("quillpilot_characters");
+        const savedMappings = localStorage.getItem(
+          "quillpilot_character_mappings"
+        );
+
+        if (savedCharacters) {
+          const parsed = JSON.parse(savedCharacters);
+          setCharacters(Array.isArray(parsed) ? parsed : []);
+        }
+
+        if (savedMappings) {
+          const parsed = JSON.parse(savedMappings);
+          setCharacterMappings(Array.isArray(parsed) ? parsed : []);
+        }
+      } catch (error) {
+        console.error("Error loading characters:", error);
+      }
+    }
+  }, [accessLevel]);
 
   // Listen for jump-to-position events (from dual coding buttons, etc.)
   useEffect(() => {
@@ -1156,6 +1195,44 @@ export const ChapterCheckerV2: React.FC = () => {
     setPendingAutosave(null);
   };
 
+  // Character management handlers (Tier 3)
+  const handleSaveCharacters = (updatedCharacters: Character[]) => {
+    setCharacters(updatedCharacters);
+    try {
+      localStorage.setItem(
+        "quillpilot_characters",
+        JSON.stringify(updatedCharacters)
+      );
+    } catch (error) {
+      console.error("Failed to save characters:", error);
+      alert("Failed to save characters. Please try again.");
+    }
+  };
+
+  const handleCharacterLink = (textOccurrence: string, characterId: string) => {
+    const newMapping: CharacterMapping = {
+      textOccurrence,
+      characterId,
+      position: 0, // Could calculate actual position if needed
+    };
+
+    const updatedMappings = [
+      ...characterMappings.filter((m) => m.textOccurrence !== textOccurrence),
+      newMapping,
+    ];
+
+    setCharacterMappings(updatedMappings);
+
+    try {
+      localStorage.setItem(
+        "quillpilot_character_mappings",
+        JSON.stringify(updatedMappings)
+      );
+    } catch (error) {
+      console.error("Failed to save character mapping:", error);
+    }
+  };
+
   const handleAcceptMissingConcept = (
     concept: ConceptDefinition,
     insertionPoint: number,
@@ -1385,6 +1462,10 @@ export const ChapterCheckerV2: React.FC = () => {
           domain: analysisDomain,
           includeCrossDomain: false,
           customConcepts,
+          userCharacters:
+            accessLevel === "professional" ? characters : undefined,
+          characterMappings:
+            accessLevel === "professional" ? characterMappings : undefined,
         },
       };
 
@@ -1564,16 +1645,6 @@ export const ChapterCheckerV2: React.FC = () => {
       setIsAnalyzing(false);
     }
   };
-  const handleClear = () => {
-    setChapterText("");
-    setFileName("");
-    setFileType("");
-    setChapterData(null);
-    setAnalysis(null);
-    setError(null);
-    setIsTemplateMode(false);
-  };
-
   const handleExportDocx = async () => {
     if (!chapterData) {
       alert("No document to export");
@@ -1615,6 +1686,47 @@ export const ChapterCheckerV2: React.FC = () => {
     } catch (err) {
       alert(
         "Error exporting DOCX: " +
+          (err instanceof Error ? err.message : "Unknown error")
+      );
+    }
+  };
+
+  const handleExportPdf = async () => {
+    if (!chapterData) {
+      alert("No document to export");
+      return;
+    }
+
+    // FEATURE RESTRICTION: Only testers can export
+    const isTester = isTesterEmail(userProfile?.email);
+    if (!isTester) {
+      alert(
+        "🔒 Export features are coming soon!\n\n" +
+          "This feature is currently available only to testers.\n\n" +
+          "Full export functionality will be available in the next release."
+      );
+      return;
+    }
+
+    try {
+      const fallbackAnalysis =
+        analysis ??
+        buildTierOneAnalysisSummary({
+          plainText: chapterData.plainText || chapterText,
+          htmlContent: chapterData.editorHtml ?? chapterData.html ?? null,
+        });
+
+      await exportToPdf({
+        text: chapterText,
+        fileName: fileName || "manuscript",
+        analysis: fallbackAnalysis,
+        includeAnalysis: true,
+        format: "manuscript",
+      });
+    } catch (err) {
+      console.error("PDF export failed:", err);
+      alert(
+        "Error exporting PDF: " +
           (err instanceof Error ? err.message : "Unknown error")
       );
     }
@@ -2024,31 +2136,6 @@ export const ChapterCheckerV2: React.FC = () => {
                 {chapterData && !isAnalyzing && (
                   <>
                     <button
-                      onClick={handleClear}
-                      style={{
-                        padding: "6px 12px",
-                        backgroundColor: "white",
-                        color: "#2c3e50",
-                        border: "1.5px solid #e0c392",
-                        borderRadius: "12px",
-                        cursor: "pointer",
-                        fontSize: "12px",
-                        fontWeight: "600",
-                        transition: "all 0.2s",
-                        whiteSpace: "nowrap",
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = "#f7e6d0";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = "white";
-                      }}
-                      title="Clear document"
-                    >
-                      🗑️
-                    </button>
-
-                    <button
                       onClick={handleExportDocx}
                       style={{
                         padding: "6px 12px",
@@ -2071,6 +2158,31 @@ export const ChapterCheckerV2: React.FC = () => {
                       title="Export DOCX"
                     >
                       📥
+                    </button>
+
+                    <button
+                      onClick={handleExportPdf}
+                      style={{
+                        padding: "6px 12px",
+                        backgroundColor: "white",
+                        color: "#2c3e50",
+                        border: "1.5px solid #e0c392",
+                        borderRadius: "12px",
+                        cursor: "pointer",
+                        fontSize: "12px",
+                        fontWeight: "600",
+                        transition: "all 0.2s",
+                        whiteSpace: "nowrap",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = "#f7e6d0";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = "white";
+                      }}
+                      title="Export PDF (Manuscript Format)"
+                    >
+                      📄
                     </button>
 
                     <button
@@ -2178,6 +2290,9 @@ export const ChapterCheckerV2: React.FC = () => {
                   </>
                 )}
               </div>
+
+              {/* Dark Mode Toggle */}
+              <DarkModeToggle className="text-sm" />
 
               {/* Mode Toggle Buttons - Show when document is loaded */}
               {chapterData && accessLevel === "professional" && (
@@ -2446,6 +2561,12 @@ export const ChapterCheckerV2: React.FC = () => {
         onClose={() => setIsNavigationOpen(false)}
         onOpenHelp={() => setIsHelpModalOpen(true)}
         onOpenReferenceLibrary={() => setIsReferenceLibraryModalOpen(true)}
+        onOpenQuickStart={() => setIsQuickStartModalOpen(true)}
+      />
+
+      <QuickStartModal
+        isOpen={isQuickStartModalOpen}
+        onClose={() => setIsQuickStartModalOpen(false)}
       />
 
       <HelpModal
@@ -2466,6 +2587,15 @@ export const ChapterCheckerV2: React.FC = () => {
           setTimeout(() => setSaveMessage(null), 5000);
         }}
       />
+
+      {/* Character Manager (Tier 3) */}
+      {isCharacterManagerOpen && (
+        <CharacterManager
+          characters={characters}
+          onSave={handleSaveCharacters}
+          onClose={() => setIsCharacterManagerOpen(false)}
+        />
+      )}
 
       {/* Main Content */}
       <div
@@ -2718,9 +2848,9 @@ export const ChapterCheckerV2: React.FC = () => {
                     <div
                       style={{
                         position: "absolute",
-                        top: "140px",
+                        top: "50%",
                         left: "50%",
-                        transform: "translateX(-50%)",
+                        transform: "translate(-50%, -50%)",
                         color: "#9ca3af",
                         fontSize: "18px",
                         fontStyle: "italic",
@@ -2728,6 +2858,7 @@ export const ChapterCheckerV2: React.FC = () => {
                         zIndex: 10,
                         textAlign: "center",
                         width: "100%",
+                        maxWidth: "600px",
                         padding: "0 20px",
                       }}
                     >
@@ -2784,6 +2915,12 @@ export const ChapterCheckerV2: React.FC = () => {
                       searchWord={searchWord}
                       searchOccurrence={searchOccurrence}
                       isFreeMode={!tierFeatures.writerMode}
+                      characters={characters}
+                      onCharacterLink={handleCharacterLink}
+                      onOpenCharacterManager={() =>
+                        setIsCharacterManagerOpen(true)
+                      }
+                      isProfessionalTier={accessLevel === "professional"}
                       concepts={
                         analysis?.conceptGraph?.concepts?.map(
                           (c: any) => c.name
@@ -2984,7 +3121,14 @@ export const ChapterCheckerV2: React.FC = () => {
                   boxShadow: "0 12px 24px rgba(15,23,42,0.08)",
                 }}
               >
-                <h2 style={{ margin: 0, fontSize: "20px", fontWeight: 700 }}>
+                <h2
+                  style={{
+                    margin: 0,
+                    fontSize: "20px",
+                    fontWeight: 700,
+                    color: "#000000",
+                  }}
+                >
                   Analysis Controls
                 </h2>
                 <ul
@@ -3230,7 +3374,13 @@ export const ChapterCheckerV2: React.FC = () => {
                     boxShadow: "0 10px 25px rgba(15,23,42,0.08)",
                   }}
                 >
-                  <h2 style={{ margin: "0 0 6px 0", fontSize: "18px" }}>
+                  <h2
+                    style={{
+                      margin: "0 0 6px 0",
+                      fontSize: "18px",
+                      color: "#000000",
+                    }}
+                  >
                     Analysis Controls
                   </h2>
                   <p

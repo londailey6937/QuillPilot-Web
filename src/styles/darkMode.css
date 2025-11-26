@@ -1,0 +1,213 @@
+/* Dark Mode Color Palette - Based on existing cream/tan theme */
+
+[data-theme="dark"] {
+  /* Brand Colors - Adjusted for dark mode */
+  --tome-orange: #ef8432;
+  --tome-orange-hover: #ff9447;
+  --tome-navy: #e8d5b7; /* Inverted for text on dark */
+
+  /* Background Colors */
+  --bg-primary: #1a1816; /* Very dark brown */
+  --bg-secondary: #2a2420; /* Dark brown */
+  --bg-tertiary: #3a332b; /* Medium dark brown */
+  --bg-card: #2d2621; /* Card background */
+  --bg-hover: #3d352e; /* Hover state */
+  --bg-input: #2a2420; /* Input fields */
+
+  /* Border Colors */
+  --border-primary: #4a4237; /* Muted tan border */
+  --border-secondary: #5a5247; /* Lighter border */
+  --border-accent: #ef8432; /* Orange accent border */
+
+  /* Text Colors */
+  --text-primary: #e8d5b7; /* Cream text */
+  --text-secondary: #c9b89a; /* Muted cream */
+  --text-tertiary: #a89979; /* Darker muted cream */
+  --text-heading: #f5e6d3; /* Bright cream for headings */
+  --text-muted: #7a6f5e; /* Very muted */
+  --text-on-orange: #ffffff; /* White text on orange */
+
+  /* Status Colors - Slightly muted for dark mode */
+  --success: #10b981;
+  --warning: #f59e0b;
+  --error: #ef4444;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5),
+    0 2px 4px -1px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5),
+    0 4px 6px -2px rgba(0, 0, 0, 0.3);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.5),
+    0 10px 10px -5px rgba(0, 0, 0, 0.3);
+}
+
+/* Apply dark mode styles */
+[data-theme="dark"] body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .bg-white {
+  background-color: var(--bg-card) !important;
+}
+
+[data-theme="dark"] .bg-gray-50 {
+  background-color: var(--bg-secondary) !important;
+}
+
+[data-theme="dark"] .bg-gray-100 {
+  background-color: var(--bg-tertiary) !important;
+}
+
+[data-theme="dark"] .text-gray-900 {
+  color: var(--text-heading) !important;
+}
+
+[data-theme="dark"] .text-gray-800 {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .text-gray-700 {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .text-gray-600 {
+  color: var(--text-secondary) !important;
+}
+
+[data-theme="dark"] .text-gray-500 {
+  color: var(--text-tertiary) !important;
+}
+
+[data-theme="dark"] .text-gray-400 {
+  color: var(--text-muted) !important;
+}
+
+[data-theme="dark"] .border-gray-200 {
+  border-color: var(--border-primary) !important;
+}
+
+[data-theme="dark"] .border-gray-300 {
+  border-color: var(--border-secondary) !important;
+}
+
+/* Card styles */
+[data-theme="dark"] .info-card,
+[data-theme="dark"] .analysis-card {
+  background-color: var(--bg-card);
+  border-color: var(--border-primary);
+  color: var(--text-primary);
+}
+
+/* Button adjustments */
+[data-theme="dark"]
+  button:not(.bg-green-600):not(.bg-blue-600):not(.bg-red-600):not(
+    [style*="background"]
+  ) {
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+  border-color: var(--border-secondary);
+}
+
+[data-theme="dark"]
+  button:not(.bg-green-600):not(.bg-blue-600):not(.bg-red-600):not(
+    [style*="background"]
+  ):hover {
+  background-color: var(--bg-hover);
+}
+
+/* Input styles */
+[data-theme="dark"] input,
+[data-theme="dark"] textarea,
+[data-theme="dark"] select {
+  background-color: var(--bg-input) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-primary) !important;
+}
+
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] textarea::placeholder {
+  color: var(--text-muted) !important;
+}
+
+/* Override inline styles with !important for dark mode */
+[data-theme="dark"] [style*="background-color: #fff"],
+[data-theme="dark"] [style*="backgroundColor: #fff"] {
+  background-color: var(--bg-input) !important;
+}
+
+[data-theme="dark"] [style*="background-color: #f9fafb"],
+[data-theme="dark"] [style*="backgroundColor: #f9fafb"] {
+  background-color: var(--bg-card) !important;
+}
+
+[data-theme="dark"] [style*="background-color: #fef5e7"],
+[data-theme="dark"] [style*="backgroundColor: #fef5e7"] {
+  background-color: var(--bg-card) !important;
+}
+
+[data-theme="dark"] [style*="background-color: #fff7ed"],
+[data-theme="dark"] [style*="backgroundColor: #fff7ed"] {
+  background-color: var(--bg-tertiary) !important;
+}
+
+[data-theme="dark"] [style*="color: #2c3e50"],
+[data-theme="dark"] [style*="color: #374151"],
+[data-theme="dark"] [style*="color: #1f2937"] {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] [style*="border: 1px solid #d1d5db"],
+[data-theme="dark"] [style*="border: 2px solid #e0c392"] {
+  border-color: var(--border-primary) !important;
+}
+
+/* Scrollbars */
+[data-theme="dark"] ::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: var(--border-secondary);
+  border-radius: 6px;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background: var(--border-accent);
+}
+
+/* Ensure orange buttons stay orange */
+[data-theme="dark"] [style*="background-color: #ef8432"],
+[data-theme="dark"] [style*="backgroundColor: #ef8432"] {
+  background-color: #ef8432 !important;
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] [style*="background-color: #10b981"] {
+  background-color: #10b981 !important;
+}
+
+[data-theme="dark"] [style*="background-color: #3b82f6"] {
+  background-color: #3b82f6 !important;
+}
+
+[data-theme="dark"] [style*="background-color: #ef4444"] {
+  background-color: #ef4444 !important;
+}
+
+/* Modal overlay */
+[data-theme="dark"] [style*="backgroundColor: rgba(0, 0, 0, 0.5)"] {
+  background-color: rgba(0, 0, 0, 0.75) !important;
+}
+
+/* Shadows in dark mode */
+[data-theme="dark"] [style*="boxShadow"],
+[data-theme="dark"] [style*="box-shadow"] {
+  box-shadow: var(--shadow-xl) !important;
+}

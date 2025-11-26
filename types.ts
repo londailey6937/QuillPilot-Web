@@ -605,6 +605,56 @@ export interface PrincipleScoreDisplay {
 }
 
 // ============================================================================
+// CHARACTER MANAGEMENT (Tier 3 - Professional)
+// ============================================================================
+
+export type CharacterRole =
+  | "protagonist"
+  | "antagonist"
+  | "deuteragonist"
+  | "love-interest"
+  | "mentor"
+  | "sidekick"
+  | "foil"
+  | "supporting"
+  | "minor";
+
+export interface Character {
+  id: string;
+  name: string;
+  role: CharacterRole;
+  traits: string[]; // e.g., ["brave", "impulsive", "loyal"]
+  background: string; // Character backstory/history
+  goals: string; // What the character wants
+  conflicts: string; // Internal/external conflicts
+  arc: string; // Character development arc
+  relationships: CharacterRelationship[]; // Connections to other characters
+  linkedNames: string[]; // Alternative names/aliases used in text (e.g., "John", "Johnny", "Mr. Smith")
+  notes: string; // Free-form writer notes
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CharacterRelationship {
+  characterId: string; // ID of the related character
+  type:
+    | "ally"
+    | "enemy"
+    | "family"
+    | "romantic"
+    | "mentor"
+    | "rival"
+    | "neutral";
+  description: string; // Brief description of the relationship
+}
+
+export interface CharacterMapping {
+  textOccurrence: string; // The actual text string found in the document
+  characterId: string; // ID of the character it maps to
+  position: number; // Character position in text where mapping was created
+}
+
+// ============================================================================
 // UTILITIES
 // ============================================================================
 

@@ -290,6 +290,106 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
     const fileType = file.name.split(".").pop()?.toLowerCase() || "";
 
     try {
+      // Handle plain text files (.txt)
+      if (fileType === "txt") {
+        const text = await file.text();
+        const plainText = text; // Don't trim - preserve formatting
+
+        // Convert to simple HTML paragraphs, preserving indentation
+        const htmlContent = plainText
+          .split(/\n\n+/)
+          .map((para) => {
+            // Preserve leading spaces by converting them to &nbsp;
+            const preservedPara = para.replace(/^( +)/gm, (match) =>
+              "&nbsp;".repeat(match.length)
+            );
+            return `<p style="white-space: pre-wrap; color: #000000;">${preservedPara.replace(
+              /\n/g,
+              "<br>"
+            )}</p>`;
+          })
+          .join("\n");
+
+        incrementUploadCount();
+
+        onDocumentLoad({
+          fileName,
+          fileType: "text",
+          format: "html",
+          content: htmlContent,
+          plainText,
+          imageCount: 0,
+        });
+
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
+        return;
+      }
+
+      // Handle Markdown files (.md)
+      if (fileType === "md" || fileType === "markdown") {
+        const text = await file.text();
+        const plainText = text; // Don't trim - preserve formatting
+
+        // Basic Markdown to HTML conversion
+        let htmlContent = plainText
+          // Headers
+          .replace(/^### (.*$)/gim, "<h3>$1</h3>")
+          .replace(/^## (.*$)/gim, "<h2>$1</h2>")
+          .replace(/^# (.*$)/gim, "<h1>$1</h1>")
+          // Bold
+          .replace(/\*\*(.*?)\*\*/gim, "<strong>$1</strong>")
+          .replace(/__(.*?)__/gim, "<strong>$1</strong>")
+          // Italic
+          .replace(/\*(.*?)\*/gim, "<em>$1</em>")
+          .replace(/_(.*?)_/gim, "<em>$1</em>")
+          // Code
+          .replace(/`(.*?)`/gim, "<code>$1</code>")
+          // Line breaks and paragraphs
+          .split(/\n\n+/)
+          .map((para) => {
+            // Skip if already an HTML tag
+            if (para.trim().startsWith("<h") || para.trim().startsWith("<")) {
+              return para;
+            }
+            // Preserve leading spaces by converting them to &nbsp;
+            const preservedPara = para.replace(/^( +)/gm, (match) =>
+              "&nbsp;".repeat(match.length)
+            );
+            return `<p style="white-space: pre-wrap; color: #000000;">${preservedPara.replace(
+              /\n/g,
+              "<br>"
+            )}</p>`;
+          })
+          .join("\n");
+
+        // Strip Markdown for plain text
+        const strippedText = plainText
+          .replace(/^#{1,6}\s+/gm, "")
+          .replace(/\*\*/g, "")
+          .replace(/__/g, "")
+          .replace(/\*/g, "")
+          .replace(/_/g, "")
+          .replace(/`/g, "");
+
+        incrementUploadCount();
+
+        onDocumentLoad({
+          fileName,
+          fileType: "markdown",
+          format: "html",
+          content: htmlContent,
+          plainText: strippedText.trim(),
+          imageCount: 0,
+        });
+
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
+        return;
+      }
+
       if (fileType === "docx") {
         const sourceBuffer = await file.arrayBuffer();
         const htmlBuffer = sourceBuffer.slice(0);
@@ -633,7 +733,7 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
       <input
         ref={fileInputRef}
         type="file"
-        accept=".docx,.txt,.obt,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+        accept=".docx,.txt,.md,.markdown,.obt,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown"
         onChange={handleFileChange}
         disabled={disabled}
         style={{ display: "none" }}

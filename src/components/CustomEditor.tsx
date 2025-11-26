@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { analyzeParagraphSpacing, countWords } from "@/utils/spacingInsights";
 import { SensoryDetailAnalyzer } from "@/utils/sensoryDetailAnalyzer";
+import { Character, CharacterMapping } from "../types";
 
 interface CustomEditorProps {
   content: string;
@@ -18,6 +19,11 @@ interface CustomEditorProps {
   leftMargin?: number;
   rightMargin?: number;
   firstLineIndent?: number;
+  // Tier 3 - Character management
+  characters?: Character[];
+  onCharacterLink?: (textOccurrence: string, characterId: string) => void;
+  onOpenCharacterManager?: () => void;
+  isProfessionalTier?: boolean;
 }
 
 interface AnalysisData {
@@ -113,6 +119,10 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   leftMargin = 48,
   rightMargin = 48,
   firstLineIndent = 96,
+  characters = [],
+  onCharacterLink,
+  onOpenCharacterManager,
+  isProfessionalTier = false,
 }) => {
   const editorRef = useRef<HTMLDivElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -164,6 +174,29 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     readingLevel: 0,
   });
   const [showBackToTop, setShowBackToTop] = useState(false);
+  const [selectedCharacterId, setSelectedCharacterId] = useState<string>("");
+
+  // Character linking handler
+  const linkSelectedTextToCharacter = useCallback(() => {
+    if (!selectedCharacterId || !onCharacterLink) return;
+
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) {
+      alert("Please select text to link to a character");
+      return;
+    }
+
+    const selectedText = selection.toString().trim();
+    if (!selectedText) {
+      alert("Please select text to link to a character");
+      return;
+    }
+
+    onCharacterLink(selectedText, selectedCharacterId);
+
+    // Visual feedback
+    alert(`Linked "${selectedText}" to character`);
+  }, [selectedCharacterId, onCharacterLink]);
 
   // Analyze content for spacing and dual-coding
   const analyzeContent = useCallback((text: string) => {
@@ -1698,6 +1731,70 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               {sprintMode ? "⏹️" : "⏱️"}
             </button>
           </div>
+
+          {/* Character Management (Tier 3 only) */}
+          {isProfessionalTier && (
+            <>
+              <div className="w-px h-6 bg-gray-300" />
+              <div className="flex gap-1 items-center">
+                {characters && characters.length > 0 ? (
+                  <>
+                    <span className="text-xs text-gray-600 mr-1">
+                      Characters:
+                    </span>
+                    <select
+                      value={selectedCharacterId}
+                      onChange={(e) => setSelectedCharacterId(e.target.value)}
+                      className="px-2 py-1.5 rounded border bg-white hover:bg-gray-50 transition-colors text-sm"
+                      title="Select character to link"
+                    >
+                      <option value="">Select character...</option>
+                      {characters
+                        .sort((a, b) => {
+                          const roleOrder: Record<string, number> = {
+                            protagonist: 1,
+                            antagonist: 2,
+                            deuteragonist: 3,
+                            "love-interest": 4,
+                            mentor: 5,
+                            sidekick: 6,
+                            foil: 7,
+                            supporting: 8,
+                            minor: 9,
+                          };
+                          return (
+                            (roleOrder[a.role] || 999) -
+                            (roleOrder[b.role] || 999)
+                          );
+                        })
+                        .map((char) => (
+                          <option key={char.id} value={char.id}>
+                            {char.name} ({char.role})
+                          </option>
+                        ))}
+                    </select>
+                    <button
+                      onClick={linkSelectedTextToCharacter}
+                      disabled={!selectedCharacterId}
+                      className="px-3 py-1.5 rounded transition-colors text-sm bg-purple-100 text-purple-700 hover:bg-purple-200 disabled:opacity-30 disabled:cursor-not-allowed"
+                      title="Link selected text to character"
+                    >
+                      🔗 Link
+                    </button>
+                  </>
+                ) : null}
+                {onOpenCharacterManager && (
+                  <button
+                    onClick={onOpenCharacterManager}
+                    className="px-3 py-1.5 rounded hover:bg-gray-200 text-gray-700 transition-colors text-sm"
+                    title="Manage Characters"
+                  >
+                    👥
+                  </button>
+                )}
+              </div>
+            </>
+          )}
         </div>
       )}
 
@@ -1885,6 +1982,9 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
       </div>
 
       <style>{`
+        .editor-content {
+          color: #000000;
+        }
         .editor-content p {
           margin: 0.5em 0;
           line-height: 1.2;

@@ -49,12 +49,12 @@ export function ReferenceLibraryModal({
                   style={{
                     marginTop: "1.5rem",
                     marginBottom: "0.5rem",
-                    color: "#374151",
+                    color: "#000000",
                   }}
                 >
                   How We Identify Characters & Story Elements
                 </h3>
-                <p style={{ marginBottom: "1rem", lineHeight: "1.6" }}>
+                <p style={{ marginBottom: "1rem", lineHeight: "1.6", color: "#000000" }}>
                   Our analysis engine uses intelligent{" "}
                   <strong>pattern recognition</strong> to identify and track
                   characters, story elements, themes, and narrative devices
@@ -86,7 +86,7 @@ export function ReferenceLibraryModal({
                       color: "#334155",
                     }}
                   >
-                    <li style={{ marginBottom: "0.5rem" }}>
+                    <li style={{ marginBottom: "0.5rem", color: "#000000" }}>
                       <strong>Character Recognition:</strong> Identifies
                       character names (like "Sarah" or "Detective Morgan") and
                       tracks their appearances, development, and relationships
@@ -105,17 +105,17 @@ export function ReferenceLibraryModal({
                   style={{
                     marginTop: "1.5rem",
                     marginBottom: "0.5rem",
-                    color: "#374151",
+                    color: "#000000",
                   }}
                 >
                   Improving Accuracy
                 </h3>
-                <p style={{ marginBottom: "1rem", lineHeight: "1.6" }}>
+                <p style={{ marginBottom: "1rem", lineHeight: "1.6", color: "#000000" }}>
                   Fiction writing is nuanced, and sometimes the system might
                   flag common words as character names (e.g., "Will" as a name
                   vs. "will" as a helping verb).
                 </p>
-                <p style={{ marginBottom: "1rem", lineHeight: "1.6" }}>
+                <p style={{ marginBottom: "1rem", lineHeight: "1.6", color: "#000000" }}>
                   You can <strong>Report False Positives</strong> directly from
                   the element list. Look for the flag icon{" "}
                   <span
@@ -157,12 +157,12 @@ export function ReferenceLibraryModal({
                   style={{
                     marginTop: "1.5rem",
                     marginBottom: "0.5rem",
-                    color: "#374151",
+                    color: "#000000",
                   }}
                 >
                   What is Pacing & Flow Analysis?
                 </h3>
-                <p style={{ marginBottom: "1rem", lineHeight: "1.6" }}>
+                <p style={{ marginBottom: "1rem", lineHeight: "1.6", color: "#000000" }}>
                   Pacing analysis evaluates how narrative elements are
                   distributed throughout your manuscript to maintain{" "}
                   <strong>reader engagement</strong> - balancing action with
@@ -174,7 +174,7 @@ export function ReferenceLibraryModal({
                   style={{
                     marginTop: "1.5rem",
                     marginBottom: "0.5rem",
-                    color: "#374151",
+                    color: "#000000",
                   }}
                 >
                   Paragraph Pacing Indicators
@@ -237,24 +237,24 @@ export function ReferenceLibraryModal({
                   style={{
                     marginTop: "1.5rem",
                     marginBottom: "0.5rem",
-                    color: "#374151",
+                    color: "#000000",
                   }}
                 >
                   How Pacing Scores Are Calculated
                 </h3>
-                <p style={{ marginBottom: "1rem", lineHeight: "1.6" }}>
+                <p style={{ marginBottom: "1rem", lineHeight: "1.6", color: "#000000" }}>
                   <strong>Score Range: 0-100</strong>
                 </p>
                 <ul style={{ marginBottom: "1rem", paddingLeft: "1.5rem" }}>
-                  <li style={{ marginBottom: "0.5rem" }}>
+                  <li style={{ marginBottom: "0.5rem", color: "#000000" }}>
                     <strong>80-100 (High):</strong> Strong narrative flow with
                     varied paragraph lengths and good rhythm
                   </li>
-                  <li style={{ marginBottom: "0.5rem" }}>
+                  <li style={{ marginBottom: "0.5rem", color: "#000000" }}>
                     <strong>50-79 (Medium):</strong> Moderate pacing, some
                     variety but could use more balance
                   </li>
-                  <li style={{ marginBottom: "0.5rem" }}>
+                  <li style={{ marginBottom: "0.5rem", color: "#000000" }}>
                     <strong>0-49 (Low):</strong> Monotonous pacing with little
                     paragraph variety
                   </li>
@@ -278,12 +278,12 @@ export function ReferenceLibraryModal({
                   style={{
                     marginTop: "1.5rem",
                     marginBottom: "0.5rem",
-                    color: "#374151",
+                    color: "#000000",
                   }}
                 >
                   What is Sensory Detail Density?
                 </h3>
-                <p style={{ marginBottom: "1rem", lineHeight: "1.6" }}>
+                <p style={{ marginBottom: "1rem", lineHeight: "1.6", color: "#000000" }}>
                   <strong>Sensory Detail Density</strong> measures how much
                   immersive, sensory language appears in your writing. Effective
                   fiction engages readers through the five senses, making scenes
@@ -294,7 +294,7 @@ export function ReferenceLibraryModal({
                   style={{
                     marginTop: "1.5rem",
                     marginBottom: "0.5rem",
-                    color: "#374151",
+                    color: "#000000",
                   }}
                 >
                   The Five Senses in Writing
@@ -364,25 +364,25 @@ export function ReferenceLibraryModal({
                   style={{
                     marginTop: "1.5rem",
                     marginBottom: "0.5rem",
-                    color: "#374151",
+                    color: "#000000",
                   }}
                 >
                   Priority Levels
                 </h3>
                 <ul style={{ marginBottom: "1rem", paddingLeft: "1.5rem" }}>
-                  <li style={{ marginBottom: "0.5rem" }}>
+                  <li style={{ marginBottom: "0.5rem", color: "#000000" }}>
                     <strong>High Priority</strong> 🔴 - &lt;5% sensory density:
                     Very low sensory detail, needs concrete descriptions
                   </li>
-                  <li style={{ marginBottom: "0.5rem" }}>
+                  <li style={{ marginBottom: "0.5rem", color: "#000000" }}>
                     <strong>Medium Priority</strong> 🟡 - 5-8% sensory density:
                     Low sensory detail, consider adding more sensory language
                   </li>
-                  <li style={{ marginBottom: "0.5rem" }}>
+                  <li style={{ marginBottom: "0.5rem", color: "#000000" }}>
                     <strong>Low Priority</strong> ⚪ - 8-12% sensory density:
                     Moderate sensory detail, could benefit from enhancement
                   </li>
-                  <li style={{ marginBottom: "0.5rem" }}>
+                  <li style={{ marginBottom: "0.5rem", color: "#000000" }}>
                     <strong>Good</strong> ✅ - &gt;12% sensory density: Strong
                     sensory engagement
                   </li>
@@ -392,42 +392,42 @@ export function ReferenceLibraryModal({
                   style={{
                     marginTop: "1.5rem",
                     marginBottom: "0.5rem",
-                    color: "#374151",
+                    color: "#000000",
                   }}
                 >
                   How Sensory Detail Scores Are Calculated
                 </h3>
-                <p style={{ marginBottom: "1rem", lineHeight: "1.6" }}>
+                <p style={{ marginBottom: "1rem", lineHeight: "1.6", color: "#000000" }}>
                   Score is based on the ratio of paragraphs needing more sensory
                   details:
                 </p>
                 <ul style={{ marginBottom: "1rem", paddingLeft: "1.5rem" }}>
-                  <li style={{ marginBottom: "0.5rem" }}>
+                  <li style={{ marginBottom: "0.5rem", color: "#000000" }}>
                     <strong>95 (Excellent):</strong> &lt;10% of paragraphs need
                     improvement
                   </li>
-                  <li style={{ marginBottom: "0.5rem" }}>
+                  <li style={{ marginBottom: "0.5rem", color: "#000000" }}>
                     <strong>85 (Very Good):</strong> 10-20% of paragraphs need
                     improvement
                   </li>
-                  <li style={{ marginBottom: "0.5rem" }}>
+                  <li style={{ marginBottom: "0.5rem", color: "#000000" }}>
                     <strong>75 (Good):</strong> 20-30% of paragraphs need
                     improvement
                   </li>
-                  <li style={{ marginBottom: "0.5rem" }}>
+                  <li style={{ marginBottom: "0.5rem", color: "#000000" }}>
                     <strong>65 (Fair):</strong> 30-40% of paragraphs need
                     improvement
                   </li>
-                  <li style={{ marginBottom: "0.5rem" }}>
+                  <li style={{ marginBottom: "0.5rem", color: "#000000" }}>
                     <strong>55 (Needs Work):</strong> 40-50% of paragraphs need
                     improvement
                   </li>
-                  <li style={{ marginBottom: "0.5rem" }}>
+                  <li style={{ marginBottom: "0.5rem", color: "#000000" }}>
                     <strong>45 (Poor):</strong> &gt;50% of paragraphs need
                     improvement
                   </li>
                 </ul>
-                <p style={{ marginBottom: "1rem", lineHeight: "1.6" }}>
+                <p style={{ marginBottom: "1rem", lineHeight: "1.6", color: "#000000" }}>
                   <strong>Target:</strong> Aim for at least 12% sensory word
                   density across your manuscript. Strong descriptive passages
                   may reach 15-20%, while dialogue-heavy scenes naturally have
@@ -438,37 +438,37 @@ export function ReferenceLibraryModal({
                   style={{
                     marginTop: "1.5rem",
                     marginBottom: "0.5rem",
-                    color: "#374151",
+                    color: "#000000",
                   }}
                 >
                   Five Sensory Categories
                 </h3>
-                <p style={{ marginBottom: "1rem", lineHeight: "1.6" }}>
+                <p style={{ marginBottom: "1rem", lineHeight: "1.6", color: "#000000" }}>
                   The analyzer tracks 540+ sensory words across five categories:
                 </p>
                 <ul style={{ marginBottom: "1rem", paddingLeft: "1.5rem" }}>
-                  <li style={{ marginBottom: "0.5rem" }}>
+                  <li style={{ marginBottom: "0.5rem", color: "#000000" }}>
                     <strong>Visual (200+ words):</strong> shimmer, gleaming,
                     shadowy, vibrant, translucent, flickering
                   </li>
-                  <li style={{ marginBottom: "0.5rem" }}>
+                  <li style={{ marginBottom: "0.5rem", color: "#000000" }}>
                     <strong>Auditory (150+ words):</strong> whisper, thunder,
                     crackling, melodic, resonant, muffled
                   </li>
-                  <li style={{ marginBottom: "0.5rem" }}>
+                  <li style={{ marginBottom: "0.5rem", color: "#000000" }}>
                     <strong>Olfactory (50+ words):</strong> fragrant, musty,
                     acrid, earthy, pungent, aromatic
                   </li>
-                  <li style={{ marginBottom: "0.5rem" }}>
+                  <li style={{ marginBottom: "0.5rem", color: "#000000" }}>
                     <strong>Tactile (100+ words):</strong> rough, silky, cold,
                     prickly, clammy, velvety
                   </li>
-                  <li style={{ marginBottom: "0.5rem" }}>
+                  <li style={{ marginBottom: "0.5rem", color: "#000000" }}>
                     <strong>Gustatory (40+ words):</strong> bitter, sweet,
                     tangy, savory, bland, zesty
                   </li>
                 </ul>
-                <p style={{ marginBottom: "1rem", lineHeight: "1.6" }}>
+                <p style={{ marginBottom: "1rem", lineHeight: "1.6", color: "#000000" }}>
                   <strong>Pro Tip:</strong> The analyzer identifies which senses
                   are missing from each paragraph. A well-rounded scene engages
                   multiple senses, not just sight. Try adding sound, smell, or
@@ -493,16 +493,89 @@ export function ReferenceLibraryModal({
                   style={{
                     marginTop: "1.5rem",
                     marginBottom: "0.5rem",
-                    color: "#374151",
+                    color: "#000000",
+                  }}
+                >
+                  PDF Export (.pdf)
+                </h3>
+                <p
+                  style={{
+                    marginBottom: "0.5rem",
+                    lineHeight: "1.6",
+                    color: "#000000",
+                  }}
+                >
+                  <strong>Best for:</strong> Professional submissions,
+                  agent/publisher formatting, print-ready manuscripts
+                </p>
+                <p
+                  style={{
+                    marginBottom: "1rem",
+                    lineHeight: "1.6",
+                    color: "#000000",
+                  }}
+                >
+                  <strong>Features:</strong> Manuscript format with Courier 12pt
+                  font, double-spaced lines, 1.25" margins, automatic page
+                  numbering, optional analysis summary included
+                </p>
+                <div
+                  style={{
+                    background: "#fef5e7",
+                    padding: "1rem",
+                    borderRadius: "8px",
+                    marginBottom: "1rem",
+                  }}
+                >
+                  <p
+                    style={{
+                      marginBottom: "0.5rem",
+                      fontWeight: "600",
+                      color: "#000000",
+                    }}
+                  >
+                    💡 Perfect For:
+                  </p>
+                  <ul
+                    style={{
+                      paddingLeft: "1.5rem",
+                      margin: 0,
+                      color: "#000000",
+                    }}
+                  >
+                    <li>Literary agent submissions</li>
+                    <li>Publisher manuscript formatting</li>
+                    <li>Professional presentation</li>
+                    <li>Print-ready documents</li>
+                  </ul>
+                </div>
+
+                <h3
+                  style={{
+                    marginTop: "1.5rem",
+                    marginBottom: "0.5rem",
+                    color: "#000000",
                   }}
                 >
                   HTML Export (.html)
                 </h3>
-                <p style={{ marginBottom: "0.5rem", lineHeight: "1.6" }}>
+                <p
+                  style={{
+                    marginBottom: "0.5rem",
+                    lineHeight: "1.6",
+                    color: "#000000",
+                  }}
+                >
                   <strong>Best for:</strong> Sharing, viewing in browser,
                   printing
                 </p>
-                <p style={{ marginBottom: "1rem", lineHeight: "1.6" }}>
+                <p
+                  style={{
+                    marginBottom: "1rem",
+                    lineHeight: "1.6",
+                    color: "#000000",
+                  }}
+                >
                   <strong>Features:</strong> Self-contained file, works in any
                   browser, color-coded indicators, print-optimized, responsive
                   design
@@ -512,16 +585,28 @@ export function ReferenceLibraryModal({
                   style={{
                     marginTop: "1.5rem",
                     marginBottom: "0.5rem",
-                    color: "#374151",
+                    color: "#000000",
                   }}
                 >
                   DOCX Export (.docx)
                 </h3>
-                <p style={{ marginBottom: "0.5rem", lineHeight: "1.6" }}>
+                <p
+                  style={{
+                    marginBottom: "0.5rem",
+                    lineHeight: "1.6",
+                    color: "#000000",
+                  }}
+                >
                   <strong>Best for:</strong> Editing in Word, collaborating,
                   formal documents
                 </p>
-                <p style={{ marginBottom: "1rem", lineHeight: "1.6" }}>
+                <p
+                  style={{
+                    marginBottom: "1rem",
+                    lineHeight: "1.6",
+                    color: "#000000",
+                  }}
+                >
                   <strong>Features:</strong> Editable in Microsoft Word, colored
                   shaded backgrounds, professional formatting
                 </p>
@@ -533,10 +618,22 @@ export function ReferenceLibraryModal({
                     marginBottom: "1rem",
                   }}
                 >
-                  <p style={{ marginBottom: "0.5rem", fontWeight: "600" }}>
+                  <p
+                    style={{
+                      marginBottom: "0.5rem",
+                      fontWeight: "600",
+                      color: "#000000",
+                    }}
+                  >
                     Color Coding:
                   </p>
-                  <ul style={{ paddingLeft: "1.5rem", margin: 0 }}>
+                  <ul
+                    style={{
+                      paddingLeft: "1.5rem",
+                      margin: 0,
+                      color: "#000000",
+                    }}
+                  >
                     <li>Blue background = Compact spacing (too brief)</li>
                     <li>Green background = Balanced spacing (ideal)</li>
                     <li>Orange background = Extended spacing (too long)</li>
@@ -548,16 +645,28 @@ export function ReferenceLibraryModal({
                   style={{
                     marginTop: "1.5rem",
                     marginBottom: "0.5rem",
-                    color: "#374151",
+                    color: "#000000",
                   }}
                 >
                   JSON Export (.json)
                 </h3>
-                <p style={{ marginBottom: "0.5rem", lineHeight: "1.6" }}>
+                <p
+                  style={{
+                    marginBottom: "0.5rem",
+                    lineHeight: "1.6",
+                    color: "#000000",
+                  }}
+                >
                   <strong>Best for:</strong> Developers, data analysis,
                   integrations
                 </p>
-                <p style={{ marginBottom: "1rem", lineHeight: "1.6" }}>
+                <p
+                  style={{
+                    marginBottom: "1rem",
+                    lineHeight: "1.6",
+                    color: "#000000",
+                  }}
+                >
                   <strong>Contains:</strong> Complete raw analysis data, all
                   scores, findings, suggestions, visualization data, and
                   metadata
@@ -581,12 +690,12 @@ export function ReferenceLibraryModal({
                   style={{
                     marginTop: "1.5rem",
                     marginBottom: "0.5rem",
-                    color: "#374151",
+                    color: "#000000",
                   }}
                 >
                   What Are Genre Libraries?
                 </h3>
-                <p style={{ marginBottom: "1rem", lineHeight: "1.6" }}>
+                <p style={{ marginBottom: "1rem", lineHeight: "1.6", color: "#000000" }}>
                   Genre libraries are specialized pattern databases tailored to
                   specific fiction genres. They help the analyzer recognize
                   genre-specific tropes, character archetypes, plot structures,
@@ -597,7 +706,7 @@ export function ReferenceLibraryModal({
                   style={{
                     marginTop: "1.5rem",
                     marginBottom: "0.5rem",
-                    color: "#374151",
+                    color: "#000000",
                   }}
                 >
                   Built-in Genre Libraries
@@ -675,12 +784,12 @@ export function ReferenceLibraryModal({
                   style={{
                     marginTop: "1.5rem",
                     marginBottom: "0.5rem",
-                    color: "#374151",
+                    color: "#000000",
                   }}
                 >
                   Genre-Specific Analysis Details
                 </h3>
-                <p style={{ marginBottom: "1rem", lineHeight: "1.6" }}>
+                <p style={{ marginBottom: "1rem", lineHeight: "1.6", color: "#000000" }}>
                   Each genre library includes specialized analysis for common
                   storytelling patterns:
                 </p>
@@ -741,12 +850,12 @@ export function ReferenceLibraryModal({
                   style={{
                     marginTop: "1.5rem",
                     marginBottom: "0.5rem",
-                    color: "#374151",
+                    color: "#000000",
                   }}
                 >
                   Auto-Detection Feature
                 </h3>
-                <p style={{ marginBottom: "1rem", lineHeight: "1.6" }}>
+                <p style={{ marginBottom: "1rem", lineHeight: "1.6", color: "#000000" }}>
                   When you upload a manuscript, Quill Pilot analyzes your
                   content and suggests the most likely genre based on character
                   patterns, plot structure, and stylistic markers. You can
@@ -1023,23 +1132,24 @@ export function ReferenceLibraryModal({
                   style={{
                     marginTop: "1.5rem",
                     marginBottom: "0.5rem",
-                    color: "#374151",
+                    color: "#000000",
                   }}
                 >
                   Accessing Writer Mode
                 </h3>
                 <ol style={{ marginBottom: "1rem", paddingLeft: "1.5rem" }}>
-                  <li style={{ marginBottom: "0.5rem" }}>
-                    <strong>Upload a document</strong> (DOCX or OBT)
+                  <li style={{ marginBottom: "0.5rem", color: "#000000" }}>
+                    <strong>Upload a document</strong> (.docx, .txt, .md, or
+                    .obt)
                   </li>
-                  <li style={{ marginBottom: "0.5rem" }}>
+                  <li style={{ marginBottom: "0.5rem", color: "#000000" }}>
                     <strong>Run analysis</strong> (select genre first)
                   </li>
-                  <li style={{ marginBottom: "0.5rem" }}>
+                  <li style={{ marginBottom: "0.5rem", color: "#000000" }}>
                     <strong>Click "✍️ Writer" tab</strong> (Professional tier
                     required)
                   </li>
-                  <li style={{ marginBottom: "0.5rem" }}>
+                  <li style={{ marginBottom: "0.5rem", color: "#000000" }}>
                     <strong>Editor opens</strong> with your document text
                   </li>
                 </ol>
@@ -1048,25 +1158,25 @@ export function ReferenceLibraryModal({
                   style={{
                     marginTop: "1.5rem",
                     marginBottom: "0.5rem",
-                    color: "#374151",
+                    color: "#000000",
                   }}
                 >
                   Editing Features (Pro Tier Only)
                 </h3>
                 <ul style={{ marginBottom: "1rem", paddingLeft: "1.5rem" }}>
-                  <li style={{ marginBottom: "0.5rem" }}>
+                  <li style={{ marginBottom: "0.5rem", color: "#000000" }}>
                     <strong>Text Editing:</strong> Type directly in the editor,
                     copy/paste formatted text, word count updates live
                   </li>
-                  <li style={{ marginBottom: "0.5rem" }}>
+                  <li style={{ marginBottom: "0.5rem", color: "#000000" }}>
                     <strong>Pacing Controls:</strong> Toggle pacing indicators
                     on/off, dashed lines show paragraph boundaries
                   </li>
-                  <li style={{ marginBottom: "0.5rem" }}>
+                  <li style={{ marginBottom: "0.5rem", color: "#000000" }}>
                     <strong>Sensory Detail Controls:</strong> Toggle craft
                     callouts on/off, yellow boxes appear inline
                   </li>
-                  <li style={{ marginBottom: "0.5rem" }}>
+                  <li style={{ marginBottom: "0.5rem", color: "#000000" }}>
                     <strong>Search & Highlight:</strong> Search for characters
                     or elements, click name to highlight all mentions
                   </li>
@@ -1076,29 +1186,29 @@ export function ReferenceLibraryModal({
                   style={{
                     marginTop: "1rem",
                     marginBottom: "0.25rem",
-                    color: "#374151",
+                    color: "#000000",
                   }}
                 >
                   Autosave Behavior & Recovery
                 </h4>
-                <p style={{ marginBottom: "0.75rem", lineHeight: "1.5" }}>
+                <p style={{ marginBottom: "0.75rem", lineHeight: "1.5", color: "#000000" }}>
                   Writer Mode keeps one rolling backup named&nbsp;
                   <code>quillpilot_autosave</code> in your browser's local
                   storage. Every new edit replaces the previous snapshot, so
                   export or save analyses for long-term checkpoints.
                 </p>
                 <ul style={{ marginBottom: "1rem", paddingLeft: "1.5rem" }}>
-                  <li style={{ marginBottom: "0.5rem" }}>
+                  <li style={{ marginBottom: "0.5rem", color: "#000000" }}>
                     Closing or restarting the browser does <em>not</em> delete
                     the snapshot unless site data is cleared or you're using a
                     private/incognito window.
                   </li>
-                  <li style={{ marginBottom: "0.5rem" }}>
+                  <li style={{ marginBottom: "0.5rem", color: "#000000" }}>
                     Use the "Dismiss" option on the restore banner to skip a
                     stale draft; this stores a skip token so the same snapshot
                     won't prompt again.
                   </li>
-                  <li style={{ marginBottom: "0.5rem" }}>
+                  <li style={{ marginBottom: "0.5rem", color: "#000000" }}>
                     Only one draft is stored at a time. Before starting a new
                     document, use Save Analysis or export (DOCX/HTML/JSON) if
                     you need separate backups.
@@ -1109,30 +1219,30 @@ export function ReferenceLibraryModal({
                   style={{
                     marginTop: "1.5rem",
                     marginBottom: "0.5rem",
-                    color: "#374151",
+                    color: "#000000",
                   }}
                 >
                   Writing Productivity Tools
                 </h3>
                 <ul style={{ marginBottom: "1rem", paddingLeft: "1.5rem" }}>
-                  <li style={{ marginBottom: "0.5rem" }}>
+                  <li style={{ marginBottom: "0.5rem", color: "#000000" }}>
                     <strong>⌨️ Typewriter Mode:</strong> Keeps the current line
                     centered in the editor viewport as you write. Works with all
                     cursor movements - typing, arrow keys, mouse clicks, and
                     navigation shortcuts. Creates a distraction-free writing
                     experience by maintaining consistent eye position.
                   </li>
-                  <li style={{ marginBottom: "0.5rem" }}>
+                  <li style={{ marginBottom: "0.5rem", color: "#000000" }}>
                     <strong>🎯 Focus Mode:</strong> Hides all craft indicators
                     and analysis highlights for pure writing without
                     distractions. Toggle on when drafting, off when revising.
                   </li>
-                  <li style={{ marginBottom: "0.5rem" }}>
+                  <li style={{ marginBottom: "0.5rem", color: "#000000" }}>
                     <strong>⏱️ Sprint Mode:</strong> Set a timer (5-60 minutes)
                     for focused writing sessions. Tracks word count progress and
                     helps build consistent writing habits.
                   </li>
-                  <li style={{ marginBottom: "0.5rem" }}>
+                  <li style={{ marginBottom: "0.5rem", color: "#000000" }}>
                     <strong>📝 Word Count Tracking:</strong> Real-time updates
                     showing total words and sprint progress. Helps maintain
                     daily writing goals.
@@ -1172,7 +1282,7 @@ export function ReferenceLibraryModal({
                   style={{
                     marginTop: "1.5rem",
                     marginBottom: "0.5rem",
-                    color: "#374151",
+                    color: "#000000",
                   }}
                 >
                   Score Badges
@@ -1246,7 +1356,7 @@ export function ReferenceLibraryModal({
                   style={{
                     marginTop: "1.5rem",
                     marginBottom: "0.5rem",
-                    color: "#374151",
+                    color: "#000000",
                   }}
                 >
                   Spacing Indicators
@@ -1300,7 +1410,7 @@ export function ReferenceLibraryModal({
                   style={{
                     marginTop: "1.5rem",
                     marginBottom: "0.5rem",
-                    color: "#374151",
+                    color: "#000000",
                   }}
                 >
                   Priority Badges
@@ -1391,7 +1501,7 @@ export function ReferenceLibraryModal({
                   style={{
                     marginTop: "1.5rem",
                     marginBottom: "0.5rem",
-                    color: "#374151",
+                    color: "#000000",
                   }}
                 >
                   Supported File Formats
@@ -1466,12 +1576,12 @@ export function ReferenceLibraryModal({
                   style={{
                     marginTop: "1.5rem",
                     marginBottom: "0.5rem",
-                    color: "#374151",
+                    color: "#000000",
                   }}
                 >
                   Browser Requirements
                 </h3>
-                <p style={{ marginBottom: "0.5rem", lineHeight: "1.6" }}>
+                <p style={{ marginBottom: "0.5rem", lineHeight: "1.6", color: "#000000" }}>
                   <strong>Minimum:</strong>
                 </p>
                 <ul style={{ marginBottom: "1rem", paddingLeft: "1.5rem" }}>
@@ -1485,7 +1595,7 @@ export function ReferenceLibraryModal({
                   style={{
                     marginTop: "1.5rem",
                     marginBottom: "0.5rem",
-                    color: "#374151",
+                    color: "#000000",
                   }}
                 >
                   Analysis Performance
@@ -1569,7 +1679,7 @@ export function ReferenceLibraryModal({
                   style={{
                     marginTop: "1.5rem",
                     marginBottom: "0.5rem",
-                    color: "#374151",
+                    color: "#000000",
                   }}
                 >
                   Data Privacy
@@ -1973,7 +2083,7 @@ export function ReferenceLibraryModal({
                   style={{
                     marginTop: "1.5rem",
                     marginBottom: "0.5rem",
-                    color: "#374151",
+                    color: "#000000",
                   }}
                 >
                   General Questions
@@ -2041,7 +2151,7 @@ export function ReferenceLibraryModal({
                   style={{
                     marginTop: "1.5rem",
                     marginBottom: "0.5rem",
-                    color: "#374151",
+                    color: "#000000",
                   }}
                 >
                   Analysis Questions
@@ -2105,7 +2215,7 @@ export function ReferenceLibraryModal({
                   style={{
                     marginTop: "1.5rem",
                     marginBottom: "0.5rem",
-                    color: "#374151",
+                    color: "#000000",
                   }}
                 >
                   Export Questions

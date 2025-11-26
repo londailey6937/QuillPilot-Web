@@ -1,13 +1,7 @@
 /* Global styles with Tailwind CSS */
-@import "@syncfusion/ej2-base/styles/material.css";
-@import "@syncfusion/ej2-buttons/styles/material.css";
-@import "@syncfusion/ej2-inputs/styles/material.css";
-@import "@syncfusion/ej2-popups/styles/material.css";
-@import "@syncfusion/ej2-lists/styles/material.css";
-@import "@syncfusion/ej2-navigations/styles/material.css";
-@import "@syncfusion/ej2-splitbuttons/styles/material.css";
-@import "@syncfusion/ej2-dropdowns/styles/material.css";
-@import "@syncfusion/ej2-react-documenteditor/styles/material.css";
+
+/* Dark mode styles */
+@import "./styles/darkMode.css";
 
 /* @tailwindcss */
 /* Inter font served via Google Fonts stylesheet; explicit @font-face not needed here.
@@ -43,6 +37,8 @@
 .prose-content p {
   margin: 1rem 0;
   line-height: 1.8;
+  color: #000000;
+  text-indent: 0;
 }
 
 .prose-content h1,
@@ -254,6 +250,7 @@
     background: #fef5e7;
     border: 1px solid rgba(217, 119, 6, 0.12);
     box-shadow: 0 12px 24px rgba(15, 23, 42, 0.06);
+    color: #000000;
   }
 
   .quickstart-card h4 {
@@ -266,8 +263,9 @@
   .quickstart-card p {
     margin-bottom: 0.75rem;
     font-size: 0.95rem;
-    color: rgb(55 65 81);
+    color: #000000;
     line-height: 1.6;
+    text-indent: 0;
   }
 
   .quickstart-list,
@@ -275,7 +273,7 @@
     list-style-type: disc;
     padding-left: 1.5rem;
     font-size: 0.95rem;
-    color: #374151;
+    color: #000000;
     line-height: 1.6;
   }
 
@@ -288,14 +286,14 @@
     margin-top: 0.5rem;
     border-left: 2px solid #e5e7eb;
     padding-left: 1rem;
-    color: #4b5563;
+    color: #000000;
   }
 
   .quickstart-order {
     list-style-type: decimal;
     padding-left: 1.5rem;
     font-size: 0.95rem;
-    color: #1f2937;
+    color: #000000;
   }
   .quickstart-order > li {
     margin: 0.75rem 0;
@@ -553,4 +551,10 @@ select:focus option:checked {
   .chart-scroll-container {
     -webkit-overflow-scrolling: touch;
   }
+}
+
+/* Override any default paragraph indentation */
+.prose-content p,
+p {
+  text-indent: 0 !important;
 }

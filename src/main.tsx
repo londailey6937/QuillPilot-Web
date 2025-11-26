@@ -1,6 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "@components/App";
+import { ThemeProvider } from "@components/ThemeProvider";
 import "./globals.css";
 import "./styles/analysis-common.css";
 
@@ -14,6 +15,8 @@ const root = ReactDOM.createRoot(
 
 root.render(
   <React.StrictMode>
-    <App />
+    <ThemeProvider>
+      <App />
+    </ThemeProvider>
   </React.StrictMode>
 );
