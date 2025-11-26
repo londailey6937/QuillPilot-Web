@@ -756,7 +756,7 @@ export const ChapterCheckerV2: React.FC = () => {
       // Automatically switch to writer mode when professional tier is selected
       if (level === "professional") {
         setViewMode("writer");
-      } else if (level !== "professional" && viewMode === "writer") {
+      } else if (viewMode === "writer") {
         // If switching away from professional tier while in writer mode, switch to analysis
         setViewMode("analysis");
       }
