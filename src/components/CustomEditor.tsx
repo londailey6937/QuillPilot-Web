@@ -844,15 +844,158 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     [handleInput]
   );
 
+  const sanitizeClipboardHtml = useCallback((rawHtml: string) => {
+    if (!rawHtml) return "";
+
+    let workingHtml = rawHtml.trim();
+
+    const htmlIndex = workingHtml.toLowerCase().indexOf("<html");
+    if (htmlIndex > -1) {
+      workingHtml = workingHtml.slice(htmlIndex);
+    }
+
+    const startMarker = "<!--StartFragment-->";
+    const endMarker = "<!--EndFragment-->";
+    let fragmentHtml = workingHtml;
+
+    const startIndex = workingHtml.indexOf(startMarker);
+    const endIndex = workingHtml.indexOf(endMarker);
+    if (startIndex !== -1 && endIndex !== -1 && endIndex > startIndex) {
+      fragmentHtml = workingHtml.slice(
+        startIndex + startMarker.length,
+        endIndex
+      );
+    } else {
+      const bodyMatch = workingHtml.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+      if (bodyMatch && bodyMatch[1]) {
+        fragmentHtml = bodyMatch[1];
+      }
+    }
+
+    if (typeof window === "undefined" || typeof document === "undefined") {
+      return fragmentHtml;
+    }
+
+    const container = document.createElement("div");
+    container.innerHTML = fragmentHtml;
+
+    container
+      .querySelectorAll("style, meta, link, xml, script, head, title")
+      .forEach((node) => node.remove());
+
+    container.querySelectorAll("*").forEach((el) => {
+      const attributes = Array.from(el.attributes);
+      attributes.forEach((attr) => {
+        const name = attr.name.toLowerCase();
+        const value = attr.value;
+
+        if (name.startsWith("xmlns") || name === "lang") {
+          el.removeAttribute(attr.name);
+          return;
+        }
+
+        if (name === "class" && /mso/i.test(value)) {
+          el.removeAttribute(attr.name);
+          return;
+        }
+
+        if (name === "style") {
+          const cleanedStyle = value
+            .split(";")
+            .map((rule) => rule.trim())
+            .filter(
+              (rule) =>
+                rule &&
+                !rule.toLowerCase().startsWith("mso-") &&
+                !rule.toLowerCase().includes("font-variant-east-asian")
+            )
+            .join("; ");
+
+          if (cleanedStyle) {
+            el.setAttribute("style", cleanedStyle);
+          } else {
+            el.removeAttribute("style");
+          }
+          return;
+        }
+
+        if (name === "width" || name === "height") {
+          el.removeAttribute(attr.name);
+        }
+      });
+
+      if (
+        el.tagName.toLowerCase() === "span" &&
+        !el.attributes.length &&
+        (el.textContent || "").trim() === ""
+      ) {
+        el.remove();
+      }
+    });
+
+    return container.innerHTML
+      .replace(/<p[^>]*>/g, "<p>")
+      .replace(/<div[^>]*>/g, "<div>")
+      .replace(/&nbsp;/g, " ")
+      .replace(/<\/?o:p>/g, "");
+  }, []);
+
   // Handle paste with images
   const handlePaste = useCallback(
     (e: React.ClipboardEvent) => {
-      e.preventDefault();
+      const html = e.clipboardData.getData("text/html");
+      if (html) {
+        e.preventDefault();
+        const cleanHtml = sanitizeClipboardHtml(html);
+        if (cleanHtml.trim().length > 0) {
+          document.execCommand("insertHTML", false, cleanHtml);
+          setTimeout(() => handleInput(), 0);
+          return;
+        }
+      }
 
-      // Check for images first
+      // Get plain text and insert it
+      const text = e.clipboardData.getData("text/plain");
+      if (text) {
+        e.preventDefault();
+        // Insert text properly by using the browser's natural paste or insertHTML
+        // This preserves line breaks and formatting
+        const selection = window.getSelection();
+        if (!selection || !selection.rangeCount) return;
+
+        const range = selection.getRangeAt(0);
+        range.deleteContents();
+
+        // Convert line breaks to proper HTML
+        const lines = text.split("\n");
+        const fragment = document.createDocumentFragment();
+
+        lines.forEach((line, index) => {
+          const textNode = document.createTextNode(line);
+          fragment.appendChild(textNode);
+
+          // Add <br> between lines (but not after the last line)
+          if (index < lines.length - 1) {
+            fragment.appendChild(document.createElement("br"));
+          }
+        });
+
+        range.insertNode(fragment);
+
+        // Move cursor to end of inserted content
+        range.collapse(false);
+        selection.removeAllRanges();
+        selection.addRange(range);
+
+        setTimeout(() => handleInput(), 0);
+        return;
+      }
+
+      // No HTML/text content; allow image pastes (e.g., screenshots)
       const items = e.clipboardData.items;
       for (let i = 0; i < items.length; i++) {
         if (items[i].type.indexOf("image") !== -1) {
+          e.preventDefault();
           const blob = items[i].getAsFile();
           if (!blob) continue;
 
@@ -866,15 +1009,8 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           return;
         }
       }
-
-      // Get plain text and insert it
-      const text = e.clipboardData.getData("text/plain");
-      if (text) {
-        document.execCommand("insertText", false, text);
-        setTimeout(() => handleInput(), 0);
-      }
     },
-    [handleInput]
+    [handleInput, sanitizeClipboardHtml]
   );
 
   // Handle keyboard shortcuts
