@@ -1349,7 +1349,15 @@ You can now **Report False Positives** directly from the concept list. Look for 
 - Drag and drop functionality
 - Auto-save every edit (300ms debounce)
 - Browser storage backup
+- Single-slot autosave stored in browser localStorage (`quillpilot_autosave`)
 - Export with full formatting preserved
+
+#### Autosave Behavior & Recovery
+
+- Only the most recent chapter snapshot is stored. Each new edit replaces the previous `quillpilot_autosave` entry, so keep manual exports for critical drafts.
+- Autosave lives entirely in the current browser profile. Closing or restarting the browser keeps the snapshot unless site data is cleared.
+- To skip a stale snapshot, click "Dismiss" on the restore prompt; this writes a skip token so the same draft will not prompt again.
+- Multiple drafts are not retained—use **Save Analysis**, **Export DOCX/HTML/JSON**, or duplicate the browser tab before starting a new document if you need separate backups.
 
 **Keyboard Shortcuts:**
 

@@ -52,9 +52,34 @@ self.onmessage = async (evt: MessageEvent<IncomingMessage>) => {
     domain = "general", // Default genre for creative writing
   } = options || {};
 
+  const runnerStartedAt =
+    typeof performance !== "undefined" ? performance.now() : Date.now();
+  const chapterStats = {
+    wordCount: chapter?.wordCount ?? 0,
+    contentLength: chapter?.content?.length ?? 0,
+    sectionCount: chapter?.sections?.length ?? 0,
+    hasHtmlContent: Boolean(chapter?.metadata?.hasHtmlContent),
+    htmlLength: chapter?.metadata?.sourceHtml?.length ?? 0,
+    embeddedImageCount: chapter?.metadata?.embeddedImageCount ?? 0,
+    timestamp: new Date().toISOString(),
+    domain,
+  };
+
+  (self as any).postMessage({
+    type: "diagnostic",
+    event: "worker-received",
+    stats: chapterStats,
+  });
+
   // Progress reporting function
   const reportProgress = (step: string, detail?: string) => {
-    (self as any).postMessage({ type: "progress", step, detail });
+    (self as any).postMessage({
+      type: "progress",
+      step,
+      detail,
+      timestamp: new Date().toISOString(),
+      stats: chapterStats,
+    });
   };
 
   reportProgress("received", "Chapter received by worker");
@@ -69,7 +94,16 @@ self.onmessage = async (evt: MessageEvent<IncomingMessage>) => {
       domain // Pass as genre parameter
     );
 
+    const durationMs =
+      (typeof performance !== "undefined" ? performance.now() : Date.now()) -
+      runnerStartedAt;
     reportProgress("analysis-complete", "Analysis complete");
+    (self as any).postMessage({
+      type: "diagnostic",
+      event: "worker-complete",
+      durationMs,
+      stats: chapterStats,
+    });
     (self as any).postMessage({ type: "complete", result });
   } catch (err) {
     const serialized = serializeError(err);
@@ -78,7 +112,14 @@ self.onmessage = async (evt: MessageEvent<IncomingMessage>) => {
     (self as any).postMessage({
       type: "error",
       error: serialized.message || serialized.name || "Unknown analysis error",
-      details: serialized,
+      details: {
+        ...serialized,
+        stats: chapterStats,
+        durationMs:
+          (typeof performance !== "undefined"
+            ? performance.now()
+            : Date.now()) - runnerStartedAt,
+      },
     });
   }
 };

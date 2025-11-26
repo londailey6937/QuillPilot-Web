@@ -1423,6 +1423,30 @@ Score Impact: Lower scores, missed learning opportunities</code></pre>
         <h3>🤖 AI-Driven Template Generation</h3>
         <div
           class="info-box"
+
+        <h4>Autosave Behavior &amp; Recovery</h4>
+        <p>
+          Writer Mode keeps a single rolling backup named&nbsp;
+          <code>quillpilot_autosave</code> in your browsers localStorage. Every
+          new edit replaces the previous snapshot, so export or save analyses if
+          you need long-term checkpoints.
+        </p>
+        <ul>
+          <li>
+            Closing or restarting the browser does <em>not</em> delete the snapshot
+            unless you clear site data or use a private/incognito window.
+          </li>
+          <li>
+            When the restore banner appears, choose "Dismiss" if you want to skip
+            that draft; this records a skip token so the same snapshot will not
+            prompt again.
+          </li>
+          <li>
+            Multiple drafts are not stored simultaneously. Use Save Analysis or
+            export (DOCX/HTML/JSON) before switching documents if you need
+            separate backups.
+          </li>
+        </ul>
           style="
             background: linear-gradient(135deg, #9333ea 0%, #7c3aed 100%);
             color: white;

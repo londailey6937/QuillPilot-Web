@@ -1072,6 +1072,39 @@ export function ReferenceLibraryModal({
                   </li>
                 </ul>
 
+                <h4
+                  style={{
+                    marginTop: "1rem",
+                    marginBottom: "0.25rem",
+                    color: "#374151",
+                  }}
+                >
+                  Autosave Behavior & Recovery
+                </h4>
+                <p style={{ marginBottom: "0.75rem", lineHeight: "1.5" }}>
+                  Writer Mode keeps one rolling backup named&nbsp;
+                  <code>quillpilot_autosave</code> in your browser's local
+                  storage. Every new edit replaces the previous snapshot, so
+                  export or save analyses for long-term checkpoints.
+                </p>
+                <ul style={{ marginBottom: "1rem", paddingLeft: "1.5rem" }}>
+                  <li style={{ marginBottom: "0.5rem" }}>
+                    Closing or restarting the browser does <em>not</em> delete
+                    the snapshot unless site data is cleared or you're using a
+                    private/incognito window.
+                  </li>
+                  <li style={{ marginBottom: "0.5rem" }}>
+                    Use the "Dismiss" option on the restore banner to skip a
+                    stale draft; this stores a skip token so the same snapshot
+                    won't prompt again.
+                  </li>
+                  <li style={{ marginBottom: "0.5rem" }}>
+                    Only one draft is stored at a time. Before starting a new
+                    document, use Save Analysis or export (DOCX/HTML/JSON) if
+                    you need separate backups.
+                  </li>
+                </ul>
+
                 <h3
                   style={{
                     marginTop: "1.5rem",

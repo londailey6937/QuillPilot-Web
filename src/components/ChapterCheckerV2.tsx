@@ -1361,24 +1361,69 @@ export const ChapterCheckerV2: React.FC = () => {
           lastAnalyzed: new Date(),
           embeddedImageCount: chapterData?.imageCount ?? 0,
           hasHtmlContent: Boolean(chapterData?.isHybridDocx),
-          sourceHtml: normalizedHtmlSource,
           originalFormat: chapterData?.isHybridDocx ? "html" : "text",
         },
       };
 
+      const workerStats = {
+        wordCount: chapter.wordCount,
+        contentLength: chapter.content.length,
+        sectionCount: sections.length,
+        htmlLength: normalizedHtmlSource?.length ?? 0,
+        hasHtmlContent: Boolean(chapterData?.isHybridDocx),
+        embeddedImageCount: chapterData?.imageCount ?? 0,
+        timestamp: new Date().toISOString(),
+      };
+
+      console.log("[Analysis Worker] Prepared chapter payload", workerStats);
+
       // Run analysis in worker (with cache-busting timestamp for dev)
       const worker = new AnalysisWorker();
-
-      worker.postMessage({
+      const workerPayload = {
         chapter,
         options: {
           domain: analysisDomain,
           includeCrossDomain: false,
           customConcepts,
         },
-      });
+      };
+
+      try {
+        worker.postMessage(workerPayload);
+      } catch (postMessageError) {
+        const message =
+          postMessageError instanceof Error
+            ? postMessageError.message
+            : String(postMessageError);
+        console.error("[Analysis Worker] Failed to start", {
+          error: postMessageError,
+          workerStats,
+        });
+        setError(`Failed to start analysis worker: ${message}`);
+        setProgress("");
+        setIsAnalyzing(false);
+        worker.terminate();
+        return;
+      }
 
       worker.onmessage = (e) => {
+        if (e.data?.type === "progress") {
+          const label = e.data.detail || e.data.step || "Running analysis...";
+          setProgress(label);
+          console.info("[Analysis Worker] progress", {
+            step: e.data.step,
+            detail: e.data.detail,
+            timestamp: e.data.timestamp,
+            stats: e.data.stats,
+          });
+          return;
+        }
+
+        if (e.data?.type === "diagnostic") {
+          console.info("[Analysis Worker] diagnostic", e.data);
+          return;
+        }
+
         if (e.data.type === "complete") {
           setAnalysis(e.data.result);
 
