@@ -907,7 +907,8 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               (rule) =>
                 rule &&
                 !rule.toLowerCase().startsWith("mso-") &&
-                !rule.toLowerCase().includes("font-variant-east-asian")
+                !rule.toLowerCase().includes("font-variant-east-asian") &&
+                !rule.toLowerCase().includes("font-family")
             )
             .join("; ");
 
@@ -933,11 +934,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
       }
     });
 
-    return container.innerHTML
-      .replace(/<p[^>]*>/g, "<p>")
-      .replace(/<div[^>]*>/g, "<div>")
-      .replace(/&nbsp;/g, " ")
-      .replace(/<\/?o:p>/g, "");
+    return container.innerHTML.replace(/&nbsp;/g, " ").replace(/<\/?o:p>/g, "");
   }, []);
 
   // Handle paste with images
