@@ -3,7 +3,13 @@
  * Upload DOCX/OBT → Analyze → Edit → Export
  */
 
-import React, { useState, useMemo, useRef, useEffect } from "react";
+import React, {
+  useState,
+  useMemo,
+  useRef,
+  useEffect,
+  useCallback,
+} from "react";
 import { DocumentUploader, UploadedDocumentPayload } from "./DocumentUploader";
 import { DocumentEditor } from "./DocumentEditor";
 import { ChapterAnalysisDashboard } from "./VisualizationComponents";
@@ -73,6 +79,8 @@ import { ServerAnalysisTest } from "./ServerAnalysisTest";
 const HEADING_LENGTH_LIMIT = 120;
 const MAX_FALLBACK_SECTIONS = 8;
 const STICKY_HEADER_OFFSET = 140;
+const INCH_IN_PX = 96;
+const PAGE_WIDTH_PX = INCH_IN_PX * 8;
 
 type AutosaveSnapshot = {
   content?: {
@@ -483,6 +491,9 @@ export const ChapterCheckerV2: React.FC = () => {
   const [leftMargin, setLeftMargin] = useState(48); // pixels
   const [rightMargin, setRightMargin] = useState(48); // pixels
   const [firstLineIndent, setFirstLineIndent] = useState(96); // pixels
+  const editorColumnRef = useRef<HTMLDivElement>(null);
+  const [editorWidth, setEditorWidth] = useState(PAGE_WIDTH_PX); // track actual editor width for ruler alignment
+  const [editorOffset, setEditorOffset] = useState(0);
   const [isDragging, setIsDragging] = useState<
     "left" | "right" | "indent" | null
   >(null);
@@ -519,6 +530,75 @@ export const ChapterCheckerV2: React.FC = () => {
     }
     return resolveLayoutMode(window.innerWidth);
   });
+  const handleEditorLayoutChange = useCallback(
+    (layout: { width: number; left: number }) => {
+      if (!Number.isFinite(layout.width) || layout.width <= 0) {
+        return;
+      }
+
+      setEditorWidth((prev) => {
+        const normalized = Math.round(layout.width);
+        return Math.abs(prev - normalized) > 0.5 ? normalized : prev;
+      });
+
+      const columnLeft =
+        editorColumnRef.current?.getBoundingClientRect().left ?? 0;
+      const offset = layout.left - columnLeft;
+      if (Number.isFinite(offset)) {
+        setEditorOffset(offset);
+      }
+    },
+    []
+  );
+
+  const rulerTicks = useMemo(() => {
+    const width = Math.max(editorWidth, 1);
+
+    const formatLabel = (value: number) => {
+      const rounded = Math.round(value * 10) / 10;
+      if (Math.abs(rounded - Math.round(rounded)) < 0.01) {
+        return String(Math.round(rounded));
+      }
+      return rounded.toFixed(1).replace(/\.0$/, "");
+    };
+
+    type Tick = { leftPercent: number; label: string };
+    const ticks: Tick[] = [];
+    let positionPx = 0;
+
+    while (positionPx < width - 0.5) {
+      const inches = positionPx / INCH_IN_PX;
+      ticks.push({
+        leftPercent: (positionPx / width) * 100,
+        label: formatLabel(inches),
+      });
+      positionPx += INCH_IN_PX;
+    }
+
+    const totalInches = width / INCH_IN_PX;
+    const lastTick = ticks[ticks.length - 1];
+    const finalTick: Tick = {
+      leftPercent: 100,
+      label: formatLabel(totalInches),
+    };
+
+    if (!lastTick) {
+      ticks.push(finalTick);
+    } else if (Math.abs(lastTick.leftPercent - 100) > 0.1) {
+      ticks.push(finalTick);
+    } else {
+      ticks[ticks.length - 1] = finalTick;
+    }
+
+    // Always ensure 0" tick exists at the far left
+    if (!ticks.length || ticks[0].leftPercent > 0.1) {
+      ticks.unshift({ leftPercent: 0, label: "0" });
+    } else {
+      ticks[0] = { leftPercent: 0, label: "0" };
+    }
+
+    return ticks;
+  }, [editorWidth, INCH_IN_PX]);
 
   const statisticsText =
     chapterData?.plainText ??
@@ -916,13 +996,13 @@ export const ChapterCheckerV2: React.FC = () => {
       e.preventDefault();
       e.stopPropagation();
 
-      // Get the 800px ruler content area (not the full-width container)
+      // Get the ruler content area (not the full-width container)
       const rulerContainer = document.querySelector(
         "[data-ruler-container]"
       ) as HTMLElement;
       if (!rulerContainer) return;
 
-      // Find the 800px content div - it's the child of the centered wrapper
+      // Find the fixed-width content div - it's the child of the centered wrapper
       const centerWrapper = rulerContainer.querySelector("div") as HTMLElement;
       if (!centerWrapper) return;
 
@@ -933,7 +1013,7 @@ export const ChapterCheckerV2: React.FC = () => {
       const relativeX = Math.max(0, e.clientX - rect.left);
 
       // Constrain to ruler bounds
-      const maxWidth = Math.min(rect.width, 800);
+      const maxWidth = rect.width;
       const constrainedX = Math.max(0, Math.min(relativeX, maxWidth));
 
       if (isDragging === "left") {
@@ -2794,6 +2874,7 @@ export const ChapterCheckerV2: React.FC = () => {
             >
               {chapterData ? (
                 <div
+                  ref={editorColumnRef}
                   style={{
                     flex: 1,
                     display: "flex",
@@ -2829,14 +2910,15 @@ export const ChapterCheckerV2: React.FC = () => {
                         justifyContent: "center",
                       }}
                     >
-                      {/* Center content area matching editor width (800px) */}
+                      {/* Center content area matching editor width */}
                       <div
                         style={{
-                          width: "800px",
-                          maxWidth: "calc(100% - 40px)",
+                          width: `${editorWidth || PAGE_WIDTH_PX}px`,
+                          maxWidth: "100%",
                           height: "100%",
                           position: "relative",
-                          margin: "0 20px",
+                          marginLeft: `${Math.max(editorOffset, 0)}px`,
+                          marginRight: "auto",
                         }}
                       >
                         {/* Ruler background */}
@@ -2848,18 +2930,18 @@ export const ChapterCheckerV2: React.FC = () => {
                             top: 0,
                             bottom: 0,
                             background:
-                              "linear-gradient(to right, #e5e7eb 0%, #e5e7eb 1px, transparent 1px)",
-                            backgroundSize: "40px 100%",
+                              "linear-gradient(to right, #e5e7eb 0px, #e5e7eb 1px, transparent 1px)",
+                            backgroundSize: `${INCH_IN_PX}px 100%`,
                           }}
                         />
 
-                        {/* Ruler tick marks every inch (assuming ~96 DPI) */}
-                        {Array.from({ length: 9 }, (_, i) => i).map((inch) => (
+                        {/* Ruler tick marks based on actual editor width */}
+                        {rulerTicks.map((tick, idx) => (
                           <div
-                            key={inch}
+                            key={`ruler-tick-${idx}`}
                             style={{
                               position: "absolute",
-                              left: `${(inch / 8) * 100}%`,
+                              left: `${tick.leftPercent}%`,
                               height: "100%",
                               display: "flex",
                               flexDirection: "column",
@@ -2874,7 +2956,7 @@ export const ChapterCheckerV2: React.FC = () => {
                                 marginBottom: "2px",
                               }}
                             >
-                              {inch}
+                              {tick.label}
                             </div>
                             <div
                               style={{
@@ -3117,6 +3199,7 @@ export const ChapterCheckerV2: React.FC = () => {
                       viewMode={viewMode}
                       isTemplateMode={isTemplateMode}
                       onExitTemplateMode={() => setIsTemplateMode(false)}
+                      onEditorLayoutChange={handleEditorLayoutChange}
                     />
                   </div>
                 </div>

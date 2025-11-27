@@ -33,6 +33,7 @@ interface DocumentEditorProps {
   onCharacterLink?: (textOccurrence: string, characterId: string) => void;
   onOpenCharacterManager?: () => void;
   isProfessionalTier?: boolean;
+  onEditorLayoutChange?: (layout: { width: number; left: number }) => void;
 }
 
 export const DocumentEditor: React.FC<DocumentEditorProps> = ({
@@ -58,6 +59,7 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
   onCharacterLink,
   onOpenCharacterManager,
   isProfessionalTier = false,
+  onEditorLayoutChange,
 }) => {
   // Determine initial content: prefer HTML if available, otherwise text
   const startContent = htmlContent || initialText;
@@ -92,6 +94,7 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
         onCharacterLink={onCharacterLink}
         onOpenCharacterManager={onOpenCharacterManager}
         isProfessionalTier={isProfessionalTier}
+        onLayoutChange={onEditorLayoutChange}
         style={{ flex: 1, minHeight: 0 }}
       />
     </div>

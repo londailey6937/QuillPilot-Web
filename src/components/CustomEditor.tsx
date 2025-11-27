@@ -24,7 +24,11 @@ interface CustomEditorProps {
   onCharacterLink?: (textOccurrence: string, characterId: string) => void;
   onOpenCharacterManager?: () => void;
   isProfessionalTier?: boolean;
+  onLayoutChange?: (layout: { width: number; left: number }) => void;
 }
+
+const INCH_IN_PX = 96;
+const PAGE_WIDTH_PX = INCH_IN_PX * 8;
 
 interface AnalysisData {
   spacing: Array<{
@@ -123,6 +127,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   onCharacterLink,
   onOpenCharacterManager,
   isProfessionalTier = false,
+  onLayoutChange,
 }) => {
   const editorRef = useRef<HTMLDivElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -430,6 +435,38 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only on mount - content is captured from closure
+
+  useEffect(() => {
+    if (!onLayoutChange) {
+      return;
+    }
+
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const notifyLayout = () => {
+      if (!editorRef.current) {
+        return;
+      }
+      const rect = editorRef.current.getBoundingClientRect();
+      if (rect.width > 0) {
+        onLayoutChange({ width: rect.width, left: rect.left });
+      }
+    };
+
+    notifyLayout();
+
+    if (typeof ResizeObserver !== "undefined" && editorRef.current) {
+      const observer = new ResizeObserver(() => notifyLayout());
+      observer.observe(editorRef.current);
+      return () => observer.disconnect();
+    }
+
+    const handleResize = () => notifyLayout();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [onLayoutChange]);
 
   // Apply concept underlining
   useEffect(() => {
@@ -1454,7 +1491,14 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     >
       {/* Toolbar */}
       {viewMode === "writer" && !isFreeMode && (
-        <div className="toolbar flex flex-wrap items-center gap-2 p-2 border-b bg-gray-50 sticky top-0 z-20 shadow-sm">
+        <div
+          className="toolbar flex flex-wrap items-center gap-2 p-2 border-b bg-gray-50 sticky top-0 z-20 shadow-sm"
+          style={{
+            maxWidth: `${PAGE_WIDTH_PX}px`,
+            margin: "0 auto",
+            width: "100%",
+          }}
+        >
           {/* Block type dropdown */}
           <select
             value={blockType}
@@ -2037,10 +2081,11 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           }`}
           style={{
             minHeight: "300px",
-            maxWidth: "800px",
+            maxWidth: `${PAGE_WIDTH_PX}px`,
             margin: "20px auto",
             paddingLeft: `${leftMargin}px`,
             paddingRight: `${rightMargin}px`,
+            boxSizing: "border-box",
             border: isEditable ? "2px solid #10b981" : "1px solid #d1d5db",
             backgroundColor: isEditable ? "#ffffff" : "#fafafa",
             boxShadow: isEditable
