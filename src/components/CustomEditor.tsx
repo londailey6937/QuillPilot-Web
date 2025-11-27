@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import { analyzeParagraphSpacing, countWords } from "@/utils/spacingInsights";
 import { SensoryDetailAnalyzer } from "@/utils/sensoryDetailAnalyzer";
 import { Character, CharacterMapping } from "../types";
+import { AdvancedToolsPanel } from "./AdvancedToolsPanel";
 
 interface CustomEditorProps {
   content: string;
@@ -2525,6 +2526,45 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           <span style={{ fontSize: "16px" }}>↑</span>
           Back to top
         </button>
+      )}
+
+      {/* Advanced Tools Panel */}
+      {viewMode === "writer" && !isFreeMode && (
+        <AdvancedToolsPanel
+          text={editorRef.current?.innerText || ""}
+          selectedText={window.getSelection()?.toString() || ""}
+          onInsertText={(text) => {
+            const selection = window.getSelection();
+            if (selection && selection.rangeCount > 0) {
+              const range = selection.getRangeAt(0);
+              range.deleteContents();
+              range.insertNode(document.createTextNode(text));
+              handleEditorInput();
+            }
+          }}
+          onReplaceText={(oldText, newText) => {
+            if (editorRef.current) {
+              const html = editorRef.current.innerHTML;
+              editorRef.current.innerHTML = html.replace(
+                new RegExp(oldText, "gi"),
+                newText
+              );
+              handleEditorInput();
+            }
+          }}
+          onNavigate={(position) => {
+            // Scroll to specific word position
+            if (editorRef.current) {
+              const words = editorRef.current.innerText.split(/\s+/);
+              let charCount = 0;
+              for (let i = 0; i < Math.min(position, words.length); i++) {
+                charCount += words[i].length + 1;
+              }
+              // This is a simplified navigation - could be enhanced
+              editorRef.current.scrollIntoView({ behavior: "smooth" });
+            }
+          }}
+        />
       )}
     </div>
   );
