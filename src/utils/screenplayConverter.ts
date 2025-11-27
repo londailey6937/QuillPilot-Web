@@ -10,61 +10,76 @@ export function isScreenplay(text: string): boolean {
   const normalizedText = text.replace(/\r\n?/g, "\n");
   const upperText = normalizedText.toUpperCase();
 
-  const screenplayIndicators = [
+  // Primary indicators - if we find multiple of these, it's definitely a screenplay
+  const strongIndicators = [
     /\bINT\.?\s+/,
     /\bEXT\.?\s+/,
-    /\bEST\.?\s+/,
     /\bINT\.?\/?EXT\.?\s+/,
     /\bFADE IN:?/,
     /\bFADE OUT:?/,
-    /\bCUT TO:?/,
-    /\bDISSOLVE TO:?/,
-    /\bSMASH CUT:?/,
-    /\bMATCH CUT:?/,
-    /\bCONTINUOUS\b/,
-    /\bMONTAGE\b/,
-    /\bSUPER:\b/,
-    /\bTITLE:\b/,
-    /\b\(V\.O\.\)/,
-    /\b\(O\.S\.\)/,
-    /(beat)/i,
-    /(pause)/i,
   ];
 
-  let indicatorCount = 0;
-  for (const pattern of screenplayIndicators) {
+  let strongIndicatorCount = 0;
+  for (const pattern of strongIndicators) {
     if (pattern.test(upperText)) {
-      indicatorCount++;
+      strongIndicatorCount++;
     }
   }
 
-  if (indicatorCount >= 2) {
+  // If we have 2+ strong indicators, it's a screenplay
+  if (strongIndicatorCount >= 2) {
     return true;
   }
 
-  const sceneHeadingRegex = /^(INT|EXT|EST|INT\/EXT)[^\n]*$/gim;
+  // Check for scene headings (INT/EXT format)
+  const sceneHeadingRegex = /^(INT|EXT|EST|INT\/EXT)[.\s]+[A-Z]/gim;
   const sceneHeadings = normalizedText.match(sceneHeadingRegex);
-  if (sceneHeadings && sceneHeadings.length >= 3) {
+  if (sceneHeadings && sceneHeadings.length >= 5) {
     return true;
   }
 
+  // More conservative character name detection
+  // Only count as potential screenplay if we have:
+  // 1. Multiple short all-caps lines
+  // 2. Followed by non-caps text (dialogue)
+  // 3. AND we have transition markers or other screenplay elements
   const lines = normalizedText.split("\n");
   let capsLineCount = 0;
   let dialogueAfterCaps = 0;
+  let transitionCount = 0;
 
   for (let i = 0; i < lines.length - 1; i++) {
     const line = lines[i].trim();
     if (!line) continue;
     const nextLine = lines[i + 1].trim();
 
+    // Check for transitions (CUT TO:, DISSOLVE TO:, etc.)
+    if (line.endsWith(":") && line === line.toUpperCase()) {
+      if (
+        /^(CUT TO|DISSOLVE TO|FADE TO|SMASH CUT|MATCH CUT|JUMP CUT|WIPE TO):?$/i.test(
+          line
+        )
+      ) {
+        transitionCount++;
+      }
+    }
+
+    // Check for character names (more strict)
     if (
       line === line.toUpperCase() &&
-      line.length > 0 &&
+      line.length > 2 &&
       line.length < 30 &&
+      /^[A-Z\s'-]+$/.test(line) && // Only letters, spaces, hyphens, apostrophes
       !line.startsWith("INT") &&
       !line.startsWith("EXT") &&
       !line.startsWith("FADE") &&
-      !line.endsWith(":")
+      !line.endsWith(":") &&
+      !line.includes("CHAPTER") &&
+      !line.includes("PART") &&
+      !line.includes("CONTENTS") &&
+      !line.includes("ACKNOWLEDGMENTS") &&
+      !line.includes("BOOKS BY") &&
+      !line.includes("COPYRIGHT")
     ) {
       capsLineCount++;
 
@@ -74,7 +89,13 @@ export function isScreenplay(text: string): boolean {
     }
   }
 
-  if (capsLineCount >= 3 && dialogueAfterCaps / (capsLineCount || 1) > 0.4) {
+  // Require BOTH character/dialogue patterns AND transitions
+  if (
+    capsLineCount >= 10 &&
+    dialogueAfterCaps >= 8 &&
+    transitionCount >= 2 &&
+    dialogueAfterCaps / capsLineCount > 0.6
+  ) {
     return true;
   }
 
