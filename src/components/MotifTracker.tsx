@@ -242,13 +242,14 @@ export const MotifTracker: React.FC<MotifTrackerProps> = ({
   return (
     <div
       className="motif-tracker-modal"
+      onClick={(e) => e.stopPropagation()}
       style={{
         position: "fixed",
         top: "50%",
         left: "50%",
         transform: "translate(-50%, -50%)",
-        background: "white",
-        border: "2px solid #a855f7",
+        background: "#fef5e7",
+        border: "2px solid #e0c392",
         borderRadius: "16px",
         padding: "24px",
         boxShadow: "0 20px 60px rgba(0,0,0,0.25)",
@@ -258,16 +259,10 @@ export const MotifTracker: React.FC<MotifTrackerProps> = ({
         zIndex: 1000,
       }}
     >
-      <div className="flex justify-between items-center mb-4">
+      <div className="mb-4">
         <h2 className="text-2xl font-bold text-gray-800">
           🔮 Motif & Symbol Tracker
         </h2>
-        <button
-          onClick={onClose}
-          className="text-gray-500 hover:text-gray-700 text-2xl"
-        >
-          ×
-        </button>
       </div>
 
       {isAnalyzing ? (

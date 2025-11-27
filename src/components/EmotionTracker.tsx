@@ -336,13 +336,14 @@ export const EmotionTracker: React.FC<EmotionTrackerProps> = ({
   return (
     <div
       className="emotion-tracker-modal"
+      onClick={(e) => e.stopPropagation()}
       style={{
         position: "fixed",
         top: "50%",
         left: "50%",
         transform: "translate(-50%, -50%)",
-        background: "white",
-        border: "2px solid #ec4899",
+        background: "#fef5e7",
+        border: "2px solid #e0c392",
         borderRadius: "16px",
         padding: "24px",
         boxShadow: "0 20px 60px rgba(0,0,0,0.25)",
@@ -352,14 +353,8 @@ export const EmotionTracker: React.FC<EmotionTrackerProps> = ({
         zIndex: 1000,
       }}
     >
-      <div className="flex justify-between items-center mb-4">
+      <div className="mb-4">
         <h2 className="text-2xl font-bold text-gray-800">💖 Emotion Tracker</h2>
-        <button
-          onClick={onClose}
-          className="text-gray-500 hover:text-gray-700 text-2xl"
-        >
-          ×
-        </button>
       </div>
 
       {isAnalyzing ? (

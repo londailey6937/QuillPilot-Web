@@ -211,29 +211,24 @@ export const AIWritingAssistant: React.FC<AIWritingAssistantProps> = ({
   return (
     <div
       className="ai-writing-assistant"
+      onClick={(e) => e.stopPropagation()}
       style={{
         position: "absolute",
         top: position?.top || 100,
         left: position?.left || 100,
-        background: "white",
-        border: "2px solid #4f46e5",
+        background: "#fef5e7",
+        border: "2px solid #e0c392",
         borderRadius: "12px",
         padding: "16px",
-        boxShadow: "0 10px 40px rgba(0,0,0,0.15)",
+        boxShadow: "0 10px 40px rgba(44, 62, 80, 0.15)",
         maxWidth: "500px",
         zIndex: 1000,
       }}
     >
-      <div className="flex justify-between items-center mb-3">
+      <div className="mb-3">
         <h3 className="text-lg font-bold text-gray-800">
           ✨ AI Writing Assistant
         </h3>
-        <button
-          onClick={onClose}
-          className="text-gray-500 hover:text-gray-700 text-xl"
-        >
-          ×
-        </button>
       </div>
 
       <div className="mb-3">

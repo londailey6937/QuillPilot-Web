@@ -133,13 +133,14 @@ export const ReadabilityAnalyzer: React.FC<ReadabilityAnalyzerProps> = ({
   return (
     <div
       className="readability-analyzer-modal"
+      onClick={(e) => e.stopPropagation()}
       style={{
         position: "fixed",
         top: "50%",
         left: "50%",
         transform: "translate(-50%, -50%)",
-        background: "white",
-        border: "2px solid #10b981",
+        background: "#fef5e7",
+        border: "2px solid #e0c392",
         borderRadius: "16px",
         padding: "24px",
         boxShadow: "0 20px 60px rgba(0,0,0,0.25)",
@@ -149,16 +150,10 @@ export const ReadabilityAnalyzer: React.FC<ReadabilityAnalyzerProps> = ({
         zIndex: 1000,
       }}
     >
-      <div className="flex justify-between items-center mb-4">
+      <div className="mb-4">
         <h2 className="text-2xl font-bold text-gray-800">
           📊 Readability Metrics
         </h2>
-        <button
-          onClick={onClose}
-          className="text-gray-500 hover:text-gray-700 text-2xl"
-        >
-          ×
-        </button>
       </div>
 
       <div className="grid grid-cols-2 gap-4 mb-6">

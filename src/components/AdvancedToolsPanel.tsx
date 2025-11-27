@@ -117,12 +117,59 @@ export const AdvancedToolsPanel: React.FC<AdvancedToolsPanelProps> = ({
     setActiveTool(null);
   };
 
+  const closePanel = () => {
+    setIsPanelOpen(false);
+    setActiveTool(null);
+  };
+
   return (
     <>
+      {/* Backdrop - click outside to close */}
+      {(isPanelOpen || activeTool) && (
+        <div
+          onClick={closePanel}
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 49,
+          }}
+        />
+      )}
+
       {/* Floating Button */}
       <button
         onClick={() => setIsPanelOpen(!isPanelOpen)}
-        className="fixed right-6 bottom-6 w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 text-white shadow-2xl hover:shadow-3xl transition-all hover:scale-110 z-50 flex items-center justify-center text-2xl"
+        style={{
+          position: "fixed",
+          right: "24px",
+          bottom: "24px",
+          width: "64px",
+          height: "64px",
+          borderRadius: "999px",
+          border: "2px solid #e0c392",
+          background: "linear-gradient(135deg, #f5ead9 0%, #f5e6d3 100%)",
+          color: "#2c3e50",
+          fontWeight: 600,
+          fontSize: "24px",
+          boxShadow: "0 4px 16px rgba(44, 62, 80, 0.15)",
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 50,
+          transition: "all 0.2s ease",
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform = "translateY(-2px) scale(1.05)";
+          e.currentTarget.style.boxShadow = "0 6px 20px rgba(44, 62, 80, 0.2)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = "none";
+          e.currentTarget.style.boxShadow = "0 4px 16px rgba(44, 62, 80, 0.15)";
+        }}
         title="Advanced Writing Tools"
       >
         {isPanelOpen ? "×" : "🛠️"}
@@ -131,22 +178,63 @@ export const AdvancedToolsPanel: React.FC<AdvancedToolsPanelProps> = ({
       {/* Tools Panel */}
       {isPanelOpen && (
         <div
-          className="fixed right-6 bottom-24 bg-white rounded-2xl shadow-2xl border-2 border-purple-200 p-6 z-50"
-          style={{ maxWidth: "400px", maxHeight: "600px", overflow: "auto" }}
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            position: "fixed",
+            right: "24px",
+            bottom: "96px",
+            background: "#fef5e7",
+            borderRadius: "20px",
+            boxShadow: "0 10px 40px rgba(44, 62, 80, 0.15)",
+            border: "2px solid #e0c392",
+            padding: "24px",
+            zIndex: 50,
+            maxWidth: "400px",
+            maxHeight: "600px",
+            overflow: "auto",
+          }}
         >
-          <h3 className="text-2xl font-bold mb-4 text-gray-800">
+          <h3
+            style={{
+              fontSize: "24px",
+              fontWeight: "bold",
+              marginBottom: "16px",
+              color: "#2c3e50",
+            }}
+          >
             🛠️ Advanced Tools
           </h3>
-          <div className="space-y-2">
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
             {tools.map((tool) => (
               <button
                 key={tool.id}
                 onClick={() => handleToolClick(tool.id)}
-                className={`w-full text-left p-4 rounded-lg border-2 hover:shadow-md transition-all ${
-                  activeTool === tool.id
-                    ? "border-purple-500 bg-purple-50"
-                    : "border-gray-200 hover:border-gray-300"
-                }`}
+                style={{
+                  width: "100%",
+                  textAlign: "left",
+                  padding: "16px",
+                  borderRadius: "12px",
+                  border:
+                    activeTool === tool.id
+                      ? "2px solid #ef8432"
+                      : "2px solid #e0c392",
+                  background: activeTool === tool.id ? "#f7e6d0" : "white",
+                  cursor: "pointer",
+                  transition: "all 0.2s ease",
+                }}
+                onMouseEnter={(e) => {
+                  if (activeTool !== tool.id) {
+                    e.currentTarget.style.background = "#f7e6d0";
+                    e.currentTarget.style.boxShadow =
+                      "0 2px 8px rgba(44, 62, 80, 0.1)";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (activeTool !== tool.id) {
+                    e.currentTarget.style.background = "white";
+                    e.currentTarget.style.boxShadow = "none";
+                  }
+                }}
               >
                 <div className="flex items-start gap-3">
                   <div
@@ -165,8 +253,16 @@ export const AdvancedToolsPanel: React.FC<AdvancedToolsPanelProps> = ({
             ))}
           </div>
 
-          <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-            <div className="text-sm text-gray-700">
+          <div
+            style={{
+              marginTop: "16px",
+              padding: "12px",
+              background: "#f5e6d3",
+              borderRadius: "12px",
+              border: "1px solid #e0c392",
+            }}
+          >
+            <div style={{ fontSize: "14px", color: "#2c3e50" }}>
               <strong>💡 Tip:</strong> These tools analyze your manuscript to
               improve structure, style, and emotional impact.
             </div>
