@@ -3429,9 +3429,8 @@ export const ChapterCheckerV2: React.FC = () => {
                         agent/editor submission workflows.
                       </li>
                       <li>
-                        Professional screenplay formatting with
-                        industry-standard templates and automatic
-                        scene/character tracking.
+                        Professional screenplay formatting with industry-standard
+                        styling and automatic scene/character tracking.
                       </li>
                     </ul>
                     <button
