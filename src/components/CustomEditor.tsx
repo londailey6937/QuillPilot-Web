@@ -574,6 +574,9 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   const performUndo = useCallback(() => {
     if (!editorRef.current || historyIndexRef.current <= 0) return;
 
+    // Save current scroll position
+    const scrollTop = wrapperRef.current?.scrollTop || 0;
+
     historyIndexRef.current--;
     const html = historyRef.current[historyIndexRef.current];
 
@@ -583,6 +586,11 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     const text = editorRef.current.innerText;
     onUpdate?.({ html, text });
     analyzeContent(text);
+    
+    // Restore scroll position
+    if (wrapperRef.current) {
+      wrapperRef.current.scrollTop = scrollTop;
+    }
     editorRef.current.focus();
 
     // Update button states
@@ -598,6 +606,9 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     )
       return;
 
+    // Save current scroll position
+    const scrollTop = wrapperRef.current?.scrollTop || 0;
+
     historyIndexRef.current++;
     const html = historyRef.current[historyIndexRef.current];
 
@@ -607,6 +618,11 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     const text = editorRef.current.innerText;
     onUpdate?.({ html, text });
     analyzeContent(text);
+    
+    // Restore scroll position
+    if (wrapperRef.current) {
+      wrapperRef.current.scrollTop = scrollTop;
+    }
     editorRef.current.focus();
 
     // Update button states
@@ -641,16 +657,37 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
 
       if (screenplayElements.includes(tag)) {
         const selection = window.getSelection();
-        const selectedText = selection?.toString() || "TYPE HERE";
-        const escapedText = selectedText
-          .replace(/&/g, "&amp;")
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;")
-          .replace(/"/g, "&quot;")
-          .replace(/'/g, "&#39;");
+        if (!selection || !editorRef.current) return;
 
-        const blockHtml = `<p class="screenplay-block ${tag}" data-block="${tag}">${escapedText}</p>`;
-        document.execCommand("insertHTML", false, blockHtml);
+        // Get the current paragraph/block element
+        let currentBlock = selection.anchorNode;
+        while (
+          currentBlock &&
+          currentBlock.nodeName !== "P" &&
+          currentBlock !== editorRef.current
+        ) {
+          currentBlock = currentBlock.parentNode;
+        }
+
+        if (currentBlock && currentBlock.nodeName === "P") {
+          // Convert existing paragraph to screenplay block
+          const p = currentBlock as HTMLElement;
+          const text = p.textContent || "";
+          p.className = `screenplay-block ${tag}`;
+          p.setAttribute("data-block", tag);
+        } else {
+          // Create new screenplay block if no paragraph found
+          const selectedText = selection.toString() || "TYPE HERE";
+          const escapedText = selectedText
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
+
+          const blockHtml = `<p class="screenplay-block ${tag}" data-block="${tag}">${escapedText}</p>`;
+          document.execCommand("insertHTML", false, blockHtml);
+        }
         setTimeout(() => handleInput(), 0);
       } else {
         // Standard HTML elements use formatBlock
@@ -2079,6 +2116,16 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           margin-right: 0 !important;
           margin-bottom: 1rem !important;
           margin-top: 0 !important;
+        }
+        /* Center action blocks at the start (title page) - before first scene heading */
+        .screenplay-block.action {
+          text-align: left !important;
+        }
+        .screenplay-block.scene-heading ~ .screenplay-block.action {
+          text-align: left !important;
+        }
+        .screenplay-block.action:not(.screenplay-block.scene-heading ~ .screenplay-block.action) {
+          text-align: center !important;
         }
         .editor-content p.screenplay-block.transition {
           text-align: right !important;

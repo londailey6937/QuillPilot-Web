@@ -46,6 +46,7 @@ import AnalysisWorker from "@/workers/analysisWorker?worker";
 import { buildTierOneAnalysisSummary } from "@/utils/tierOneAnalysis";
 import { exportToHtml } from "@/utils/htmlExport";
 import { exportToPdf } from "@/utils/pdfExport";
+import { analyzeScreenplay, generateScreenplaySummary } from "@/utils/screenplayAnalyzer";
 import {
   TEMPLATE_LIBRARY,
   getTemplateById,
@@ -1056,6 +1057,12 @@ export const ChapterCheckerV2: React.FC = () => {
     setDetectedDomain(detected);
     setSelectedDomain(detected);
 
+    // Skip auto-analysis for screenplays (they need different analysis)
+    if (detected === 'screenplay') {
+      console.log('📝 Screenplay detected - skipping prose analysis');
+      return;
+    }
+
     // Auto-analyze for free tier (spacing + dual coding only)
     const autoAnalyzeFeatures = ACCESS_TIERS[accessLevel];
     if (
@@ -1393,7 +1400,54 @@ export const ChapterCheckerV2: React.FC = () => {
     // Premium/Professional tier: Run full analysis
     setIsAnalyzing(true);
     setError(null);
-    setProgress("Analyzing chapter...");
+    setProgress("Analyzing screenplay...");
+
+    // Handle screenplay analysis differently
+    if (detectedDomain === 'screenplay') {
+      try {
+        console.log('📝 Running screenplay-specific analysis');
+        
+        // Get HTML content for screenplay analysis
+        const htmlContent = chapterData?.editorHtml || chapterData?.html || '';
+        const plainTextContent = chapterData?.plainText || '';
+        
+        if (!htmlContent) {
+          throw new Error("No screenplay content available for analysis");
+        }
+        
+        // Run screenplay analysis
+        const metrics = analyzeScreenplay(htmlContent, plainTextContent);
+        const summary = generateScreenplaySummary(metrics);
+        
+        console.log('✅ Screenplay analysis complete:', metrics);
+        
+        // Store results with summary in a format compatible with the dashboard
+        setAnalysis({
+          chapterId: `screenplay-${Date.now()}`,
+          overallScore: 80,
+          principleScores: [],
+          recommendations: [],
+          conceptGraph: { concepts: [], relationships: [] },
+          metrics: {} as any,
+          summary: summary, // Custom field for screenplay
+        } as any);
+        
+        setIsAnalyzing(false);
+        setProgress("Analysis complete!");
+        
+        // Show success message
+        setTimeout(() => {
+          setProgress("");
+        }, 2000);
+        
+        return;
+      } catch (err) {
+        console.error('❌ Screenplay analysis failed:', err);
+        setError(err instanceof Error ? err.message : 'Screenplay analysis failed');
+        setIsAnalyzing(false);
+        return;
+      }
+    }
 
     try {
       // Use normalized chapter data - no need to re-parse
@@ -2232,6 +2286,42 @@ export const ChapterCheckerV2: React.FC = () => {
                     >
                       🌐
                     </button>
+
+                    {analysis && (
+                      <button
+                        onClick={handleExport}
+                        disabled={!ACCESS_TIERS[accessLevel].exportResults}
+                        style={{
+                          padding: "6px 12px",
+                          backgroundColor: "white",
+                          color: ACCESS_TIERS[accessLevel].exportResults
+                            ? "#2c3e50"
+                            : "#999",
+                          border: ACCESS_TIERS[accessLevel].exportResults
+                            ? "1.5px solid #e0c392"
+                            : "1.5px solid #ddd",
+                          borderRadius: "12px",
+                          cursor: ACCESS_TIERS[accessLevel].exportResults
+                            ? "pointer"
+                            : "not-allowed",
+                          fontSize: "12px",
+                          fontWeight: "600",
+                          transition: "all 0.2s",
+                          whiteSpace: "nowrap",
+                          opacity: ACCESS_TIERS[accessLevel].exportResults ? 1 : 0.6,
+                        }}
+                        onMouseEnter={(e) => {
+                          if (ACCESS_TIERS[accessLevel].exportResults)
+                            e.currentTarget.style.backgroundColor = "#f7e6d0";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = "white";
+                        }}
+                        title={ACCESS_TIERS[accessLevel].exportResults ? "Export JSON" : "Export JSON (Premium)"}
+                      >
+                        {ACCESS_TIERS[accessLevel].exportResults ? "📊" : "🔒"}
+                      </button>
+                    )}
 
                     {viewMode === "writer" &&
                       accessLevel === "professional" && (
@@ -3413,8 +3503,8 @@ export const ChapterCheckerV2: React.FC = () => {
                       color: "#2c3e50",
                     }}
                   >
-                    Select the domain that best matches your chapter content for
-                    accurate concept recognition and analysis.
+                    Select the genre or screenplay type that best matches your content for
+                    accurate analysis.
                   </p>
 
                   <div style={{ marginBottom: "16px" }}>
@@ -3840,8 +3930,8 @@ export const ChapterCheckerV2: React.FC = () => {
                       : "🔍 Analyze Book"}
                   </button>
 
-                  {/* Auto-Analysis Toggle */}
-                  {chapterData && analysis && !isAnalyzing && (
+                  {/* Auto-Analysis Toggle - hide for screenplays */}
+                  {chapterData && analysis && !isAnalyzing && detectedDomain !== 'screenplay' && (
                     <button
                       onClick={() =>
                         setAutoAnalysisEnabled(!autoAnalysisEnabled)
@@ -3975,40 +4065,6 @@ export const ChapterCheckerV2: React.FC = () => {
                           : "1.5px solid #f7d8a8",
                     }}
                   >
-                    <button
-                      onClick={handleExport}
-                      disabled={!ACCESS_TIERS[accessLevel].exportResults}
-                      style={{
-                        width: "100%",
-                        padding: "8px",
-                        backgroundColor: "white",
-                        color: ACCESS_TIERS[accessLevel].exportResults
-                          ? "#2c3e50"
-                          : "#2c3e50",
-                        border: ACCESS_TIERS[accessLevel].exportResults
-                          ? "1.5px solid #2c3e50"
-                          : "1.5px solid #e0c392",
-                        borderRadius: "20px",
-                        cursor: ACCESS_TIERS[accessLevel].exportResults
-                          ? "pointer"
-                          : "not-allowed",
-                        fontSize: "14px",
-                        fontWeight: "600",
-                        marginBottom: "16px",
-                        transition: "background-color 0.2s",
-                      }}
-                      onMouseEnter={(e) => {
-                        if (ACCESS_TIERS[accessLevel].exportResults)
-                          e.currentTarget.style.backgroundColor = "#f7e6d0";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = "white";
-                      }}
-                    >
-                      📥 Export JSON{" "}
-                      {!ACCESS_TIERS[accessLevel].exportResults && "🔒"}
-                    </button>
-
                     {/* Generate AI Template - only in Writer Mode */}
                     {viewMode === "writer" && analysis && (
                       <button
@@ -4051,31 +4107,117 @@ export const ChapterCheckerV2: React.FC = () => {
                             }}
                           />
                         )}
-                        <ChapterAnalysisDashboard
-                          analysis={analysis}
-                          concepts={analysis.conceptGraph?.concepts || []}
-                          onConceptClick={handleConceptClick}
-                          highlightedConceptId={highlightedConceptId}
-                          currentMentionIndex={currentMentionIndex}
-                          accessLevel={accessLevel}
-                          hasDomain={
-                            selectedDomain !== "none" && selectedDomain !== null
-                          }
-                          activeDomain={selectedDomain}
-                          relationships={
-                            analysis.conceptGraph?.relationships || []
-                          }
-                          generalConcepts={
-                            selectedDomain === "none"
-                              ? generalConcepts
-                              : undefined
-                          }
-                          onGeneralConceptClick={(position, term) => {
-                            setHighlightPosition(position);
-                            setSearchWord(term);
-                            setSearchOccurrence(0);
-                          }}
-                        />
+                        
+                        {/* Screenplay Analysis Display */}
+                        {detectedDomain === 'screenplay' && (analysis as any).summary ? (
+                          <div
+                            style={{
+                              padding: "24px",
+                              backgroundColor: "#fefdfb",
+                              borderRadius: "24px",
+                              overflowY: "auto",
+                              maxHeight: "calc(100vh - 220px)",
+                              border: "2px solid #e0c392",
+                            }}
+                          >
+                            <h2 style={{ 
+                              fontSize: "28px", 
+                              fontWeight: "700", 
+                              marginBottom: "24px",
+                              color: "#2c3e50",
+                              fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+                            }}>
+                              📽️ Screenplay Analysis
+                            </h2>
+                            <div 
+                              style={{
+                                fontSize: "15px",
+                                lineHeight: "1.8",
+                                color: "#2c3e50",
+                                fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+                              }}
+                            >
+                              {(analysis as any).summary.split('\n').map((line: string, idx: number) => {
+                                // Main heading (# )
+                                if (line.startsWith('# ')) {
+                                  return <div key={idx} style={{ fontSize: '24px', fontWeight: '700', margin: '28px 0 16px 0', color: '#1a202c' }}>{line.substring(2)}</div>;
+                                }
+                                // Section heading (## )
+                                if (line.startsWith('## ')) {
+                                  return <div key={idx} style={{ fontSize: '18px', fontWeight: '600', margin: '24px 0 12px 0', color: '#2d3748', borderBottom: '2px solid #e0c392', paddingBottom: '6px' }}>{line.substring(3)}</div>;
+                                }
+                                // Bullet points (- )
+                                if (line.startsWith('- ')) {
+                                  const content = line.substring(2);
+                                  // Handle bold (**text**)
+                                  const parts = content.split(/(\*\*[^*]+\*\*)/);
+                                  return (
+                                    <div key={idx} style={{ margin: '6px 0 6px 20px', display: 'flex', gap: '8px' }}>
+                                      <span style={{ color: '#2c5282', fontWeight: '600' }}>•</span>
+                                      <span>
+                                        {parts.map((part, i) => 
+                                          part.startsWith('**') && part.endsWith('**') 
+                                            ? <strong key={i} style={{ color: '#2c5282', fontWeight: '600' }}>{part.slice(2, -2)}</strong>
+                                            : part
+                                        )}
+                                      </span>
+                                    </div>
+                                  );
+                                }
+                                // Numbered list items
+                                const numberedMatch = line.match(/^(\d+)\.\s+(.+)$/);
+                                if (numberedMatch) {
+                                  return (
+                                    <div key={idx} style={{ margin: '6px 0 6px 20px' }}>
+                                      <span style={{ fontWeight: '600', color: '#2c5282' }}>{numberedMatch[1]}.</span> {numberedMatch[2]}
+                                    </div>
+                                  );
+                                }
+                                // Empty lines
+                                if (line.trim() === '') {
+                                  return <div key={idx} style={{ height: '8px' }}></div>;
+                                }
+                                // Regular text with bold handling
+                                const parts = line.split(/(\*\*[^*]+\*\*)/);
+                                return (
+                                  <div key={idx} style={{ margin: '4px 0' }}>
+                                    {parts.map((part, i) => 
+                                      part.startsWith('**') && part.endsWith('**') 
+                                        ? <strong key={i} style={{ color: '#2c5282', fontWeight: '600' }}>{part.slice(2, -2)}</strong>
+                                        : part
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ) : (
+                          <ChapterAnalysisDashboard
+                            analysis={analysis}
+                            concepts={analysis.conceptGraph?.concepts || []}
+                            onConceptClick={handleConceptClick}
+                            highlightedConceptId={highlightedConceptId}
+                            currentMentionIndex={currentMentionIndex}
+                            accessLevel={accessLevel}
+                            hasDomain={
+                              selectedDomain !== "none" && selectedDomain !== null
+                            }
+                            activeDomain={selectedDomain}
+                            relationships={
+                              analysis.conceptGraph?.relationships || []
+                            }
+                            generalConcepts={
+                              selectedDomain === "none"
+                                ? generalConcepts
+                                : undefined
+                            }
+                            onGeneralConceptClick={(position, term) => {
+                              setHighlightPosition(position);
+                              setSearchWord(term);
+                              setSearchOccurrence(0);
+                            }}
+                          />
+                        )}
                       </>
                     ) : (
                       <div
