@@ -378,6 +378,14 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
 
           if (isHtml) {
             editorRef.current.innerHTML = content;
+            console.log(
+              "[CustomEditor] Set HTML content, first 500 chars:",
+              content.substring(0, 500)
+            );
+            console.log(
+              "[CustomEditor] Editor DOM structure:",
+              editorRef.current.firstChild
+            );
           } else {
             editorRef.current.innerHTML = content
               .split("\n\n")
@@ -621,10 +629,36 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   // Change block type (heading, paragraph, etc.)
   const changeBlockType = useCallback(
     (tag: string) => {
-      formatText("formatBlock", tag);
+      // Screenplay elements use custom tags
+      const screenplayElements = [
+        "scene-heading",
+        "action",
+        "character",
+        "dialogue",
+        "parenthetical",
+        "transition",
+      ];
+
+      if (screenplayElements.includes(tag)) {
+        const selection = window.getSelection();
+        const selectedText = selection?.toString() || "TYPE HERE";
+        const escapedText = selectedText
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+
+        const blockHtml = `<p class="screenplay-block ${tag}" data-block="${tag}">${escapedText}</p>`;
+        document.execCommand("insertHTML", false, blockHtml);
+        setTimeout(() => handleInput(), 0);
+      } else {
+        // Standard HTML elements use formatBlock
+        formatText("formatBlock", tag);
+      }
       setBlockType(tag);
     },
-    [formatText]
+    [formatText, handleInput]
   );
 
   // Insert link
@@ -1406,6 +1440,14 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
             <option value="toc">Table of Contents</option>
             <option value="index">Index</option>
             <option value="figure">Figure</option>
+            <optgroup label="Screenplay Format">
+              <option value="scene-heading">Scene Heading (INT/EXT)</option>
+              <option value="action">Action</option>
+              <option value="character">Character Name</option>
+              <option value="dialogue">Dialogue</option>
+              <option value="parenthetical">Parenthetical</option>
+              <option value="transition">Transition</option>
+            </optgroup>
           </select>
 
           <div className="w-px h-6 bg-gray-300" />
@@ -1975,10 +2017,10 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
         />
 
         {/* Spacing indicators overlay */}
-        {renderIndicators()}
+        {/* {renderIndicators()} */}
 
         {/* Visual suggestions overlay */}
-        {renderSuggestions()}
+        {/* {renderSuggestions()} */}
       </div>
 
       <style>{`
@@ -1989,6 +2031,68 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           margin: 0.5em 0;
           line-height: 1.2;
           text-indent: ${firstLineIndent - leftMargin}px;
+        }
+        /* Screenplay block formatting - highest priority */
+        .editor-content p.screenplay-block {
+          text-indent: 0 !important;
+          font-family: "Courier Prime", "Courier New", Courier, monospace !important;
+          font-size: 12pt !important;
+          line-height: 1.2 !important;
+          margin: 0 !important;
+          margin-bottom: 1rem !important;
+          white-space: normal !important;
+        }
+        .editor-content p.screenplay-block.scene-heading {
+          font-weight: bold !important;
+          text-transform: uppercase !important;
+          margin-top: 1.5rem !important;
+          margin-bottom: 1rem !important;
+          margin-left: 0 !important;
+          margin-right: 0 !important;
+        }
+        .editor-content p.screenplay-block.character {
+          margin-left: auto !important;
+          margin-right: auto !important;
+          margin-top: 1rem !important;
+          margin-bottom: 0 !important;
+          text-transform: uppercase !important;
+          text-align: center !important;
+          width: 100% !important;
+        }
+        .editor-content p.screenplay-block.dialogue {
+          margin-left: auto !important;
+          margin-right: auto !important;
+          margin-bottom: 0.5rem !important;
+          margin-top: 0 !important;
+          width: 100% !important;
+          max-width: 60% !important;
+          text-align: left !important;
+        }
+        .editor-content p.screenplay-block.parenthetical {
+          margin-left: min(3.1in, 43%) !important;
+          margin-right: 0 !important;
+          margin-bottom: 0 !important;
+          margin-top: 0 !important;
+        }
+        .editor-content p.screenplay-block.action {
+          margin-left: 0 !important;
+          margin-right: 0 !important;
+          margin-bottom: 1rem !important;
+          margin-top: 0 !important;
+        }
+        .editor-content p.screenplay-block.transition {
+          text-align: right !important;
+          margin-top: 1rem !important;
+          margin-bottom: 1rem !important;
+          margin-left: 0 !important;
+          margin-right: 0 !important;
+          text-transform: uppercase !important;
+        }
+        .editor-content p.screenplay-block.spacer {
+          height: 1rem !important;
+          margin: 0 !important;
+          margin-bottom: 0 !important;
+          text-indent: 0 !important;
         }
         .editor-content p:first-child {
           margin-top: 0;

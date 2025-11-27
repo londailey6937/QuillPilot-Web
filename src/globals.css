@@ -558,3 +558,106 @@ select:focus option:checked {
 p {
   text-indent: 0 !important;
 }
+
+/* Screenplay Formatting */
+.screenplay-block {
+  font-family: "Courier Prime", "Courier New", Courier, monospace !important;
+  font-size: 12pt !important;
+  line-height: 1.2 !important;
+  margin-bottom: 1rem !important;
+  text-indent: 0 !important;
+  white-space: pre-wrap !important;
+}
+
+.screenplay-block.scene-heading {
+  font-weight: bold !important;
+  text-transform: uppercase !important;
+  margin-top: 1.5rem !important;
+  margin-bottom: 1rem !important;
+}
+
+.screenplay-block.action {
+  margin-bottom: 1rem !important;
+}
+
+.screenplay-block.character {
+  margin-left: 3.5in !important;
+  margin-top: 1rem !important;
+  margin-bottom: 0 !important;
+  text-transform: uppercase !important;
+  text-align: left !important;
+}
+
+.screenplay-block.dialogue {
+  margin-left: 2.5in !important;
+  margin-right: 2.5in !important;
+  margin-bottom: 0.5rem !important;
+  width: auto !important;
+  max-width: 3.5in !important;
+}
+
+.screenplay-block.parenthetical {
+  margin-left: 3in !important;
+  margin-bottom: 0 !important;
+}
+
+.screenplay-block.transition {
+  text-align: right !important;
+  margin-top: 1rem !important;
+  margin-bottom: 1rem !important;
+  text-transform: uppercase !important;
+}
+
+.screenplay-block.spacer {
+  height: 1rem !important;
+  margin: 0 !important;
+}
+
+/* Also support editor-content scoping for backwards compatibility */
+.editor-content .screenplay-block {
+  font-family: "Courier Prime", "Courier New", Courier, monospace !important;
+  font-size: 12pt !important;
+  line-height: 1.2 !important;
+  margin-bottom: 1rem !important;
+  text-indent: 0 !important;
+}
+
+.editor-content .screenplay-block.scene-heading {
+  font-weight: bold !important;
+  text-transform: uppercase !important;
+  margin-top: 1.5rem !important;
+  margin-bottom: 1rem !important;
+}
+
+.editor-content .screenplay-block.action {
+  margin-bottom: 1rem !important;
+}
+
+.editor-content .screenplay-block.character {
+  margin-left: 3.5in !important;
+  margin-top: 1rem !important;
+  margin-bottom: 0 !important;
+  text-transform: uppercase !important;
+}
+
+.editor-content .screenplay-block.dialogue {
+  margin-left: 2.5in !important;
+  margin-right: 2.5in !important;
+  margin-bottom: 1rem !important;
+}
+
+.editor-content .screenplay-block.parenthetical {
+  margin-left: 3in !important;
+  margin-bottom: 0 !important;
+}
+
+.editor-content .screenplay-block.transition {
+  text-align: right !important;
+  margin-top: 1rem !important;
+  margin-bottom: 1rem !important;
+  text-transform: uppercase !important;
+}
+
+.editor-content .screenplay-block.spacer {
+  height: 1rem !important;
+}

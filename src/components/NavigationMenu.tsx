@@ -97,7 +97,7 @@ export function NavigationMenu({
                   color: "#2c3e50",
                 }}
               >
-                Fiction Manuscript Analysis
+                Fiction & Screenplay Analysis
               </p>
               <p
                 style={{
@@ -108,8 +108,8 @@ export function NavigationMenu({
                   lineHeight: "1.3",
                 }}
               >
-                Craft Analysis • Story Structure • Character Development • Genre
-                Mastery
+                Craft Analysis • Story Structure • Character Development •
+                Screenplay Formatting
               </p>
             </div>
           </div>
@@ -344,6 +344,21 @@ export function NavigationMenu({
               <span>
                 <strong>Manuscript Editing</strong> - Developmental editing,
                 self-editing
+              </span>
+            </div>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                fontSize: "0.85rem",
+                color: "#4b5563",
+              }}
+            >
+              <span style={{ fontSize: "1.1rem" }}>🎬</span>
+              <span>
+                <strong>Screenwriters</strong> - Film & TV scripts with industry
+                formatting
               </span>
             </div>
           </div>

@@ -762,6 +762,171 @@ function createTextParagraph(text: string): Paragraph {
   });
 }
 
+/**
+ * Convert screenplay block elements to properly formatted DOCX paragraphs
+ * following industry standard screenplay format
+ */
+function convertScreenplayBlock(element: HTMLElement): Paragraph[] {
+  // Extract block type from data-block attribute or class names
+  let blockType = element.dataset.block || element.getAttribute("data-block");
+
+  // If no data-block, try to extract from class names
+  if (!blockType) {
+    const classes = element.className.split(" ");
+    blockType =
+      classes.find(
+        (c) =>
+          c !== "screenplay-block" &&
+          [
+            "scene-heading",
+            "action",
+            "character",
+            "dialogue",
+            "parenthetical",
+            "transition",
+            "spacer",
+          ].includes(c)
+      ) || "action";
+  }
+
+  const text = sanitizeText(element.textContent || "");
+
+  if (!text && blockType !== "spacer") {
+    return [];
+  }
+
+  // Courier or Courier New font at 12pt (24 half-points)
+  const screenplayFont = "Courier New";
+  const screenplaySize = 24; // 12pt in half-points
+
+  switch (blockType) {
+    case "scene-heading":
+      // Scene headings: All caps, left aligned, bold
+      return [
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: text.toUpperCase(),
+              font: screenplayFont,
+              size: screenplaySize,
+              bold: true,
+            }),
+          ],
+          spacing: { before: 240, after: 240, line: 240 },
+        }),
+      ];
+
+    case "action":
+      // Action/description: Normal text, left aligned
+      return [
+        new Paragraph({
+          children: [
+            new TextRun({
+              text,
+              font: screenplayFont,
+              size: screenplaySize,
+            }),
+          ],
+          spacing: { after: 240, line: 240 },
+        }),
+      ];
+
+    case "character":
+      // Character name: All caps, indented 3.7 inches from left
+      return [
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: text.toUpperCase(),
+              font: screenplayFont,
+              size: screenplaySize,
+            }),
+          ],
+          indent: { left: 2664 }, // 3.7 inches in twips (1440 twips per inch)
+          spacing: { before: 240, after: 0, line: 240 },
+        }),
+      ];
+
+    case "parenthetical":
+      // Parenthetical: Indented 3.1 inches from left
+      return [
+        new Paragraph({
+          children: [
+            new TextRun({
+              text,
+              font: screenplayFont,
+              size: screenplaySize,
+            }),
+          ],
+          indent: { left: 2232 }, // 3.1 inches in twips
+          spacing: { after: 0, line: 240 },
+        }),
+      ];
+
+    case "dialogue":
+      // Dialogue: Indented 2.5 inches from left, max width about 3.5 inches
+      return [
+        new Paragraph({
+          children: [
+            new TextRun({
+              text,
+              font: screenplayFont,
+              size: screenplaySize,
+            }),
+          ],
+          indent: { left: 1800 }, // 2.5 inches in twips
+          spacing: { after: 0, line: 240 },
+        }),
+      ];
+
+    case "transition":
+      // Transition: All caps, right aligned
+      return [
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: text.toUpperCase(),
+              font: screenplayFont,
+              size: screenplaySize,
+            }),
+          ],
+          alignment: AlignmentType.RIGHT,
+          spacing: { before: 240, after: 240, line: 240 },
+        }),
+      ];
+
+    case "spacer":
+      // Empty line for spacing
+      return [
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: "",
+              font: screenplayFont,
+              size: screenplaySize,
+            }),
+          ],
+          spacing: { after: 240, line: 240 },
+        }),
+      ];
+
+    default:
+      // Fallback to action format
+      return [
+        new Paragraph({
+          children: [
+            new TextRun({
+              text,
+              font: screenplayFont,
+              size: screenplaySize,
+            }),
+          ],
+          spacing: { after: 240, line: 240 },
+        }),
+      ];
+  }
+}
+
 type HeadingLevelValue = (typeof HeadingLevel)[keyof typeof HeadingLevel];
 type AlignmentTypeValue = (typeof AlignmentType)[keyof typeof AlignmentType];
 type UnderlineTypeValue = (typeof UnderlineType)[keyof typeof UnderlineType];
@@ -841,6 +1006,11 @@ async function convertNodeToParagraphs(
 
   if (className.includes("dual-coding-callout")) {
     return convertDualCodingCallout(element);
+  }
+
+  // Handle screenplay blocks with industry standard formatting
+  if (className.includes("screenplay-block")) {
+    return convertScreenplayBlock(element);
   }
 
   if (tag === "img") {

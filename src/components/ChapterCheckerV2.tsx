@@ -624,6 +624,11 @@ export const ChapterCheckerV2: React.FC = () => {
             if (isTester) {
               // Testers can manually switch tiers for testing
               console.log("🔓 Tester access granted:", profile.email);
+              // Save tester email to localStorage for fallback when Supabase fails
+              localStorage.setItem(
+                "quillpilot_last_tester_email",
+                profile.email.toLowerCase()
+              );
               // Keep current accessLevel (allows manual tier switching)
             } else {
               // Non-testers: Only set access level from profile if authenticated
@@ -654,6 +659,14 @@ export const ChapterCheckerV2: React.FC = () => {
             const isTester = TESTER_EMAILS.includes(
               profile.email.toLowerCase()
             );
+
+            if (isTester) {
+              // Save tester email to localStorage for fallback
+              localStorage.setItem(
+                "quillpilot_last_tester_email",
+                profile.email.toLowerCase()
+              );
+            }
 
             if (!isTester && profile.access_level) {
               // Only update tier for non-testers
@@ -778,8 +791,11 @@ export const ChapterCheckerV2: React.FC = () => {
   }, []);
 
   const handleAccessLevelChange = async (level: AccessLevel) => {
-    // Check if user is a tester - testers can switch freely
-    const isTester = isTesterEmail(userProfile?.email);
+    // Check if user is a tester - with fallback for auth failures
+    const supabaseFailed = localStorage.getItem("quillpilot_last_tester_email");
+    const isTester =
+      isTesterEmail(userProfile?.email) ||
+      (supabaseFailed && TESTER_EMAILS.includes(supabaseFailed));
 
     // TEMPORARY BYPASS: If userProfile is null (auth issues), allow switching in dev mode
     const isDevelopmentBypass = !userProfile && import.meta.env.DEV;
@@ -1335,13 +1351,17 @@ export const ChapterCheckerV2: React.FC = () => {
     }
 
     // FEATURE RESTRICTION: Check if user is a tester first
-    const isTester = isTesterEmail(userProfile?.email);
+    const supabaseFailed = localStorage.getItem("quillpilot_last_tester_email");
+    const isTester =
+      isTesterEmail(userProfile?.email) ||
+      (supabaseFailed && TESTER_EMAILS.includes(supabaseFailed));
 
     // TEMPORARY BYPASS: If userProfile is null (auth issues), treat as tester for development
     const isDevelopmentBypass = !userProfile && import.meta.env.DEV;
 
     console.log("🔍 Analysis Access Check:", {
       email: userProfile?.email,
+      fallbackEmail: supabaseFailed,
       isTester,
       isDevelopmentBypass,
       accessLevel,
@@ -1652,7 +1672,10 @@ export const ChapterCheckerV2: React.FC = () => {
     }
 
     // FEATURE RESTRICTION: Only testers can export
-    const isTester = isTesterEmail(userProfile?.email);
+    const supabaseFailed = localStorage.getItem("quillpilot_last_tester_email");
+    const isTester =
+      isTesterEmail(userProfile?.email) ||
+      (supabaseFailed && TESTER_EMAILS.includes(supabaseFailed));
     if (!isTester) {
       alert(
         "🔒 Export features are coming soon!\n\n" +
@@ -3810,7 +3833,11 @@ export const ChapterCheckerV2: React.FC = () => {
                       e.currentTarget.style.backgroundColor = "white";
                     }}
                   >
-                    {isAnalyzing ? "⏳ Analyzing..." : "🔍 Analyze Book"}
+                    {isAnalyzing
+                      ? "⏳ Analyzing..."
+                      : detectedDomain === "screenplay"
+                      ? "🔍 Analyze Screenplay"
+                      : "🔍 Analyze Book"}
                   </button>
 
                   {/* Auto-Analysis Toggle */}

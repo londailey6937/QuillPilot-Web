@@ -17,8 +17,8 @@ export type AccessLevel = "free" | "premium" | "professional";
 // Add additional tester emails here as needed
 export const TESTER_EMAILS = [
   "londailey6937@gmail.com", // Primary admin/developer
-  // Add additional tester emails below:
-  // "tester@example.com",
+  "lonwdailey@icloud.com",
+  "tamwrite@comcast.net",
 ];
 
 // Check if user has tester access

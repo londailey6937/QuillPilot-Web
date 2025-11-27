@@ -1,6 +1,10 @@
 import React, { useRef } from "react";
 import mammoth from "mammoth";
 import { wmfToPng, getPlaceholderSvg } from "../utils/wmfUtils";
+import {
+  processScreenplayDocument,
+  isScreenplay,
+} from "../utils/screenplayConverter";
 import { AccessLevel, ACCESS_TIERS } from "../../types";
 
 // Helper to detect magic numbers
@@ -65,6 +69,7 @@ export interface UploadedDocumentPayload {
   content: string;
   plainText: string;
   imageCount: number;
+  isScreenplay?: boolean;
 }
 
 interface DocumentUploaderProps {
@@ -81,6 +86,7 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const lastIncrementTime = useRef<number>(0);
   const [isProcessing, setIsProcessing] = React.useState(false);
+  const [hasScreenplay, setHasScreenplay] = React.useState(false);
 
   const checkUploadLimit = (): boolean => {
     // Only enforce limit for free tier
@@ -173,6 +179,9 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
       const htmlResult = await mammoth.convertToHtml(
         { arrayBuffer: htmlBuffer },
         {
+          includeDefaultStyleMap: true,
+          includeEmbeddedStyleMap: true,
+          preserveEmptyParagraphs: true,
           convertImage: mammoth.images.imgElement((image) => {
             imageCount += 1;
             return image.read("base64").then((base64String) => {
@@ -235,13 +244,24 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
         arrayBuffer: textBuffer,
       });
 
+      // Auto-detect and convert screenplay format using plain text as source
+      const detectionText = textResult.value || htmlResult.value || "";
+      const screenplayResult = processScreenplayDocument(
+        detectionText,
+        detectionText,
+        fileName
+      );
+
       const payload: UploadedDocumentPayload = {
         fileName,
         fileType,
-        format: "html",
-        content: htmlResult.value,
-        plainText: textResult.value,
+        format: screenplayResult.isScreenplay ? "html" : "html",
+        content: screenplayResult.isScreenplay
+          ? screenplayResult.content
+          : htmlResult.value,
+        plainText: screenplayResult.plainText,
         imageCount,
+        isScreenplay: screenplayResult.isScreenplay,
       };
 
       console.log("Sample story loaded:", {
@@ -252,6 +272,7 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
         plainTextPreview: textResult.value.substring(0, 200),
       });
 
+      setHasScreenplay(screenplayResult.isScreenplay);
       incrementUploadCount();
       onDocumentLoad(payload);
     } catch (error) {
@@ -399,6 +420,15 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
         const htmlResult = await mammoth.convertToHtml(
           { arrayBuffer: htmlBuffer },
           {
+            includeDefaultStyleMap: true,
+            includeEmbeddedStyleMap: true,
+            preserveEmptyParagraphs: true,
+            styleMap: [
+              "p => p:fresh",
+              "p[style-name='Normal'] => p:fresh",
+              // Preserve indentation
+              "p => p.preserve-indent:fresh",
+            ].join("\n"),
             convertImage: mammoth.images.imgElement((image) => {
               imageCount += 1;
               return image.read("base64").then((base64String) => {
@@ -485,6 +515,18 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
         const rawHtml = htmlResult.value?.trim() ?? "";
         const plainText = textResult.value?.trim() ?? "";
 
+        // Check if the DOCX has styling/indentation (indicates already formatted screenplay)
+        const hasInlineStyles =
+          rawHtml.includes("style=") || rawHtml.includes("margin-left");
+        const hasParagraphIndents = /margin-left:\s*\d+/.test(rawHtml);
+
+        console.log("[DocumentUploader] DOCX analysis:", {
+          hasInlineStyles,
+          hasParagraphIndents,
+          htmlLength: rawHtml.length,
+          htmlPreview: rawHtml.substring(0, 300),
+        });
+
         // Estimate page count (approximately 350 words per page for textbooks)
         const wordCount = plainText
           .split(/\s+/)
@@ -541,13 +583,76 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
           throw new Error("No content extracted from DOCX");
         }
 
+        // Auto-detect screenplay format
+        // Extract text line-by-line from HTML to preserve paragraph structure
+        const extractTextFromHtml = (html: string): string => {
+          // First, replace <br> tags with newlines to preserve line breaks within paragraphs
+          const htmlWithNewlines = html
+            .replace(/<br\s*\/?>/gi, "\n")
+            .replace(/<\/p>\s*<p[^>]*>/gi, "\n");
+
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(htmlWithNewlines, "text/html");
+          const text = doc.body.textContent || "";
+
+          // Clean up excessive blank lines but preserve intentional spacing
+          return text
+            .split("\n")
+            .map((line) => line.trim())
+            .join("\n");
+        };
+
+        const textForDetection = rawHtml
+          ? extractTextFromHtml(rawHtml)
+          : plainText || fallbackPlainText || "";
+
+        const lines = textForDetection.split("\n");
+        console.log("[DocumentUploader] Text extraction debug:");
+        console.log("  Total lines:", lines.length);
+        console.log("  Total chars:", textForDetection.length);
+        console.log("  First 20 lines:");
+        lines.slice(0, 20).forEach((line, i) => {
+          console.log(`    ${i}: "${line}"`);
+        });
+
+        const screenplayResult = processScreenplayDocument(
+          textForDetection,
+          textForDetection,
+          fileName
+        );
+
+        console.log("[DocumentUploader] Screenplay result:", {
+          isScreenplay: screenplayResult.isScreenplay,
+          contentLength: screenplayResult.content.length,
+          alreadyFormatted: hasParagraphIndents,
+          textPreview: textForDetection.substring(0, 200),
+        });
+
+        if (screenplayResult.isScreenplay) {
+          console.log("[DocumentUploader] Screenplay HTML sample:");
+          console.log(screenplayResult.content.substring(0, 1500));
+          console.log("\n[DocumentUploader] Screenplay HTML (lines 50-100):");
+          const htmlLines = screenplayResult.content.split("\n");
+          console.log(htmlLines.slice(50, 100).join("\n"));
+        }
+
+        // Case 1: Already formatted DOCX screenplay - preserve Word HTML with inline styles
+        // Case 2: Unformatted screenplay - use our converted HTML with CSS classes
+        const shouldUseWordFormatting =
+          screenplayResult.isScreenplay && hasParagraphIndents && rawHtml;
+
         const payload: UploadedDocumentPayload = {
           fileName,
           fileType,
-          format: rawHtml ? "html" : "text",
-          content: rawHtml || plainText,
-          plainText: plainText || fallbackPlainText,
+          format: screenplayResult.isScreenplay || rawHtml ? "html" : "text",
+          content: shouldUseWordFormatting
+            ? rawHtml
+            : screenplayResult.isScreenplay
+            ? screenplayResult.content
+            : rawHtml || plainText,
+          plainText: screenplayResult.plainText,
           imageCount,
+          isScreenplay: screenplayResult.isScreenplay,
         };
 
         // Document loaded successfully
@@ -556,6 +661,7 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
           contentLength: payload.content.length,
           plainTextLength: payload.plainText.length,
         });
+        setHasScreenplay(screenplayResult.isScreenplay);
         incrementUploadCount();
         onDocumentLoad(payload);
       } else if (fileType === "obt") {
@@ -608,19 +714,30 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
           return;
         }
 
+        // Auto-detect and convert screenplay format
+        const screenplayResult = processScreenplayDocument(
+          textContent,
+          textContent,
+          fileName
+        );
+
         const payload: UploadedDocumentPayload = {
           fileName,
           fileType,
-          format: "text",
-          content: textContent,
-          plainText: textContent,
+          format: screenplayResult.isScreenplay ? "html" : "text",
+          content: screenplayResult.isScreenplay
+            ? screenplayResult.content
+            : textContent,
+          plainText: screenplayResult.plainText,
           imageCount: 0,
+          isScreenplay: screenplayResult.isScreenplay,
         };
 
         console.log("✅ OBT document processed, calling onDocumentLoad", {
           fileName,
           contentLength: textContent.length,
         });
+        setHasScreenplay(screenplayResult.isScreenplay);
         incrementUploadCount();
         onDocumentLoad(payload);
       } else if (fileType === "txt") {
@@ -664,19 +781,30 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
           return;
         }
 
+        // Auto-detect and convert screenplay format
+        const screenplayResult = processScreenplayDocument(
+          textContent,
+          textContent,
+          fileName
+        );
+
         const payload: UploadedDocumentPayload = {
           fileName,
           fileType,
-          format: "text",
-          content: textContent,
-          plainText: textContent,
+          format: screenplayResult.isScreenplay ? "html" : "text",
+          content: screenplayResult.isScreenplay
+            ? screenplayResult.content
+            : textContent,
+          plainText: screenplayResult.plainText,
           imageCount: 0,
+          isScreenplay: screenplayResult.isScreenplay,
         };
 
         console.log("✅ TXT document processed, calling onDocumentLoad", {
           fileName,
           contentLength: textContent.length,
         });
+        setHasScreenplay(screenplayResult.isScreenplay);
         incrementUploadCount();
         onDocumentLoad(payload);
       } else {
@@ -807,35 +935,37 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
           </button>
         )}
 
-        {/* Sample Story Button */}
-        <button
-          onClick={loadSampleStory}
-          disabled={disabled || isProcessing}
-          style={{
-            padding: "10px 24px",
-            backgroundColor: "#ffffff",
-            color: "#8b5a3c",
-            border: "1.5px solid #c16659",
-            borderRadius: "20px",
-            cursor: disabled || isProcessing ? "not-allowed" : "pointer",
-            fontWeight: "600",
-            fontSize: "14px",
-            transition: "all 0.2s",
-            opacity: disabled || isProcessing ? 0.6 : 1,
-          }}
-          onMouseEnter={(e) => {
-            if (!disabled && !isProcessing) {
-              e.currentTarget.style.backgroundColor = "#fef3e7";
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (!disabled && !isProcessing) {
-              e.currentTarget.style.backgroundColor = "#ffffff";
-            }
-          }}
-        >
-          📖 Use Our Sample Story
-        </button>
+        {/* Sample Story Button - Hidden when screenplay is loaded */}
+        {!hasScreenplay && (
+          <button
+            onClick={loadSampleStory}
+            disabled={disabled || isProcessing}
+            style={{
+              padding: "10px 24px",
+              backgroundColor: "#ffffff",
+              color: "#8b5a3c",
+              border: "1.5px solid #c16659",
+              borderRadius: "20px",
+              cursor: disabled || isProcessing ? "not-allowed" : "pointer",
+              fontWeight: "600",
+              fontSize: "14px",
+              transition: "all 0.2s",
+              opacity: disabled || isProcessing ? 0.6 : 1,
+            }}
+            onMouseEnter={(e) => {
+              if (!disabled && !isProcessing) {
+                e.currentTarget.style.backgroundColor = "#fef3e7";
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!disabled && !isProcessing) {
+                e.currentTarget.style.backgroundColor = "#ffffff";
+              }
+            }}
+          >
+            📖 Use Our Sample Story
+          </button>
+        )}
       </div>
       <style>{`
         .upload-spinner {

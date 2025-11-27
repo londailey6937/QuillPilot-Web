@@ -44,7 +44,12 @@ export function buildHtmlFromTemplate({
 
   // Build main content
   const trimmedText = text?.trim() ?? "";
-  if (includeHighlights && trimmedText) {
+  const isScreenplay = html?.includes("screenplay-block");
+
+  // For screenplays, preserve the HTML structure exactly
+  if (isScreenplay) {
+    contentHtml += sanitizeAndWrapHtml(html);
+  } else if (includeHighlights && trimmedText) {
     contentHtml += buildDocumentWithHighlights(trimmedText, html);
   } else if (html?.trim()) {
     contentHtml += sanitizeAndWrapHtml(html);
@@ -83,7 +88,12 @@ export function buildContentHtml({
 
   // Build main content
   const trimmedText = text?.trim() ?? "";
-  if (includeHighlights && trimmedText) {
+  const isScreenplay = html?.includes("screenplay-block");
+
+  // For screenplays, preserve the HTML structure exactly
+  if (isScreenplay) {
+    contentHtml += sanitizeAndWrapHtml(html);
+  } else if (includeHighlights && trimmedText) {
     contentHtml += buildDocumentWithHighlights(trimmedText, html);
   } else if (html?.trim()) {
     contentHtml += sanitizeAndWrapHtml(html);
