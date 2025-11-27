@@ -148,18 +148,21 @@ export function NavigationMenu({
                 display: "flex",
                 alignItems: "center",
                 gap: "0.75rem",
-                transition: "transform 0.2s, background-color 0.2s, box-shadow 0.2s",
+                transition:
+                  "transform 0.2s, background-color 0.2s, box-shadow 0.2s",
                 boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = "translateY(-2px)";
                 e.currentTarget.style.backgroundColor = "#f7e6d0";
-                e.currentTarget.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.15)";
+                e.currentTarget.style.boxShadow =
+                  "0 4px 12px rgba(0, 0, 0, 0.15)";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.transform = "translateY(0)";
                 e.currentTarget.style.backgroundColor = "white";
-                e.currentTarget.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.1)";
+                e.currentTarget.style.boxShadow =
+                  "0 2px 8px rgba(0, 0, 0, 0.1)";
               }}
             >
               <span style={{ fontSize: "1.25rem" }}>📚</span>
@@ -184,18 +187,21 @@ export function NavigationMenu({
                 display: "flex",
                 alignItems: "center",
                 gap: "0.75rem",
-                transition: "transform 0.2s, background-color 0.2s, box-shadow 0.2s",
+                transition:
+                  "transform 0.2s, background-color 0.2s, box-shadow 0.2s",
                 boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.backgroundColor = "#f7e6d0";
                 e.currentTarget.style.transform = "translateY(-2px)";
-                e.currentTarget.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.15)";
+                e.currentTarget.style.boxShadow =
+                  "0 4px 12px rgba(0, 0, 0, 0.15)";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.backgroundColor = "white";
                 e.currentTarget.style.transform = "translateY(0)";
-                e.currentTarget.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.1)";
+                e.currentTarget.style.boxShadow =
+                  "0 2px 8px rgba(0, 0, 0, 0.1)";
               }}
             >
               <span style={{ fontSize: "1.25rem" }}>📖</span>
@@ -223,18 +229,21 @@ export function NavigationMenu({
                 display: "flex",
                 alignItems: "center",
                 gap: "0.75rem",
-                transition: "transform 0.2s, background-color 0.2s, box-shadow 0.2s",
+                transition:
+                  "transform 0.2s, background-color 0.2s, box-shadow 0.2s",
                 boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.backgroundColor = "#fee2e2";
                 e.currentTarget.style.transform = "translateY(-2px)";
-                e.currentTarget.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.15)";
+                e.currentTarget.style.boxShadow =
+                  "0 4px 12px rgba(0, 0, 0, 0.15)";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.backgroundColor = "white";
                 e.currentTarget.style.transform = "translateY(0)";
-                e.currentTarget.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.1)";
+                e.currentTarget.style.boxShadow =
+                  "0 2px 8px rgba(0, 0, 0, 0.1)";
               }}
             >
               <span style={{ fontSize: "1.25rem" }}>🐛</span>
@@ -900,7 +909,9 @@ function FeatureSection({
           justifyContent: "space-between",
           textAlign: "left",
           transition: "transform 0.2s, background-color 0.2s, box-shadow 0.2s",
-          boxShadow: isExpanded ? "0 4px 12px rgba(0, 0, 0, 0.15)" : "0 2px 8px rgba(0, 0, 0, 0.1)",
+          boxShadow: isExpanded
+            ? "0 4px 12px rgba(0, 0, 0, 0.15)"
+            : "0 2px 8px rgba(0, 0, 0, 0.1)",
         }}
         onMouseEnter={(e) => {
           if (!isExpanded) {

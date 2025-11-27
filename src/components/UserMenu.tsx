@@ -33,7 +33,6 @@ export const UserMenu: React.FC<UserMenuProps> = ({ onAuthRequired }) => {
         // Set a safety timeout
         const timeoutId = setTimeout(() => {
           if (mounted) {
-            console.warn("UserMenu: Loading timeout, stopping spinner");
             setLoading(false);
           }
         }, 4000);

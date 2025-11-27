@@ -997,6 +997,7 @@ export const ChapterCheckerV2: React.FC = () => {
       fileType,
       format,
       imageCount,
+      isScreenplay: isScreenplayDoc,
     } = payload;
 
     const normalizedPlainText = plainText?.trim().length
@@ -1055,7 +1056,10 @@ export const ChapterCheckerV2: React.FC = () => {
       setIsTemplateMode(false);
     }
 
-    const detected = detectDomain(normalizedPlainText);
+    // Use screenplay detection from DocumentUploader if available
+    const detected = isScreenplayDoc
+      ? "screenplay"
+      : detectDomain(normalizedPlainText);
     console.log(`🎭 Detected genre: ${detected || "none"}`);
     setDetectedDomain(detected);
     setSelectedDomain(detected);
@@ -3347,7 +3351,7 @@ export const ChapterCheckerV2: React.FC = () => {
                         improvement suggestions.
                       </li>
                       <li>
-                        Export results as DOCX, JSON, or HTML for revision
+                        Export results as DOCX, PDF, JSON, or HTML for revision
                         planning and beta reader sharing.
                       </li>
                       <li>
@@ -3392,7 +3396,8 @@ export const ChapterCheckerV2: React.FC = () => {
                     <p style={{ margin: "4px 0" }}>
                       Everything in Premium plus Writer Mode for real-time
                       editing, unlimited analyses (up to 1,000 pages), perfect
-                      for professional authors, screenwriters, and writing teams.
+                      for professional authors, screenwriters, and writing
+                      teams.
                     </p>
                     <ul
                       style={{
@@ -3420,16 +3425,13 @@ export const ChapterCheckerV2: React.FC = () => {
                         deadlines.
                       </li>
                       <li>
-                        Advanced formatting tools and collaborative features for
-                        writing teams.
-                      </li>
-                      <li>
                         Version tracking and comprehensive export options for
                         agent/editor submission workflows.
                       </li>
                       <li>
-                        Professional screenplay formatting with industry-standard
-                        templates and automatic scene/character tracking.
+                        Professional screenplay formatting with
+                        industry-standard templates and automatic
+                        scene/character tracking.
                       </li>
                     </ul>
                     <button
@@ -3518,7 +3520,7 @@ export const ChapterCheckerV2: React.FC = () => {
                       color: "#2c3e50",
                     }}
                   >
-                    Select the genre or screenplay type that best matches your
+                    Select a screenplay or genre type that best matches your
                     content for accurate analysis.
                   </p>
 
