@@ -48,11 +48,11 @@ export function buildHtmlFromTemplate({
 
   // For screenplays, preserve the HTML structure exactly
   if (isScreenplay) {
-    contentHtml += sanitizeAndWrapHtml(html);
+    contentHtml += sanitizeAndWrapHtml(html || '');
   } else if (includeHighlights && trimmedText) {
     contentHtml += buildDocumentWithHighlights(trimmedText, html);
   } else if (html?.trim()) {
-    contentHtml += sanitizeAndWrapHtml(html);
+    contentHtml += sanitizeAndWrapHtml(html || '');
   } else {
     contentHtml += `<div class="chapter-content">${sanitizeAndWrapHtml(
       trimmedText
@@ -92,11 +92,11 @@ export function buildContentHtml({
 
   // For screenplays, preserve the HTML structure exactly
   if (isScreenplay) {
-    contentHtml += sanitizeAndWrapHtml(html);
+    contentHtml += sanitizeAndWrapHtml(html || '');
   } else if (includeHighlights && trimmedText) {
     contentHtml += buildDocumentWithHighlights(trimmedText, html);
   } else if (html?.trim()) {
-    contentHtml += sanitizeAndWrapHtml(html);
+    contentHtml += sanitizeAndWrapHtml(html || '');
   } else {
     contentHtml += `<div class="chapter-content">${sanitizeAndWrapHtml(
       trimmedText

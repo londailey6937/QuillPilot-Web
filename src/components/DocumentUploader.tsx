@@ -181,7 +181,6 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
         {
           includeDefaultStyleMap: true,
           includeEmbeddedStyleMap: true,
-          preserveEmptyParagraphs: true,
           convertImage: mammoth.images.imgElement((image) => {
             imageCount += 1;
             return image.read("base64").then((base64String) => {
@@ -422,7 +421,6 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
           {
             includeDefaultStyleMap: true,
             includeEmbeddedStyleMap: true,
-            preserveEmptyParagraphs: true,
             styleMap: [
               "p => p:fresh",
               "p[style-name='Normal'] => p:fresh",
