@@ -2539,7 +2539,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               const range = selection.getRangeAt(0);
               range.deleteContents();
               range.insertNode(document.createTextNode(text));
-              handleEditorInput();
+              handleInput();
             }
           }}
           onReplaceText={(oldText, newText) => {
@@ -2549,7 +2549,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                 new RegExp(oldText, "gi"),
                 newText
               );
-              handleEditorInput();
+              handleInput();
             }
           }}
           onNavigate={(position) => {
