@@ -586,7 +586,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     const text = editorRef.current.innerText;
     onUpdate?.({ html, text });
     analyzeContent(text);
-    
+
     // Restore scroll position
     if (wrapperRef.current) {
       wrapperRef.current.scrollTop = scrollTop;
@@ -618,7 +618,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     const text = editorRef.current.innerText;
     onUpdate?.({ html, text });
     analyzeContent(text);
-    
+
     // Restore scroll position
     if (wrapperRef.current) {
       wrapperRef.current.scrollTop = scrollTop;
