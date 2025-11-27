@@ -626,14 +626,16 @@ export const ChapterCheckerV2: React.FC = () => {
             );
 
             if (isTester) {
-              // Testers can manually switch tiers for testing
+              // Testers get professional access by default
               console.log("🔓 Tester access granted:", profile.email);
               // Save tester email to localStorage for fallback when Supabase fails
               localStorage.setItem(
                 "quillpilot_last_tester_email",
                 profile.email.toLowerCase()
               );
-              // Keep current accessLevel (allows manual tier switching)
+              // Set to professional tier for testers
+              setAccessLevel("professional");
+              console.log("✅ Tester access level set to: professional");
             } else {
               // Non-testers: Only set access level from profile if authenticated
               // This prevents dropdown changes from overriding actual subscription
@@ -670,6 +672,9 @@ export const ChapterCheckerV2: React.FC = () => {
                 "quillpilot_last_tester_email",
                 profile.email.toLowerCase()
               );
+              // Set testers to professional tier
+              setAccessLevel("professional");
+              console.log("✅ Tester logged in - access level: professional");
             }
 
             if (!isTester && profile.access_level) {
@@ -999,6 +1004,15 @@ export const ChapterCheckerV2: React.FC = () => {
       imageCount,
       isScreenplay: isScreenplayDoc,
     } = payload;
+
+    console.log("📄 Document load payload:", {
+      fileName: incomingName,
+      fileType,
+      format,
+      isScreenplay: isScreenplayDoc,
+      contentLength: content.length,
+      plainTextLength: plainText.length,
+    });
 
     const normalizedPlainText = plainText?.trim().length
       ? plainText.trim()
@@ -3429,8 +3443,9 @@ export const ChapterCheckerV2: React.FC = () => {
                         agent/editor submission workflows.
                       </li>
                       <li>
-                        Professional screenplay formatting with industry-standard
-                        styling and automatic scene/character tracking.
+                        Professional screenplay formatting with
+                        industry-standard styling and automatic scene/character
+                        tracking.
                       </li>
                     </ul>
                     <button
