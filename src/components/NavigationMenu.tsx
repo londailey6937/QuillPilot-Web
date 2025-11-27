@@ -148,16 +148,18 @@ export function NavigationMenu({
                 display: "flex",
                 alignItems: "center",
                 gap: "0.75rem",
-                transition: "transform 0.2s, background-color 0.2s",
-                boxShadow: "none",
+                transition: "transform 0.2s, background-color 0.2s, box-shadow 0.2s",
+                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = "translateY(-2px)";
                 e.currentTarget.style.backgroundColor = "#f7e6d0";
+                e.currentTarget.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.15)";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.transform = "translateY(0)";
                 e.currentTarget.style.backgroundColor = "white";
+                e.currentTarget.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.1)";
               }}
             >
               <span style={{ fontSize: "1.25rem" }}>📚</span>
@@ -174,7 +176,7 @@ export function NavigationMenu({
                 padding: "0.875rem 1rem",
                 backgroundColor: "white",
                 color: "#2c3e50",
-                border: "1.5px solid #ef8432",
+                border: "2px solid #ef8432",
                 borderRadius: "20px",
                 fontSize: "1rem",
                 fontWeight: "600",
@@ -182,15 +184,18 @@ export function NavigationMenu({
                 display: "flex",
                 alignItems: "center",
                 gap: "0.75rem",
-                transition: "background-color 0.2s, transform 0.2s",
+                transition: "transform 0.2s, background-color 0.2s, box-shadow 0.2s",
+                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.backgroundColor = "#f7e6d0";
-                e.currentTarget.style.transform = "translateY(-1px)";
+                e.currentTarget.style.transform = "translateY(-2px)";
+                e.currentTarget.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.15)";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.backgroundColor = "white";
                 e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.1)";
               }}
             >
               <span style={{ fontSize: "1.25rem" }}>📖</span>
@@ -210,7 +215,7 @@ export function NavigationMenu({
                 padding: "0.875rem 1rem",
                 backgroundColor: "white",
                 color: "#2c3e50",
-                border: "1.5px solid #dc2626",
+                border: "2px solid #dc2626",
                 borderRadius: "20px",
                 fontSize: "1rem",
                 fontWeight: "600",
@@ -218,15 +223,18 @@ export function NavigationMenu({
                 display: "flex",
                 alignItems: "center",
                 gap: "0.75rem",
-                transition: "background-color 0.2s, transform 0.2s",
+                transition: "transform 0.2s, background-color 0.2s, box-shadow 0.2s",
+                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.backgroundColor = "#fee2e2";
-                e.currentTarget.style.transform = "translateY(-1px)";
+                e.currentTarget.style.transform = "translateY(-2px)";
+                e.currentTarget.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.15)";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.backgroundColor = "white";
                 e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.1)";
               }}
             >
               <span style={{ fontSize: "1.25rem" }}>🐛</span>
@@ -882,7 +890,7 @@ function FeatureSection({
           marginBottom: "0.75rem",
           background: isExpanded ? "#f7e6d0" : "white",
           color: "#2c3e50",
-          border: isExpanded ? "2px solid #ef8432" : "1.5px solid #ef8432",
+          border: "2px solid #ef8432",
           borderRadius: "20px",
           fontSize: "0.875rem",
           fontWeight: "600",
@@ -891,16 +899,21 @@ function FeatureSection({
           alignItems: "center",
           justifyContent: "space-between",
           textAlign: "left",
-          transition: "all 0.2s",
+          transition: "transform 0.2s, background-color 0.2s, box-shadow 0.2s",
+          boxShadow: isExpanded ? "0 4px 12px rgba(0, 0, 0, 0.15)" : "0 2px 8px rgba(0, 0, 0, 0.1)",
         }}
         onMouseEnter={(e) => {
           if (!isExpanded) {
             e.currentTarget.style.backgroundColor = "#f7e6d0";
+            e.currentTarget.style.transform = "translateY(-2px)";
+            e.currentTarget.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.15)";
           }
         }}
         onMouseLeave={(e) => {
           if (!isExpanded) {
             e.currentTarget.style.backgroundColor = "white";
+            e.currentTarget.style.transform = "translateY(0)";
+            e.currentTarget.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.1)";
           }
         }}
       >
@@ -952,10 +965,11 @@ function FeatureSection({
                 padding: "0.75rem",
                 marginBottom: idx < features.length - 1 ? "0.5rem" : 0,
                 backgroundColor: "white",
-                borderRadius: "6px",
+                borderRadius: "12px",
                 display: "flex",
                 gap: "0.75rem",
                 alignItems: "flex-start",
+                boxShadow: "0 1px 4px rgba(0, 0, 0, 0.08)",
               }}
             >
               <span style={{ fontSize: "1.25rem", marginTop: "0.125rem" }}>
@@ -1016,11 +1030,12 @@ function ComingSoonItem({ icon, title, desc }: ComingSoonItemProps) {
       style={{
         padding: "0.75rem 1rem",
         backgroundColor: "white",
-        borderRadius: "6px",
-        border: "1.5px solid #ef8432",
+        borderRadius: "20px",
+        border: "2px solid #ef8432",
         display: "flex",
         alignItems: "center",
         gap: "0.75rem",
+        boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
       }}
     >
       <span style={{ fontSize: "1.25rem" }}>{icon}</span>
@@ -1059,20 +1074,25 @@ function MenuLink({ icon, title, desc, badge, onClick }: MenuLinkProps) {
         padding: "0.75rem 1rem",
         marginBottom: "0.5rem",
         backgroundColor: "white",
-        borderRadius: "6px",
-        border: "1.5px solid #ef8432",
+        borderRadius: "20px",
+        border: "2px solid #ef8432",
         display: "flex",
         alignItems: "center",
         gap: "0.75rem",
         cursor: "pointer",
         textAlign: "left",
-        transition: "all 0.2s",
+        transition: "transform 0.2s, background-color 0.2s, box-shadow 0.2s",
+        boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
       }}
       onMouseEnter={(e) => {
         e.currentTarget.style.backgroundColor = "#f7e6d0";
+        e.currentTarget.style.transform = "translateY(-2px)";
+        e.currentTarget.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.15)";
       }}
       onMouseLeave={(e) => {
         e.currentTarget.style.backgroundColor = "white";
+        e.currentTarget.style.transform = "translateY(0)";
+        e.currentTarget.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.1)";
       }}
     >
       <span style={{ fontSize: "1.25rem" }}>{icon}</span>

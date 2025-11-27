@@ -56,15 +56,28 @@ export const DarkModeToggle: React.FC<{ className?: string }> = ({
   return (
     <button
       onClick={toggleTheme}
-      className={`px-3 py-2 rounded-lg transition-colors border-2 ${className}`}
+      className={`transition-colors ${className}`}
       style={{
-        backgroundColor: theme === "dark" ? "#2a2420" : "#fef5e7",
-        borderColor: theme === "dark" ? "#4a4237" : "#e0c392",
-        color: theme === "dark" ? "#e8d5b7" : "#2c3e50",
+        padding: "6px 12px",
+        backgroundColor: "white",
+        color: "#2c3e50",
+        border: "1.5px solid #e0c392",
+        borderRadius: "12px",
+        fontSize: "24px",
+        fontWeight: "600",
+        cursor: "pointer",
+        whiteSpace: "nowrap",
+        transition: "all 0.2s",
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.backgroundColor = "#f7e6d0";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.backgroundColor = "white";
       }}
       title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
     >
-      {theme === "dark" ? "☀️ Light" : "🌙 Dark"}
+      {theme === "dark" ? "☀️" : "🌙"}
     </button>
   );
 };

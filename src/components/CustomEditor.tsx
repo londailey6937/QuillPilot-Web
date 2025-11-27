@@ -2073,48 +2073,53 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
         .editor-content p.screenplay-block {
           text-indent: 0 !important;
           font-family: "Courier Prime", "Courier New", Courier, monospace !important;
-          font-size: 12pt !important;
-          line-height: 1.2 !important;
+          font-size: 16px !important;
+          line-height: 1.35 !important;
           margin: 0 !important;
-          margin-bottom: 1rem !important;
-          white-space: normal !important;
+          margin-bottom: 12px !important;
+          white-space: pre-wrap !important;
+          max-width: 700px !important;
         }
         .editor-content p.screenplay-block.scene-heading {
           font-weight: bold !important;
           text-transform: uppercase !important;
-          margin-top: 1.5rem !important;
-          margin-bottom: 1rem !important;
+          margin-top: 20px !important;
+          margin-bottom: 12px !important;
           margin-left: 0 !important;
           margin-right: 0 !important;
         }
         .editor-content p.screenplay-block.character {
           margin-left: auto !important;
           margin-right: auto !important;
-          margin-top: 1rem !important;
-          margin-bottom: 0 !important;
+          margin-top: 20px !important;
+          margin-bottom: 4px !important;
           text-transform: uppercase !important;
+          font-weight: bold !important;
           text-align: center !important;
           width: 100% !important;
+          letter-spacing: 1px !important;
         }
         .editor-content p.screenplay-block.dialogue {
           margin-left: auto !important;
           margin-right: auto !important;
-          margin-bottom: 0.5rem !important;
+          margin-bottom: 16px !important;
           margin-top: 0 !important;
-          width: 100% !important;
-          max-width: 60% !important;
+          width: 50% !important;
           text-align: left !important;
         }
         .editor-content p.screenplay-block.parenthetical {
-          margin-left: min(3.1in, 43%) !important;
-          margin-right: 0 !important;
-          margin-bottom: 0 !important;
+          margin-left: auto !important;
+          margin-right: auto !important;
+          margin-bottom: 10px !important;
           margin-top: 0 !important;
+          width: 40% !important;
+          font-style: italic !important;
+          text-align: center !important;
         }
         .editor-content p.screenplay-block.action {
           margin-left: 0 !important;
           margin-right: 0 !important;
-          margin-bottom: 1rem !important;
+          margin-bottom: 12px !important;
           margin-top: 0 !important;
         }
         /* Center action blocks at the start (title page) - before first scene heading */

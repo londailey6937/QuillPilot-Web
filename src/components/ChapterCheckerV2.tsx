@@ -3392,7 +3392,7 @@ export const ChapterCheckerV2: React.FC = () => {
                     <p style={{ margin: "4px 0" }}>
                       Everything in Premium plus Writer Mode for real-time
                       editing, unlimited analyses (up to 1,000 pages), perfect
-                      for professional authors and writing teams.
+                      for professional authors, screenwriters, and writing teams.
                     </p>
                     <ul
                       style={{
@@ -3405,7 +3405,7 @@ export const ChapterCheckerV2: React.FC = () => {
                       <li>
                         <strong>Upload limit:</strong> Up to 1,000 pages (epic
                         fantasy series, comprehensive memoirs, anthology
-                        collections).
+                        collections, feature-length screenplays).
                       </li>
                       <li>
                         Writer Mode: Full word processor with live analysis
@@ -3426,6 +3426,10 @@ export const ChapterCheckerV2: React.FC = () => {
                       <li>
                         Version tracking and comprehensive export options for
                         agent/editor submission workflows.
+                      </li>
+                      <li>
+                        Professional screenplay formatting with industry-standard
+                        templates and automatic scene/character tracking.
                       </li>
                     </ul>
                     <button

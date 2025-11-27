@@ -123,9 +123,26 @@ export const UserMenu: React.FC<UserMenuProps> = ({ onAuthRequired }) => {
     return (
       <button
         onClick={onAuthRequired}
-        className="px-8 py-3 bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50] border-2 border-[#ef8432] rounded-full font-semibold transition-all"
+        style={{
+          padding: "6px 12px",
+          backgroundColor: "white",
+          color: "#2c3e50",
+          border: "1.5px solid #e0c392",
+          borderRadius: "12px",
+          fontSize: "12px",
+          fontWeight: "600",
+          cursor: "pointer",
+          whiteSpace: "nowrap",
+          transition: "all 0.2s",
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.backgroundColor = "#f7e6d0";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.backgroundColor = "white";
+        }}
       >
-        Sign In
+        🔐 Sign In
       </button>
     );
   }
@@ -134,10 +151,36 @@ export const UserMenu: React.FC<UserMenuProps> = ({ onAuthRequired }) => {
     <div className="relative" ref={menuRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-1 pl-1 bg-white hover:bg-[#f7e6d0] border-2 border-[#ef8432] rounded-full transition-colors"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "0.5rem",
+          padding: "0.25rem 0.75rem 0.25rem 0.25rem",
+          backgroundColor: "white",
+          border: "2px solid #ef8432",
+          borderRadius: "9999px",
+          cursor: "pointer",
+          transition: "background-color 0.2s",
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.backgroundColor = "#f7e6d0";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.backgroundColor = "white";
+        }}
       >
         <img src="/favicon.svg" alt="User" className="w-8 h-8 rounded-full" />
-        <span className="text-sm font-semibold text-[#2c3e50] max-w-[120px] truncate">
+        <span
+          style={{
+            fontSize: "0.875rem",
+            fontWeight: "600",
+            color: "#2c3e50",
+            maxWidth: "120px",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
           {profile?.full_name || user.email?.split("@")[0]}
         </span>
         <svg
@@ -147,7 +190,10 @@ export const UserMenu: React.FC<UserMenuProps> = ({ onAuthRequired }) => {
           fill="none"
           stroke="currentColor"
           strokeWidth="2"
-          className={`transition-transform ${isOpen ? "rotate-180" : ""}`}
+          style={{
+            transition: "transform 0.2s",
+            transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
+          }}
         >
           <path d="M6 9l6 6 6-6" />
         </svg>

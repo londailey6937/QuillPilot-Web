@@ -562,54 +562,58 @@ p {
 /* Screenplay Formatting */
 .screenplay-block {
   font-family: "Courier Prime", "Courier New", Courier, monospace !important;
-  font-size: 12pt !important;
-  line-height: 1.2 !important;
-  margin-bottom: 1rem !important;
+  font-size: 16px !important;
+  line-height: 1.35 !important;
+  margin-bottom: 12px !important;
   text-indent: 0 !important;
   white-space: pre-wrap !important;
+  max-width: 700px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
 }
 
 .screenplay-block.scene-heading {
   font-weight: bold !important;
   text-transform: uppercase !important;
-  margin-top: 1.5rem !important;
-  margin-bottom: 1rem !important;
+  margin-top: 20px !important;
+  margin-bottom: 12px !important;
 }
 
 .screenplay-block.action {
-  margin-bottom: 1rem !important;
+  margin-bottom: 12px !important;
 }
 
 .screenplay-block.character {
-  margin-left: 3.5in !important;
-  margin-top: 1rem !important;
-  margin-bottom: 0 !important;
+  text-align: center !important;
+  font-weight: bold !important;
+  margin-top: 20px !important;
+  margin-bottom: 4px !important;
   text-transform: uppercase !important;
-  text-align: left !important;
+  letter-spacing: 1px !important;
 }
 
 .screenplay-block.dialogue {
-  margin-left: 2.5in !important;
-  margin-right: 2.5in !important;
-  margin-bottom: 0.5rem !important;
-  width: auto !important;
-  max-width: 3.5in !important;
+  width: 50% !important;
+  margin: 0 auto 16px auto !important;
+  text-align: left !important;
 }
 
 .screenplay-block.parenthetical {
-  margin-left: 3in !important;
-  margin-bottom: 0 !important;
+  width: 40% !important;
+  margin: 0 auto 10px auto !important;
+  font-style: italic !important;
+  text-align: center !important;
 }
 
 .screenplay-block.transition {
   text-align: right !important;
-  margin-top: 1rem !important;
-  margin-bottom: 1rem !important;
+  margin-top: 20px !important;
+  margin-bottom: 12px !important;
   text-transform: uppercase !important;
 }
 
 .screenplay-block.spacer {
-  height: 1rem !important;
+  height: 12px !important;
   margin: 0 !important;
 }
 
