@@ -516,6 +516,41 @@ export const ChapterCheckerV2: React.FC = () => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const [testerEmail, setTesterEmail] = useState<string | null>(() => {
+    if (typeof window === "undefined") {
+      return null;
+    }
+    return localStorage.getItem("quillpilot_last_tester_email");
+  });
+
+  const resolvedTesterEmail = useMemo(() => {
+    if (testerEmail && isTesterEmail(testerEmail)) {
+      return testerEmail;
+    }
+    if (userProfile?.email && isTesterEmail(userProfile.email)) {
+      return userProfile.email.toLowerCase();
+    }
+    return null;
+  }, [testerEmail, userProfile?.email]);
+
+  const rememberTesterEmail = useCallback((email?: string | null) => {
+    if (!email || !isTesterEmail(email)) {
+      return false;
+    }
+    const normalized = email.toLowerCase();
+    setTesterEmail(normalized);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("quillpilot_last_tester_email", normalized);
+    }
+    return true;
+  }, []);
+
+  const clearTesterEmail = useCallback(() => {
+    setTesterEmail(null);
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("quillpilot_last_tester_email");
+    }
+  }, []);
 
   // Character management (Tier 3)
   const [characters, setCharacters] = useState<Character[]>([]);
@@ -700,29 +735,21 @@ export const ChapterCheckerV2: React.FC = () => {
           const profile = await getUserProfile();
           if (profile) {
             setUserProfile(profile);
-            // Check if user is a tester - testers get full access
-            const isTester = TESTER_EMAILS.includes(
-              profile.email.toLowerCase()
-            );
+          }
 
-            if (isTester) {
-              // Testers get professional access by default
-              console.log("🔓 Tester access granted:", profile.email);
-              // Save tester email to localStorage for fallback when Supabase fails
-              localStorage.setItem(
-                "quillpilot_last_tester_email",
-                profile.email.toLowerCase()
-              );
-              // Set to professional tier for testers
-              setAccessLevel("professional");
-              console.log("✅ Tester access level set to: professional");
-            } else {
-              // Non-testers: Only set access level from profile if authenticated
-              // This prevents dropdown changes from overriding actual subscription
-              if (profile.access_level) {
-                setAccessLevel(profile.access_level as AccessLevel);
-              }
-            }
+          const testerDetected = rememberTesterEmail(
+            profile?.email ?? user.email
+          );
+
+          if (testerDetected) {
+            const emailLabel = profile?.email ?? user.email ?? "unknown";
+            console.log("🔓 Tester access granted:", emailLabel);
+            setAccessLevel("professional");
+            console.log("✅ Tester access level set to: professional");
+          } else if (profile?.access_level) {
+            // Non-testers: Only set access level from profile if authenticated
+            // This prevents dropdown changes from overriding actual subscription
+            setAccessLevel(profile.access_level as AccessLevel);
           }
         }
       } catch (error) {
@@ -742,28 +769,22 @@ export const ChapterCheckerV2: React.FC = () => {
           const profile = await getUserProfile();
           if (profile) {
             setUserProfile(profile);
-            const isTester = TESTER_EMAILS.includes(
-              profile.email.toLowerCase()
-            );
+          }
 
-            if (isTester) {
-              // Save tester email to localStorage for fallback
-              localStorage.setItem(
-                "quillpilot_last_tester_email",
-                profile.email.toLowerCase()
-              );
-              // Set testers to professional tier
-              setAccessLevel("professional");
-              console.log("✅ Tester logged in - access level: professional");
-            }
+          const testerDetected = rememberTesterEmail(
+            profile?.email ?? session.user.email
+          );
 
-            if (!isTester && profile.access_level) {
-              // Only update tier for non-testers
-              setAccessLevel(profile.access_level as AccessLevel);
-            }
+          if (testerDetected) {
+            setAccessLevel("professional");
+            console.log("✅ Tester logged in - access level: professional");
+          } else if (profile?.access_level) {
+            // Only update tier for non-testers
+            setAccessLevel(profile.access_level as AccessLevel);
           }
         } else {
           setUserProfile(null);
+          clearTesterEmail();
           setAccessLevel("free");
         }
       } catch (error) {
@@ -880,19 +901,33 @@ export const ChapterCheckerV2: React.FC = () => {
   }, []);
 
   const handleAccessLevelChange = async (level: AccessLevel) => {
-    // Check if user is a tester - with fallback for auth failures
-    const supabaseFailed = localStorage.getItem("quillpilot_last_tester_email");
-    const isTester =
-      isTesterEmail(userProfile?.email) ||
-      (supabaseFailed && TESTER_EMAILS.includes(supabaseFailed));
+    let cachedUser: Awaited<ReturnType<typeof getCurrentUser>> | null = null;
+
+    const ensureCurrentUser = async () => {
+      if (!cachedUser) {
+        cachedUser = await getCurrentUser();
+      }
+      return cachedUser;
+    };
+
+    let effectiveTesterEmail = testerEmail;
+
+    if (!effectiveTesterEmail) {
+      const user = await ensureCurrentUser();
+      if (rememberTesterEmail(user?.email)) {
+        effectiveTesterEmail = user?.email?.toLowerCase() ?? null;
+      }
+    }
+
+    const isTesterAccount = Boolean(effectiveTesterEmail);
 
     // TEMPORARY BYPASS: If userProfile is null (auth issues), allow switching in dev mode
     const isDevelopmentBypass = !userProfile && import.meta.env.DEV;
 
-    if (isTester || isDevelopmentBypass) {
+    if (isTesterAccount || isDevelopmentBypass) {
       // Testers or dev mode: Allow free tier switching for testing
       console.log(
-        "🔓 " + (isTester ? "Tester" : "Dev mode") + " switching to:",
+        "🔓 " + (isTesterAccount ? "Tester" : "Dev mode") + " switching to:",
         level
       );
       setAccessLevel(level);
@@ -929,7 +964,7 @@ export const ChapterCheckerV2: React.FC = () => {
       supabaseConfigured &&
       (level === "premium" || level === "professional")
     ) {
-      const user = await getCurrentUser();
+      const user = await ensureCurrentUser();
       if (!user) {
         // User not authenticated - show upgrade/auth modal
         setShowTierTwoPreview(true);
@@ -1459,17 +1494,15 @@ export const ChapterCheckerV2: React.FC = () => {
     }
 
     // FEATURE RESTRICTION: Check if user is a tester first
-    const supabaseFailed = localStorage.getItem("quillpilot_last_tester_email");
-    const isTester =
-      isTesterEmail(userProfile?.email) ||
-      (supabaseFailed && TESTER_EMAILS.includes(supabaseFailed));
+    const isTester = Boolean(resolvedTesterEmail);
 
     // TEMPORARY BYPASS: If userProfile is null (auth issues), treat as tester for development
     const isDevelopmentBypass = !userProfile && import.meta.env.DEV;
 
     console.log("🔍 Analysis Access Check:", {
       email: userProfile?.email,
-      fallbackEmail: supabaseFailed,
+      storedTesterEmail: testerEmail,
+      resolvedTesterEmail,
       isTester,
       isDevelopmentBypass,
       accessLevel,
@@ -1829,10 +1862,7 @@ export const ChapterCheckerV2: React.FC = () => {
     }
 
     // FEATURE RESTRICTION: Only testers can export
-    const supabaseFailed = localStorage.getItem("quillpilot_last_tester_email");
-    const isTester =
-      isTesterEmail(userProfile?.email) ||
-      (supabaseFailed && TESTER_EMAILS.includes(supabaseFailed));
+    const isTester = Boolean(resolvedTesterEmail);
     if (!isTester) {
       alert(
         "🔒 Export features are coming soon!\n\n" +
@@ -1878,7 +1908,7 @@ export const ChapterCheckerV2: React.FC = () => {
     }
 
     // FEATURE RESTRICTION: Only testers can export
-    const isTester = isTesterEmail(userProfile?.email);
+    const isTester = Boolean(resolvedTesterEmail);
     if (!isTester) {
       alert(
         "🔒 Export features are coming soon!\n\n" +
@@ -1919,7 +1949,7 @@ export const ChapterCheckerV2: React.FC = () => {
     }
 
     // FEATURE RESTRICTION: Only testers can export
-    const isTester = isTesterEmail(userProfile?.email);
+    const isTester = Boolean(resolvedTesterEmail);
     if (!isTester) {
       alert(
         "🔒 Export features are coming soon!\n\n" +
@@ -2553,7 +2583,7 @@ export const ChapterCheckerV2: React.FC = () => {
                   <button
                     onClick={() => {
                       // FEATURE RESTRICTION: Only testers can use Writer Mode
-                      const isTester = isTesterEmail(userProfile?.email);
+                      const isTester = Boolean(resolvedTesterEmail);
                       const isDevelopmentBypass =
                         !userProfile && import.meta.env.DEV;
 
