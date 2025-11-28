@@ -620,7 +620,7 @@ export const BeatSheetGenerator: React.FC<BeatSheetGeneratorProps> = ({
                     </div>
                   </div>
                   <div
-                    className="text-sm p-2 rounded border"
+                    className="text-sm p-2 rounded border text-black"
                     style={{
                       background: palette.subtle,
                       borderColor: palette.lightBorder,

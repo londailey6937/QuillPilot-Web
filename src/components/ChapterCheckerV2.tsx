@@ -928,8 +928,14 @@ export const ChapterCheckerV2: React.FC = () => {
         setRightMargin(Math.max(0, Math.min(fromRight, 200)));
       } else if (isDragging === "indent") {
         // First line indent: must be after left margin and before right margin
+        // Snap to 24px (quarter inch) increments for cleaner positioning
+        const rawIndent = Math.max(
+          leftMargin,
+          Math.min(constrainedX, maxWidth - rightMargin)
+        );
+        const snappedIndent = Math.round(rawIndent / 24) * 24;
         setFirstLineIndent(
-          Math.max(leftMargin, Math.min(constrainedX, maxWidth - rightMargin))
+          Math.max(leftMargin, Math.min(snappedIndent, maxWidth - rightMargin))
         );
       }
     };
@@ -2752,6 +2758,41 @@ export const ChapterCheckerV2: React.FC = () => {
                             />
                           </div>
                         ))}
+
+                        {/* Half-inch markers */}
+                        {Array.from({ length: 8 }, (_, i) => i).map((idx) => (
+                          <div
+                            key={`half-${idx}`}
+                            style={{
+                              position: "absolute",
+                              left: `${((idx + 0.5) / 8) * 100}%`,
+                              bottom: 0,
+                              height: "8px",
+                              width: "1px",
+                              backgroundColor: "#d1d5db",
+                            }}
+                          />
+                        ))}
+
+                        {/* Quarter-inch markers */}
+                        {Array.from({ length: 16 }, (_, i) => i).map((idx) => {
+                          const position = (idx + 0.25) / 8;
+                          // Skip positions that would overlap with half-inch markers
+                          if ((idx + 0.25) % 0.5 === 0) return null;
+                          return (
+                            <div
+                              key={`quarter-${idx}`}
+                              style={{
+                                position: "absolute",
+                                left: `${position * 100}%`,
+                                bottom: 0,
+                                height: "5px",
+                                width: "1px",
+                                backgroundColor: "#e5e7eb",
+                              }}
+                            />
+                          );
+                        })}
 
                         {/* Left margin indicator - DRAGGABLE */}
                         <div

@@ -58,7 +58,7 @@ export const GENRE_DEFINITIONS: Record<Genre, GenreDefinition> = {
       "fairies",
       "gnome",
       "pixie",
-      "sprite",
+      // "sprite" removed - conflicts with CSS/graphics terminology
       "goblin",
       "troll",
       "unicorn",
@@ -68,18 +68,18 @@ export const GENRE_DEFINITIONS: Record<Genre, GenreDefinition> = {
       "curse",
       "cursed",
       "bewitched",
-      "transform",
-      "transformation",
+      // "transform" removed - too common in technical contexts
+      // "transformation" removed - too common in technical contexts
       "shapeshifter",
       "oracle",
-      "crystal",
+      // "crystal" removed - too generic
       "amulet",
       "talisman",
-      "charm",
+      // "charm" removed - too generic
       "incantation",
       "conjure",
       "summon",
-      "portal",
+      // "portal" removed - used in web/tech contexts
       "otherworld",
       "fae",
       "warlock",
@@ -88,6 +88,13 @@ export const GENRE_DEFINITIONS: Record<Genre, GenreDefinition> = {
       "immortal",
       "elixir",
       "familiar",
+      "kingdom",
+      "castle",
+      "throne",
+      "dungeon",
+      "necromancer",
+      "dragonborn",
+      "spellcaster",
     ],
     icon: "🧙‍♂️",
   },
@@ -154,10 +161,12 @@ export const GENRE_DEFINITIONS: Record<Genre, GenreDefinition> = {
     keywords: [
       "spaceship",
       "alien",
-      "planet",
+      "aliens",
+      // "planet" removed - too generic for astronomy texts
       "robot",
+      "robots",
       "galaxy",
-      "technology",
+      // "technology" removed - too common in technical writing
       "cyborg",
       "android",
       "laser",
@@ -165,13 +174,21 @@ export const GENRE_DEFINITIONS: Record<Genre, GenreDefinition> = {
       "extraterrestrial",
       "colonize",
       "starship",
-      "quantum",
+      // "quantum" removed - used in physics/computing
       "teleport",
+      "teleportation",
       "hologram",
       "artificial intelligence",
-      "warp",
-      "orbit",
-      "dimension",
+      "warp drive",
+      // "orbit" removed - used in astronomy/physics
+      // "dimension" removed - used in math/physics
+      "intergalactic",
+      "hyperspace",
+      "stasis",
+      "cryogenic",
+      "antimatter",
+      "lightyear",
+      "interstellar",
     ],
     icon: "🚀",
   },
@@ -432,8 +449,9 @@ export function detectGenre(text: string): Genre | null {
   console.log("[Genre Detection] Top 3 scores:", sortedScores.slice(0, 3));
 
   // Require minimum score and lead over second place
-  const minScore = 3; // Lowered from 5 to detect genres with fewer keyword matches
-  const minLead = 1.3; // Lowered from 1.5 to be less strict about lead requirement
+  // Higher thresholds to avoid false positives on non-fiction/technical text
+  const minScore = 5; // Require at least 5 keyword matches
+  const minLead = 1.5; // Must have 50% lead over second place
   const secondPlace = sortedScores[1];
 
   if (

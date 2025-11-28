@@ -331,7 +331,7 @@ export const MotifTracker: React.FC<MotifTrackerProps> = ({
                 {analysis.recurringPhrases.slice(0, 10).map((phrase, idx) => (
                   <div
                     key={idx}
-                    className="p-2 rounded border text-sm"
+                    className="p-2 rounded border text-sm text-black"
                     style={{
                       background: palette.subtle,
                       borderColor: palette.border,

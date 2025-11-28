@@ -19,8 +19,6 @@ export function WritersReferenceModal({
   const [activeSection, setActiveSection] = useState<string>("overview");
   const [searchQuery, setSearchQuery] = useState<string>("");
 
-  if (!isOpen) return null;
-
   const sections = {
     overview: "Writer Mode Overview",
     toolbar: "Editor Toolbar",
@@ -42,7 +40,7 @@ export function WritersReferenceModal({
     shortcuts: "Keyboard Shortcuts",
   };
 
-  // Search functionality
+  // Search functionality - must be before early return to follow React hooks rules
   const filteredSections = useMemo(() => {
     if (!searchQuery.trim()) return sections;
     const query = searchQuery.toLowerCase();
@@ -54,6 +52,9 @@ export function WritersReferenceModal({
     });
     return filtered;
   }, [searchQuery]);
+
+  // Early return must come AFTER all hooks
+  if (!isOpen) return null;
 
   const renderContent = () => {
     switch (activeSection) {

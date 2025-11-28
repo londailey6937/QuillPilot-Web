@@ -182,6 +182,10 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   });
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [selectedCharacterId, setSelectedCharacterId] = useState<string>("");
+  const [showCharacterPopover, setShowCharacterPopover] = useState(false);
+  const [popoverPosition, setPopoverPosition] = useState({ top: 0, right: 0 });
+  const characterPopoverRef = useRef<HTMLDivElement>(null);
+  const characterButtonRef = useRef<HTMLButtonElement>(null);
   const toolbarDividerStyle = {
     width: "1px",
     height: "28px",
@@ -210,7 +214,34 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
 
     // Visual feedback
     alert(`Linked "${selectedText}" to character`);
+    setShowCharacterPopover(false);
   }, [selectedCharacterId, onCharacterLink]);
+
+  // Close character popover on click outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        characterPopoverRef.current &&
+        !characterPopoverRef.current.contains(event.target as Node)
+      ) {
+        setShowCharacterPopover(false);
+      }
+    };
+
+    if (showCharacterPopover) {
+      // Use setTimeout to avoid the click that opened the popover from immediately closing it
+      const timeoutId = setTimeout(() => {
+        document.addEventListener("click", handleClickOutside);
+      }, 0);
+      return () => {
+        clearTimeout(timeoutId);
+        document.removeEventListener("click", handleClickOutside);
+      };
+    }
+    return () => {
+      document.removeEventListener("click", handleClickOutside);
+    };
+  }, [showCharacterPopover]);
 
   // Analyze content for spacing and dual-coding
   const analyzeContent = useCallback((text: string) => {
@@ -1884,78 +1915,170 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                 </button>
               </div>
 
-              {/* Character Management (Tier 3 only) */}
-              {isProfessionalTier && (
+              {/* Character Management (Tier 3 only) - Dropdown approach */}
+              {isProfessionalTier && onOpenCharacterManager && (
                 <>
                   <div style={toolbarDividerStyle} aria-hidden="true" />
-                  <div className="flex gap-1 items-center">
-                    {characters && characters.length > 0 ? (
-                      <>
-                        <span className="text-xs text-gray-600 mr-1">
-                          Characters:
-                        </span>
-                        <select
-                          value={selectedCharacterId}
-                          onChange={(e) =>
-                            setSelectedCharacterId(e.target.value)
-                          }
-                          className="px-2 py-1.5 rounded border bg-white hover:bg-gray-50 transition-colors text-sm"
-                          title="Select character to link"
-                        >
-                          <option value="">Select character...</option>
-                          {characters
-                            .sort((a, b) => {
-                              const roleOrder: Record<string, number> = {
-                                protagonist: 1,
-                                antagonist: 2,
-                                deuteragonist: 3,
-                                "love-interest": 4,
-                                mentor: 5,
-                                sidekick: 6,
-                                foil: 7,
-                                supporting: 8,
-                                minor: 9,
-                              };
-                              return (
-                                (roleOrder[a.role] || 999) -
-                                (roleOrder[b.role] || 999)
-                              );
-                            })
-                            .map((char) => (
-                              <option key={char.id} value={char.id}>
-                                {char.name} ({char.role})
-                              </option>
-                            ))}
-                        </select>
-                        <button
-                          onClick={linkSelectedTextToCharacter}
-                          disabled={!selectedCharacterId}
-                          className="px-3 py-1.5 rounded transition-colors text-sm disabled:opacity-30 disabled:cursor-not-allowed"
-                          style={{
-                            background: palette.subtle,
-                            color: palette.navy,
-                            border: `1px solid ${palette.lightBorder}`,
-                          }}
-                          title="Link selected text to character"
-                        >
-                          🔗 Link
-                        </button>
-                      </>
-                    ) : null}
-                    {onOpenCharacterManager && (
-                      <button
-                        onClick={onOpenCharacterManager}
-                        className="px-3 py-1.5 rounded hover:bg-gray-200 text-gray-700 transition-colors text-sm"
-                        title="Manage Characters"
-                      >
-                        👥
-                      </button>
-                    )}
+                  <div ref={characterPopoverRef}>
+                    <button
+                      ref={characterButtonRef}
+                      onClick={() => {
+                        if (
+                          !showCharacterPopover &&
+                          characterButtonRef.current
+                        ) {
+                          const rect =
+                            characterButtonRef.current.getBoundingClientRect();
+                          setPopoverPosition({
+                            top: rect.bottom + 4,
+                            right: window.innerWidth - rect.right,
+                          });
+                        }
+                        setShowCharacterPopover(!showCharacterPopover);
+                      }}
+                      className="px-3 py-1.5 rounded transition-colors text-sm"
+                      style={
+                        showCharacterPopover
+                          ? {
+                              background: palette.base,
+                              color: palette.navy,
+                              border: `1px solid ${palette.lightBorder}`,
+                            }
+                          : { border: "1px solid transparent" }
+                      }
+                      title="Character Tools"
+                    >
+                      👥 Characters
+                    </button>
                   </div>
                 </>
               )}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Character Popover - rendered outside toolbar to avoid overflow:hidden */}
+      {showCharacterPopover && isProfessionalTier && (
+        <div
+          ref={characterPopoverRef}
+          style={{
+            position: "fixed",
+            top: popoverPosition.top,
+            right: popoverPosition.right,
+            backgroundColor: "white",
+            borderRadius: "8px",
+            boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
+            border: `1px solid ${palette.lightBorder}`,
+            padding: "12px",
+            minWidth: "280px",
+            zIndex: 9999,
+          }}
+        >
+          <div style={{ marginBottom: "12px" }}>
+            <button
+              onClick={() => {
+                onOpenCharacterManager?.();
+                setShowCharacterPopover(false);
+              }}
+              className="w-full px-3 py-2 rounded transition-colors text-sm text-left hover:bg-gray-100"
+              style={{
+                border: `1px solid ${palette.lightBorder}`,
+              }}
+            >
+              👥 Manage Characters...
+            </button>
+          </div>
+
+          {characters && characters.length > 0 && (
+            <>
+              <div
+                style={{
+                  borderTop: `1px solid ${palette.lightBorder}`,
+                  paddingTop: "12px",
+                  marginTop: "8px",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: "12px",
+                    color: "#666",
+                    marginBottom: "8px",
+                    fontWeight: 500,
+                  }}
+                >
+                  🔗 Link Selection to Character
+                </div>
+                <select
+                  value={selectedCharacterId}
+                  onChange={(e) => setSelectedCharacterId(e.target.value)}
+                  className="w-full px-2 py-1.5 rounded border bg-white hover:bg-gray-50 transition-colors text-sm mb-2"
+                >
+                  <option value="">Select character...</option>
+                  {characters
+                    .sort((a, b) => {
+                      const roleOrder: Record<string, number> = {
+                        protagonist: 1,
+                        antagonist: 2,
+                        deuteragonist: 3,
+                        "love-interest": 4,
+                        mentor: 5,
+                        sidekick: 6,
+                        foil: 7,
+                        supporting: 8,
+                        minor: 9,
+                      };
+                      return (
+                        (roleOrder[a.role] || 999) - (roleOrder[b.role] || 999)
+                      );
+                    })
+                    .map((char) => (
+                      <option key={char.id} value={char.id}>
+                        {char.name} ({char.role})
+                      </option>
+                    ))}
+                </select>
+                <button
+                  onClick={linkSelectedTextToCharacter}
+                  disabled={!selectedCharacterId}
+                  className="w-full px-3 py-1.5 rounded transition-colors text-sm disabled:opacity-30 disabled:cursor-not-allowed"
+                  style={{
+                    background: selectedCharacterId
+                      ? palette.accent
+                      : palette.subtle,
+                    color: selectedCharacterId ? "white" : palette.navy,
+                    border: `1px solid ${
+                      selectedCharacterId ? palette.accent : palette.lightBorder
+                    }`,
+                  }}
+                >
+                  🔗 Link Selected Text
+                </button>
+                <div
+                  style={{
+                    fontSize: "11px",
+                    color: "#888",
+                    marginTop: "8px",
+                    fontStyle: "italic",
+                  }}
+                >
+                  Select text in editor, then click Link
+                </div>
+              </div>
+            </>
+          )}
+
+          {(!characters || characters.length === 0) && (
+            <div
+              style={{
+                fontSize: "12px",
+                color: "#888",
+                fontStyle: "italic",
+              }}
+            >
+              No characters yet. Click above to add some!
+            </div>
+          )}
         </div>
       )}
 
@@ -2133,6 +2256,10 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
             caretColor: "#2c3e50",
             cursor: isEditable ? "text" : "default",
             transition: "all 0.2s ease",
+            // CSS variable for dynamic text-indent
+            ["--first-line-indent" as string]: `${
+              firstLineIndent - leftMargin
+            }px`,
           }}
           suppressContentEditableWarning
         />
@@ -2151,7 +2278,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
         .editor-content p {
           margin: 0.5em 0;
           line-height: 1.2;
-          text-indent: ${firstLineIndent - leftMargin}px;
+          text-indent: var(--first-line-indent, 48px);
         }
         /* Screenplay block formatting - highest priority */
         .editor-content p.screenplay-block {

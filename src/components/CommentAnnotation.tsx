@@ -489,6 +489,7 @@ export const CommentAnnotation: React.FC<CommentAnnotationProps> = ({
                       fontSize: "13px",
                       fontStyle: "italic",
                       marginBottom: "8px",
+                      color: "#1a1a1a",
                     }}
                   >
                     "{comment.highlightText.substring(0, 80)}
@@ -530,7 +531,9 @@ export const CommentAnnotation: React.FC<CommentAnnotationProps> = ({
                         >
                           {formatTime(reply.timestamp)}
                         </span>
-                        <div style={{ marginTop: "4px" }}>{reply.text}</div>
+                        <div style={{ marginTop: "4px", color: palette.navy }}>
+                          {reply.text}
+                        </div>
                       </div>
                     ))}
                   </div>
