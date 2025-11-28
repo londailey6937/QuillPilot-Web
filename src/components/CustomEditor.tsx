@@ -1516,433 +1516,445 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
             background: "linear-gradient(135deg, #fffaf3 0%, #fef5e7 100%)",
             border: "1.5px solid #e0c392",
             boxShadow: "0 10px 24px rgba(239, 132, 50, 0.18)",
-            overflow: "auto",
+            overflow: "hidden",
           }}
         >
           <div
-            className="toolbar flex items-center gap-2"
             style={{
-              flexWrap: "nowrap",
-              alignItems: "center",
-              gap: "8px",
-              whiteSpace: "nowrap",
+              overflowX: "auto",
+              overflowY: "hidden",
+              borderRadius: "18px",
+              margin: "-2px",
+              padding: "2px",
             }}
           >
-            {/* Block type dropdown */}
-            <select
-              value={blockType}
-              onChange={(e) => changeBlockType(e.target.value)}
-              className="px-2 py-1.5 rounded border bg-white hover:bg-gray-50 transition-colors text-sm"
-              title="Block Type"
-            >
-              <option value="p">Paragraph</option>
-              <option value="h1">Heading 1</option>
-              <option value="h2">Heading 2</option>
-              <option value="h3">Heading 3</option>
-              <option value="h4">Heading 4</option>
-              <option value="h5">Heading 5</option>
-              <option value="h6">Heading 6</option>
-              <option value="blockquote">Quote</option>
-              <option value="pullquote">Pull Quote</option>
-              <option value="pre">Code Block</option>
-              <option value="footnote">Footnote</option>
-              <option value="citation">Bibliography/Citation</option>
-              <option value="toc">Table of Contents</option>
-              <option value="index">Index</option>
-              <option value="figure">Figure</option>
-              <optgroup label="Screenplay Format">
-                <option value="scene-heading">Scene Heading (INT/EXT)</option>
-                <option value="action">Action</option>
-                <option value="character">Character Name</option>
-                <option value="dialogue">Dialogue</option>
-                <option value="parenthetical">Parenthetical</option>
-                <option value="transition">Transition</option>
-              </optgroup>
-            </select>
-
-            <div style={toolbarDividerStyle} aria-hidden="true" />
-
-            {/* Font family dropdown */}
-            <select
-              value={fontFamily}
-              onChange={(e) => {
-                setFontFamily(e.target.value);
-                if (editorRef.current) {
-                  editorRef.current.style.fontFamily =
-                    e.target.value === "default" ? "" : e.target.value;
-                }
+            <div
+              className="toolbar flex items-center gap-2"
+              style={{
+                flexWrap: "nowrap",
+                alignItems: "center",
+                gap: "8px",
+                whiteSpace: "nowrap",
               }}
-              className="px-2 py-1.5 rounded border bg-white hover:bg-gray-50 transition-colors text-sm"
-              title="Font Family"
             >
-              <option value="default">Default</option>
-              <option value="Georgia, serif">Georgia</option>
-              <option value="'Times New Roman', Times, serif">
-                Times New Roman
-              </option>
-              <option value="'Courier New', Courier, monospace">
-                Courier New
-              </option>
-              <option value="Arial, sans-serif">Arial</option>
-              <option value="Helvetica, sans-serif">Helvetica</option>
-              <option value="Verdana, sans-serif">Verdana</option>
-              <option value="'Comic Sans MS', cursive">Comic Sans</option>
-              <option value="'Palatino Linotype', 'Book Antiqua', Palatino, serif">
-                Palatino
-              </option>
-              <option value="'Trebuchet MS', sans-serif">Trebuchet</option>
-              <option value="'Lucida Console', Monaco, monospace">
-                Lucida Console
-              </option>
-            </select>
+              {/* Block type dropdown */}
+              <select
+                value={blockType}
+                onChange={(e) => changeBlockType(e.target.value)}
+                className="px-2 py-1.5 rounded border bg-white hover:bg-gray-50 transition-colors text-sm"
+                title="Block Type"
+              >
+                <option value="p">Paragraph</option>
+                <option value="h1">Heading 1</option>
+                <option value="h2">Heading 2</option>
+                <option value="h3">Heading 3</option>
+                <option value="h4">Heading 4</option>
+                <option value="h5">Heading 5</option>
+                <option value="h6">Heading 6</option>
+                <option value="blockquote">Quote</option>
+                <option value="pullquote">Pull Quote</option>
+                <option value="pre">Code Block</option>
+                <option value="footnote">Footnote</option>
+                <option value="citation">Bibliography/Citation</option>
+                <option value="toc">Table of Contents</option>
+                <option value="index">Index</option>
+                <option value="figure">Figure</option>
+                <optgroup label="Screenplay Format">
+                  <option value="scene-heading">Scene Heading (INT/EXT)</option>
+                  <option value="action">Action</option>
+                  <option value="character">Character Name</option>
+                  <option value="dialogue">Dialogue</option>
+                  <option value="parenthetical">Parenthetical</option>
+                  <option value="transition">Transition</option>
+                </optgroup>
+              </select>
 
-            {/* Font size dropdown */}
-            <select
-              value={fontSize}
-              onChange={(e) => {
-                setFontSize(e.target.value);
-                if (editorRef.current) {
-                  editorRef.current.style.fontSize = e.target.value;
-                }
-              }}
-              className="px-2 py-1.5 rounded border bg-white hover:bg-gray-50 transition-colors text-sm"
-              title="Font Size"
-            >
-              <option value="12px">12px</option>
-              <option value="14px">14px</option>
-              <option value="16px">16px</option>
-              <option value="18px">18px</option>
-              <option value="20px">20px</option>
-              <option value="22px">22px</option>
-              <option value="24px">24px</option>
-              <option value="28px">28px</option>
-              <option value="32px">32px</option>
-              <option value="36px">36px</option>
-            </select>
+              <div style={toolbarDividerStyle} aria-hidden="true" />
 
-            <div style={toolbarDividerStyle} aria-hidden="true" />
-
-            {/* Text formatting */}
-            <div className="flex gap-1">
-              <button
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  formatText("bold");
+              {/* Font family dropdown */}
+              <select
+                value={fontFamily}
+                onChange={(e) => {
+                  setFontFamily(e.target.value);
+                  if (editorRef.current) {
+                    editorRef.current.style.fontFamily =
+                      e.target.value === "default" ? "" : e.target.value;
+                  }
                 }}
-                className={`px-3 py-1.5 rounded font-bold transition-colors ${
-                  isBold
-                    ? "bg-blue-100 text-blue-700"
-                    : "hover:bg-gray-200 text-gray-700"
-                }`}
-                title="Bold (⌘B / Ctrl+B)"
+                className="px-2 py-1.5 rounded border bg-white hover:bg-gray-50 transition-colors text-sm"
+                title="Font Family"
               >
-                B
-              </button>
-              <button
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  formatText("italic");
+                <option value="default">Default</option>
+                <option value="Georgia, serif">Georgia</option>
+                <option value="'Times New Roman', Times, serif">
+                  Times New Roman
+                </option>
+                <option value="'Courier New', Courier, monospace">
+                  Courier New
+                </option>
+                <option value="Arial, sans-serif">Arial</option>
+                <option value="Helvetica, sans-serif">Helvetica</option>
+                <option value="Verdana, sans-serif">Verdana</option>
+                <option value="'Comic Sans MS', cursive">Comic Sans</option>
+                <option value="'Palatino Linotype', 'Book Antiqua', Palatino, serif">
+                  Palatino
+                </option>
+                <option value="'Trebuchet MS', sans-serif">Trebuchet</option>
+                <option value="'Lucida Console', Monaco, monospace">
+                  Lucida Console
+                </option>
+              </select>
+
+              {/* Font size dropdown */}
+              <select
+                value={fontSize}
+                onChange={(e) => {
+                  setFontSize(e.target.value);
+                  if (editorRef.current) {
+                    editorRef.current.style.fontSize = e.target.value;
+                  }
                 }}
-                className={`px-3 py-1.5 rounded italic transition-colors ${
-                  isItalic
-                    ? "bg-blue-100 text-blue-700"
-                    : "hover:bg-gray-200 text-gray-700"
-                }`}
-                title="Italic (⌘I / Ctrl+I)"
+                className="px-2 py-1.5 rounded border bg-white hover:bg-gray-50 transition-colors text-sm"
+                title="Font Size"
               >
-                I
-              </button>
-              <button
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  formatText("underline");
-                }}
-                className={`px-3 py-1.5 rounded underline transition-colors ${
-                  isUnderline
-                    ? "bg-blue-100 text-blue-700"
-                    : "hover:bg-gray-200 text-gray-700"
-                }`}
-                title="Underline (⌘U / Ctrl+U)"
-              >
-                U
-              </button>
-              <button
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  formatText("strikeThrough");
-                }}
-                className="px-3 py-1.5 rounded line-through hover:bg-gray-200 text-gray-700 transition-colors"
-                title="Strikethrough"
-              >
-                S
-              </button>
-            </div>
+                <option value="12px">12px</option>
+                <option value="14px">14px</option>
+                <option value="16px">16px</option>
+                <option value="18px">18px</option>
+                <option value="20px">20px</option>
+                <option value="22px">22px</option>
+                <option value="24px">24px</option>
+                <option value="28px">28px</option>
+                <option value="32px">32px</option>
+                <option value="36px">36px</option>
+              </select>
 
-            <div style={toolbarDividerStyle} aria-hidden="true" />
+              <div style={toolbarDividerStyle} aria-hidden="true" />
 
-            {/* Text alignment */}
-            <div className="flex gap-1">
-              <button
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  alignText("left");
-                }}
-                className={`px-2 py-1.5 rounded transition-colors ${
-                  textAlign === "left"
-                    ? "bg-blue-100 text-blue-700"
-                    : "hover:bg-gray-200 text-gray-700"
-                }`}
-                title="Align Left"
-              >
-                ≡
-              </button>
-              <button
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  alignText("center");
-                }}
-                className={`px-2 py-1.5 rounded transition-colors ${
-                  textAlign === "center"
-                    ? "bg-blue-100 text-blue-700"
-                    : "hover:bg-gray-200 text-gray-700"
-                }`}
-                title="Align Center"
-              >
-                ≡
-              </button>
-              <button
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  alignText("right");
-                }}
-                className={`px-2 py-1.5 rounded transition-colors ${
-                  textAlign === "right"
-                    ? "bg-blue-100 text-blue-700"
-                    : "hover:bg-gray-200 text-gray-700"
-                }`}
-                title="Align Right"
-              >
-                ≡
-              </button>
-            </div>
+              {/* Text formatting */}
+              <div className="flex gap-1">
+                <button
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    formatText("bold");
+                  }}
+                  className={`px-3 py-1.5 rounded font-bold transition-colors ${
+                    isBold
+                      ? "bg-blue-100 text-blue-700"
+                      : "hover:bg-gray-200 text-gray-700"
+                  }`}
+                  title="Bold (⌘B / Ctrl+B)"
+                >
+                  B
+                </button>
+                <button
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    formatText("italic");
+                  }}
+                  className={`px-3 py-1.5 rounded italic transition-colors ${
+                    isItalic
+                      ? "bg-blue-100 text-blue-700"
+                      : "hover:bg-gray-200 text-gray-700"
+                  }`}
+                  title="Italic (⌘I / Ctrl+I)"
+                >
+                  I
+                </button>
+                <button
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    formatText("underline");
+                  }}
+                  className={`px-3 py-1.5 rounded underline transition-colors ${
+                    isUnderline
+                      ? "bg-blue-100 text-blue-700"
+                      : "hover:bg-gray-200 text-gray-700"
+                  }`}
+                  title="Underline (⌘U / Ctrl+U)"
+                >
+                  U
+                </button>
+                <button
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    formatText("strikeThrough");
+                  }}
+                  className="px-3 py-1.5 rounded line-through hover:bg-gray-200 text-gray-700 transition-colors"
+                  title="Strikethrough"
+                >
+                  S
+                </button>
+              </div>
 
-            <div style={toolbarDividerStyle} aria-hidden="true" />
+              <div style={toolbarDividerStyle} aria-hidden="true" />
 
-            {/* Lists */}
-            <div className="flex gap-1">
-              <button
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  formatText("insertUnorderedList");
-                }}
-                className="px-3 py-1.5 rounded hover:bg-gray-200 text-gray-700 transition-colors"
-                title="Bullet List"
-              >
-                • List
-              </button>
-              <button
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  formatText("insertOrderedList");
-                }}
-                className="px-3 py-1.5 rounded hover:bg-gray-200 text-gray-700 transition-colors"
-                title="Numbered List"
-              >
-                1. List
-              </button>
-            </div>
+              {/* Text alignment */}
+              <div className="flex gap-1">
+                <button
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    alignText("left");
+                  }}
+                  className={`px-2 py-1.5 rounded transition-colors ${
+                    textAlign === "left"
+                      ? "bg-blue-100 text-blue-700"
+                      : "hover:bg-gray-200 text-gray-700"
+                  }`}
+                  title="Align Left"
+                >
+                  ≡
+                </button>
+                <button
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    alignText("center");
+                  }}
+                  className={`px-2 py-1.5 rounded transition-colors ${
+                    textAlign === "center"
+                      ? "bg-blue-100 text-blue-700"
+                      : "hover:bg-gray-200 text-gray-700"
+                  }`}
+                  title="Align Center"
+                >
+                  ≡
+                </button>
+                <button
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    alignText("right");
+                  }}
+                  className={`px-2 py-1.5 rounded transition-colors ${
+                    textAlign === "right"
+                      ? "bg-blue-100 text-blue-700"
+                      : "hover:bg-gray-200 text-gray-700"
+                  }`}
+                  title="Align Right"
+                >
+                  ≡
+                </button>
+              </div>
 
-            <div style={toolbarDividerStyle} aria-hidden="true" />
+              <div style={toolbarDividerStyle} aria-hidden="true" />
 
-            {/* Insert options */}
-            <div className="flex gap-1">
-              <button
-                onClick={() => setShowLinkModal(true)}
-                className="px-3 py-1.5 rounded hover:bg-gray-200 text-gray-700 transition-colors"
-                title="Insert Link (⌘K / Ctrl+K)"
-              >
-                🔗
-              </button>
-              <button
-                onClick={removeLink}
-                className="px-3 py-1.5 rounded hover:bg-gray-200 text-gray-700 transition-colors"
-                title="Remove Link"
-              >
-                ⛓️‍💥
-              </button>
-              <label
-                className="px-3 py-1.5 rounded hover:bg-gray-200 text-gray-700 transition-colors cursor-pointer"
-                title="Upload Image"
-              >
-                📸
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="hidden"
-                />
-              </label>
-              <button
-                onClick={insertTable}
-                className="px-3 py-1.5 rounded hover:bg-gray-200 text-gray-700 transition-colors"
-                title="Insert Table"
-              >
-                ⊞
-              </button>
-            </div>
+              {/* Lists */}
+              <div className="flex gap-1">
+                <button
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    formatText("insertUnorderedList");
+                  }}
+                  className="px-3 py-1.5 rounded hover:bg-gray-200 text-gray-700 transition-colors"
+                  title="Bullet List"
+                >
+                  • List
+                </button>
+                <button
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    formatText("insertOrderedList");
+                  }}
+                  className="px-3 py-1.5 rounded hover:bg-gray-200 text-gray-700 transition-colors"
+                  title="Numbered List"
+                >
+                  1. List
+                </button>
+              </div>
 
-            <div style={toolbarDividerStyle} aria-hidden="true" />
+              <div style={toolbarDividerStyle} aria-hidden="true" />
 
-            {/* Utilities */}
-            <div className="flex gap-1">
-              <button
-                onClick={clearFormatting}
-                className="px-3 py-1.5 rounded hover:bg-gray-200 text-gray-700 transition-colors text-sm"
-                title="Clear Formatting"
-              >
-                ⌫
-              </button>
-              <button
-                onClick={() => setShowFindReplace(!showFindReplace)}
-                className={`px-3 py-1.5 rounded transition-colors ${
-                  showFindReplace
-                    ? "bg-blue-100 text-blue-700"
-                    : "hover:bg-gray-200 text-gray-700"
-                }`}
-                title="Find & Replace (⌘F / Ctrl+F)"
-              >
-                🔍
-              </button>
-            </div>
+              {/* Insert options */}
+              <div className="flex gap-1">
+                <button
+                  onClick={() => setShowLinkModal(true)}
+                  className="px-3 py-1.5 rounded hover:bg-gray-200 text-gray-700 transition-colors"
+                  title="Insert Link (⌘K / Ctrl+K)"
+                >
+                  🔗
+                </button>
+                <button
+                  onClick={removeLink}
+                  className="px-3 py-1.5 rounded hover:bg-gray-200 text-gray-700 transition-colors"
+                  title="Remove Link"
+                >
+                  ⛓️‍💥
+                </button>
+                <label
+                  className="px-3 py-1.5 rounded hover:bg-gray-200 text-gray-700 transition-colors cursor-pointer"
+                  title="Upload Image"
+                >
+                  📸
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
+                </label>
+                <button
+                  onClick={insertTable}
+                  className="px-3 py-1.5 rounded hover:bg-gray-200 text-gray-700 transition-colors"
+                  title="Insert Table"
+                >
+                  ⊞
+                </button>
+              </div>
 
-            <div style={toolbarDividerStyle} aria-hidden="true" />
+              <div style={toolbarDividerStyle} aria-hidden="true" />
 
-            {/* History */}
-            <div className="flex gap-1">
-              <button
-                onClick={performUndo}
-                disabled={!canUndo}
-                className="px-3 py-1.5 rounded hover:bg-gray-200 text-gray-700 transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent"
-                title="Undo (⌘Z / Ctrl+Z)"
-              >
-                ↶
-              </button>
-              <button
-                onClick={performRedo}
-                disabled={!canRedo}
-                className="px-3 py-1.5 rounded hover:bg-gray-200 text-gray-700 transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent"
-                title="Redo (⌘⇧Z / Ctrl+Y)"
-              >
-                ↷
-              </button>
-            </div>
+              {/* Utilities */}
+              <div className="flex gap-1">
+                <button
+                  onClick={clearFormatting}
+                  className="px-3 py-1.5 rounded hover:bg-gray-200 text-gray-700 transition-colors text-sm"
+                  title="Clear Formatting"
+                >
+                  ⌫
+                </button>
+                <button
+                  onClick={() => setShowFindReplace(!showFindReplace)}
+                  className={`px-3 py-1.5 rounded transition-colors ${
+                    showFindReplace
+                      ? "bg-blue-100 text-blue-700"
+                      : "hover:bg-gray-200 text-gray-700"
+                  }`}
+                  title="Find & Replace (⌘F / Ctrl+F)"
+                >
+                  🔍
+                </button>
+              </div>
 
-            <div style={toolbarDividerStyle} aria-hidden="true" />
+              <div style={toolbarDividerStyle} aria-hidden="true" />
 
-            {/* View options */}
-            <div className="flex gap-1">
-              <button
-                onClick={() => setFocusMode(!focusMode)}
-                className="px-3 py-1.5 rounded transition-colors text-sm hover:bg-gray-200 text-gray-700"
-                style={
-                  focusMode
-                    ? {
-                        background: palette.subtle,
-                        color: palette.navy,
-                        border: `1px solid ${palette.border}`,
-                      }
-                    : { border: "1px solid transparent" }
-                }
-                title="Focus Mode (Hide Indicators)"
-              >
-                🎯
-              </button>
-              <button
-                onClick={() => setTypewriterMode(!typewriterMode)}
-                className="px-3 py-1.5 rounded transition-colors text-sm hover:bg-gray-200 text-gray-700"
-                style={
-                  typewriterMode
-                    ? {
-                        background: palette.base,
-                        color: palette.navy,
-                        border: `1px solid ${palette.lightBorder}`,
-                      }
-                    : { border: "1px solid transparent" }
-                }
-                title="Typewriter Mode (Center Current Line)"
-              >
-                ⌨️
-              </button>
-            </div>
+              {/* History */}
+              <div className="flex gap-1">
+                <button
+                  onClick={performUndo}
+                  disabled={!canUndo}
+                  className="px-3 py-1.5 rounded hover:bg-gray-200 text-gray-700 transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                  title="Undo (⌘Z / Ctrl+Z)"
+                >
+                  ↶
+                </button>
+                <button
+                  onClick={performRedo}
+                  disabled={!canRedo}
+                  className="px-3 py-1.5 rounded hover:bg-gray-200 text-gray-700 transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                  title="Redo (⌘⇧Z / Ctrl+Y)"
+                >
+                  ↷
+                </button>
+              </div>
 
-            {/* Character Management (Tier 3 only) */}
-            {isProfessionalTier && (
-              <>
-                <div style={toolbarDividerStyle} aria-hidden="true" />
-                <div className="flex gap-1 items-center">
-                  {characters && characters.length > 0 ? (
-                    <>
-                      <span className="text-xs text-gray-600 mr-1">
-                        Characters:
-                      </span>
-                      <select
-                        value={selectedCharacterId}
-                        onChange={(e) => setSelectedCharacterId(e.target.value)}
-                        className="px-2 py-1.5 rounded border bg-white hover:bg-gray-50 transition-colors text-sm"
-                        title="Select character to link"
-                      >
-                        <option value="">Select character...</option>
-                        {characters
-                          .sort((a, b) => {
-                            const roleOrder: Record<string, number> = {
-                              protagonist: 1,
-                              antagonist: 2,
-                              deuteragonist: 3,
-                              "love-interest": 4,
-                              mentor: 5,
-                              sidekick: 6,
-                              foil: 7,
-                              supporting: 8,
-                              minor: 9,
-                            };
-                            return (
-                              (roleOrder[a.role] || 999) -
-                              (roleOrder[b.role] || 999)
-                            );
-                          })
-                          .map((char) => (
-                            <option key={char.id} value={char.id}>
-                              {char.name} ({char.role})
-                            </option>
-                          ))}
-                      </select>
-                      <button
-                        onClick={linkSelectedTextToCharacter}
-                        disabled={!selectedCharacterId}
-                        className="px-3 py-1.5 rounded transition-colors text-sm disabled:opacity-30 disabled:cursor-not-allowed"
-                        style={{
+              <div style={toolbarDividerStyle} aria-hidden="true" />
+
+              {/* View options */}
+              <div className="flex gap-1">
+                <button
+                  onClick={() => setFocusMode(!focusMode)}
+                  className="px-3 py-1.5 rounded transition-colors text-sm hover:bg-gray-200 text-gray-700"
+                  style={
+                    focusMode
+                      ? {
                           background: palette.subtle,
                           color: palette.navy,
+                          border: `1px solid ${palette.border}`,
+                        }
+                      : { border: "1px solid transparent" }
+                  }
+                  title="Focus Mode (Hide Indicators)"
+                >
+                  🎯
+                </button>
+                <button
+                  onClick={() => setTypewriterMode(!typewriterMode)}
+                  className="px-3 py-1.5 rounded transition-colors text-sm hover:bg-gray-200 text-gray-700"
+                  style={
+                    typewriterMode
+                      ? {
+                          background: palette.base,
+                          color: palette.navy,
                           border: `1px solid ${palette.lightBorder}`,
-                        }}
-                        title="Link selected text to character"
+                        }
+                      : { border: "1px solid transparent" }
+                  }
+                  title="Typewriter Mode (Center Current Line)"
+                >
+                  ⌨️
+                </button>
+              </div>
+
+              {/* Character Management (Tier 3 only) */}
+              {isProfessionalTier && (
+                <>
+                  <div style={toolbarDividerStyle} aria-hidden="true" />
+                  <div className="flex gap-1 items-center">
+                    {characters && characters.length > 0 ? (
+                      <>
+                        <span className="text-xs text-gray-600 mr-1">
+                          Characters:
+                        </span>
+                        <select
+                          value={selectedCharacterId}
+                          onChange={(e) =>
+                            setSelectedCharacterId(e.target.value)
+                          }
+                          className="px-2 py-1.5 rounded border bg-white hover:bg-gray-50 transition-colors text-sm"
+                          title="Select character to link"
+                        >
+                          <option value="">Select character...</option>
+                          {characters
+                            .sort((a, b) => {
+                              const roleOrder: Record<string, number> = {
+                                protagonist: 1,
+                                antagonist: 2,
+                                deuteragonist: 3,
+                                "love-interest": 4,
+                                mentor: 5,
+                                sidekick: 6,
+                                foil: 7,
+                                supporting: 8,
+                                minor: 9,
+                              };
+                              return (
+                                (roleOrder[a.role] || 999) -
+                                (roleOrder[b.role] || 999)
+                              );
+                            })
+                            .map((char) => (
+                              <option key={char.id} value={char.id}>
+                                {char.name} ({char.role})
+                              </option>
+                            ))}
+                        </select>
+                        <button
+                          onClick={linkSelectedTextToCharacter}
+                          disabled={!selectedCharacterId}
+                          className="px-3 py-1.5 rounded transition-colors text-sm disabled:opacity-30 disabled:cursor-not-allowed"
+                          style={{
+                            background: palette.subtle,
+                            color: palette.navy,
+                            border: `1px solid ${palette.lightBorder}`,
+                          }}
+                          title="Link selected text to character"
+                        >
+                          🔗 Link
+                        </button>
+                      </>
+                    ) : null}
+                    {onOpenCharacterManager && (
+                      <button
+                        onClick={onOpenCharacterManager}
+                        className="px-3 py-1.5 rounded hover:bg-gray-200 text-gray-700 transition-colors text-sm"
+                        title="Manage Characters"
                       >
-                        🔗 Link
+                        👥
                       </button>
-                    </>
-                  ) : null}
-                  {onOpenCharacterManager && (
-                    <button
-                      onClick={onOpenCharacterManager}
-                      className="px-3 py-1.5 rounded hover:bg-gray-200 text-gray-700 transition-colors text-sm"
-                      title="Manage Characters"
-                    >
-                      👥
-                    </button>
-                  )}
-                </div>
-              </>
-            )}
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
       )}

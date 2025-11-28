@@ -2454,7 +2454,7 @@ export const ChapterCheckerV2: React.FC = () => {
                   >
                     {accessLevel === "premium"
                       ? "Tier 2 (Full Analysis)"
-                      : "Tier 3 (Pro + Unlimited)"}
+                      : "Tier 3 (Pro Writer)"}
                   </span>
                 ) : (
                   <CustomDropdown
@@ -2470,7 +2470,7 @@ export const ChapterCheckerV2: React.FC = () => {
                       },
                       {
                         value: "professional",
-                        label: "Tier 3 (Pro + Unlimited)",
+                        label: "Tier 3 (Pro Writer)",
                       },
                     ]}
                   />

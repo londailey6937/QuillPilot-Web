@@ -378,6 +378,21 @@ export function NavigationMenu({
                 formatting
               </span>
             </div>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                fontSize: "0.85rem",
+                color: "#4b5563",
+              }}
+            >
+              <span style={{ fontSize: "1.1rem" }}>🪶</span>
+              <span>
+                <strong>Poetry Writers</strong> - Verse, sonnets, free-form
+                poetry
+              </span>
+            </div>
           </div>
           <p
             style={{
