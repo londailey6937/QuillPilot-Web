@@ -11,6 +11,10 @@ import { MotifTracker } from "./MotifTracker";
 import { PoetryMeterAnalyzer } from "./PoetryMeterAnalyzer";
 import { NonFictionOutlineGenerator } from "./NonFictionOutlineGenerator";
 import { AcademicCitationManager } from "./AcademicCitationManager";
+import { CharacterNameGenerator } from "./CharacterNameGenerator";
+import { WorldBuildingNotebook } from "./WorldBuildingNotebook";
+import { ResearchNotesPanel } from "./ResearchNotesPanel";
+import { ImageMoodBoard } from "./ImageMoodBoard";
 
 interface AdvancedToolsPanelProps {
   text: string;
@@ -32,6 +36,10 @@ type ActiveTool =
   | "poetry-meter"
   | "nonfiction-outline"
   | "citation-manager"
+  | "name-generator"
+  | "world-building"
+  | "research-notes"
+  | "mood-board"
   | null;
 
 export const AdvancedToolsPanel: React.FC<AdvancedToolsPanelProps> = ({
@@ -138,8 +146,43 @@ export const AdvancedToolsPanel: React.FC<AdvancedToolsPanelProps> = ({
     },
   ];
 
+  const contentTools = [
+    {
+      id: "name-generator" as ActiveTool,
+      name: "Character Name Generator",
+      icon: "👤",
+      description: "Generate names by genre and culture",
+      color: palette.accent,
+      requiresSelection: false,
+    },
+    {
+      id: "world-building" as ActiveTool,
+      name: "World-Building Notebook",
+      icon: "📚",
+      description: "Integrated wiki for characters & places",
+      color: palette.navy,
+      requiresSelection: false,
+    },
+    {
+      id: "research-notes" as ActiveTool,
+      name: "Research Notes",
+      icon: "📝",
+      description: "Quick notes without leaving the editor",
+      color: palette.info,
+      requiresSelection: false,
+    },
+    {
+      id: "mood-board" as ActiveTool,
+      name: "Image Mood Board",
+      icon: "🖼️",
+      description: "Upload reference images for scenes",
+      color: palette.success,
+      requiresSelection: false,
+    },
+  ];
+
   const handleToolClick = (toolId: ActiveTool) => {
-    const allTools = [...tools, ...genreTools];
+    const allTools = [...tools, ...genreTools, ...contentTools];
     const tool = allTools.find((t) => t.id === toolId);
     if (tool?.requiresSelection && !selectedText) {
       alert("Please select text first to use this tool");
@@ -371,6 +414,82 @@ export const AdvancedToolsPanel: React.FC<AdvancedToolsPanelProps> = ({
             </div>
           </div>
 
+          {/* Content Generation & Enhancements Section */}
+          <div
+            style={{
+              marginTop: "24px",
+              paddingTop: "16px",
+              borderTop: `2px solid ${palette.border}`,
+            }}
+          >
+            <h4
+              style={{
+                fontSize: "18px",
+                fontWeight: "bold",
+                marginBottom: "12px",
+                color: palette.navy,
+              }}
+            >
+              🎨 Content Generation
+            </h4>
+            <div
+              style={{ display: "flex", flexDirection: "column", gap: "8px" }}
+            >
+              {contentTools.map((tool) => (
+                <button
+                  key={tool.id}
+                  onClick={() => handleToolClick(tool.id)}
+                  style={{
+                    width: "100%",
+                    textAlign: "left",
+                    padding: "16px",
+                    borderRadius: "12px",
+                    border:
+                      activeTool === tool.id
+                        ? `2px solid ${palette.accent}`
+                        : `2px solid ${palette.border}`,
+                    background:
+                      activeTool === tool.id ? palette.hover : palette.base,
+                    cursor: "pointer",
+                    transition: "all 0.2s ease",
+                  }}
+                  onMouseEnter={(e) => {
+                    if (activeTool !== tool.id) {
+                      e.currentTarget.style.background = palette.hover;
+                      e.currentTarget.style.boxShadow =
+                        "0 2px 8px rgba(44, 62, 80, 0.1)";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (activeTool !== tool.id) {
+                      e.currentTarget.style.background = palette.base;
+                      e.currentTarget.style.boxShadow = "none";
+                    }
+                  }}
+                >
+                  <div className="flex items-start gap-3">
+                    <div
+                      className="text-2xl w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                      style={{
+                        background: palette.subtle,
+                        border: `1px solid ${palette.lightBorder}`,
+                        color: tool.color,
+                      }}
+                    >
+                      {tool.icon}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-bold text-black">{tool.name}</div>
+                      <div className="text-sm text-gray-600 line-clamp-2">
+                        {tool.description}
+                      </div>
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div
             style={{
               marginTop: "16px",
@@ -451,6 +570,20 @@ export const AdvancedToolsPanel: React.FC<AdvancedToolsPanelProps> = ({
       {activeTool === "citation-manager" && (
         <AcademicCitationManager text={text} onClose={closeTool} />
       )}
+
+      {activeTool === "name-generator" && (
+        <CharacterNameGenerator onClose={closeTool} />
+      )}
+
+      {activeTool === "world-building" && (
+        <WorldBuildingNotebook onClose={closeTool} />
+      )}
+
+      {activeTool === "research-notes" && (
+        <ResearchNotesPanel onClose={closeTool} />
+      )}
+
+      {activeTool === "mood-board" && <ImageMoodBoard onClose={closeTool} />}
     </>
   );
 };
