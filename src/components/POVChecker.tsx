@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { creamPalette as palette } from "../styles/palette";
 
 interface POVIssue {
   type: "head-hopping" | "inconsistent" | "unclear" | "shift";
@@ -229,11 +230,40 @@ export const POVChecker: React.FC<POVCheckerProps> = ({
     }, 600);
   }, [text]);
 
-  const getSeverityColor = (severity: string): string => {
-    if (severity === "high") return "bg-red-100 border-red-300 text-red-700";
-    if (severity === "medium")
-      return "bg-yellow-100 border-yellow-300 text-yellow-700";
-    return "bg-blue-100 border-blue-300 text-blue-700";
+  const getSeverityStyles = (severity: string): React.CSSProperties => {
+    if (severity === "high") {
+      return { background: palette.hover, borderColor: "#ef4444" };
+    }
+    if (severity === "medium") {
+      return { background: palette.base, borderColor: "#f59e0b" };
+    }
+    return { background: palette.light, borderColor: "#3b82f6" };
+  };
+
+  const getSeverityChipStyles = (
+    severity: POVIssue["severity"]
+  ): React.CSSProperties => {
+    if (severity === "high") {
+      return {
+        background: "rgba(239, 68, 68, 0.12)",
+        color: palette.danger,
+        border: `1px solid rgba(239, 68, 68, 0.4)`,
+      };
+    }
+
+    if (severity === "medium") {
+      return {
+        background: "rgba(245, 158, 11, 0.12)",
+        color: palette.warning,
+        border: `1px solid rgba(245, 158, 11, 0.4)`,
+      };
+    }
+
+    return {
+      background: "rgba(16, 185, 129, 0.12)",
+      color: palette.success,
+      border: `1px solid rgba(16, 185, 129, 0.4)`,
+    };
   };
 
   const getPOVLabel = (pov: POVAnalysis["dominantPOV"]): string => {
@@ -256,8 +286,8 @@ export const POVChecker: React.FC<POVCheckerProps> = ({
         top: "50%",
         left: "50%",
         transform: "translate(-50%, -50%)",
-        background: "#fef5e7",
-        border: "2px solid #e0c392",
+        background: palette.base,
+        border: `2px solid ${palette.border}`,
         borderRadius: "16px",
         padding: "24px",
         boxShadow: "0 20px 60px rgba(0,0,0,0.25)",
@@ -268,7 +298,7 @@ export const POVChecker: React.FC<POVCheckerProps> = ({
       }}
     >
       <div className="mb-4">
-        <h2 className="text-2xl font-bold text-gray-800">👁️ POV Checker</h2>
+        <h2 className="text-2xl font-bold text-black">👁️ POV Checker</h2>
       </div>
 
       {isAnalyzing ? (
@@ -280,23 +310,44 @@ export const POVChecker: React.FC<POVCheckerProps> = ({
         <div className="space-y-6">
           {/* POV Overview */}
           <div className="grid grid-cols-2 gap-4">
-            <div className="border rounded-lg p-4 bg-indigo-50">
+            <div
+              className="border rounded-lg p-4"
+              style={{
+                background: palette.base,
+                borderColor: palette.border,
+              }}
+            >
               <div className="text-sm text-gray-600 mb-1">Dominant POV</div>
-              <div className="text-xl font-bold text-indigo-600">
+              <div
+                className="text-xl font-bold"
+                style={{ color: palette.navy }}
+              >
                 {getPOVLabel(analysis.dominantPOV)}
               </div>
             </div>
-            <div className="border rounded-lg p-4 bg-green-50">
+            <div
+              className="border rounded-lg p-4"
+              style={{
+                background: palette.light,
+                borderColor: palette.border,
+              }}
+            >
               <div className="text-sm text-gray-600 mb-1">
                 Consistency Score
               </div>
-              <div className="text-3xl font-bold text-green-600">
+              <div
+                className="text-3xl font-bold"
+                style={{ color: palette.success }}
+              >
                 {analysis.povConsistency}%
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
                 <div
-                  className="bg-green-500 h-2 rounded-full"
-                  style={{ width: `${analysis.povConsistency}%` }}
+                  className="h-2 rounded-full"
+                  style={{
+                    width: `${analysis.povConsistency}%`,
+                    background: palette.success,
+                  }}
                 />
               </div>
             </div>
@@ -304,8 +355,14 @@ export const POVChecker: React.FC<POVCheckerProps> = ({
 
           {/* Character Perspectives */}
           {Object.keys(analysis.characterPerspectives).length > 0 && (
-            <div className="border rounded-lg p-4 bg-purple-50">
-              <h3 className="font-bold text-lg mb-2">
+            <div
+              className="border rounded-lg p-4"
+              style={{
+                background: palette.subtle,
+                borderColor: palette.border,
+              }}
+            >
+              <h3 className="font-bold text-lg mb-2 text-black">
                 🎭 Character Perspectives
               </h3>
               <div className="grid grid-cols-2 gap-2">
@@ -314,7 +371,11 @@ export const POVChecker: React.FC<POVCheckerProps> = ({
                   .map(([char, count]) => (
                     <div
                       key={char}
-                      className="flex justify-between items-center bg-white p-2 rounded border"
+                      className="flex justify-between items-center p-2 rounded border"
+                      style={{
+                        background: palette.base,
+                        borderColor: palette.lightBorder,
+                      }}
                     >
                       <span className="font-semibold">{char}</span>
                       <span className="text-sm text-gray-600">
@@ -328,17 +389,22 @@ export const POVChecker: React.FC<POVCheckerProps> = ({
 
           {/* Issues */}
           {analysis.issues.length > 0 ? (
-            <div>
-              <h3 className="font-bold text-lg mb-3">
+            <div
+              className="border rounded-lg p-4"
+              style={{
+                background: palette.hover,
+                borderColor: palette.border,
+              }}
+            >
+              <h3 className="font-bold text-lg mb-3 text-black">
                 ⚠️ POV Issues ({analysis.issues.length})
               </h3>
               <div className="space-y-3">
                 {analysis.issues.map((issue, idx) => (
                   <div
                     key={idx}
-                    className={`border rounded-lg p-4 cursor-pointer hover:shadow-md transition-shadow ${getSeverityColor(
-                      issue.severity
-                    )}`}
+                    className="border rounded-lg p-4 cursor-pointer hover:shadow-md transition-shadow text-black"
+                    style={getSeverityStyles(issue.severity)}
                     onClick={() => onNavigate && onNavigate(issue.location)}
                   >
                     <div className="flex items-start justify-between mb-2">
@@ -347,14 +413,23 @@ export const POVChecker: React.FC<POVCheckerProps> = ({
                           <span className="font-bold">
                             {issue.type.toUpperCase()}
                           </span>
-                          <span className="text-xs px-2 py-1 bg-white rounded">
+                          <span
+                            className="text-xs px-2 py-1 rounded font-semibold"
+                            style={getSeverityChipStyles(issue.severity)}
+                          >
                             {issue.severity}
                           </span>
                         </div>
                         <p className="text-sm">{issue.description}</p>
                       </div>
                     </div>
-                    <div className="text-sm bg-white p-2 rounded border mt-2">
+                    <div
+                      className="text-sm p-2 rounded border mt-2"
+                      style={{
+                        background: palette.base,
+                        borderColor: palette.lightBorder,
+                      }}
+                    >
                       {issue.excerpt}...
                     </div>
                   </div>
@@ -375,13 +450,19 @@ export const POVChecker: React.FC<POVCheckerProps> = ({
 
           {/* Recommendations */}
           {analysis.recommendations.length > 0 && (
-            <div className="border rounded-lg p-4 bg-blue-50 border-blue-200">
-              <h3 className="font-bold text-lg mb-2 text-blue-900">
+            <div
+              className="border rounded-lg p-4"
+              style={{
+                background: palette.light,
+                borderColor: palette.lightBorder,
+              }}
+            >
+              <h3 className="font-bold text-lg mb-2 text-black">
                 💡 Recommendations
               </h3>
-              <ul className="space-y-1">
+              <ul className="space-y-1" style={{ color: palette.navy }}>
                 {analysis.recommendations.map((rec, idx) => (
-                  <li key={idx} className="text-sm text-gray-700">
+                  <li key={idx} className="text-sm">
                     {rec.startsWith("✓") ? rec : `• ${rec}`}
                   </li>
                 ))}
@@ -390,9 +471,17 @@ export const POVChecker: React.FC<POVCheckerProps> = ({
           )}
 
           {/* POV Guide */}
-          <div className="border rounded-lg p-4 bg-gray-50">
-            <h3 className="font-bold text-lg mb-2">📚 POV Quick Guide</h3>
-            <div className="text-sm space-y-2 text-gray-700">
+          <div
+            className="border rounded-lg p-4"
+            style={{
+              background: palette.subtle,
+              borderColor: palette.border,
+            }}
+          >
+            <h3 className="font-bold text-lg mb-2 text-black">
+              📚 POV Quick Guide
+            </h3>
+            <div className="text-sm space-y-2" style={{ color: palette.navy }}>
               <div>
                 <strong>First Person:</strong> Intimate, limited to one
                 character's knowledge

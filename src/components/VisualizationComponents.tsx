@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { creamPalette as palette } from "../styles/palette";
 import {
   LineChart,
   Line,
@@ -115,12 +116,12 @@ const CharacterArcTrajectory: React.FC<{ characterAnalysis: any }> = ({
 
   // Color palette for characters
   const colors = [
-    "#8b5cf6", // purple
-    "#3b82f6", // blue
-    "#10b981", // green
-    "#f59e0b", // orange
-    "#ef4444", // red
-    "#ec4899", // pink
+    palette.accent,
+    palette.info,
+    palette.success,
+    palette.warning,
+    palette.danger,
+    palette.navy,
   ];
 
   return (

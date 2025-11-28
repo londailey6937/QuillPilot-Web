@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { creamPalette as palette } from "../styles/palette";
 
 interface MotifOccurrence {
   text: string;
@@ -34,6 +35,12 @@ export const MotifTracker: React.FC<MotifTrackerProps> = ({
   const [analysis, setAnalysis] = useState<MotifAnalysis | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+
+  const getFilterButtonStyle = (active: boolean): React.CSSProperties => ({
+    background: active ? palette.accent : palette.base,
+    color: active ? "#ffffff" : palette.navy,
+    border: `1px solid ${active ? palette.accent : palette.border}`,
+  });
 
   const symbolDatabase: Record<string, string> = {
     light: "enlightenment, hope, knowledge, purity",
@@ -206,6 +213,11 @@ export const MotifTracker: React.FC<MotifTrackerProps> = ({
   };
 
   useEffect(() => {
+    const getFilterButtonStyle = (active: boolean): React.CSSProperties => ({
+      background: active ? palette.accent : palette.base,
+      color: active ? "#ffffff" : palette.navy,
+      border: `1px solid ${active ? palette.accent : palette.border}`,
+    });
     setIsAnalyzing(true);
     setTimeout(() => {
       const result = analyzeMotifs(text);
@@ -214,14 +226,19 @@ export const MotifTracker: React.FC<MotifTrackerProps> = ({
     }, 700);
   }, [text]);
 
-  const getCategoryColor = (category: string): string => {
-    const colors = {
-      symbol: "bg-purple-100 border-purple-300 text-purple-700",
-      theme: "bg-blue-100 border-blue-300 text-blue-700",
-      image: "bg-green-100 border-green-300 text-green-700",
-      phrase: "bg-yellow-100 border-yellow-300 text-yellow-700",
+  const getCategoryStyles = (category: string): React.CSSProperties => {
+    const styles: Record<string, React.CSSProperties> = {
+      symbol: { background: palette.base, borderColor: palette.border },
+      theme: { background: palette.subtle, borderColor: palette.lightBorder },
+      image: { background: palette.light, borderColor: palette.deep },
+      phrase: { background: palette.hover, borderColor: palette.lightBorder },
     };
-    return colors[category as keyof typeof colors] || "bg-gray-100";
+    return (
+      styles[category as keyof typeof styles] || {
+        background: palette.base,
+        borderColor: palette.border,
+      }
+    );
   };
 
   const getCategoryIcon = (category: string): string => {
@@ -248,8 +265,8 @@ export const MotifTracker: React.FC<MotifTrackerProps> = ({
         top: "50%",
         left: "50%",
         transform: "translate(-50%, -50%)",
-        background: "#fef5e7",
-        border: "2px solid #e0c392",
+        background: palette.base,
+        border: `2px solid ${palette.border}`,
         borderRadius: "16px",
         padding: "24px",
         boxShadow: "0 20px 60px rgba(0,0,0,0.25)",
@@ -260,7 +277,7 @@ export const MotifTracker: React.FC<MotifTrackerProps> = ({
       }}
     >
       <div className="mb-4">
-        <h2 className="text-2xl font-bold text-gray-800">
+        <h2 className="text-2xl font-bold text-black">
           🔮 Motif & Symbol Tracker
         </h2>
       </div>
@@ -276,11 +293,8 @@ export const MotifTracker: React.FC<MotifTrackerProps> = ({
           <div className="flex gap-2 flex-wrap">
             <button
               onClick={() => setSelectedCategory("all")}
-              className={`px-4 py-2 rounded ${
-                selectedCategory === "all"
-                  ? "bg-purple-500 text-white"
-                  : "bg-gray-100 hover:bg-gray-200"
-              }`}
+              className="px-4 py-2 rounded transition-colors"
+              style={getFilterButtonStyle(selectedCategory === "all")}
             >
               All ({analysis.motifs.length})
             </button>
@@ -292,11 +306,8 @@ export const MotifTracker: React.FC<MotifTrackerProps> = ({
                 <button
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
-                  className={`px-4 py-2 rounded capitalize ${
-                    selectedCategory === cat
-                      ? "bg-purple-500 text-white"
-                      : "bg-gray-100 hover:bg-gray-200"
-                  }`}
+                  className="px-4 py-2 rounded capitalize transition-colors"
+                  style={getFilterButtonStyle(selectedCategory === cat)}
                 >
                   {getCategoryIcon(cat)} {cat}s ({count})
                 </button>
@@ -306,13 +317,25 @@ export const MotifTracker: React.FC<MotifTrackerProps> = ({
 
           {/* Recurring Phrases */}
           {analysis.recurringPhrases.length > 0 && (
-            <div className="border rounded-lg p-4 bg-yellow-50">
-              <h3 className="font-bold text-lg mb-3">💬 Recurring Phrases</h3>
+            <div
+              className="border rounded-lg p-4"
+              style={{
+                background: palette.base,
+                borderColor: palette.border,
+              }}
+            >
+              <h3 className="font-bold text-lg mb-3 text-black">
+                💬 Recurring Phrases
+              </h3>
               <div className="grid grid-cols-2 gap-2">
                 {analysis.recurringPhrases.slice(0, 10).map((phrase, idx) => (
                   <div
                     key={idx}
-                    className="bg-white p-2 rounded border border-yellow-300 text-sm"
+                    className="p-2 rounded border text-sm"
+                    style={{
+                      background: palette.subtle,
+                      borderColor: palette.border,
+                    }}
                   >
                     <div className="font-semibold">"{phrase.phrase}"</div>
                     <div className="text-xs text-gray-600">
@@ -326,17 +349,22 @@ export const MotifTracker: React.FC<MotifTrackerProps> = ({
 
           {/* Motifs */}
           {filteredMotifs && filteredMotifs.length > 0 ? (
-            <div>
-              <h3 className="font-bold text-lg mb-3">
+            <div
+              className="border rounded-lg p-4"
+              style={{
+                background: palette.base,
+                borderColor: palette.border,
+              }}
+            >
+              <h3 className="font-bold text-lg mb-3 text-black">
                 📚 Detected Motifs ({filteredMotifs.length})
               </h3>
               <div className="space-y-4">
                 {filteredMotifs.map((motif, idx) => (
                   <div
                     key={idx}
-                    className={`border-2 rounded-lg p-4 ${getCategoryColor(
-                      motif.category
-                    )}`}
+                    className="border-2 rounded-lg p-4 text-black"
+                    style={getCategoryStyles(motif.category)}
                   >
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-2">
@@ -362,7 +390,11 @@ export const MotifTracker: React.FC<MotifTrackerProps> = ({
                       {motif.occurrences.slice(0, 3).map((occ, occIdx) => (
                         <div
                           key={occIdx}
-                          className="bg-white p-2 rounded border cursor-pointer hover:shadow-md transition-shadow"
+                          className="p-2 rounded border cursor-pointer hover:shadow-md transition-shadow"
+                          style={{
+                            background: palette.subtle,
+                            borderColor: palette.lightBorder,
+                          }}
                           onClick={() => onNavigate && onNavigate(occ.location)}
                         >
                           <div className="text-xs text-gray-600 mb-1">
@@ -391,18 +423,30 @@ export const MotifTracker: React.FC<MotifTrackerProps> = ({
 
           {/* Symbolism Guide */}
           {Object.keys(analysis.symbolism).length > 0 && (
-            <div className="border rounded-lg p-4 bg-purple-50">
-              <h3 className="font-bold text-lg mb-3">🔮 Detected Symbolism</h3>
+            <div
+              className="border rounded-lg p-4"
+              style={{
+                background: palette.subtle,
+                borderColor: palette.border,
+              }}
+            >
+              <h3 className="font-bold text-lg mb-3 text-black">
+                🔮 Detected Symbolism
+              </h3>
               <div className="grid grid-cols-2 gap-3 text-sm">
                 {Object.entries(analysis.symbolism)
                   .slice(0, 8)
                   .map(([symbol, meanings]) => (
                     <div
                       key={symbol}
-                      className="bg-white p-3 rounded border border-purple-300"
+                      className="p-3 rounded border"
+                      style={{
+                        background: palette.base,
+                        borderColor: palette.lightBorder,
+                      }}
                     >
                       <div className="font-bold capitalize mb-1">{symbol}</div>
-                      <div className="text-xs text-gray-600">
+                      <div className="text-xs" style={{ color: palette.navy }}>
                         {meanings.join(", ")}
                       </div>
                     </div>
@@ -412,11 +456,17 @@ export const MotifTracker: React.FC<MotifTrackerProps> = ({
           )}
 
           {/* Insights */}
-          <div className="border rounded-lg p-4 bg-blue-50 border-blue-200">
-            <h3 className="font-bold text-lg mb-2 text-blue-900">
+          <div
+            className="border rounded-lg p-4"
+            style={{
+              background: palette.light,
+              borderColor: palette.lightBorder,
+            }}
+          >
+            <h3 className="font-bold text-lg mb-2 text-black">
               💡 Thematic Insights
             </h3>
-            <ul className="text-sm space-y-1 text-gray-700">
+            <ul className="text-sm space-y-1" style={{ color: palette.navy }}>
               {analysis.motifs.length > 5 && (
                 <li>• Rich symbolic language throughout the narrative</li>
               )}
@@ -428,6 +478,33 @@ export const MotifTracker: React.FC<MotifTrackerProps> = ({
               {Object.keys(analysis.symbolism).length > 5 && (
                 <li>• Extensive use of symbolism enhances meaning</li>
               )}
+            </ul>
+          </div>
+
+          {/* Genre-Specific Tools */}
+          <div
+            className="border rounded-lg p-4"
+            style={{
+              background: palette.base,
+              borderColor: palette.border,
+            }}
+          >
+            <h3 className="font-bold text-lg mb-3 text-black">
+              🧭 Genre-Specific
+            </h3>
+            <ul className="text-sm space-y-2" style={{ color: palette.navy }}>
+              <li>
+                • <strong>Poetry Meter Analyzer:</strong> Scan rhythm and rhyme
+                schemes
+              </li>
+              <li>
+                • <strong>Non-Fiction Outline Generator:</strong> Structure
+                arguments, evidence
+              </li>
+              <li>
+                • <strong>Academic Citation Manager:</strong> Format references
+                in APA/MLA/Chicago
+              </li>
             </ul>
           </div>
         </div>

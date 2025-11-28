@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { creamPalette as palette } from "../styles/palette";
 
 interface StoryBeat {
   name: string;
@@ -38,6 +39,11 @@ export const BeatSheetGenerator: React.FC<BeatSheetGeneratorProps> = ({
   const [structureType, setStructureType] = useState<
     "three-act" | "five-act" | "hero-journey"
   >("three-act");
+  const structureButtonStyle = (active: boolean): React.CSSProperties => ({
+    background: active ? palette.accent : palette.base,
+    color: active ? "#ffffff" : palette.navy,
+    border: `1px solid ${active ? palette.accent : palette.border}`,
+  });
 
   const detectStoryBeats = (
     inputText: string,
@@ -439,42 +445,33 @@ export const BeatSheetGenerator: React.FC<BeatSheetGeneratorProps> = ({
       }}
     >
       <div className="mb-4">
-        <h2 className="text-2xl font-bold text-gray-800">
+        <h2 className="text-2xl font-bold text-black">
           📖 Beat Sheet Generator
         </h2>
       </div>
 
       {/* Structure Type Selector */}
       <div className="mb-4">
-        <div className="text-sm text-gray-600 mb-2">Story Structure:</div>
+        <div className="text-sm text-black mb-2">Story Structure:</div>
         <div className="flex gap-2">
           <button
             onClick={() => setStructureType("three-act")}
-            className={`px-4 py-2 rounded ${
-              structureType === "three-act"
-                ? "bg-blue-500 text-white"
-                : "bg-gray-100 hover:bg-gray-200"
-            }`}
+            className="px-4 py-2 rounded transition-colors"
+            style={structureButtonStyle(structureType === "three-act")}
           >
             Three-Act
           </button>
           <button
             onClick={() => setStructureType("five-act")}
-            className={`px-4 py-2 rounded ${
-              structureType === "five-act"
-                ? "bg-blue-500 text-white"
-                : "bg-gray-100 hover:bg-gray-200"
-            }`}
+            className="px-4 py-2 rounded transition-colors"
+            style={structureButtonStyle(structureType === "five-act")}
           >
             Five-Act
           </button>
           <button
             onClick={() => setStructureType("hero-journey")}
-            className={`px-4 py-2 rounded ${
-              structureType === "hero-journey"
-                ? "bg-blue-500 text-white"
-                : "bg-gray-100 hover:bg-gray-200"
-            }`}
+            className="px-4 py-2 rounded transition-colors"
+            style={structureButtonStyle(structureType === "hero-journey")}
           >
             Hero's Journey
           </button>
@@ -489,18 +486,38 @@ export const BeatSheetGenerator: React.FC<BeatSheetGeneratorProps> = ({
       ) : analysis ? (
         <div className="space-y-6">
           {/* Story Timeline */}
-          <div className="border rounded-lg p-4 bg-gradient-to-r from-amber-50 to-orange-50">
-            <h3 className="font-bold text-lg mb-3">📊 Story Timeline</h3>
-            <div className="relative h-16 bg-white rounded-lg border-2 border-gray-300 overflow-hidden">
+          <div
+            className="border rounded-lg p-4"
+            style={{ background: palette.base, borderColor: palette.border }}
+          >
+            <h3 className="font-bold text-lg mb-3 text-black">
+              📊 Story Timeline
+            </h3>
+            <div
+              className="relative h-16 rounded-lg overflow-hidden"
+              style={{
+                background: palette.base,
+                border: `2px solid ${palette.border}`,
+              }}
+            >
               {analysis.beats.map((beat, idx) => (
                 <div
                   key={idx}
-                  className="absolute top-0 bottom-0 w-1 bg-blue-500 hover:w-2 transition-all cursor-pointer"
-                  style={{ left: `${beat.actualPosition}%` }}
+                  className="absolute top-0 bottom-0 w-1 transition-all cursor-pointer"
+                  style={{
+                    left: `${beat.actualPosition}%`,
+                    background: palette.accent,
+                  }}
                   title={`${beat.name} (${Math.round(beat.actualPosition)}%)`}
                   onClick={() => onNavigate && onNavigate(beat.location)}
                 >
-                  <div className="absolute top-full mt-1 text-xs whitespace-nowrap transform -translate-x-1/2 bg-blue-500 text-white px-2 py-1 rounded opacity-0 hover:opacity-100 transition-opacity">
+                  <div
+                    className="absolute top-full mt-1 text-xs whitespace-nowrap transform -translate-x-1/2 px-2 py-1 rounded opacity-0 hover:opacity-100 transition-opacity"
+                    style={{
+                      background: palette.navy,
+                      color: "#ffffff",
+                    }}
+                  >
                     {beat.name}
                   </div>
                 </div>
@@ -516,42 +533,56 @@ export const BeatSheetGenerator: React.FC<BeatSheetGeneratorProps> = ({
           </div>
 
           {/* Pacing Breakdown */}
-          <div className="border rounded-lg p-4 bg-purple-50">
-            <h3 className="font-bold text-lg mb-3">⏱️ Pacing Analysis</h3>
+          <div
+            className="border rounded-lg p-4"
+            style={{ background: palette.subtle, borderColor: palette.border }}
+          >
+            <h3 className="font-bold text-lg mb-3 text-black">
+              ⏱️ Pacing Analysis
+            </h3>
             <div className="grid grid-cols-3 gap-4">
               <div className="text-center">
-                <div className="text-2xl font-bold text-purple-600">
+                <div
+                  className="text-2xl font-bold"
+                  style={{ color: palette.navy }}
+                >
                   {Math.round(
                     (analysis.pacing.act1 / analysis.totalWords) * 100
                   )}
                   %
                 </div>
-                <div className="text-sm text-gray-600">Act 1 (Setup)</div>
-                <div className="text-xs text-gray-500">
+                <div className="text-sm text-black">Act 1 (Setup)</div>
+                <div className="text-xs text-black">
                   {analysis.pacing.act1.toLocaleString()} words
                 </div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-purple-600">
+                <div
+                  className="text-2xl font-bold"
+                  style={{ color: palette.navy }}
+                >
                   {Math.round(
                     (analysis.pacing.act2 / analysis.totalWords) * 100
                   )}
                   %
                 </div>
-                <div className="text-sm text-gray-600">Act 2 (Conflict)</div>
-                <div className="text-xs text-gray-500">
+                <div className="text-sm text-black">Act 2 (Conflict)</div>
+                <div className="text-xs text-black">
                   {analysis.pacing.act2.toLocaleString()} words
                 </div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-purple-600">
+                <div
+                  className="text-2xl font-bold"
+                  style={{ color: palette.navy }}
+                >
                   {Math.round(
                     (analysis.pacing.act3 / analysis.totalWords) * 100
                   )}
                   %
                 </div>
-                <div className="text-sm text-gray-600">Act 3 (Resolution)</div>
-                <div className="text-xs text-gray-500">
+                <div className="text-sm text-black">Act 3 (Resolution)</div>
+                <div className="text-xs text-black">
                   {analysis.pacing.act3.toLocaleString()} words
                 </div>
               </div>
@@ -560,36 +591,49 @@ export const BeatSheetGenerator: React.FC<BeatSheetGeneratorProps> = ({
 
           {/* Story Beats */}
           <div>
-            <h3 className="font-bold text-lg mb-3">🎬 Detected Story Beats</h3>
+            <h3 className="font-bold text-lg mb-3 text-black">
+              🎬 Detected Story Beats
+            </h3>
             <div className="space-y-3">
               {analysis.beats.map((beat, idx) => (
                 <div
                   key={idx}
                   className="border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
+                  style={{
+                    background: palette.base,
+                    borderColor: palette.border,
+                  }}
                   onClick={() => onNavigate && onNavigate(beat.location)}
                 >
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex-1">
-                      <h4 className="font-bold text-blue-600">{beat.name}</h4>
-                      <p className="text-sm text-gray-600">
-                        {beat.description}
-                      </p>
+                      <h4 className="font-bold text-black">{beat.name}</h4>
+                      <p className="text-sm text-black">{beat.description}</p>
                     </div>
                     <div className="text-right">
-                      <div className="text-sm font-bold">
+                      <div className="text-sm font-bold text-black">
                         {Math.round(beat.actualPosition)}%
                       </div>
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-black">
                         Confidence: {beat.confidence}%
                       </div>
                     </div>
                   </div>
-                  <div className="text-sm bg-gray-50 p-2 rounded border">
+                  <div
+                    className="text-sm p-2 rounded border"
+                    style={{
+                      background: palette.subtle,
+                      borderColor: palette.lightBorder,
+                    }}
+                  >
                     {beat.excerpt}...
                   </div>
                   {Math.abs(beat.actualPosition - beat.expectedPosition) >
                     10 && (
-                    <div className="text-xs text-orange-600 mt-1">
+                    <div
+                      className="text-xs mt-1"
+                      style={{ color: palette.info }}
+                    >
                       ⚠️ Expected around {beat.expectedPosition}%
                     </div>
                   )}
@@ -600,8 +644,11 @@ export const BeatSheetGenerator: React.FC<BeatSheetGeneratorProps> = ({
 
           {/* Recommendations */}
           {analysis.recommendations.length > 0 && (
-            <div className="border rounded-lg p-4 bg-yellow-50 border-yellow-200">
-              <h3 className="font-bold text-lg mb-2 text-yellow-900">
+            <div
+              className="border rounded-lg p-4"
+              style={{ background: palette.light, borderColor: palette.border }}
+            >
+              <h3 className="font-bold text-lg mb-2 text-black">
                 💡 Recommendations
               </h3>
               <ul className="space-y-1">

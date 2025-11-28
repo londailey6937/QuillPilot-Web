@@ -213,9 +213,10 @@ export const AIWritingAssistant: React.FC<AIWritingAssistantProps> = ({
       className="ai-writing-assistant"
       onClick={(e) => e.stopPropagation()}
       style={{
-        position: "absolute",
-        top: position?.top || 100,
-        left: position?.left || 100,
+        position: "fixed",
+        top: "50%",
+        left: "50%",
+        transform: "translate(-50%, -50%)",
         background: "#fef5e7",
         border: "2px solid #e0c392",
         borderRadius: "12px",
@@ -226,7 +227,7 @@ export const AIWritingAssistant: React.FC<AIWritingAssistantProps> = ({
       }}
     >
       <div className="mb-3">
-        <h3 className="text-lg font-bold text-gray-800">
+        <h3 className="text-lg font-bold text-black">
           ✨ AI Writing Assistant
         </h3>
       </div>

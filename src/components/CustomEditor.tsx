@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
+import { creamPalette as palette } from "../styles/palette";
 import { analyzeParagraphSpacing, countWords } from "@/utils/spacingInsights";
 import { SensoryDetailAnalyzer } from "@/utils/sensoryDetailAnalyzer";
 import { Character, CharacterMapping } from "../types";
@@ -1837,22 +1838,32 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
             <div className="flex gap-1">
               <button
                 onClick={() => setFocusMode(!focusMode)}
-                className={`px-3 py-1.5 rounded transition-colors text-sm ${
+                className="px-3 py-1.5 rounded transition-colors text-sm hover:bg-gray-200 text-gray-700"
+                style={
                   focusMode
-                    ? "bg-blue-100 text-blue-700"
-                    : "hover:bg-gray-200 text-gray-700"
-                }`}
+                    ? {
+                        background: palette.subtle,
+                        color: palette.navy,
+                        border: `1px solid ${palette.border}`,
+                      }
+                    : { border: "1px solid transparent" }
+                }
                 title="Focus Mode (Hide Indicators)"
               >
                 🎯
               </button>
               <button
                 onClick={() => setTypewriterMode(!typewriterMode)}
-                className={`px-3 py-1.5 rounded transition-colors text-sm ${
+                className="px-3 py-1.5 rounded transition-colors text-sm hover:bg-gray-200 text-gray-700"
+                style={
                   typewriterMode
-                    ? "bg-purple-100 text-purple-700"
-                    : "hover:bg-gray-200 text-gray-700"
-                }`}
+                    ? {
+                        background: palette.base,
+                        color: palette.navy,
+                        border: `1px solid ${palette.lightBorder}`,
+                      }
+                    : { border: "1px solid transparent" }
+                }
                 title="Typewriter Mode (Center Current Line)"
               >
                 ⌨️
@@ -1924,7 +1935,12 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                       <button
                         onClick={linkSelectedTextToCharacter}
                         disabled={!selectedCharacterId}
-                        className="px-3 py-1.5 rounded transition-colors text-sm bg-purple-100 text-purple-700 hover:bg-purple-200 disabled:opacity-30 disabled:cursor-not-allowed"
+                        className="px-3 py-1.5 rounded transition-colors text-sm disabled:opacity-30 disabled:cursor-not-allowed"
+                        style={{
+                          background: palette.subtle,
+                          color: palette.navy,
+                          border: `1px solid ${palette.lightBorder}`,
+                        }}
                         title="Link selected text to character"
                       >
                         🔗 Link

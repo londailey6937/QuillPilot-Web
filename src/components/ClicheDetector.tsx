@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { creamPalette as palette } from "../styles/palette";
 
 interface ClicheDetection {
   phrase: string;
@@ -338,17 +339,51 @@ export const ClicheDetector: React.FC<ClicheDetectorProps> = ({
     ...Array.from(new Set(detections.map((d) => d.category))),
   ];
 
-  const getCategoryColor = (category: string): string => {
-    const colors: Record<string, string> = {
-      filler: "bg-gray-100 text-gray-700 border-gray-300",
-      business: "bg-blue-100 text-blue-700 border-blue-300",
-      emotion: "bg-red-100 text-red-700 border-red-300",
-      description: "bg-green-100 text-green-700 border-green-300",
-      comparison: "bg-yellow-100 text-yellow-700 border-yellow-300",
-      time: "bg-purple-100 text-purple-700 border-purple-300",
-      action: "bg-orange-100 text-orange-700 border-orange-300",
+  const getCategoryStyle = (category: string): React.CSSProperties => {
+    const styles: Record<string, React.CSSProperties> = {
+      filler: {
+        background: palette.base,
+        borderColor: palette.border,
+        color: palette.navy,
+      },
+      business: {
+        background: palette.subtle,
+        borderColor: palette.lightBorder,
+        color: palette.navy,
+      },
+      emotion: {
+        background: palette.hover,
+        borderColor: palette.accent,
+        color: palette.accentDark,
+      },
+      description: {
+        background: palette.light,
+        borderColor: palette.border,
+        color: palette.navy,
+      },
+      comparison: {
+        background: palette.deep,
+        borderColor: palette.border,
+        color: palette.navy,
+      },
+      time: {
+        background: palette.subtle,
+        borderColor: palette.lightBorder,
+        color: palette.navy,
+      },
+      action: {
+        background: palette.hover,
+        borderColor: palette.info,
+        color: palette.navy,
+      },
     };
-    return colors[category] || "bg-gray-100 text-gray-700 border-gray-300";
+    return (
+      styles[category] || {
+        background: palette.base,
+        borderColor: palette.border,
+        color: palette.navy,
+      }
+    );
   };
 
   return (
@@ -360,8 +395,8 @@ export const ClicheDetector: React.FC<ClicheDetectorProps> = ({
         top: "50%",
         left: "50%",
         transform: "translate(-50%, -50%)",
-        background: "#fef5e7",
-        border: "2px solid #e0c392",
+        background: palette.base,
+        border: `2px solid ${palette.border}`,
         borderRadius: "16px",
         padding: "24px",
         boxShadow: "0 20px 60px rgba(0,0,0,0.25)",
@@ -372,7 +407,7 @@ export const ClicheDetector: React.FC<ClicheDetectorProps> = ({
       }}
     >
       <div className="mb-4">
-        <h2 className="text-2xl font-bold text-gray-800">🚫 Cliché Detector</h2>
+        <h2 className="text-2xl font-bold text-black">🚫 Cliché Detector</h2>
       </div>
 
       {isAnalyzing ? (
@@ -383,9 +418,18 @@ export const ClicheDetector: React.FC<ClicheDetectorProps> = ({
       ) : (
         <>
           {detections.length > 0 && (
-            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <div
+              className="mb-4 p-4 rounded-lg"
+              style={{
+                background: palette.hover,
+                border: `1px solid ${palette.border}`,
+              }}
+            >
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-3xl font-bold text-red-600">
+                <span
+                  className="text-3xl font-bold"
+                  style={{ color: palette.accent }}
+                >
                   {detections.length}
                 </span>
                 <span className="text-gray-700">
@@ -409,11 +453,13 @@ export const ClicheDetector: React.FC<ClicheDetectorProps> = ({
                 <button
                   key={cat}
                   onClick={() => setFilter(cat)}
-                  className={`px-3 py-1.5 rounded text-sm border ${
-                    filter === cat
-                      ? "bg-blue-500 text-white border-blue-600"
-                      : "bg-gray-100 hover:bg-gray-200 border-gray-300"
-                  }`}
+                  className="px-3 py-1.5 rounded text-sm border transition-colors"
+                  style={{
+                    background: filter === cat ? palette.accent : palette.base,
+                    color: filter === cat ? "#ffffff" : palette.navy,
+                    borderColor:
+                      filter === cat ? palette.accent : palette.border,
+                  }}
                 >
                   {cat.charAt(0).toUpperCase() + cat.slice(1)}
                   {cat !== "all" &&
@@ -439,6 +485,10 @@ export const ClicheDetector: React.FC<ClicheDetectorProps> = ({
                 <div
                   key={idx}
                   className="border rounded-lg p-4 hover:shadow-md transition-shadow"
+                  style={{
+                    background: palette.base,
+                    borderColor: palette.border,
+                  }}
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
@@ -447,9 +497,8 @@ export const ClicheDetector: React.FC<ClicheDetectorProps> = ({
                           "{detection.phrase}"
                         </h3>
                         <span
-                          className={`px-2 py-1 rounded text-xs border ${getCategoryColor(
-                            detection.category
-                          )}`}
+                          className="px-2 py-1 rounded text-xs border"
+                          style={getCategoryStyle(detection.category)}
                         >
                           {detection.category}
                         </span>
@@ -474,7 +523,12 @@ export const ClicheDetector: React.FC<ClicheDetectorProps> = ({
                               onReplace(detection.phrase, alt);
                             }
                           }}
-                          className="px-3 py-1.5 bg-green-50 hover:bg-green-100 border border-green-300 rounded text-sm text-green-700 transition-colors"
+                          className="px-3 py-1.5 rounded text-sm transition-colors"
+                          style={{
+                            background: palette.subtle,
+                            border: `1px solid ${palette.lightBorder}`,
+                            color: palette.navy,
+                          }}
                           title={`Replace with "${alt}"`}
                         >
                           {alt}
@@ -495,8 +549,14 @@ export const ClicheDetector: React.FC<ClicheDetectorProps> = ({
 
           {/* Tips */}
           {detections.length > 0 && (
-            <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <h3 className="font-bold text-blue-900 mb-2">📚 Writing Tips</h3>
+            <div
+              className="mt-6 p-4 rounded-lg"
+              style={{
+                background: palette.light,
+                border: `1px solid ${palette.lightBorder}`,
+              }}
+            >
+              <h3 className="font-bold text-black mb-2">📚 Writing Tips</h3>
               <ul className="text-sm text-gray-700 space-y-1">
                 <li>• Clichés weaken your writing by making it predictable</li>
                 <li>• Fresh, specific language creates stronger impact</li>

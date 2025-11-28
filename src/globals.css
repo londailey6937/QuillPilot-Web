@@ -72,34 +72,34 @@
 /* Base layer customizations */
 @layer base {
   :root {
-    /* Academic palette: neutral greys and dark blues (high contrast) */
-    --bg-app: #f8fafc; /* slate-50 */
-    --bg-panel: #ffffff; /* white */
-    --text-main: #0f172a; /* slate-900 */
-    --text-muted: #334155; /* slate-700 */
-    --text-subtle: #475569; /* slate-600 */
-    --border-soft: #e2e8f0; /* slate-200 */
-    --brand-navy-600: #1e3a8a; /* blue-800 */
-    --brand-navy-700: #4b5563; /* blue-900 */
-    --brand-accent: #0ea5e9; /* sky-500 */
-    --success-600: #166534; /* green-700 */
-    --warn-600: #d97706; /* amber-600 - darker for better readability */
-    --danger-600: #e10600; /* vivid red for high load or blocking */
+    /* Cream & Tan palette sourced from docs/colorPalette.md */
+    --bg-app: #fef5e7;
+    --bg-panel: #ffffff;
+    --text-main: #2c3e50;
+    --text-muted: #6b7280;
+    --text-subtle: #9ca3af;
+    --border-soft: #e0c392;
+    --brand-navy-600: #2c3e50;
+    --brand-navy-700: #111827;
+    --brand-accent: #ef8432;
+    --success-600: #10b981;
+    --warn-600: #f59e0b;
+    --danger-600: #ef4444;
   }
   /* Greys template: apply by adding class="theme-grey" to <body> or a wrapping container */
   .theme-grey {
-    --bg-app: #f9fafb; /* gray-50 */
-    --bg-panel: #ffffff; /* white */
-    --text-main: #111827; /* gray-900 */
-    --text-muted: #374151; /* gray-700 */
-    --text-subtle: #4b5563; /* gray-600 */
-    --border-soft: #e5e7eb; /* gray-200 */
-    --brand-navy-600: #4b5563; /* gray-600 */
-    --brand-navy-700: #374151; /* gray-700 */
-    --brand-accent: #6b7280; /* gray-500 */
-    --success-600: #166534; /* green-700 */
-    --warn-600: #d97706; /* amber-600 - darker for better readability */
-    --danger-600: #b91c1c; /* red-700 */
+    --bg-app: #fef5e7;
+    --bg-panel: #f5ead9;
+    --text-main: #2c3e50;
+    --text-muted: #6b7280;
+    --text-subtle: #9ca3af;
+    --border-soft: #f5d1ab;
+    --brand-navy-600: #2c3e50;
+    --brand-navy-700: #111827;
+    --brand-accent: #ef8432;
+    --success-600: #10b981;
+    --warn-600: #f59e0b;
+    --danger-600: #ef4444;
   }
   html {
     @apply scroll-smooth;

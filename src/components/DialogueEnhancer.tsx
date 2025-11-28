@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { creamPalette as palette } from "../styles/palette";
 
 interface DialogueAnalysis {
   naturalFlow: {
@@ -202,8 +203,8 @@ export const DialogueEnhancer: React.FC<DialogueEnhancerProps> = ({
         top: "50%",
         left: "50%",
         transform: "translate(-50%, -50%)",
-        background: "#fef5e7",
-        border: "2px solid #e0c392",
+        background: palette.base,
+        border: `2px solid ${palette.border}`,
         borderRadius: "16px",
         padding: "24px",
         boxShadow: "0 20px 60px rgba(0,0,0,0.25)",
@@ -214,9 +215,7 @@ export const DialogueEnhancer: React.FC<DialogueEnhancerProps> = ({
       }}
     >
       <div className="mb-4">
-        <h2 className="text-2xl font-bold text-gray-800">
-          💬 Dialogue Enhancer
-        </h2>
+        <h2 className="text-2xl font-bold text-black">💬 Dialogue Enhancer</h2>
       </div>
 
       {characterName && (
@@ -233,9 +232,12 @@ export const DialogueEnhancer: React.FC<DialogueEnhancerProps> = ({
       ) : analysis ? (
         <div className="space-y-6">
           {/* Natural Flow */}
-          <div className="border rounded-lg p-4 bg-blue-50">
-            <h3 className="font-bold text-lg mb-2 text-blue-900">
-              🌊 Natural Flow
+          <div
+            className="border rounded-lg p-4"
+            style={{ background: palette.base, borderColor: palette.border }}
+          >
+            <h3 className="font-bold text-lg mb-2 text-black">
+              🎭 Natural Flow
             </h3>
             <div className="mb-2">
               <div className="text-sm text-gray-600 mb-1">Score:</div>
@@ -280,10 +282,11 @@ export const DialogueEnhancer: React.FC<DialogueEnhancerProps> = ({
           </div>
 
           {/* Subtext */}
-          <div className="border rounded-lg p-4 bg-purple-50">
-            <h3 className="font-bold text-lg mb-2 text-purple-900">
-              🎭 Subtext
-            </h3>
+          <div
+            className="border rounded-lg p-4"
+            style={{ background: palette.base, borderColor: palette.border }}
+          >
+            <h3 className="font-bold text-lg mb-2 text-black">🎯 Subtext</h3>
             <div className="mb-2">
               <div className="text-sm">
                 Subtext detected:{" "}
@@ -300,12 +303,19 @@ export const DialogueEnhancer: React.FC<DialogueEnhancerProps> = ({
             </div>
             {analysis.subtext.examples.length > 0 && (
               <div className="mb-2">
-                <div className="text-sm font-semibold text-purple-700 mb-1">
+                <div
+                  className="text-sm font-semibold mb-1"
+                  style={{ color: palette.accent }}
+                >
                   Examples:
                 </div>
                 <ul className="text-sm space-y-1">
                   {analysis.subtext.examples.map((example, idx) => (
-                    <li key={idx} className="text-purple-600">
+                    <li
+                      key={idx}
+                      className="text-sm"
+                      style={{ color: palette.accentDark }}
+                    >
                       • {example}
                     </li>
                   ))}
@@ -329,9 +339,12 @@ export const DialogueEnhancer: React.FC<DialogueEnhancerProps> = ({
           </div>
 
           {/* Character Voice */}
-          <div className="border rounded-lg p-4 bg-amber-50">
-            <h3 className="font-bold text-lg mb-2 text-amber-900">
-              🎤 Character Voice
+          <div
+            className="border rounded-lg p-4"
+            style={{ background: palette.base, borderColor: palette.border }}
+          >
+            <h3 className="font-bold text-lg mb-2 text-black">
+              👤 Character Voice
             </h3>
             <div className="mb-2">
               <div className="text-sm text-gray-600 mb-1">
@@ -384,8 +397,14 @@ export const DialogueEnhancer: React.FC<DialogueEnhancerProps> = ({
           {/* Dialogue Tags */}
           {(analysis.tags.overused.length > 0 ||
             analysis.tags.suggestions.length > 0) && (
-            <div className="border rounded-lg p-4 bg-green-50">
-              <h3 className="font-bold text-lg mb-2 text-green-900">
+            <div
+              className="border rounded-lg p-4"
+              style={{
+                background: palette.base,
+                borderColor: palette.border,
+              }}
+            >
+              <h3 className="font-bold text-lg mb-2 text-black">
                 🏷️ Dialogue Tags
               </h3>
               {analysis.tags.overused.length > 0 && (
