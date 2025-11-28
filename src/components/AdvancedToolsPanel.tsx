@@ -51,6 +51,15 @@ export const AdvancedToolsPanel: React.FC<AdvancedToolsPanelProps> = ({
 }) => {
   const [activeTool, setActiveTool] = useState<ActiveTool>(null);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
+  const [capturedSelection, setCapturedSelection] = useState<string>("");
+
+  // Capture current selection before any click steals focus
+  const captureSelection = () => {
+    const sel = window.getSelection()?.toString() || "";
+    if (sel) {
+      setCapturedSelection(sel);
+    }
+  };
 
   const tools = [
     {
@@ -184,7 +193,9 @@ export const AdvancedToolsPanel: React.FC<AdvancedToolsPanelProps> = ({
   const handleToolClick = (toolId: ActiveTool) => {
     const allTools = [...tools, ...genreTools, ...contentTools];
     const tool = allTools.find((t) => t.id === toolId);
-    if (tool?.requiresSelection && !selectedText) {
+    // Use capturedSelection (captured on mousedown) or fall back to selectedText prop
+    const effectiveSelection = capturedSelection || selectedText;
+    if (tool?.requiresSelection && !effectiveSelection) {
       alert("Please select text first to use this tool");
       return;
     }
@@ -220,6 +231,7 @@ export const AdvancedToolsPanel: React.FC<AdvancedToolsPanelProps> = ({
 
       {/* Floating Button */}
       <button
+        onMouseDown={captureSelection}
         onClick={() => setIsPanelOpen(!isPanelOpen)}
         style={{
           position: "fixed",
@@ -508,11 +520,15 @@ export const AdvancedToolsPanel: React.FC<AdvancedToolsPanelProps> = ({
       )}
 
       {/* Tool Modals */}
-      {activeTool === "ai-assistant" && selectedText && (
+      {activeTool === "ai-assistant" && (capturedSelection || selectedText) && (
         <AIWritingAssistant
-          selectedText={selectedText}
+          selectedText={capturedSelection || selectedText}
           onInsertText={(text) => {
             if (onInsertText) onInsertText(text);
+            closeTool();
+          }}
+          onReplaceText={(oldText, newText) => {
+            if (onReplaceText) onReplaceText(oldText, newText);
             closeTool();
           }}
           onClose={closeTool}

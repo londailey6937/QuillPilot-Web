@@ -169,6 +169,16 @@
   height: 12px;
 }
 
+/* Toolbar labels (like upload image) should match button styling */
+[data-theme="dark"] label.cursor-pointer:not([style*="background"]) {
+  background-color: var(--bg-tertiary) !important;
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] label.cursor-pointer:not([style*="background"]):hover {
+  background-color: var(--bg-hover) !important;
+}
+
 [data-theme="dark"] ::-webkit-scrollbar-track {
   background: var(--bg-secondary);
 }

@@ -633,11 +633,12 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     onUpdate?.({ html, text });
     analyzeContent(text);
 
-    // Restore scroll position
-    if (wrapperRef.current) {
-      wrapperRef.current.scrollTop = scrollTop;
-    }
-    editorRef.current.focus();
+    // Restore scroll position after DOM update
+    requestAnimationFrame(() => {
+      if (wrapperRef.current) {
+        wrapperRef.current.scrollTop = scrollTop;
+      }
+    });
 
     // Update button states
     setCanUndo(historyIndexRef.current > 0);
@@ -665,11 +666,12 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     onUpdate?.({ html, text });
     analyzeContent(text);
 
-    // Restore scroll position
-    if (wrapperRef.current) {
-      wrapperRef.current.scrollTop = scrollTop;
-    }
-    editorRef.current.focus();
+    // Restore scroll position after DOM update
+    requestAnimationFrame(() => {
+      if (wrapperRef.current) {
+        wrapperRef.current.scrollTop = scrollTop;
+      }
+    });
 
     // Update button states
     setCanUndo(historyIndexRef.current > 0);
@@ -1508,12 +1510,13 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
             zIndex: 20,
             margin: "0 auto 12px",
             width: "fit-content",
-            maxWidth: "none",
+            maxWidth: "calc(100% - 24px)",
             padding: "10px 14px",
             borderRadius: "28px",
             background: "linear-gradient(135deg, #fffaf3 0%, #fef5e7 100%)",
             border: "1.5px solid #e0c392",
             boxShadow: "0 10px 24px rgba(239, 132, 50, 0.18)",
+            overflow: "auto",
           }}
         >
           <div
@@ -1767,14 +1770,16 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               >
                 ⛓️‍💥
               </button>
-              <label className="px-3 py-1.5 rounded hover:bg-gray-200 text-gray-700 transition-colors cursor-pointer">
+              <label
+                className="px-3 py-1.5 rounded hover:bg-gray-200 text-gray-700 transition-colors cursor-pointer"
+                title="Upload Image"
+              >
                 📸
                 <input
                   type="file"
                   accept="image/*"
                   onChange={handleImageUpload}
                   className="hidden"
-                  title="Insert Image"
                 />
               </label>
               <button
@@ -1867,27 +1872,6 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                 title="Typewriter Mode (Center Current Line)"
               >
                 ⌨️
-              </button>
-              <button
-                onClick={() => {
-                  if (sprintMode) {
-                    stopSprint();
-                  } else {
-                    startSprint();
-                  }
-                }}
-                className={`px-3 py-1.5 rounded transition-colors text-sm ${
-                  sprintMode
-                    ? "bg-green-100 text-green-700"
-                    : "hover:bg-gray-200 text-gray-700"
-                }`}
-                title={
-                  sprintMode
-                    ? "Stop Sprint"
-                    : `Start ${sprintDuration} Min Sprint`
-                }
-              >
-                {sprintMode ? "⏹️" : "⏱️"}
               </button>
             </div>
 
@@ -2123,7 +2107,8 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           }`}
           style={{
             minHeight: "300px",
-            maxWidth: `${PAGE_WIDTH_PX}px`,
+            width: `${PAGE_WIDTH_PX}px`,
+            maxWidth: "calc(100% - 8px)",
             margin: "20px auto",
             paddingLeft: `${leftMargin}px`,
             paddingRight: `${rightMargin}px`,
@@ -2141,10 +2126,10 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
         />
 
         {/* Spacing indicators overlay */}
-        {/* {renderIndicators()} */}
+        {renderIndicators()}
 
         {/* Visual suggestions overlay */}
-        {/* {renderSuggestions()} */}
+        {renderSuggestions()}
       </div>
 
       <style>{`
@@ -2550,22 +2535,60 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           text={editorRef.current?.innerText || ""}
           selectedText={window.getSelection()?.toString() || ""}
           onInsertText={(text) => {
-            const selection = window.getSelection();
-            if (selection && selection.rangeCount > 0) {
-              const range = selection.getRangeAt(0);
-              range.deleteContents();
-              range.insertNode(document.createTextNode(text));
+            // Replace the entire editor content's selected portion or insert at end
+            if (editorRef.current) {
+              // Try to get current selection
+              const selection = window.getSelection();
+              if (
+                selection &&
+                selection.rangeCount > 0 &&
+                !selection.isCollapsed
+              ) {
+                const range = selection.getRangeAt(0);
+                // Check if selection is within our editor
+                if (editorRef.current.contains(range.commonAncestorContainer)) {
+                  range.deleteContents();
+                  range.insertNode(document.createTextNode(text));
+                  // Collapse selection to end of inserted text
+                  selection.collapseToEnd();
+                  handleInput();
+                  return;
+                }
+              }
+              // Fallback: append to end of editor
+              const textNode = document.createTextNode(text);
+              editorRef.current.appendChild(document.createElement("br"));
+              editorRef.current.appendChild(textNode);
               handleInput();
             }
           }}
           onReplaceText={(oldText, newText) => {
-            if (editorRef.current) {
+            if (editorRef.current && oldText) {
+              // Escape special regex characters in the search text
+              const escapedOldText = oldText.replace(
+                /[.*+?^${}()|[\]\\]/g,
+                "\\$&"
+              );
               const html = editorRef.current.innerHTML;
-              editorRef.current.innerHTML = html.replace(
-                new RegExp(oldText, "gi"),
+              // Try to replace in HTML first
+              const newHtml = html.replace(
+                new RegExp(escapedOldText, "gi"),
                 newText
               );
-              handleInput();
+              if (newHtml !== html) {
+                editorRef.current.innerHTML = newHtml;
+                handleInput();
+              } else {
+                // Fallback: try plain text replacement
+                const plainText = editorRef.current.innerText;
+                if (plainText.includes(oldText)) {
+                  editorRef.current.innerText = plainText.replace(
+                    oldText,
+                    newText
+                  );
+                  handleInput();
+                }
+              }
             }
           }}
           onNavigate={(position) => {

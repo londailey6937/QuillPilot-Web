@@ -3,13 +3,7 @@
  * Upload DOCX/OBT → Analyze → Edit → Export
  */
 
-import React, {
-  useState,
-  useMemo,
-  useRef,
-  useEffect,
-  useCallback,
-} from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import { DocumentUploader, UploadedDocumentPayload } from "./DocumentUploader";
 import { DocumentEditor } from "./DocumentEditor";
 import { ChapterAnalysisDashboard } from "./VisualizationComponents";
@@ -53,10 +47,6 @@ import { buildTierOneAnalysisSummary } from "@/utils/tierOneAnalysis";
 import { exportToHtml } from "@/utils/htmlExport";
 import { exportToPdf } from "@/utils/pdfExport";
 import {
-  analyzeScreenplay,
-  generateScreenplaySummary,
-} from "@/utils/screenplayAnalyzer";
-import {
   TEMPLATE_LIBRARY,
   getTemplateById,
   type Template,
@@ -79,8 +69,6 @@ import { ServerAnalysisTest } from "./ServerAnalysisTest";
 const HEADING_LENGTH_LIMIT = 120;
 const MAX_FALLBACK_SECTIONS = 8;
 const STICKY_HEADER_OFFSET = 140;
-const INCH_IN_PX = 96;
-const PAGE_WIDTH_PX = INCH_IN_PX * 8;
 
 type AutosaveSnapshot = {
   content?: {
@@ -491,9 +479,6 @@ export const ChapterCheckerV2: React.FC = () => {
   const [leftMargin, setLeftMargin] = useState(48); // pixels
   const [rightMargin, setRightMargin] = useState(48); // pixels
   const [firstLineIndent, setFirstLineIndent] = useState(96); // pixels
-  const editorColumnRef = useRef<HTMLDivElement>(null);
-  const [editorWidth, setEditorWidth] = useState(PAGE_WIDTH_PX); // track actual editor width for ruler alignment
-  const [editorOffset, setEditorOffset] = useState(0);
   const [isDragging, setIsDragging] = useState<
     "left" | "right" | "indent" | null
   >(null);
@@ -516,41 +501,6 @@ export const ChapterCheckerV2: React.FC = () => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
-  const [testerEmail, setTesterEmail] = useState<string | null>(() => {
-    if (typeof window === "undefined") {
-      return null;
-    }
-    return localStorage.getItem("quillpilot_last_tester_email");
-  });
-
-  const resolvedTesterEmail = useMemo(() => {
-    if (testerEmail && isTesterEmail(testerEmail)) {
-      return testerEmail;
-    }
-    if (userProfile?.email && isTesterEmail(userProfile.email)) {
-      return userProfile.email.toLowerCase();
-    }
-    return null;
-  }, [testerEmail, userProfile?.email]);
-
-  const rememberTesterEmail = useCallback((email?: string | null) => {
-    if (!email || !isTesterEmail(email)) {
-      return false;
-    }
-    const normalized = email.toLowerCase();
-    setTesterEmail(normalized);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("quillpilot_last_tester_email", normalized);
-    }
-    return true;
-  }, []);
-
-  const clearTesterEmail = useCallback(() => {
-    setTesterEmail(null);
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("quillpilot_last_tester_email");
-    }
-  }, []);
 
   // Character management (Tier 3)
   const [characters, setCharacters] = useState<Character[]>([]);
@@ -565,75 +515,6 @@ export const ChapterCheckerV2: React.FC = () => {
     }
     return resolveLayoutMode(window.innerWidth);
   });
-  const handleEditorLayoutChange = useCallback(
-    (layout: { width: number; left: number }) => {
-      if (!Number.isFinite(layout.width) || layout.width <= 0) {
-        return;
-      }
-
-      setEditorWidth((prev) => {
-        const normalized = Math.round(layout.width);
-        return Math.abs(prev - normalized) > 0.5 ? normalized : prev;
-      });
-
-      const columnLeft =
-        editorColumnRef.current?.getBoundingClientRect().left ?? 0;
-      const offset = layout.left - columnLeft;
-      if (Number.isFinite(offset)) {
-        setEditorOffset(offset);
-      }
-    },
-    []
-  );
-
-  const rulerTicks = useMemo(() => {
-    const width = Math.max(editorWidth, 1);
-
-    const formatLabel = (value: number) => {
-      const rounded = Math.round(value * 10) / 10;
-      if (Math.abs(rounded - Math.round(rounded)) < 0.01) {
-        return String(Math.round(rounded));
-      }
-      return rounded.toFixed(1).replace(/\.0$/, "");
-    };
-
-    type Tick = { leftPercent: number; label: string };
-    const ticks: Tick[] = [];
-    let positionPx = 0;
-
-    while (positionPx < width - 0.5) {
-      const inches = positionPx / INCH_IN_PX;
-      ticks.push({
-        leftPercent: (positionPx / width) * 100,
-        label: formatLabel(inches),
-      });
-      positionPx += INCH_IN_PX;
-    }
-
-    const totalInches = width / INCH_IN_PX;
-    const lastTick = ticks[ticks.length - 1];
-    const finalTick: Tick = {
-      leftPercent: 100,
-      label: formatLabel(totalInches),
-    };
-
-    if (!lastTick) {
-      ticks.push(finalTick);
-    } else if (Math.abs(lastTick.leftPercent - 100) > 0.1) {
-      ticks.push(finalTick);
-    } else {
-      ticks[ticks.length - 1] = finalTick;
-    }
-
-    // Always ensure 0" tick exists at the far left
-    if (!ticks.length || ticks[0].leftPercent > 0.1) {
-      ticks.unshift({ leftPercent: 0, label: "0" });
-    } else {
-      ticks[0] = { leftPercent: 0, label: "0" };
-    }
-
-    return ticks;
-  }, [editorWidth, INCH_IN_PX]);
 
   const statisticsText =
     chapterData?.plainText ??
@@ -735,21 +616,22 @@ export const ChapterCheckerV2: React.FC = () => {
           const profile = await getUserProfile();
           if (profile) {
             setUserProfile(profile);
-          }
+            // Check if user is a tester - testers get full access
+            const isTester = TESTER_EMAILS.includes(
+              profile.email.toLowerCase()
+            );
 
-          const testerDetected = rememberTesterEmail(
-            profile?.email ?? user.email
-          );
-
-          if (testerDetected) {
-            const emailLabel = profile?.email ?? user.email ?? "unknown";
-            console.log("🔓 Tester access granted:", emailLabel);
-            setAccessLevel("professional");
-            console.log("✅ Tester access level set to: professional");
-          } else if (profile?.access_level) {
-            // Non-testers: Only set access level from profile if authenticated
-            // This prevents dropdown changes from overriding actual subscription
-            setAccessLevel(profile.access_level as AccessLevel);
+            if (isTester) {
+              // Testers can manually switch tiers for testing
+              console.log("🔓 Tester access granted:", profile.email);
+              // Keep current accessLevel (allows manual tier switching)
+            } else {
+              // Non-testers: Only set access level from profile if authenticated
+              // This prevents dropdown changes from overriding actual subscription
+              if (profile.access_level) {
+                setAccessLevel(profile.access_level as AccessLevel);
+              }
+            }
           }
         }
       } catch (error) {
@@ -769,22 +651,17 @@ export const ChapterCheckerV2: React.FC = () => {
           const profile = await getUserProfile();
           if (profile) {
             setUserProfile(profile);
-          }
+            const isTester = TESTER_EMAILS.includes(
+              profile.email.toLowerCase()
+            );
 
-          const testerDetected = rememberTesterEmail(
-            profile?.email ?? session.user.email
-          );
-
-          if (testerDetected) {
-            setAccessLevel("professional");
-            console.log("✅ Tester logged in - access level: professional");
-          } else if (profile?.access_level) {
-            // Only update tier for non-testers
-            setAccessLevel(profile.access_level as AccessLevel);
+            if (!isTester && profile.access_level) {
+              // Only update tier for non-testers
+              setAccessLevel(profile.access_level as AccessLevel);
+            }
           }
         } else {
           setUserProfile(null);
-          clearTesterEmail();
           setAccessLevel("free");
         }
       } catch (error) {
@@ -901,33 +778,16 @@ export const ChapterCheckerV2: React.FC = () => {
   }, []);
 
   const handleAccessLevelChange = async (level: AccessLevel) => {
-    let cachedUser: Awaited<ReturnType<typeof getCurrentUser>> | null = null;
-
-    const ensureCurrentUser = async () => {
-      if (!cachedUser) {
-        cachedUser = await getCurrentUser();
-      }
-      return cachedUser;
-    };
-
-    let effectiveTesterEmail = testerEmail;
-
-    if (!effectiveTesterEmail) {
-      const user = await ensureCurrentUser();
-      if (rememberTesterEmail(user?.email)) {
-        effectiveTesterEmail = user?.email?.toLowerCase() ?? null;
-      }
-    }
-
-    const isTesterAccount = Boolean(effectiveTesterEmail);
+    // Check if user is a tester - testers can switch freely
+    const isTester = isTesterEmail(userProfile?.email);
 
     // TEMPORARY BYPASS: If userProfile is null (auth issues), allow switching in dev mode
     const isDevelopmentBypass = !userProfile && import.meta.env.DEV;
 
-    if (isTesterAccount || isDevelopmentBypass) {
+    if (isTester || isDevelopmentBypass) {
       // Testers or dev mode: Allow free tier switching for testing
       console.log(
-        "🔓 " + (isTesterAccount ? "Tester" : "Dev mode") + " switching to:",
+        "🔓 " + (isTester ? "Tester" : "Dev mode") + " switching to:",
         level
       );
       setAccessLevel(level);
@@ -964,7 +824,7 @@ export const ChapterCheckerV2: React.FC = () => {
       supabaseConfigured &&
       (level === "premium" || level === "professional")
     ) {
-      const user = await ensureCurrentUser();
+      const user = await getCurrentUser();
       if (!user) {
         // User not authenticated - show upgrade/auth modal
         setShowTierTwoPreview(true);
@@ -1031,13 +891,13 @@ export const ChapterCheckerV2: React.FC = () => {
       e.preventDefault();
       e.stopPropagation();
 
-      // Get the ruler content area (not the full-width container)
+      // Get the 800px ruler content area (not the full-width container)
       const rulerContainer = document.querySelector(
         "[data-ruler-container]"
       ) as HTMLElement;
       if (!rulerContainer) return;
 
-      // Find the fixed-width content div - it's the child of the centered wrapper
+      // Find the 800px content div - it's the child of the centered wrapper
       const centerWrapper = rulerContainer.querySelector("div") as HTMLElement;
       if (!centerWrapper) return;
 
@@ -1048,7 +908,7 @@ export const ChapterCheckerV2: React.FC = () => {
       const relativeX = Math.max(0, e.clientX - rect.left);
 
       // Constrain to ruler bounds
-      const maxWidth = rect.width;
+      const maxWidth = Math.min(rect.width, 800);
       const constrainedX = Math.max(0, Math.min(relativeX, maxWidth));
 
       if (isDragging === "left") {
@@ -1117,17 +977,7 @@ export const ChapterCheckerV2: React.FC = () => {
       fileType,
       format,
       imageCount,
-      isScreenplay: isScreenplayDoc,
     } = payload;
-
-    console.log("📄 Document load payload:", {
-      fileName: incomingName,
-      fileType,
-      format,
-      isScreenplay: isScreenplayDoc,
-      contentLength: content.length,
-      plainTextLength: plainText.length,
-    });
 
     const normalizedPlainText = plainText?.trim().length
       ? plainText.trim()
@@ -1185,19 +1035,10 @@ export const ChapterCheckerV2: React.FC = () => {
       setIsTemplateMode(false);
     }
 
-    // Use screenplay detection from DocumentUploader if available
-    const detected = isScreenplayDoc
-      ? "screenplay"
-      : detectDomain(normalizedPlainText);
+    const detected = detectDomain(normalizedPlainText);
     console.log(`🎭 Detected genre: ${detected || "none"}`);
     setDetectedDomain(detected);
     setSelectedDomain(detected);
-
-    // Skip auto-analysis for screenplays (they need different analysis)
-    if (detected === "screenplay") {
-      console.log("📝 Screenplay detected - skipping prose analysis");
-      return;
-    }
 
     // Auto-analyze for free tier (spacing + dual coding only)
     const autoAnalyzeFeatures = ACCESS_TIERS[accessLevel];
@@ -1494,15 +1335,13 @@ export const ChapterCheckerV2: React.FC = () => {
     }
 
     // FEATURE RESTRICTION: Check if user is a tester first
-    const isTester = Boolean(resolvedTesterEmail);
+    const isTester = isTesterEmail(userProfile?.email);
 
     // TEMPORARY BYPASS: If userProfile is null (auth issues), treat as tester for development
     const isDevelopmentBypass = !userProfile && import.meta.env.DEV;
 
     console.log("🔍 Analysis Access Check:", {
       email: userProfile?.email,
-      storedTesterEmail: testerEmail,
-      resolvedTesterEmail,
       isTester,
       isDevelopmentBypass,
       accessLevel,
@@ -1534,56 +1373,7 @@ export const ChapterCheckerV2: React.FC = () => {
     // Premium/Professional tier: Run full analysis
     setIsAnalyzing(true);
     setError(null);
-    setProgress("Analyzing screenplay...");
-
-    // Handle screenplay analysis differently
-    if (detectedDomain === "screenplay") {
-      try {
-        console.log("📝 Running screenplay-specific analysis");
-
-        // Get HTML content for screenplay analysis
-        const htmlContent = chapterData?.editorHtml || chapterData?.html || "";
-        const plainTextContent = chapterData?.plainText || "";
-
-        if (!htmlContent) {
-          throw new Error("No screenplay content available for analysis");
-        }
-
-        // Run screenplay analysis
-        const metrics = analyzeScreenplay(htmlContent, plainTextContent);
-        const summary = generateScreenplaySummary(metrics);
-
-        console.log("✅ Screenplay analysis complete:", metrics);
-
-        // Store results with summary in a format compatible with the dashboard
-        setAnalysis({
-          chapterId: `screenplay-${Date.now()}`,
-          overallScore: 80,
-          principleScores: [],
-          recommendations: [],
-          conceptGraph: { concepts: [], relationships: [] },
-          metrics: {} as any,
-          summary: summary, // Custom field for screenplay
-        } as any);
-
-        setIsAnalyzing(false);
-        setProgress("Analysis complete!");
-
-        // Show success message
-        setTimeout(() => {
-          setProgress("");
-        }, 2000);
-
-        return;
-      } catch (err) {
-        console.error("❌ Screenplay analysis failed:", err);
-        setError(
-          err instanceof Error ? err.message : "Screenplay analysis failed"
-        );
-        setIsAnalyzing(false);
-        return;
-      }
-    }
+    setProgress("Analyzing chapter...");
 
     try {
       // Use normalized chapter data - no need to re-parse
@@ -1862,7 +1652,7 @@ export const ChapterCheckerV2: React.FC = () => {
     }
 
     // FEATURE RESTRICTION: Only testers can export
-    const isTester = Boolean(resolvedTesterEmail);
+    const isTester = isTesterEmail(userProfile?.email);
     if (!isTester) {
       alert(
         "🔒 Export features are coming soon!\n\n" +
@@ -1908,7 +1698,7 @@ export const ChapterCheckerV2: React.FC = () => {
     }
 
     // FEATURE RESTRICTION: Only testers can export
-    const isTester = Boolean(resolvedTesterEmail);
+    const isTester = isTesterEmail(userProfile?.email);
     if (!isTester) {
       alert(
         "🔒 Export features are coming soon!\n\n" +
@@ -1949,7 +1739,7 @@ export const ChapterCheckerV2: React.FC = () => {
     }
 
     // FEATURE RESTRICTION: Only testers can export
-    const isTester = Boolean(resolvedTesterEmail);
+    const isTester = isTesterEmail(userProfile?.email);
     if (!isTester) {
       alert(
         "🔒 Export features are coming soon!\n\n" +
@@ -2420,48 +2210,6 @@ export const ChapterCheckerV2: React.FC = () => {
                       🌐
                     </button>
 
-                    {analysis && (
-                      <button
-                        onClick={handleExport}
-                        disabled={!ACCESS_TIERS[accessLevel].exportResults}
-                        style={{
-                          padding: "6px 12px",
-                          backgroundColor: "white",
-                          color: ACCESS_TIERS[accessLevel].exportResults
-                            ? "#2c3e50"
-                            : "#999",
-                          border: ACCESS_TIERS[accessLevel].exportResults
-                            ? "1.5px solid #e0c392"
-                            : "1.5px solid #ddd",
-                          borderRadius: "12px",
-                          cursor: ACCESS_TIERS[accessLevel].exportResults
-                            ? "pointer"
-                            : "not-allowed",
-                          fontSize: "12px",
-                          fontWeight: "600",
-                          transition: "all 0.2s",
-                          whiteSpace: "nowrap",
-                          opacity: ACCESS_TIERS[accessLevel].exportResults
-                            ? 1
-                            : 0.6,
-                        }}
-                        onMouseEnter={(e) => {
-                          if (ACCESS_TIERS[accessLevel].exportResults)
-                            e.currentTarget.style.backgroundColor = "#f7e6d0";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = "white";
-                        }}
-                        title={
-                          ACCESS_TIERS[accessLevel].exportResults
-                            ? "Export JSON"
-                            : "Export JSON (Premium)"
-                        }
-                      >
-                        {ACCESS_TIERS[accessLevel].exportResults ? "📊" : "🔒"}
-                      </button>
-                    )}
-
                     {viewMode === "writer" &&
                       accessLevel === "professional" && (
                         <button
@@ -2519,7 +2267,7 @@ export const ChapterCheckerV2: React.FC = () => {
                       }}
                       style={{
                         padding: "6px 12px",
-                        backgroundColor: "white",
+                        backgroundColor: "#fef5e7",
                         color: "#2c3e50",
                         border: "1.5px solid #e0c392",
                         borderRadius: "12px",
@@ -2533,9 +2281,9 @@ export const ChapterCheckerV2: React.FC = () => {
                         e.currentTarget.style.backgroundColor = "#f7e6d0";
                       }}
                       onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = "white";
+                        e.currentTarget.style.backgroundColor = "#fef5e7";
                       }}
-                      title="Auto-save info"
+                      title="View or clear auto-saved data"
                     >
                       💾
                     </button>
@@ -2583,7 +2331,7 @@ export const ChapterCheckerV2: React.FC = () => {
                   <button
                     onClick={() => {
                       // FEATURE RESTRICTION: Only testers can use Writer Mode
-                      const isTester = Boolean(resolvedTesterEmail);
+                      const isTester = isTesterEmail(userProfile?.email);
                       const isDevelopmentBypass =
                         !userProfile && import.meta.env.DEV;
 
@@ -2904,7 +2652,6 @@ export const ChapterCheckerV2: React.FC = () => {
             >
               {chapterData ? (
                 <div
-                  ref={editorColumnRef}
                   style={{
                     flex: 1,
                     display: "flex",
@@ -2940,15 +2687,14 @@ export const ChapterCheckerV2: React.FC = () => {
                         justifyContent: "center",
                       }}
                     >
-                      {/* Center content area matching editor width */}
+                      {/* Center content area matching editor width (768px = 8 inches at 96 DPI) */}
                       <div
                         style={{
-                          width: `${editorWidth || PAGE_WIDTH_PX}px`,
-                          maxWidth: "100%",
+                          width: "768px",
+                          maxWidth: "calc(100% - 8px)",
                           height: "100%",
                           position: "relative",
-                          marginLeft: `${Math.max(editorOffset, 0)}px`,
-                          marginRight: "auto",
+                          margin: "0 auto",
                         }}
                       >
                         {/* Ruler background */}
@@ -2960,18 +2706,18 @@ export const ChapterCheckerV2: React.FC = () => {
                             top: 0,
                             bottom: 0,
                             background:
-                              "linear-gradient(to right, #e5e7eb 0px, #e5e7eb 1px, transparent 1px)",
-                            backgroundSize: `${INCH_IN_PX}px 100%`,
+                              "linear-gradient(to right, #e5e7eb 0%, #e5e7eb 1px, transparent 1px)",
+                            backgroundSize: "40px 100%",
                           }}
                         />
 
-                        {/* Ruler tick marks based on actual editor width */}
-                        {rulerTicks.map((tick, idx) => (
+                        {/* Ruler tick marks every inch (assuming ~96 DPI) */}
+                        {Array.from({ length: 9 }, (_, i) => i).map((inch) => (
                           <div
-                            key={`ruler-tick-${idx}`}
+                            key={inch}
                             style={{
                               position: "absolute",
-                              left: `${tick.leftPercent}%`,
+                              left: `${(inch / 8) * 100}%`,
                               height: "100%",
                               display: "flex",
                               flexDirection: "column",
@@ -2986,7 +2732,7 @@ export const ChapterCheckerV2: React.FC = () => {
                                 marginBottom: "2px",
                               }}
                             >
-                              {tick.label}
+                              {inch}
                             </div>
                             <div
                               style={{
@@ -3102,18 +2848,18 @@ export const ChapterCheckerV2: React.FC = () => {
                     <div
                       style={{
                         position: "absolute",
-                        top: "50%",
+                        top: "40%",
                         left: "50%",
                         transform: "translate(-50%, -50%)",
                         color: "#9ca3af",
-                        fontSize: "18px",
+                        fontSize: "16px",
                         fontStyle: "italic",
                         pointerEvents: "none",
                         zIndex: 10,
                         textAlign: "center",
-                        width: "100%",
-                        maxWidth: "600px",
-                        padding: "0 20px",
+                        width: "auto",
+                        maxWidth: "80%",
+                        padding: "0 40px",
                       }}
                     >
                       The page will expand as you write...
@@ -3229,7 +2975,6 @@ export const ChapterCheckerV2: React.FC = () => {
                       viewMode={viewMode}
                       isTemplateMode={isTemplateMode}
                       onExitTemplateMode={() => setIsTemplateMode(false)}
-                      onEditorLayoutChange={handleEditorLayoutChange}
                     />
                   </div>
                 </div>
@@ -3478,7 +3223,7 @@ export const ChapterCheckerV2: React.FC = () => {
                         improvement suggestions.
                       </li>
                       <li>
-                        Export results as DOCX, PDF, JSON, or HTML for revision
+                        Export results as DOCX, JSON, or HTML for revision
                         planning and beta reader sharing.
                       </li>
                       <li>
@@ -3523,8 +3268,7 @@ export const ChapterCheckerV2: React.FC = () => {
                     <p style={{ margin: "4px 0" }}>
                       Everything in Premium plus Writer Mode for real-time
                       editing, unlimited analyses (up to 1,000 pages), perfect
-                      for professional authors, screenwriters, and writing
-                      teams.
+                      for professional authors and writing teams.
                     </p>
                     <ul
                       style={{
@@ -3537,7 +3281,7 @@ export const ChapterCheckerV2: React.FC = () => {
                       <li>
                         <strong>Upload limit:</strong> Up to 1,000 pages (epic
                         fantasy series, comprehensive memoirs, anthology
-                        collections, feature-length screenplays).
+                        collections).
                       </li>
                       <li>
                         Writer Mode: Full word processor with live analysis
@@ -3552,13 +3296,12 @@ export const ChapterCheckerV2: React.FC = () => {
                         deadlines.
                       </li>
                       <li>
-                        Version tracking and comprehensive export options for
-                        agent/editor submission workflows.
+                        Advanced formatting tools and collaborative features for
+                        writing teams.
                       </li>
                       <li>
-                        Professional screenplay formatting with
-                        industry-standard styling and automatic scene/character
-                        tracking.
+                        Version tracking and comprehensive export options for
+                        agent/editor submission workflows.
                       </li>
                     </ul>
                     <button
@@ -3647,8 +3390,8 @@ export const ChapterCheckerV2: React.FC = () => {
                       color: "#2c3e50",
                     }}
                   >
-                    Select a screenplay or genre type that best matches your
-                    content for accurate analysis.
+                    Select the domain that best matches your chapter content for
+                    accurate concept recognition and analysis.
                   </p>
 
                   <div style={{ marginBottom: "16px" }}>
@@ -4067,63 +3810,56 @@ export const ChapterCheckerV2: React.FC = () => {
                       e.currentTarget.style.backgroundColor = "white";
                     }}
                   >
-                    {isAnalyzing
-                      ? "⏳ Analyzing..."
-                      : detectedDomain === "screenplay"
-                      ? "🔍 Analyze Screenplay"
-                      : "🔍 Analyze Book"}
+                    {isAnalyzing ? "⏳ Analyzing..." : "🔍 Analyze Book"}
                   </button>
 
-                  {/* Auto-Analysis Toggle - hide for screenplays */}
-                  {chapterData &&
-                    analysis &&
-                    !isAnalyzing &&
-                    detectedDomain !== "screenplay" && (
-                      <button
-                        onClick={() =>
-                          setAutoAnalysisEnabled(!autoAnalysisEnabled)
+                  {/* Auto-Analysis Toggle */}
+                  {chapterData && analysis && !isAnalyzing && (
+                    <button
+                      onClick={() =>
+                        setAutoAnalysisEnabled(!autoAnalysisEnabled)
+                      }
+                      style={{
+                        width: "100%",
+                        marginTop: "8px",
+                        padding: "8px 12px",
+                        backgroundColor: autoAnalysisEnabled
+                          ? "#ef8432"
+                          : "white",
+                        color: autoAnalysisEnabled ? "white" : "#2c3e50",
+                        border: `1.5px solid ${
+                          autoAnalysisEnabled ? "#ef8432" : "#e0c392"
+                        }`,
+                        borderRadius: "20px",
+                        fontSize: "13px",
+                        fontWeight: "600",
+                        cursor: "pointer",
+                        transition: "all 0.2s",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "6px",
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!autoAnalysisEnabled) {
+                          e.currentTarget.style.backgroundColor = "#f7e6d0";
                         }
-                        style={{
-                          width: "100%",
-                          marginTop: "8px",
-                          padding: "8px 12px",
-                          backgroundColor: autoAnalysisEnabled
-                            ? "#ef8432"
-                            : "white",
-                          color: autoAnalysisEnabled ? "white" : "#2c3e50",
-                          border: `1.5px solid ${
-                            autoAnalysisEnabled ? "#ef8432" : "#e0c392"
-                          }`,
-                          borderRadius: "20px",
-                          fontSize: "13px",
-                          fontWeight: "600",
-                          cursor: "pointer",
-                          transition: "all 0.2s",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          gap: "6px",
-                        }}
-                        onMouseEnter={(e) => {
-                          if (!autoAnalysisEnabled) {
-                            e.currentTarget.style.backgroundColor = "#f7e6d0";
-                          }
-                        }}
-                        onMouseLeave={(e) => {
-                          if (!autoAnalysisEnabled) {
-                            e.currentTarget.style.backgroundColor = "white";
-                          }
-                        }}
-                        title={
-                          autoAnalysisEnabled
-                            ? "Auto-analysis is ON - will re-analyze 3 seconds after you stop typing"
-                            : "Click to enable auto-analysis"
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!autoAnalysisEnabled) {
+                          e.currentTarget.style.backgroundColor = "white";
                         }
-                      >
-                        {autoAnalysisEnabled ? "✓" : ""} 🔄 Auto-Analysis{" "}
-                        {autoAnalysisEnabled ? "ON" : "OFF"}
-                      </button>
-                    )}
+                      }}
+                      title={
+                        autoAnalysisEnabled
+                          ? "Auto-analysis is ON - will re-analyze 3 seconds after you stop typing"
+                          : "Click to enable auto-analysis"
+                      }
+                    >
+                      {autoAnalysisEnabled ? "✓" : ""} 🔄 Auto-Analysis{" "}
+                      {autoAnalysisEnabled ? "ON" : "OFF"}
+                    </button>
+                  )}
 
                   {/* Free tier info */}
                   {accessLevel === "free" && chapterText && !isAnalyzing && (
@@ -4212,6 +3948,40 @@ export const ChapterCheckerV2: React.FC = () => {
                           : "1.5px solid #f7d8a8",
                     }}
                   >
+                    <button
+                      onClick={handleExport}
+                      disabled={!ACCESS_TIERS[accessLevel].exportResults}
+                      style={{
+                        width: "100%",
+                        padding: "8px",
+                        backgroundColor: "white",
+                        color: ACCESS_TIERS[accessLevel].exportResults
+                          ? "#2c3e50"
+                          : "#2c3e50",
+                        border: ACCESS_TIERS[accessLevel].exportResults
+                          ? "1.5px solid #2c3e50"
+                          : "1.5px solid #e0c392",
+                        borderRadius: "20px",
+                        cursor: ACCESS_TIERS[accessLevel].exportResults
+                          ? "pointer"
+                          : "not-allowed",
+                        fontSize: "14px",
+                        fontWeight: "600",
+                        marginBottom: "16px",
+                        transition: "background-color 0.2s",
+                      }}
+                      onMouseEnter={(e) => {
+                        if (ACCESS_TIERS[accessLevel].exportResults)
+                          e.currentTarget.style.backgroundColor = "#f7e6d0";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = "white";
+                      }}
+                    >
+                      📥 Export JSON{" "}
+                      {!ACCESS_TIERS[accessLevel].exportResults && "🔒"}
+                    </button>
+
                     {/* Generate AI Template - only in Writer Mode */}
                     {viewMode === "writer" && analysis && (
                       <button
@@ -4254,205 +4024,31 @@ export const ChapterCheckerV2: React.FC = () => {
                             }}
                           />
                         )}
-
-                        {/* Screenplay Analysis Display */}
-                        {detectedDomain === "screenplay" &&
-                        (analysis as any).summary ? (
-                          <div
-                            style={{
-                              padding: "24px",
-                              backgroundColor: "#fefdfb",
-                              borderRadius: "24px",
-                              overflowY: "auto",
-                              maxHeight: "calc(100vh - 220px)",
-                              border: "2px solid #e0c392",
-                            }}
-                          >
-                            <h2
-                              style={{
-                                fontSize: "28px",
-                                fontWeight: "700",
-                                marginBottom: "24px",
-                                color: "#2c3e50",
-                                fontFamily:
-                                  "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-                              }}
-                            >
-                              📽️ Screenplay Analysis
-                            </h2>
-                            <div
-                              style={{
-                                fontSize: "15px",
-                                lineHeight: "1.8",
-                                color: "#2c3e50",
-                                fontFamily:
-                                  "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-                              }}
-                            >
-                              {(analysis as any).summary
-                                .split("\n")
-                                .map((line: string, idx: number) => {
-                                  // Main heading (# )
-                                  if (line.startsWith("# ")) {
-                                    return (
-                                      <div
-                                        key={idx}
-                                        style={{
-                                          fontSize: "24px",
-                                          fontWeight: "700",
-                                          margin: "28px 0 16px 0",
-                                          color: "#1a202c",
-                                        }}
-                                      >
-                                        {line.substring(2)}
-                                      </div>
-                                    );
-                                  }
-                                  // Section heading (## )
-                                  if (line.startsWith("## ")) {
-                                    return (
-                                      <div
-                                        key={idx}
-                                        style={{
-                                          fontSize: "18px",
-                                          fontWeight: "600",
-                                          margin: "24px 0 12px 0",
-                                          color: "#2d3748",
-                                          borderBottom: "2px solid #e0c392",
-                                          paddingBottom: "6px",
-                                        }}
-                                      >
-                                        {line.substring(3)}
-                                      </div>
-                                    );
-                                  }
-                                  // Bullet points (- )
-                                  if (line.startsWith("- ")) {
-                                    const content = line.substring(2);
-                                    // Handle bold (**text**)
-                                    const parts =
-                                      content.split(/(\*\*[^*]+\*\*)/);
-                                    return (
-                                      <div
-                                        key={idx}
-                                        style={{
-                                          margin: "6px 0 6px 20px",
-                                          display: "flex",
-                                          gap: "8px",
-                                        }}
-                                      >
-                                        <span
-                                          style={{
-                                            color: "#2c5282",
-                                            fontWeight: "600",
-                                          }}
-                                        >
-                                          •
-                                        </span>
-                                        <span>
-                                          {parts.map((part, i) =>
-                                            part.startsWith("**") &&
-                                            part.endsWith("**") ? (
-                                              <strong
-                                                key={i}
-                                                style={{
-                                                  color: "#2c5282",
-                                                  fontWeight: "600",
-                                                }}
-                                              >
-                                                {part.slice(2, -2)}
-                                              </strong>
-                                            ) : (
-                                              part
-                                            )
-                                          )}
-                                        </span>
-                                      </div>
-                                    );
-                                  }
-                                  // Numbered list items
-                                  const numberedMatch =
-                                    line.match(/^(\d+)\.\s+(.+)$/);
-                                  if (numberedMatch) {
-                                    return (
-                                      <div
-                                        key={idx}
-                                        style={{ margin: "6px 0 6px 20px" }}
-                                      >
-                                        <span
-                                          style={{
-                                            fontWeight: "600",
-                                            color: "#2c5282",
-                                          }}
-                                        >
-                                          {numberedMatch[1]}.
-                                        </span>{" "}
-                                        {numberedMatch[2]}
-                                      </div>
-                                    );
-                                  }
-                                  // Empty lines
-                                  if (line.trim() === "") {
-                                    return (
-                                      <div
-                                        key={idx}
-                                        style={{ height: "8px" }}
-                                      ></div>
-                                    );
-                                  }
-                                  // Regular text with bold handling
-                                  const parts = line.split(/(\*\*[^*]+\*\*)/);
-                                  return (
-                                    <div key={idx} style={{ margin: "4px 0" }}>
-                                      {parts.map((part, i) =>
-                                        part.startsWith("**") &&
-                                        part.endsWith("**") ? (
-                                          <strong
-                                            key={i}
-                                            style={{
-                                              color: "#2c5282",
-                                              fontWeight: "600",
-                                            }}
-                                          >
-                                            {part.slice(2, -2)}
-                                          </strong>
-                                        ) : (
-                                          part
-                                        )
-                                      )}
-                                    </div>
-                                  );
-                                })}
-                            </div>
-                          </div>
-                        ) : (
-                          <ChapterAnalysisDashboard
-                            analysis={analysis}
-                            concepts={analysis.conceptGraph?.concepts || []}
-                            onConceptClick={handleConceptClick}
-                            highlightedConceptId={highlightedConceptId}
-                            currentMentionIndex={currentMentionIndex}
-                            accessLevel={accessLevel}
-                            hasDomain={
-                              selectedDomain !== "none" &&
-                              selectedDomain !== null
-                            }
-                            activeDomain={selectedDomain}
-                            relationships={
-                              analysis.conceptGraph?.relationships || []
-                            }
-                            generalConcepts={
-                              selectedDomain === "none"
-                                ? generalConcepts
-                                : undefined
-                            }
-                            onGeneralConceptClick={(position, term) => {
-                              setHighlightPosition(position);
-                              setSearchWord(term);
-                              setSearchOccurrence(0);
-                            }}
-                          />
-                        )}
+                        <ChapterAnalysisDashboard
+                          analysis={analysis}
+                          concepts={analysis.conceptGraph?.concepts || []}
+                          onConceptClick={handleConceptClick}
+                          highlightedConceptId={highlightedConceptId}
+                          currentMentionIndex={currentMentionIndex}
+                          accessLevel={accessLevel}
+                          hasDomain={
+                            selectedDomain !== "none" && selectedDomain !== null
+                          }
+                          activeDomain={selectedDomain}
+                          relationships={
+                            analysis.conceptGraph?.relationships || []
+                          }
+                          generalConcepts={
+                            selectedDomain === "none"
+                              ? generalConcepts
+                              : undefined
+                          }
+                          onGeneralConceptClick={(position, term) => {
+                            setHighlightPosition(position);
+                            setSearchWord(term);
+                            setSearchOccurrence(0);
+                          }}
+                        />
                       </>
                     ) : (
                       <div
