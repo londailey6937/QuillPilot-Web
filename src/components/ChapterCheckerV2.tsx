@@ -9,6 +9,7 @@ import { DocumentEditor } from "./DocumentEditor";
 import { ChapterAnalysisDashboard } from "./VisualizationComponents";
 import { HelpModal } from "./HelpModal";
 import { ReferenceLibraryModal } from "./ReferenceLibraryModal";
+import { WritersReferenceModal } from "./WritersReferenceModal";
 import { NavigationMenu } from "./NavigationMenu";
 import { QuickStartModal } from "./QuickStartModal";
 import { UpgradePrompt, InlineUpgradePrompt } from "./UpgradePrompt";
@@ -472,6 +473,8 @@ export const ChapterCheckerV2: React.FC = () => {
   const [viewMode, setViewMode] = useState<"analysis" | "writer">("analysis");
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
   const [isReferenceLibraryModalOpen, setIsReferenceLibraryModalOpen] =
+    useState(false);
+  const [isWritersReferenceModalOpen, setIsWritersReferenceModalOpen] =
     useState(false);
   const [isQuickStartModalOpen, setIsQuickStartModalOpen] = useState(false);
 
@@ -2561,6 +2564,7 @@ export const ChapterCheckerV2: React.FC = () => {
         onClose={() => setIsNavigationOpen(false)}
         onOpenHelp={() => setIsHelpModalOpen(true)}
         onOpenReferenceLibrary={() => setIsReferenceLibraryModalOpen(true)}
+        onOpenWritersReference={() => setIsWritersReferenceModalOpen(true)}
         onOpenQuickStart={() => setIsQuickStartModalOpen(true)}
       />
 
@@ -2577,6 +2581,11 @@ export const ChapterCheckerV2: React.FC = () => {
       <ReferenceLibraryModal
         isOpen={isReferenceLibraryModalOpen}
         onClose={() => setIsReferenceLibraryModalOpen(false)}
+      />
+
+      <WritersReferenceModal
+        isOpen={isWritersReferenceModalOpen}
+        onClose={() => setIsWritersReferenceModalOpen(false)}
       />
 
       <AuthModal

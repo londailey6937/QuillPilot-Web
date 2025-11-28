@@ -6,6 +6,7 @@ interface NavigationMenuProps {
   onClose: () => void;
   onOpenHelp: () => void;
   onOpenReferenceLibrary: () => void;
+  onOpenWritersReference: () => void;
   onOpenQuickStart: () => void;
 }
 
@@ -24,6 +25,7 @@ export function NavigationMenu({
   onClose,
   onOpenHelp,
   onOpenReferenceLibrary,
+  onOpenWritersReference,
   onOpenQuickStart,
 }: NavigationMenuProps): JSX.Element | null {
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
@@ -206,6 +208,45 @@ export function NavigationMenu({
             >
               <span style={{ fontSize: "1.25rem" }}>📖</span>
               <span>Reference Library</span>
+            </button>
+
+            <button
+              onClick={() => {
+                onOpenWritersReference();
+                onClose();
+              }}
+              style={{
+                width: "100%",
+                padding: "0.875rem 1rem",
+                backgroundColor: "white",
+                color: "#2c3e50",
+                border: "2px solid #10b981",
+                borderRadius: "20px",
+                fontSize: "1rem",
+                fontWeight: "600",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "0.75rem",
+                transition:
+                  "transform 0.2s, background-color 0.2s, box-shadow 0.2s",
+                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = "#d1fae5";
+                e.currentTarget.style.transform = "translateY(-2px)";
+                e.currentTarget.style.boxShadow =
+                  "0 4px 12px rgba(0, 0, 0, 0.15)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = "white";
+                e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.boxShadow =
+                  "0 2px 8px rgba(0, 0, 0, 0.1)";
+              }}
+            >
+              <span style={{ fontSize: "1.25rem" }}>✍️</span>
+              <span>Writer's Reference</span>
             </button>
 
             <button
