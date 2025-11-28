@@ -784,15 +784,9 @@ export const ChapterCheckerV2: React.FC = () => {
     // Check if user is a tester - testers can switch freely
     const isTester = isTesterEmail(userProfile?.email);
 
-    // TEMPORARY BYPASS: If userProfile is null (auth issues), allow switching in dev mode
-    const isDevelopmentBypass = !userProfile && import.meta.env.DEV;
-
-    if (isTester || isDevelopmentBypass) {
-      // Testers or dev mode: Allow free tier switching for testing
-      console.log(
-        "🔓 " + (isTester ? "Tester" : "Dev mode") + " switching to:",
-        level
-      );
+    if (isTester) {
+      // Testers: Allow free tier switching for testing
+      console.log("🔓 Tester switching to:", level);
       setAccessLevel(level);
 
       // Automatically switch to writer mode when professional tier is selected
@@ -1346,18 +1340,14 @@ export const ChapterCheckerV2: React.FC = () => {
     // FEATURE RESTRICTION: Check if user is a tester first
     const isTester = isTesterEmail(userProfile?.email);
 
-    // TEMPORARY BYPASS: If userProfile is null (auth issues), treat as tester for development
-    const isDevelopmentBypass = !userProfile && import.meta.env.DEV;
-
     console.log("🔍 Analysis Access Check:", {
       email: userProfile?.email,
       isTester,
-      isDevelopmentBypass,
       accessLevel,
       userProfileExists: !!userProfile,
     });
 
-    if (!isTester && !isDevelopmentBypass) {
+    if (!isTester) {
       // Non-testers: Check access level and block if needed
       const features = ACCESS_TIERS[accessLevel];
       if (!features.fullAnalysis) {
@@ -2341,10 +2331,8 @@ export const ChapterCheckerV2: React.FC = () => {
                     onClick={() => {
                       // FEATURE RESTRICTION: Only testers can use Writer Mode
                       const isTester = isTesterEmail(userProfile?.email);
-                      const isDevelopmentBypass =
-                        !userProfile && import.meta.env.DEV;
 
-                      if (!isTester && !isDevelopmentBypass) {
+                      if (!isTester) {
                         alert(
                           "🔒 Writer Mode is coming soon!\n\n" +
                             "This professional-tier feature is currently available only to testers.\n\n" +
