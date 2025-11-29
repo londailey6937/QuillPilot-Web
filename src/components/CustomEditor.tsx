@@ -33,6 +33,9 @@ interface CustomEditorProps {
     footerText: string;
     showPageNumbers: boolean;
     pageNumberPosition: "header" | "footer";
+    headerAlign: "left" | "center" | "right" | "justify";
+    footerAlign: "left" | "center" | "right" | "justify";
+    facingPages: boolean;
   }) => void;
 }
 
@@ -142,6 +145,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
 }) => {
   const editorRef = useRef<HTMLDivElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const isEditingHeaderFooterRef = useRef(false); // Track when editing header/footer inputs
   const [analysis, setAnalysis] = useState<AnalysisData>({
     spacing: [],
     visuals: [],
@@ -262,6 +266,14 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   const [pageNumberPosition, setPageNumberPosition] = useState<
     "header" | "footer"
   >("footer");
+  const [headerAlign, setHeaderAlign] = useState<
+    "left" | "center" | "right" | "justify"
+  >("center");
+  const [footerAlign, setFooterAlign] = useState<
+    "left" | "center" | "right" | "justify"
+  >("center");
+  // Facing pages: alternate left/right positioning for page numbers on odd/even pages
+  const [facingPages, setFacingPages] = useState(false);
 
   // Notify parent of header/footer changes for export
   useEffect(() => {
@@ -271,6 +283,9 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
         footerText,
         showPageNumbers,
         pageNumberPosition,
+        headerAlign,
+        footerAlign,
+        facingPages,
       });
     }
   }, [
@@ -278,6 +293,9 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     footerText,
     showPageNumbers,
     pageNumberPosition,
+    headerAlign,
+    footerAlign,
+    facingPages,
     onHeaderFooterChange,
   ]);
 
@@ -894,7 +912,10 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     (command: string, value?: string) => {
       document.execCommand(command, false, value);
       updateFormatState();
-      editorRef.current?.focus();
+      // Only focus the editor if we're not editing header/footer
+      if (!isEditingHeaderFooterRef.current) {
+        editorRef.current?.focus();
+      }
       // Trigger input to save to history
       setTimeout(() => handleInput(), 0);
     },
@@ -3035,6 +3056,31 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                     </div>
                     <div>
                       <label className="block text-xs text-gray-400">
+                        Align
+                      </label>
+                      <select
+                        value={headerAlign}
+                        onChange={(e) =>
+                          setHeaderAlign(
+                            e.target.value as
+                              | "left"
+                              | "center"
+                              | "right"
+                              | "justify"
+                          )
+                        }
+                        className="w-full px-2 py-1 border rounded text-xs focus:ring-1 focus:ring-[#ef8432]"
+                      >
+                        <option value="left">Left</option>
+                        <option value="center">Center</option>
+                        <option value="right">Right</option>
+                        <option value="justify">Justify</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-xs text-gray-400">
                         Footer
                       </label>
                       <input
@@ -3044,6 +3090,29 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                         placeholder="Footer text"
                         className="w-full px-2 py-1 border rounded text-xs focus:ring-1 focus:ring-[#ef8432]"
                       />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-400">
+                        Align
+                      </label>
+                      <select
+                        value={footerAlign}
+                        onChange={(e) =>
+                          setFooterAlign(
+                            e.target.value as
+                              | "left"
+                              | "center"
+                              | "right"
+                              | "justify"
+                          )
+                        }
+                        className="w-full px-2 py-1 border rounded text-xs focus:ring-1 focus:ring-[#ef8432]"
+                      >
+                        <option value="left">Left</option>
+                        <option value="center">Center</option>
+                        <option value="right">Right</option>
+                        <option value="justify">Justify</option>
+                      </select>
                     </div>
                   </div>
                   <div className="flex items-center gap-4 text-xs">
@@ -3057,18 +3126,32 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                       <span className="text-gray-600">Page #s</span>
                     </label>
                     {showPageNumbers && (
-                      <select
-                        value={pageNumberPosition}
-                        onChange={(e) =>
-                          setPageNumberPosition(
-                            e.target.value as "header" | "footer"
-                          )
-                        }
-                        className="px-1 py-0.5 border rounded text-xs focus:ring-1 focus:ring-[#ef8432]"
-                      >
-                        <option value="header">In Header</option>
-                        <option value="footer">In Footer</option>
-                      </select>
+                      <>
+                        <select
+                          value={pageNumberPosition}
+                          onChange={(e) =>
+                            setPageNumberPosition(
+                              e.target.value as "header" | "footer"
+                            )
+                          }
+                          className="px-1 py-0.5 border rounded text-xs focus:ring-1 focus:ring-[#ef8432]"
+                        >
+                          <option value="header">In Header</option>
+                          <option value="footer">In Footer</option>
+                        </select>
+                        <label
+                          className="flex items-center gap-1 cursor-pointer"
+                          title="Alternate page numbers on outside edges (left on even pages, right on odd pages)"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={facingPages}
+                            onChange={(e) => setFacingPages(e.target.checked)}
+                            className="w-3 h-3 rounded border-gray-300 text-[#ef8432] focus:ring-[#ef8432]"
+                          />
+                          <span className="text-gray-600">Facing Pages</span>
+                        </label>
+                      </>
                     )}
                     <label className="flex items-center gap-1 cursor-pointer">
                       <input
@@ -3130,6 +3213,8 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                   setFooterText("");
                   setShowPageNumbers(true);
                   setPageNumberPosition("footer");
+                  setHeaderAlign("center");
+                  setFooterAlign("center");
                 }}
                 className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800 transition-colors"
               >
@@ -3237,6 +3322,71 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           paddingBottom: "24px",
         }}
       >
+        {/* Header preview sits outside the page canvas so body text never hides behind it */}
+        {showHeaderFooter && (
+          <div
+            className="header-preview"
+            style={{
+              width: `${PAGE_WIDTH_PX}px`,
+              maxWidth: "calc(100% - 48px)",
+              margin: "0 auto 16px",
+              padding: "14px 18px",
+              borderRadius: "16px",
+              border: "1px solid #e0c392",
+              background:
+                "linear-gradient(135deg, rgba(255,250,243,0.96), rgba(254,245,231,0.96))",
+              boxShadow: "0 16px 32px rgba(44, 62, 80, 0.12)",
+            }}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-semibold tracking-wide uppercase text-gray-600">
+                Header Preview
+              </span>
+              <span className="text-[11px] text-gray-500">
+                Visible while writing • exported on every page
+              </span>
+            </div>
+            <div
+              className="flex items-center gap-3"
+              style={{
+                justifyContent: facingPages
+                  ? "space-between"
+                  : headerAlign === "center"
+                  ? "center"
+                  : headerAlign === "right"
+                  ? "flex-end"
+                  : "flex-start",
+              }}
+            >
+              {showPageNumbers && pageNumberPosition === "header" && (
+                <span className="text-[11px] text-gray-600 px-2 py-1 rounded-full bg-white border border-gray-200 shadow-sm">
+                  {facingPages ? "Even" : "Pg #"}
+                </span>
+              )}
+              <input
+                type="text"
+                value={headerText}
+                onChange={(e) => setHeaderText(e.target.value)}
+                onFocus={() => (isEditingHeaderFooterRef.current = true)}
+                onBlur={() =>
+                  setTimeout(
+                    () => (isEditingHeaderFooterRef.current = false),
+                    100
+                  )
+                }
+                onMouseDown={(e) => e.stopPropagation()}
+                placeholder="Add header text..."
+                className="flex-1 px-3 py-2 rounded-lg border border-[#e0c392] bg-white/90 text-sm text-gray-700 shadow-sm focus:ring-2 focus:ring-[#ef8432]"
+              />
+              {showPageNumbers && pageNumberPosition === "header" && (
+                <span className="text-[11px] text-gray-600 px-2 py-1 rounded-full bg-white border border-gray-200 shadow-sm">
+                  {facingPages ? "Odd" : "Pg #"}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Page container */}
         <div
           className="pages-container"
@@ -3247,6 +3397,32 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
             position: "relative",
           }}
         >
+          {/* Page backgrounds - white rectangles for each page */}
+          {Array.from({ length: pageCount }, (_, i) => (
+            <div
+              key={`page-bg-${i}`}
+              style={{
+                position: "absolute",
+                left: 0,
+                right: 0,
+                top: `${i * PAGE_HEIGHT_PX}px`,
+                height: `${PAGE_HEIGHT_PX}px`,
+                backgroundColor: "#ffffff",
+                boxShadow:
+                  i === 0
+                    ? "0 2px 8px rgba(0, 0, 0, 0.12), 0 4px 16px rgba(0, 0, 0, 0.08)"
+                    : "none",
+                borderRadius:
+                  i === 0
+                    ? "2px 2px 0 0"
+                    : i === pageCount - 1
+                    ? "0 0 2px 2px"
+                    : "0",
+                zIndex: 1,
+              }}
+            />
+          ))}
+
           {/* The actual editable content */}
           <div
             ref={editorRef}
@@ -3269,7 +3445,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               caretColor: "#2c3e50",
               cursor: isEditable ? "text" : "default",
               position: "relative",
-              zIndex: 1,
+              zIndex: 5,
               boxShadow:
                 "0 2px 8px rgba(0, 0, 0, 0.12), 0 4px 16px rgba(0, 0, 0, 0.08)",
               borderRadius: "2px",
@@ -3313,130 +3489,106 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               </div>
             ))}
 
-          {/* Editable Header regions on each page - shown when showHeaderFooter is enabled */}
-          {showHeaderFooter &&
-            Array.from({ length: pageCount }, (_, pageIndex) => (
-              <div
-                key={`header-region-${pageIndex}`}
-                style={{
-                  position: "absolute",
-                  left: `${leftMargin}px`,
-                  right: `${rightMargin}px`,
-                  top: `${pageIndex * PAGE_HEIGHT_PX + INCH_IN_PX * 0.3}px`,
-                  height: `${INCH_IN_PX * 0.5}px`,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "8px",
-                  zIndex: 15,
-                  borderBottom: "1px dashed #e0c392",
-                  backgroundColor: "rgba(254, 245, 231, 0.5)",
-                }}
-              >
-                <input
-                  type="text"
-                  value={headerText}
-                  onChange={(e) => setHeaderText(e.target.value)}
-                  placeholder="Click to add header text..."
-                  style={{
-                    flex: 1,
-                    border: "none",
-                    background: "transparent",
-                    textAlign: "center",
-                    fontSize: "11px",
-                    color: "#6b7280",
-                    outline: "none",
-                  }}
-                />
-                {showPageNumbers && pageNumberPosition === "header" && (
-                  <span
-                    style={{
-                      fontSize: "11px",
-                      color: "#6b7280",
-                      paddingRight: "8px",
-                    }}
-                  >
-                    {pageIndex + 1}
-                  </span>
-                )}
-              </div>
-            ))}
-
-          {/* Editable Footer regions on each page - shown when showHeaderFooter is enabled */}
-          {showHeaderFooter &&
-            Array.from({ length: pageCount }, (_, pageIndex) => (
-              <div
-                key={`footer-region-${pageIndex}`}
-                style={{
-                  position: "absolute",
-                  left: `${leftMargin}px`,
-                  right: `${rightMargin}px`,
-                  top: `${
-                    (pageIndex + 1) * PAGE_HEIGHT_PX - INCH_IN_PX * 0.8
-                  }px`,
-                  height: `${INCH_IN_PX * 0.5}px`,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "8px",
-                  zIndex: 15,
-                  borderTop: "1px dashed #e0c392",
-                  backgroundColor: "rgba(254, 245, 231, 0.5)",
-                }}
-              >
-                <input
-                  type="text"
-                  value={footerText}
-                  onChange={(e) => setFooterText(e.target.value)}
-                  placeholder="Click to add footer text..."
-                  style={{
-                    flex: 1,
-                    border: "none",
-                    background: "transparent",
-                    textAlign: "center",
-                    fontSize: "11px",
-                    color: "#6b7280",
-                    outline: "none",
-                  }}
-                />
-                {showPageNumbers && pageNumberPosition === "footer" && (
-                  <span
-                    style={{
-                      fontSize: "11px",
-                      color: "#6b7280",
-                      paddingRight: "8px",
-                    }}
-                  >
-                    {pageIndex + 1}
-                  </span>
-                )}
-              </div>
-            ))}
-
           {/* Legacy footer with page numbers (when showHeaderFooter is off but page numbers are on) */}
           {!showHeaderFooter &&
             showPageNumbers &&
-            Array.from({ length: pageCount }, (_, pageIndex) => (
-              <div
-                key={`footer-${pageIndex}`}
-                style={{
-                  position: "absolute",
-                  left: `${leftMargin}px`,
-                  right: `${rightMargin}px`,
-                  top: `${
-                    (pageIndex + 1) * PAGE_HEIGHT_PX - INCH_IN_PX * 0.6
-                  }px`,
-                  textAlign: "center",
-                  fontSize: "11px",
-                  color: "#6b7280",
-                  pointerEvents: "none",
-                  zIndex: 5,
-                }}
-              >
-                {pageIndex + 1}
-              </div>
-            ))}
+            Array.from({ length: pageCount }, (_, pageIndex) => {
+              const isEvenPage = pageIndex % 2 === 0;
+              const alignment = facingPages
+                ? isEvenPage
+                  ? "left"
+                  : "right"
+                : "center";
+
+              return (
+                <div
+                  key={`footer-${pageIndex}`}
+                  style={{
+                    position: "absolute",
+                    left: `${leftMargin}px`,
+                    right: `${rightMargin}px`,
+                    top: `${
+                      (pageIndex + 1) * PAGE_HEIGHT_PX - INCH_IN_PX * 0.6
+                    }px`,
+                    textAlign: alignment,
+                    fontSize: "11px",
+                    color: "#6b7280",
+                    pointerEvents: "none",
+                    zIndex: 5,
+                    paddingLeft: alignment === "left" ? "8px" : "0",
+                    paddingRight: alignment === "right" ? "8px" : "0",
+                  }}
+                >
+                  {pageIndex + 1}
+                </div>
+              );
+            })}
         </div>
+
+        {/* Footer preview mirrors the header treatment */}
+        {showHeaderFooter && (
+          <div
+            className="footer-preview"
+            style={{
+              width: `${PAGE_WIDTH_PX}px`,
+              maxWidth: "calc(100% - 48px)",
+              margin: "16px auto 0",
+              padding: "14px 18px",
+              borderRadius: "16px",
+              border: "1px solid #e0c392",
+              background:
+                "linear-gradient(135deg, rgba(254,245,231,0.96), rgba(255,247,237,0.96))",
+              boxShadow: "0 -10px 28px rgba(44, 62, 80, 0.08)",
+            }}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-semibold tracking-wide uppercase text-gray-600">
+                Footer Preview
+              </span>
+              <span className="text-[11px] text-gray-500">
+                Always printed • mirrors export layout
+              </span>
+            </div>
+            <div
+              className="flex items-center gap-3"
+              style={{
+                justifyContent: facingPages
+                  ? "space-between"
+                  : footerAlign === "center"
+                  ? "center"
+                  : footerAlign === "right"
+                  ? "flex-end"
+                  : "flex-start",
+              }}
+            >
+              {showPageNumbers && pageNumberPosition === "footer" && (
+                <span className="text-[11px] text-gray-600 px-2 py-1 rounded-full bg-white border border-gray-200 shadow-sm">
+                  {facingPages ? "Even" : "Pg #"}
+                </span>
+              )}
+              <input
+                type="text"
+                value={footerText}
+                onChange={(e) => setFooterText(e.target.value)}
+                onFocus={() => (isEditingHeaderFooterRef.current = true)}
+                onBlur={() =>
+                  setTimeout(
+                    () => (isEditingHeaderFooterRef.current = false),
+                    100
+                  )
+                }
+                onMouseDown={(e) => e.stopPropagation()}
+                placeholder="Add footer text..."
+                className="flex-1 px-3 py-2 rounded-lg border border-[#e0c392] bg-white/90 text-sm text-gray-700 shadow-sm focus:ring-2 focus:ring-[#ef8432]"
+              />
+              {showPageNumbers && pageNumberPosition === "footer" && (
+                <span className="text-[11px] text-gray-600 px-2 py-1 rounded-full bg-white border border-gray-200 shadow-sm">
+                  {facingPages ? "Odd" : "Pg #"}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Spacing indicators overlay */}
         {renderIndicators()}

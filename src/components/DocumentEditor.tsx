@@ -7,6 +7,9 @@ export interface HeaderFooterSettings {
   footerText: string;
   showPageNumbers: boolean;
   pageNumberPosition: "header" | "footer";
+  headerAlign: "left" | "center" | "right" | "justify";
+  footerAlign: "left" | "center" | "right" | "justify";
+  facingPages: boolean;
 }
 
 interface DocumentEditorProps {

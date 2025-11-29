@@ -665,3 +665,11 @@ p {
 .editor-content .screenplay-block.spacer {
   height: 1rem !important;
 }
+
+/* Page view editor previously used a mask to hide header/footer regions.
+   Header/footer previews are now rendered outside the page canvas, so keep
+   the full editor content visible to avoid cutting off pasted text. */
+.page-editor {
+  -webkit-mask-image: none;
+  mask-image: none;
+}

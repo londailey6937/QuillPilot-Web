@@ -48,6 +48,9 @@ interface ExportDocxOptions {
   footerText?: string; // Custom footer text
   showPageNumbers?: boolean; // Show page numbers (default true)
   pageNumberPosition?: "header" | "footer"; // Where to show page numbers
+  headerAlign?: "left" | "center" | "right" | "justify"; // Header alignment
+  footerAlign?: "left" | "center" | "right" | "justify"; // Footer alignment
+  facingPages?: boolean; // Mirror margins and alternate page numbers on outside edges
 }
 
 export const exportToDocx = async ({
@@ -62,6 +65,9 @@ export const exportToDocx = async ({
   footerText = "",
   showPageNumbers = true,
   pageNumberPosition = "footer",
+  headerAlign = "center",
+  footerAlign = "center",
+  facingPages = false,
 }: ExportDocxOptions) => {
   // In writer mode, we export a clean document without analysis
   const isWriterMode = mode === "writer";
@@ -458,85 +464,157 @@ export const exportToDocx = async ({
   // Skip building paragraphs manually, use the HTML we already generated
   // (The convertHtmlToParagraphs call above already added them)
 
+  // Helper to convert alignment string to docx AlignmentType
+  const getAlignment = (
+    align: "left" | "center" | "right" | "justify"
+  ): (typeof AlignmentType)[keyof typeof AlignmentType] => {
+    switch (align) {
+      case "left":
+        return AlignmentType.LEFT;
+      case "right":
+        return AlignmentType.RIGHT;
+      case "justify":
+        return AlignmentType.JUSTIFIED;
+      default:
+        return AlignmentType.CENTER;
+    }
+  };
+
   // Create document with TOC-enabled features and proper page dimensions
-  // Build header children
+  // Build header children for default (and odd pages if facing)
   const headerChildren: Paragraph[] = [];
-  if (headerText) {
-    headerChildren.push(
-      new Paragraph({
-        alignment: AlignmentType.CENTER,
-        children: [
-          new TextRun({
-            text: headerText,
-            size: 20,
-            color: "6b7280",
-          }),
-          ...(showPageNumbers && pageNumberPosition === "header"
-            ? [
-                new TextRun({ text: "  |  ", color: "9ca3af" }),
-                new TextRun({
-                  children: [PageNumber.CURRENT],
-                  size: 20,
-                  color: "6b7280",
-                }),
-              ]
-            : []),
-        ],
-      })
-    );
-  } else if (showPageNumbers && pageNumberPosition === "header") {
-    headerChildren.push(
-      new Paragraph({
-        alignment: AlignmentType.CENTER,
-        children: [
-          new TextRun({
-            children: [PageNumber.CURRENT],
-            size: 20,
-            color: "6b7280",
-          }),
-        ],
-      })
-    );
+  const headerChildrenEven: Paragraph[] = []; // For facing pages - even pages
+
+  const buildHeaderParagraph = (
+    alignment: (typeof AlignmentType)[keyof typeof AlignmentType],
+    pageNumOnLeft: boolean
+  ): Paragraph => {
+    const children: TextRun[] = [];
+
+    // Page number on left
+    if (showPageNumbers && pageNumberPosition === "header" && pageNumOnLeft) {
+      children.push(
+        new TextRun({
+          children: [PageNumber.CURRENT],
+          size: 20,
+          color: "6b7280",
+        })
+      );
+      if (headerText) {
+        children.push(new TextRun({ text: "  |  ", color: "9ca3af" }));
+      }
+    }
+
+    // Header text
+    if (headerText) {
+      children.push(
+        new TextRun({
+          text: headerText,
+          size: 20,
+          color: "6b7280",
+        })
+      );
+    }
+
+    // Page number on right
+    if (showPageNumbers && pageNumberPosition === "header" && !pageNumOnLeft) {
+      if (headerText) {
+        children.push(new TextRun({ text: "  |  ", color: "9ca3af" }));
+      }
+      children.push(
+        new TextRun({
+          children: [PageNumber.CURRENT],
+          size: 20,
+          color: "6b7280",
+        })
+      );
+    }
+
+    return new Paragraph({ alignment, children });
+  };
+
+  // Default header (also used for odd pages in facing mode)
+  if (headerText || (showPageNumbers && pageNumberPosition === "header")) {
+    const defaultAlign = facingPages
+      ? AlignmentType.RIGHT
+      : getAlignment(headerAlign);
+    headerChildren.push(buildHeaderParagraph(defaultAlign, false));
   }
 
-  // Build footer children
+  // Even page header (for facing pages - page number on left)
+  if (
+    facingPages &&
+    (headerText || (showPageNumbers && pageNumberPosition === "header"))
+  ) {
+    headerChildrenEven.push(buildHeaderParagraph(AlignmentType.LEFT, true));
+  }
+
+  // Build footer children for default (and odd pages if facing)
   const footerChildren: Paragraph[] = [];
-  if (footerText) {
-    footerChildren.push(
-      new Paragraph({
-        alignment: AlignmentType.CENTER,
-        children: [
-          new TextRun({
-            text: footerText,
-            size: 20,
-            color: "6b7280",
-          }),
-          ...(showPageNumbers && pageNumberPosition === "footer"
-            ? [
-                new TextRun({ text: "  |  ", color: "9ca3af" }),
-                new TextRun({
-                  children: [PageNumber.CURRENT],
-                  size: 20,
-                  color: "6b7280",
-                }),
-              ]
-            : []),
-        ],
-      })
-    );
-  } else if (showPageNumbers && pageNumberPosition === "footer") {
-    footerChildren.push(
-      new Paragraph({
-        alignment: AlignmentType.CENTER,
-        children: [
-          new TextRun({
-            children: [PageNumber.CURRENT],
-            size: 20,
-            color: "6b7280",
-          }),
-        ],
-      })
-    );
+  const footerChildrenEven: Paragraph[] = []; // For facing pages - even pages
+
+  const buildFooterParagraph = (
+    alignment: (typeof AlignmentType)[keyof typeof AlignmentType],
+    pageNumOnLeft: boolean
+  ): Paragraph => {
+    const children: TextRun[] = [];
+
+    // Page number on left
+    if (showPageNumbers && pageNumberPosition === "footer" && pageNumOnLeft) {
+      children.push(
+        new TextRun({
+          children: [PageNumber.CURRENT],
+          size: 20,
+          color: "6b7280",
+        })
+      );
+      if (footerText) {
+        children.push(new TextRun({ text: "  |  ", color: "9ca3af" }));
+      }
+    }
+
+    // Footer text
+    if (footerText) {
+      children.push(
+        new TextRun({
+          text: footerText,
+          size: 20,
+          color: "6b7280",
+        })
+      );
+    }
+
+    // Page number on right
+    if (showPageNumbers && pageNumberPosition === "footer" && !pageNumOnLeft) {
+      if (footerText) {
+        children.push(new TextRun({ text: "  |  ", color: "9ca3af" }));
+      }
+      children.push(
+        new TextRun({
+          children: [PageNumber.CURRENT],
+          size: 20,
+          color: "6b7280",
+        })
+      );
+    }
+
+    return new Paragraph({ alignment, children });
+  };
+
+  // Default footer (also used for odd pages in facing mode)
+  if (footerText || (showPageNumbers && pageNumberPosition === "footer")) {
+    const defaultAlign = facingPages
+      ? AlignmentType.RIGHT
+      : getAlignment(footerAlign);
+    footerChildren.push(buildFooterParagraph(defaultAlign, false));
+  }
+
+  // Even page footer (for facing pages - page number on left)
+  if (
+    facingPages &&
+    (footerText || (showPageNumbers && pageNumberPosition === "footer"))
+  ) {
+    footerChildrenEven.push(buildFooterParagraph(AlignmentType.LEFT, true));
   }
 
   const doc = new Document({
@@ -558,23 +636,39 @@ export const exportToDocx = async ({
               right: convertInchesToTwip(1),
               bottom: convertInchesToTwip(1),
               left: convertInchesToTwip(1),
+              // Mirror margins for facing pages (gutter on inside)
+              ...(facingPages && { gutter: convertInchesToTwip(0.5) }),
             },
           },
         },
         headers:
-          headerChildren.length > 0
+          headerChildren.length > 0 || headerChildrenEven.length > 0
             ? {
                 default: new Header({
                   children: headerChildren,
                 }),
+                ...(facingPages && headerChildrenEven.length > 0
+                  ? {
+                      even: new Header({
+                        children: headerChildrenEven,
+                      }),
+                    }
+                  : {}),
               }
             : undefined,
         footers:
-          footerChildren.length > 0
+          footerChildren.length > 0 || footerChildrenEven.length > 0
             ? {
                 default: new Footer({
                   children: footerChildren,
                 }),
+                ...(facingPages && footerChildrenEven.length > 0
+                  ? {
+                      even: new Footer({
+                        children: footerChildrenEven,
+                      }),
+                    }
+                  : {}),
               }
             : undefined,
         children: paragraphs,

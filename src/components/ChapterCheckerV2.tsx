@@ -561,11 +561,17 @@ export const ChapterCheckerV2: React.FC = () => {
     footerText: string;
     showPageNumbers: boolean;
     pageNumberPosition: "header" | "footer";
+    headerAlign: "left" | "center" | "right" | "justify";
+    footerAlign: "left" | "center" | "right" | "justify";
+    facingPages: boolean;
   }>({
     headerText: "",
     footerText: "",
     showPageNumbers: true,
     pageNumberPosition: "footer",
+    headerAlign: "center",
+    footerAlign: "center",
+    facingPages: false,
   });
 
   const [layoutMode, setLayoutMode] = useState<LayoutMode>(() => {
@@ -941,20 +947,28 @@ export const ChapterCheckerV2: React.FC = () => {
         const fromRight = maxWidth - constrainedX;
         setRightMargin(Math.max(0, Math.min(fromRight, 200)));
       } else if (isDragging === "indent") {
-        // First line indent: must be after left margin and before right margin
+        // First line indent: the absolute cursor position represents where the first line starts
+        // We need to subtract leftMargin to get the relative text-indent value
         // Snap to 24px (quarter inch) increments for cleaner positioning
-        const rawIndent = Math.max(
+        const rawAbsolutePos = Math.max(
           leftMargin,
           Math.min(constrainedX, maxWidth - rightMargin)
         );
-        const snappedIndent = Math.round(rawIndent / 24) * 24;
+        // Convert to relative indent (from left margin)
+        const relativeIndent = rawAbsolutePos - leftMargin;
+        // Snap to 24px increments
+        const snappedIndent = Math.round(relativeIndent / 24) * 24;
+        // Ensure it's not negative and doesn't go past the right margin
         const newIndent = Math.max(
-          leftMargin,
-          Math.min(snappedIndent, maxWidth - rightMargin)
+          0,
+          Math.min(snappedIndent, maxWidth - rightMargin - leftMargin)
         );
         console.log(
           "[ChapterCheckerV2] Setting firstLineIndent to:",
-          newIndent
+          newIndent,
+          "(absolute pos was:",
+          rawAbsolutePos,
+          ")"
         );
         setFirstLineIndent(newIndent);
       }
@@ -1693,6 +1707,9 @@ export const ChapterCheckerV2: React.FC = () => {
         footerText: headerFooterSettings.footerText,
         showPageNumbers: headerFooterSettings.showPageNumbers,
         pageNumberPosition: headerFooterSettings.pageNumberPosition,
+        headerAlign: headerFooterSettings.headerAlign,
+        footerAlign: headerFooterSettings.footerAlign,
+        facingPages: headerFooterSettings.facingPages,
       });
     } catch (err) {
       alert(
@@ -2990,7 +3007,7 @@ export const ChapterCheckerV2: React.FC = () => {
                         <div
                           style={{
                             position: "absolute",
-                            left: `${firstLineIndent}px`,
+                            left: `${leftMargin + firstLineIndent}px`,
                             top: "4px",
                             transform: "translateX(-50%)",
                             pointerEvents: "all",
