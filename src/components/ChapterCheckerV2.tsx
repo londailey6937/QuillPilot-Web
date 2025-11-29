@@ -3,21 +3,43 @@
  * Upload DOCX/TXT → Analyze → Edit → Export
  */
 
-import React, { useState, useMemo, useRef, useEffect } from "react";
+import React, {
+  useState,
+  useMemo,
+  useRef,
+  useEffect,
+  lazy,
+  Suspense,
+} from "react";
 import { DocumentUploader, UploadedDocumentPayload } from "./DocumentUploader";
 import { DocumentEditor } from "./DocumentEditor";
 import { ChapterAnalysisDashboard } from "./VisualizationComponents";
-import { HelpModal } from "./HelpModal";
-import { ReferenceLibraryModal } from "./ReferenceLibraryModal";
-import { WritersReferenceModal } from "./WritersReferenceModal";
 import { NavigationMenu } from "./NavigationMenu";
-import { QuickStartModal } from "./QuickStartModal";
 import { UpgradePrompt, InlineUpgradePrompt } from "./UpgradePrompt";
 import { TierTwoPreview } from "./TierTwoPreview";
 import { MissingConceptSuggestions } from "./MissingConceptSuggestions";
 import { CharacterManager } from "./CharacterManager";
 import { DarkModeToggle } from "./ThemeProvider";
 import { ChapterAnalysis, Section } from "@/types";
+
+// Lazy load large modal components for better initial load performance
+const HelpModal = lazy(() =>
+  import("./HelpModal").then((m) => ({ default: m.HelpModal }))
+);
+const ReferenceLibraryModal = lazy(() =>
+  import("./ReferenceLibraryModal").then((m) => ({
+    default: m.ReferenceLibraryModal,
+  }))
+);
+const WritersReferenceModal = lazy(() =>
+  import("./WritersReferenceModal").then((m) => ({
+    default: m.WritersReferenceModal,
+  }))
+);
+const QuickStartModal = lazy(() =>
+  import("./QuickStartModal").then((m) => ({ default: m.QuickStartModal }))
+);
+
 import {
   AccessLevel,
   ACCESS_TIERS,
@@ -62,7 +84,6 @@ import {
 import { AnimatedLogo } from "./AnimatedLogo";
 import { AuthModal } from "./AuthModal";
 import { UserMenu } from "./UserMenu";
-import { ServerAnalysisTest } from "./ServerAnalysisTest";
 
 const HEADING_LENGTH_LIMIT = 120;
 const MAX_FALLBACK_SECTIONS = 8;
@@ -2508,25 +2529,36 @@ export const ChapterCheckerV2: React.FC = () => {
         onOpenQuickStart={() => setIsQuickStartModalOpen(true)}
       />
 
-      <QuickStartModal
-        isOpen={isQuickStartModalOpen}
-        onClose={() => setIsQuickStartModalOpen(false)}
-      />
+      {/* Lazy-loaded modals with Suspense */}
+      <Suspense fallback={null}>
+        {isQuickStartModalOpen && (
+          <QuickStartModal
+            isOpen={isQuickStartModalOpen}
+            onClose={() => setIsQuickStartModalOpen(false)}
+          />
+        )}
 
-      <HelpModal
-        isOpen={isHelpModalOpen}
-        onClose={() => setIsHelpModalOpen(false)}
-      />
+        {isHelpModalOpen && (
+          <HelpModal
+            isOpen={isHelpModalOpen}
+            onClose={() => setIsHelpModalOpen(false)}
+          />
+        )}
 
-      <ReferenceLibraryModal
-        isOpen={isReferenceLibraryModalOpen}
-        onClose={() => setIsReferenceLibraryModalOpen(false)}
-      />
+        {isReferenceLibraryModalOpen && (
+          <ReferenceLibraryModal
+            isOpen={isReferenceLibraryModalOpen}
+            onClose={() => setIsReferenceLibraryModalOpen(false)}
+          />
+        )}
 
-      <WritersReferenceModal
-        isOpen={isWritersReferenceModalOpen}
-        onClose={() => setIsWritersReferenceModalOpen(false)}
-      />
+        {isWritersReferenceModalOpen && (
+          <WritersReferenceModal
+            isOpen={isWritersReferenceModalOpen}
+            onClose={() => setIsWritersReferenceModalOpen(false)}
+          />
+        )}
+      </Suspense>
 
       <AuthModal
         isOpen={isAuthModalOpen}
