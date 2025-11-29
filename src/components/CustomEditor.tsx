@@ -186,6 +186,70 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   const [popoverPosition, setPopoverPosition] = useState({ top: 0, right: 0 });
   const characterPopoverRef = useRef<HTMLDivElement>(null);
   const characterButtonRef = useRef<HTMLButtonElement>(null);
+
+  // Format Painter state
+  const [formatPainterActive, setFormatPainterActive] = useState(false);
+  const [copiedFormat, setCopiedFormat] = useState<{
+    fontFamily?: string;
+    fontSize?: string;
+    fontWeight?: string;
+    fontStyle?: string;
+    textDecoration?: string;
+    color?: string;
+    backgroundColor?: string;
+    textAlign?: string;
+  } | null>(null);
+
+  // Styles Panel state
+  const [showStylesPanel, setShowStylesPanel] = useState(false);
+  const [documentStyles, setDocumentStyles] = useState({
+    paragraph: {
+      firstLineIndent: 48,
+      lineHeight: 1.5,
+      marginBottom: 0.5,
+      textAlign: "left" as "left" | "center" | "right" | "justify",
+    },
+    title: {
+      fontSize: 24,
+      fontWeight: "bold" as "normal" | "bold",
+      textAlign: "center" as "left" | "center" | "right" | "justify",
+      marginBottom: 0.5,
+    },
+    heading1: {
+      fontSize: 28,
+      fontWeight: "bold" as "normal" | "bold",
+      marginTop: 1.5,
+      marginBottom: 0.8,
+    },
+    heading2: {
+      fontSize: 22,
+      fontWeight: "bold" as "normal" | "bold",
+      marginTop: 1.2,
+      marginBottom: 0.6,
+    },
+    heading3: {
+      fontSize: 18,
+      fontWeight: "bold" as "normal" | "bold",
+      marginTop: 1,
+      marginBottom: 0.5,
+    },
+    blockquote: {
+      fontStyle: "italic" as "normal" | "italic",
+      marginLeft: 40,
+      borderLeftWidth: 4,
+      borderLeftColor: "#e0c392",
+    },
+  });
+
+  // Header/Footer state
+  const [showHeaderFooter, setShowHeaderFooter] = useState(false);
+  const [headerText, setHeaderText] = useState("");
+  const [footerText, setFooterText] = useState("");
+  const [showPageNumbers, setShowPageNumbers] = useState(true);
+  const [pageNumberPosition, setPageNumberPosition] = useState<
+    "header" | "footer"
+  >("footer");
+
   const toolbarDividerStyle = {
     width: "1px",
     height: "28px",
@@ -827,6 +891,106 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   const removeLink = useCallback(() => {
     formatText("unlink");
   }, [formatText]);
+
+  // Format Painter - Copy formatting from selection
+  const copyFormat = useCallback(() => {
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) return;
+
+    const range = selection.getRangeAt(0);
+    let element = range.startContainer as HTMLElement;
+
+    // Get the element with styles (walk up to find an element node)
+    while (element && element.nodeType !== Node.ELEMENT_NODE) {
+      element = element.parentElement as HTMLElement;
+    }
+
+    if (!element) return;
+
+    const computedStyle = window.getComputedStyle(element);
+
+    setCopiedFormat({
+      fontFamily: computedStyle.fontFamily,
+      fontSize: computedStyle.fontSize,
+      fontWeight: computedStyle.fontWeight,
+      fontStyle: computedStyle.fontStyle,
+      textDecoration: computedStyle.textDecoration,
+      color: computedStyle.color,
+      backgroundColor:
+        computedStyle.backgroundColor === "rgba(0, 0, 0, 0)"
+          ? undefined
+          : computedStyle.backgroundColor,
+      textAlign: computedStyle.textAlign,
+    });
+
+    setFormatPainterActive(true);
+  }, []);
+
+  // Format Painter - Apply copied formatting to selection
+  const applyFormat = useCallback(() => {
+    if (!copiedFormat || !editorRef.current) return;
+
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) {
+      setFormatPainterActive(false);
+      return;
+    }
+
+    const range = selection.getRangeAt(0);
+    const selectedText = range.toString();
+
+    if (!selectedText) {
+      setFormatPainterActive(false);
+      return;
+    }
+
+    // Create a span with the copied formatting
+    const span = document.createElement("span");
+    span.textContent = selectedText;
+
+    if (copiedFormat.fontFamily)
+      span.style.fontFamily = copiedFormat.fontFamily;
+    if (copiedFormat.fontSize) span.style.fontSize = copiedFormat.fontSize;
+    if (copiedFormat.fontWeight)
+      span.style.fontWeight = copiedFormat.fontWeight;
+    if (copiedFormat.fontStyle) span.style.fontStyle = copiedFormat.fontStyle;
+    if (copiedFormat.textDecoration && copiedFormat.textDecoration !== "none") {
+      span.style.textDecoration = copiedFormat.textDecoration;
+    }
+    if (copiedFormat.color) span.style.color = copiedFormat.color;
+    if (copiedFormat.backgroundColor)
+      span.style.backgroundColor = copiedFormat.backgroundColor;
+
+    range.deleteContents();
+    range.insertNode(span);
+
+    // Move cursor to end of inserted span
+    selection.removeAllRanges();
+    const newRange = document.createRange();
+    newRange.selectNodeContents(span);
+    newRange.collapse(false);
+    selection.addRange(newRange);
+
+    setFormatPainterActive(false);
+    setTimeout(() => handleInput(), 0);
+  }, [copiedFormat, handleInput]);
+
+  // Handle click when Format Painter is active
+  useEffect(() => {
+    if (!formatPainterActive || !editorRef.current) return;
+
+    const handleMouseUp = () => {
+      // Small delay to let selection complete
+      setTimeout(() => {
+        applyFormat();
+      }, 10);
+    };
+
+    editorRef.current.addEventListener("mouseup", handleMouseUp);
+    return () => {
+      editorRef.current?.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [formatPainterActive, applyFormat]);
 
   // Insert table
   const insertTable = useCallback(() => {
@@ -1639,6 +1803,40 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                 </optgroup>
               </select>
 
+              {/* Styles Panel Button - next to block type */}
+              <button
+                onClick={() => setShowStylesPanel(true)}
+                className="px-2 py-1.5 rounded border bg-white hover:bg-[#f7e6d0] text-[#2c3e50] transition-colors text-sm"
+                title="Modify Styles (Paragraph, Title, Headings, Header/Footer)"
+              >
+                ⚙
+              </button>
+
+              {/* Format Painter - next to Styles */}
+              <button
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  if (formatPainterActive) {
+                    setFormatPainterActive(false);
+                    setCopiedFormat(null);
+                  } else {
+                    copyFormat();
+                  }
+                }}
+                className={`px-2 py-1.5 rounded border transition-colors text-sm ${
+                  formatPainterActive
+                    ? "bg-amber-100 text-amber-700 ring-2 ring-amber-400"
+                    : "bg-white hover:bg-[#f7e6d0] text-[#2c3e50]"
+                }`}
+                title={
+                  formatPainterActive
+                    ? "Format Painter Active - Click to cancel"
+                    : "Format Painter - Copy formatting (select text first)"
+                }
+              >
+                🖌️
+              </button>
+
               <div style={toolbarDividerStyle} aria-hidden="true" />
 
               {/* Font family dropdown */}
@@ -2203,6 +2401,588 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
         </div>
       )}
 
+      {/* Styles Panel Modal */}
+      {showStylesPanel && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div
+            className="bg-white rounded-lg shadow-2xl w-full max-w-xl max-h-[70vh] overflow-hidden flex flex-col"
+            style={{ border: "2px solid #e0c392" }}
+          >
+            <div className="p-3 border-b bg-gradient-to-r from-[#fef5e7] to-[#fff7ed] flex justify-between items-center flex-shrink-0">
+              <h2 className="text-lg font-bold text-[#2c3e50]">
+                Modify Styles
+              </h2>
+              <button
+                onClick={() => setShowStylesPanel(false)}
+                className="text-gray-500 hover:text-gray-700 text-xl leading-none px-2"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="p-3 overflow-y-auto flex-1">
+              {/* Paragraph Style */}
+              <div className="mb-4 p-3 border rounded-lg bg-[#fef5e7]">
+                <h3 className="font-semibold text-[#2c3e50] mb-2 text-sm flex items-center gap-2">
+                  <span>¶</span> Paragraph
+                </h3>
+                <div className="grid grid-cols-4 gap-2">
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">
+                      Indent (px)
+                    </label>
+                    <input
+                      type="number"
+                      value={documentStyles.paragraph.firstLineIndent}
+                      onChange={(e) =>
+                        setDocumentStyles((prev) => ({
+                          ...prev,
+                          paragraph: {
+                            ...prev.paragraph,
+                            firstLineIndent: Number(e.target.value),
+                          },
+                        }))
+                      }
+                      className="w-full px-2 py-1 text-sm border rounded focus:ring-1 focus:ring-[#ef8432]"
+                      min="0"
+                      max="200"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">
+                      Line Height
+                    </label>
+                    <select
+                      value={documentStyles.paragraph.lineHeight}
+                      onChange={(e) =>
+                        setDocumentStyles((prev) => ({
+                          ...prev,
+                          paragraph: {
+                            ...prev.paragraph,
+                            lineHeight: Number(e.target.value),
+                          },
+                        }))
+                      }
+                      className="w-full px-2 py-1 text-sm border rounded focus:ring-1 focus:ring-[#ef8432]"
+                    >
+                      <option value="1">Single</option>
+                      <option value="1.15">1.15</option>
+                      <option value="1.5">1.5</option>
+                      <option value="2">Double</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">
+                      After (em)
+                    </label>
+                    <input
+                      type="number"
+                      value={documentStyles.paragraph.marginBottom}
+                      onChange={(e) =>
+                        setDocumentStyles((prev) => ({
+                          ...prev,
+                          paragraph: {
+                            ...prev.paragraph,
+                            marginBottom: Number(e.target.value),
+                          },
+                        }))
+                      }
+                      className="w-full px-2 py-1 text-sm border rounded focus:ring-1 focus:ring-[#ef8432]"
+                      min="0"
+                      max="5"
+                      step="0.1"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">
+                      Align
+                    </label>
+                    <select
+                      value={documentStyles.paragraph.textAlign}
+                      onChange={(e) =>
+                        setDocumentStyles((prev) => ({
+                          ...prev,
+                          paragraph: {
+                            ...prev.paragraph,
+                            textAlign: e.target.value as
+                              | "left"
+                              | "center"
+                              | "right"
+                              | "justify",
+                          },
+                        }))
+                      }
+                      className="w-full px-2 py-1 text-sm border rounded focus:ring-1 focus:ring-[#ef8432]"
+                    >
+                      <option value="left">Left</option>
+                      <option value="center">Center</option>
+                      <option value="right">Right</option>
+                      <option value="justify">Justify</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Title Style */}
+              <div className="mb-4 p-3 border rounded-lg bg-[#fef5e7]">
+                <h3 className="font-semibold text-[#2c3e50] mb-2 text-sm flex items-center gap-2">
+                  <span>T</span> Title
+                </h3>
+                <div className="grid grid-cols-4 gap-2">
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">
+                      Size (px)
+                    </label>
+                    <input
+                      type="number"
+                      value={documentStyles.title.fontSize}
+                      onChange={(e) =>
+                        setDocumentStyles((prev) => ({
+                          ...prev,
+                          title: {
+                            ...prev.title,
+                            fontSize: Number(e.target.value),
+                          },
+                        }))
+                      }
+                      className="w-full px-2 py-1 text-sm border rounded focus:ring-1 focus:ring-[#ef8432]"
+                      min="12"
+                      max="72"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">
+                      Weight
+                    </label>
+                    <select
+                      value={documentStyles.title.fontWeight}
+                      onChange={(e) =>
+                        setDocumentStyles((prev) => ({
+                          ...prev,
+                          title: {
+                            ...prev.title,
+                            fontWeight: e.target.value as "normal" | "bold",
+                          },
+                        }))
+                      }
+                      className="w-full px-2 py-1 text-sm border rounded focus:ring-1 focus:ring-[#ef8432]"
+                    >
+                      <option value="normal">Normal</option>
+                      <option value="bold">Bold</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">
+                      Align
+                    </label>
+                    <select
+                      value={documentStyles.title.textAlign}
+                      onChange={(e) =>
+                        setDocumentStyles((prev) => ({
+                          ...prev,
+                          title: {
+                            ...prev.title,
+                            textAlign: e.target.value as
+                              | "left"
+                              | "center"
+                              | "right"
+                              | "justify",
+                          },
+                        }))
+                      }
+                      className="w-full px-2 py-1 text-sm border rounded focus:ring-1 focus:ring-[#ef8432]"
+                    >
+                      <option value="left">Left</option>
+                      <option value="center">Center</option>
+                      <option value="right">Right</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">
+                      After (em)
+                    </label>
+                    <input
+                      type="number"
+                      value={documentStyles.title.marginBottom}
+                      onChange={(e) =>
+                        setDocumentStyles((prev) => ({
+                          ...prev,
+                          title: {
+                            ...prev.title,
+                            marginBottom: Number(e.target.value),
+                          },
+                        }))
+                      }
+                      className="w-full px-2 py-1 text-sm border rounded focus:ring-1 focus:ring-[#ef8432]"
+                      min="0"
+                      max="5"
+                      step="0.1"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Heading Styles */}
+              <div className="mb-4 p-3 border rounded-lg bg-[#fef5e7]">
+                <h3 className="font-semibold text-[#2c3e50] mb-2 text-sm">
+                  Headings
+                </h3>
+                {["heading1", "heading2", "heading3"].map((heading, idx) => (
+                  <div key={heading} className="mb-2 last:mb-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xs font-medium text-gray-600 w-10">
+                        H{idx + 1}
+                      </span>
+                      <div className="grid grid-cols-4 gap-2 flex-1">
+                        <input
+                          type="number"
+                          value={
+                            (
+                              documentStyles[
+                                heading as keyof typeof documentStyles
+                              ] as any
+                            ).fontSize
+                          }
+                          onChange={(e) =>
+                            setDocumentStyles((prev) => ({
+                              ...prev,
+                              [heading]: {
+                                ...(prev as any)[heading],
+                                fontSize: Number(e.target.value),
+                              },
+                            }))
+                          }
+                          className="w-full px-2 py-1 border rounded text-xs focus:ring-1 focus:ring-[#ef8432]"
+                          title="Font Size (px)"
+                          placeholder="Size"
+                          min="12"
+                          max="48"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-400">
+                          Wt
+                        </label>
+                        <select
+                          value={
+                            (
+                              documentStyles[
+                                heading as keyof typeof documentStyles
+                              ] as any
+                            ).fontWeight
+                          }
+                          onChange={(e) =>
+                            setDocumentStyles((prev) => ({
+                              ...prev,
+                              [heading]: {
+                                ...(prev as any)[heading],
+                                fontWeight: e.target.value,
+                              },
+                            }))
+                          }
+                          className="w-full px-1 py-1 border rounded text-xs focus:ring-1 focus:ring-[#ef8432]"
+                        >
+                          <option value="normal">Normal</option>
+                          <option value="bold">Bold</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-400">
+                          Before
+                        </label>
+                        <input
+                          type="number"
+                          value={
+                            (
+                              documentStyles[
+                                heading as keyof typeof documentStyles
+                              ] as any
+                            ).marginTop
+                          }
+                          onChange={(e) =>
+                            setDocumentStyles((prev) => ({
+                              ...prev,
+                              [heading]: {
+                                ...(prev as any)[heading],
+                                marginTop: Number(e.target.value),
+                              },
+                            }))
+                          }
+                          className="w-full px-1 py-1 border rounded text-xs focus:ring-1 focus:ring-[#ef8432]"
+                          min="0"
+                          max="5"
+                          step="0.1"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-400">
+                          After
+                        </label>
+                        <input
+                          type="number"
+                          value={
+                            (
+                              documentStyles[
+                                heading as keyof typeof documentStyles
+                              ] as any
+                            ).marginBottom
+                          }
+                          onChange={(e) =>
+                            setDocumentStyles((prev) => ({
+                              ...prev,
+                              [heading]: {
+                                ...(prev as any)[heading],
+                                marginBottom: Number(e.target.value),
+                              },
+                            }))
+                          }
+                          className="w-full px-1 py-1 border rounded text-xs focus:ring-1 focus:ring-[#ef8432]"
+                          min="0"
+                          max="5"
+                          step="0.1"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Blockquote Style */}
+              <div className="mb-3 p-2 border rounded-lg bg-[#fef5e7]">
+                <h3 className="font-medium text-sm text-[#2c3e50] mb-2 flex items-center gap-2">
+                  <span>"</span> Block Quote
+                </h3>
+                <div className="grid grid-cols-4 gap-2">
+                  <div>
+                    <label className="block text-xs text-gray-400">Style</label>
+                    <select
+                      value={documentStyles.blockquote.fontStyle}
+                      onChange={(e) =>
+                        setDocumentStyles((prev) => ({
+                          ...prev,
+                          blockquote: {
+                            ...prev.blockquote,
+                            fontStyle: e.target.value as "normal" | "italic",
+                          },
+                        }))
+                      }
+                      className="w-full px-1 py-1 border rounded text-xs focus:ring-1 focus:ring-[#ef8432]"
+                    >
+                      <option value="normal">Normal</option>
+                      <option value="italic">Italic</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-400">
+                      Indent
+                    </label>
+                    <input
+                      type="number"
+                      value={documentStyles.blockquote.marginLeft}
+                      onChange={(e) =>
+                        setDocumentStyles((prev) => ({
+                          ...prev,
+                          blockquote: {
+                            ...prev.blockquote,
+                            marginLeft: Number(e.target.value),
+                          },
+                        }))
+                      }
+                      className="w-full px-1 py-1 border rounded text-xs focus:ring-1 focus:ring-[#ef8432]"
+                      min="0"
+                      max="100"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-400">
+                      Border
+                    </label>
+                    <input
+                      type="number"
+                      value={documentStyles.blockquote.borderLeftWidth}
+                      onChange={(e) =>
+                        setDocumentStyles((prev) => ({
+                          ...prev,
+                          blockquote: {
+                            ...prev.blockquote,
+                            borderLeftWidth: Number(e.target.value),
+                          },
+                        }))
+                      }
+                      className="w-full px-1 py-1 border rounded text-xs focus:ring-1 focus:ring-[#ef8432]"
+                      min="0"
+                      max="10"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-400">Color</label>
+                    <input
+                      type="color"
+                      value={documentStyles.blockquote.borderLeftColor}
+                      onChange={(e) =>
+                        setDocumentStyles((prev) => ({
+                          ...prev,
+                          blockquote: {
+                            ...prev.blockquote,
+                            borderLeftColor: e.target.value,
+                          },
+                        }))
+                      }
+                      className="w-full h-6 px-1 border rounded cursor-pointer"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Header & Footer */}
+              <div className="mb-3 p-2 border rounded-lg bg-[#fef5e7]">
+                <h3 className="font-medium text-sm text-[#2c3e50] mb-2 flex items-center gap-2">
+                  📄 Header & Footer
+                </h3>
+                <div className="space-y-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-xs text-gray-400">
+                        Header
+                      </label>
+                      <input
+                        type="text"
+                        value={headerText}
+                        onChange={(e) => setHeaderText(e.target.value)}
+                        placeholder="Header text"
+                        className="w-full px-2 py-1 border rounded text-xs focus:ring-1 focus:ring-[#ef8432]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-400">
+                        Footer
+                      </label>
+                      <input
+                        type="text"
+                        value={footerText}
+                        onChange={(e) => setFooterText(e.target.value)}
+                        placeholder="Footer text"
+                        className="w-full px-2 py-1 border rounded text-xs focus:ring-1 focus:ring-[#ef8432]"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4 text-xs">
+                    <label className="flex items-center gap-1 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={showPageNumbers}
+                        onChange={(e) => setShowPageNumbers(e.target.checked)}
+                        className="w-3 h-3 rounded border-gray-300 text-[#ef8432] focus:ring-[#ef8432]"
+                      />
+                      <span className="text-gray-600">Page #s</span>
+                    </label>
+                    {showPageNumbers && (
+                      <select
+                        value={pageNumberPosition}
+                        onChange={(e) =>
+                          setPageNumberPosition(
+                            e.target.value as "header" | "footer"
+                          )
+                        }
+                        className="px-1 py-0.5 border rounded text-xs focus:ring-1 focus:ring-[#ef8432]"
+                      >
+                        <option value="header">In Header</option>
+                        <option value="footer">In Footer</option>
+                      </select>
+                    )}
+                    <label className="flex items-center gap-1 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={showHeaderFooter}
+                        onChange={(e) => setShowHeaderFooter(e.target.checked)}
+                        className="w-3 h-3 rounded border-gray-300 text-[#ef8432] focus:ring-[#ef8432]"
+                      />
+                      <span className="text-gray-600">Show in editor</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-3 border-t bg-gray-50 flex justify-between items-center">
+              <button
+                onClick={() => {
+                  // Reset to defaults
+                  setDocumentStyles({
+                    paragraph: {
+                      firstLineIndent: 48,
+                      lineHeight: 1.5,
+                      marginBottom: 0.5,
+                      textAlign: "left",
+                    },
+                    title: {
+                      fontSize: 24,
+                      fontWeight: "bold",
+                      textAlign: "center",
+                      marginBottom: 0.5,
+                    },
+                    heading1: {
+                      fontSize: 28,
+                      fontWeight: "bold",
+                      marginTop: 1.5,
+                      marginBottom: 0.8,
+                    },
+                    heading2: {
+                      fontSize: 22,
+                      fontWeight: "bold",
+                      marginTop: 1.2,
+                      marginBottom: 0.6,
+                    },
+                    heading3: {
+                      fontSize: 18,
+                      fontWeight: "bold",
+                      marginTop: 1,
+                      marginBottom: 0.5,
+                    },
+                    blockquote: {
+                      fontStyle: "italic",
+                      marginLeft: 40,
+                      borderLeftWidth: 4,
+                      borderLeftColor: "#e0c392",
+                    },
+                  });
+                  setHeaderText("");
+                  setFooterText("");
+                  setShowPageNumbers(true);
+                  setPageNumberPosition("footer");
+                }}
+                className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800 transition-colors"
+              >
+                Reset to Defaults
+              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowStylesPanel(false)}
+                  className="px-3 py-1.5 text-sm border border-gray-300 rounded hover:bg-gray-100 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    // Apply styles to CSS variables and close
+                    if (editorRef.current) {
+                      editorRef.current.style.setProperty(
+                        "--first-line-indent",
+                        `${documentStyles.paragraph.firstLineIndent}px`
+                      );
+                    }
+                    setShowStylesPanel(false);
+                  }}
+                  className="px-3 py-1.5 text-sm bg-[#ef8432] text-white rounded hover:bg-[#d97320] transition-colors"
+                >
+                  Apply Styles
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Find & Replace Panel */}
       {showFindReplace && (
         <div className="border-b bg-yellow-50 p-3 flex items-center gap-3 flex-wrap">
@@ -2270,6 +3050,33 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
         className="editor-wrapper"
         style={{ position: "relative", flex: 1, overflow: "auto" }}
       >
+        {/* Header display */}
+        {showHeaderFooter &&
+          (headerText ||
+            (showPageNumbers && pageNumberPosition === "header")) && (
+            <div
+              style={{
+                width: `${PAGE_WIDTH_PX}px`,
+                maxWidth: "calc(100% - 8px)",
+                margin: "20px auto 0 auto",
+                padding: "8px 48px",
+                boxSizing: "border-box",
+                borderBottom: "1px solid #e0c392",
+                backgroundColor: "#fafafa",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                fontSize: "12px",
+                color: "#666",
+              }}
+            >
+              <span>{headerText}</span>
+              {showPageNumbers && pageNumberPosition === "header" && (
+                <span>Page 1</span>
+              )}
+            </div>
+          )}
+
         <div
           ref={editorRef}
           contentEditable={isEditable}
@@ -2283,11 +3090,34 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
             minHeight: "300px",
             width: `${PAGE_WIDTH_PX}px`,
             maxWidth: "calc(100% - 8px)",
-            margin: "20px auto",
+            margin:
+              showHeaderFooter &&
+              (headerText ||
+                (showPageNumbers && pageNumberPosition === "header"))
+                ? "0 auto 0 auto"
+                : "20px auto",
+            marginBottom:
+              showHeaderFooter &&
+              (footerText ||
+                (showPageNumbers && pageNumberPosition === "footer"))
+                ? "0"
+                : "20px",
             paddingLeft: `${leftMargin}px`,
             paddingRight: `${rightMargin}px`,
             boxSizing: "border-box",
             border: isEditable ? "2px solid #10b981" : "1px solid #d1d5db",
+            borderTop:
+              showHeaderFooter &&
+              (headerText ||
+                (showPageNumbers && pageNumberPosition === "header"))
+                ? "none"
+                : undefined,
+            borderBottom:
+              showHeaderFooter &&
+              (footerText ||
+                (showPageNumbers && pageNumberPosition === "footer"))
+                ? "none"
+                : undefined,
             backgroundColor: isEditable ? "#ffffff" : "#fafafa",
             boxShadow: isEditable
               ? "0 2px 8px rgba(16, 185, 129, 0.2)"
@@ -2296,12 +3126,37 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
             cursor: isEditable ? "text" : "default",
             transition: "all 0.2s ease",
             // CSS variable for dynamic text-indent
-            ["--first-line-indent" as string]: `${
-              firstLineIndent - leftMargin
-            }px`,
+            ["--first-line-indent" as string]: `${documentStyles.paragraph.firstLineIndent}px`,
           }}
           suppressContentEditableWarning
         />
+
+        {/* Footer display */}
+        {showHeaderFooter &&
+          (footerText ||
+            (showPageNumbers && pageNumberPosition === "footer")) && (
+            <div
+              style={{
+                width: `${PAGE_WIDTH_PX}px`,
+                maxWidth: "calc(100% - 8px)",
+                margin: "0 auto 20px auto",
+                padding: "8px 48px",
+                boxSizing: "border-box",
+                borderTop: "1px solid #e0c392",
+                backgroundColor: "#fafafa",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                fontSize: "12px",
+                color: "#666",
+              }}
+            >
+              <span>{footerText}</span>
+              {showPageNumbers && pageNumberPosition === "footer" && (
+                <span>Page 1</span>
+              )}
+            </div>
+          )}
 
         {/* Spacing indicators overlay */}
         {renderIndicators()}
@@ -2315,9 +3170,18 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           color: #000000;
         }
         .editor-content p {
-          margin: 0.5em 0;
-          line-height: 1.2;
-          text-indent: var(--first-line-indent, 48px);
+          margin: ${documentStyles.paragraph.marginBottom}em 0;
+          line-height: ${documentStyles.paragraph.lineHeight};
+          text-indent: var(--first-line-indent, ${
+            documentStyles.paragraph.firstLineIndent
+          }px);
+          text-align: ${documentStyles.paragraph.textAlign};
+        }
+        .editor-content p.body-text {
+          text-indent: var(--first-line-indent, ${
+            documentStyles.paragraph.firstLineIndent
+          }px) !important;
+          line-height: ${documentStyles.paragraph.lineHeight} !important;
         }
         /* Screenplay block formatting - highest priority */
         .editor-content p.screenplay-block {
@@ -2436,21 +3300,21 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
         }
         /* Title page content - centered, no indent */
         .editor-content p.title-content {
-          text-align: center !important;
+          text-align: ${documentStyles.title.textAlign} !important;
           text-indent: 0 !important;
-          margin: 0.3em 0 !important;
+          margin: ${documentStyles.title.marginBottom}em 0 !important;
         }
         .editor-content p.book-title {
-          text-align: center !important;
+          text-align: ${documentStyles.title.textAlign} !important;
           text-indent: 0 !important;
-          font-size: 1.5em !important;
-          font-weight: bold !important;
-          margin: 0.5em 0 !important;
+          font-size: ${documentStyles.title.fontSize}px !important;
+          font-weight: ${documentStyles.title.fontWeight} !important;
+          margin: ${documentStyles.title.marginBottom}em 0 !important;
         }
         .editor-content p.subtitle {
-          text-align: center !important;
+          text-align: ${documentStyles.title.textAlign} !important;
           text-indent: 0 !important;
-          font-size: 1.1em !important;
+          font-size: ${documentStyles.title.fontSize * 0.7}px !important;
           font-style: italic !important;
           margin: 0.3em 0 !important;
         }
@@ -2467,8 +3331,10 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           margin: 1em 0 !important;
         }
         .editor-content p.body-text {
-          text-align: left !important;
-          text-indent: var(--first-line-indent, 48px) !important;
+          text-align: ${documentStyles.paragraph.textAlign} !important;
+          text-indent: var(--first-line-indent, ${
+            documentStyles.paragraph.firstLineIndent
+          }px) !important;
         }
         /* Copyright/boilerplate text (all caps, short lines) */
         .editor-content p:has(> strong:only-child):not(:has(em)),
@@ -2481,19 +3347,25 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           text-align: center;
         }
         .editor-content h1 {
-          font-size: 2em;
-          font-weight: bold;
-          margin: 0.67em 0;
+          font-size: ${documentStyles.heading1.fontSize}px;
+          font-weight: ${documentStyles.heading1.fontWeight};
+          margin: ${documentStyles.heading1.marginTop}em 0 ${
+        documentStyles.heading1.marginBottom
+      }em 0;
         }
         .editor-content h2 {
-          font-size: 1.5em;
-          font-weight: bold;
-          margin: 0.75em 0;
+          font-size: ${documentStyles.heading2.fontSize}px;
+          font-weight: ${documentStyles.heading2.fontWeight};
+          margin: ${documentStyles.heading2.marginTop}em 0 ${
+        documentStyles.heading2.marginBottom
+      }em 0;
         }
         .editor-content h3 {
-          font-size: 1.17em;
-          font-weight: bold;
-          margin: 0.83em 0;
+          font-size: ${documentStyles.heading3.fontSize}px;
+          font-weight: ${documentStyles.heading3.fontWeight};
+          margin: ${documentStyles.heading3.marginTop}em 0 ${
+        documentStyles.heading3.marginBottom
+      }em 0;
         }
         .editor-content h4 {
           font-size: 1em;
@@ -2511,11 +3383,13 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           margin: 2em 0;
         }
         .editor-content blockquote {
-          border-left: 4px solid #ddd;
+          border-left: ${documentStyles.blockquote.borderLeftWidth}px solid ${
+        documentStyles.blockquote.borderLeftColor
+      };
           padding-left: 1em;
-          margin: 1em 0;
+          margin: 1em 0 1em ${documentStyles.blockquote.marginLeft}px;
           color: #666;
-          font-style: italic;
+          font-style: ${documentStyles.blockquote.fontStyle};
         }
         .editor-content pullquote {
           border-left: 4px solid #ef8432;

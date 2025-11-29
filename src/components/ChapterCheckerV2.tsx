@@ -436,8 +436,24 @@ const deriveSectionsFromText = (rawText: string): Section[] => {
 };
 
 export const ChapterCheckerV2: React.FC = () => {
-  // Access control state
-  const [accessLevel, setAccessLevel] = useState<AccessLevel>("free");
+  // Access control state - initialize from localStorage cache to prevent UI jerk
+  const [accessLevel, setAccessLevel] = useState<AccessLevel>(() => {
+    if (typeof window !== "undefined") {
+      const cached = localStorage.getItem("quillpilot_access_level");
+      if (cached === "premium" || cached === "professional") {
+        return cached;
+      }
+    }
+    return "free";
+  });
+  const [isLoadingProfile, setIsLoadingProfile] = useState(() => {
+    // Only show loading if we don't have a cached access level
+    if (typeof window !== "undefined") {
+      const cached = localStorage.getItem("quillpilot_access_level");
+      return !cached; // If no cache, we're loading; if cached, no loading screen needed
+    }
+    return true;
+  });
   const [userProfile, setUserProfile] = useState<any>(null);
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   const [showTierTwoPreview, setShowTierTwoPreview] = useState(false);
@@ -487,8 +503,17 @@ export const ChapterCheckerV2: React.FC = () => {
   const [autoAnalysisEnabled, setAutoAnalysisEnabled] = useState(false);
   const autoAnalysisTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // UI state
-  const [viewMode, setViewMode] = useState<"analysis" | "writer">("analysis");
+  // UI state - viewMode initialized based on cached access level (tier 3 = writer mode)
+  const [viewMode, setViewMode] = useState<"analysis" | "writer">(() => {
+    if (typeof window !== "undefined") {
+      const cached = localStorage.getItem("quillpilot_access_level");
+      // Tier 3 (professional) users default to writer mode
+      if (cached === "professional") {
+        return "writer";
+      }
+    }
+    return "analysis";
+  });
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
   const [isReferenceLibraryModalOpen, setIsReferenceLibraryModalOpen] =
     useState(false);
@@ -630,50 +655,95 @@ export const ChapterCheckerV2: React.FC = () => {
 
   // Sync user profile and access level from Supabase
   useEffect(() => {
+    let isMounted = true;
+
     const loadUserProfile = async () => {
       try {
         const user = await getCurrentUser();
+        if (!isMounted) return;
+
         if (user) {
           const profile = await getUserProfile();
+          if (!isMounted) return;
+
           if (profile) {
             setUserProfile(profile);
             // Set access level from profile subscription
-            if (profile.access_level) {
-              setAccessLevel(profile.access_level as AccessLevel);
+            const level = (profile.access_level as AccessLevel) || "free";
+            console.log("📋 Profile loaded, access_level:", level);
+            setAccessLevel(level);
+            // Cache in localStorage for instant load on next visit
+            localStorage.setItem("quillpilot_access_level", level);
+            // Only set viewMode to writer on initial load if no document loaded yet
+            // Don't override if user has already started working
+            if (level === "professional" && !chapterData) {
+              setViewMode("writer");
             }
+          } else {
+            // User exists but no profile - this is unusual, keep cached value
+            console.warn("⚠️ User exists but no profile found");
           }
+        } else {
+          // No user - but don't clear cache here, wait for explicit auth event
+          console.log("📋 No user session found during initial load");
         }
       } catch (error) {
         console.error("Error loading user profile:", error);
-        // Don't block app if profile loading fails
+        // Don't block app if profile loading fails, keep cached value
+      } finally {
+        if (isMounted) {
+          setIsLoadingProfile(false);
+        }
       }
     };
 
     loadUserProfile();
 
-    // Listen for auth state changes
+    // Listen for auth state changes (login/logout events)
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("🔐 Auth state change:", event, session?.user?.email);
+
+      // Skip INITIAL_SESSION - we handle initial load above
+      if (event === "INITIAL_SESSION") {
+        return;
+      }
+
+      if (!isMounted) return;
+
       try {
-        if (session?.user) {
+        if (event === "SIGNED_IN" && session?.user) {
           const profile = await getUserProfile();
+          if (!isMounted) return;
+
           if (profile) {
             setUserProfile(profile);
-            if (profile.access_level) {
-              setAccessLevel(profile.access_level as AccessLevel);
+            const level = (profile.access_level as AccessLevel) || "free";
+            console.log("📋 Signed in, access_level:", level);
+            setAccessLevel(level);
+            localStorage.setItem("quillpilot_access_level", level);
+            if (level === "professional" && !chapterData) {
+              setViewMode("writer");
             }
           }
-        } else {
+        } else if (event === "SIGNED_OUT") {
+          // User explicitly logged out - clear everything
+          console.log("📋 Signed out - clearing cache");
           setUserProfile(null);
           setAccessLevel("free");
+          setViewMode("analysis");
+          localStorage.removeItem("quillpilot_access_level");
         }
       } catch (error) {
         console.error("Error loading profile on auth change:", error);
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   // Force layout recalculation when tier or view mode changes
@@ -780,71 +850,6 @@ export const ChapterCheckerV2: React.FC = () => {
       );
     };
   }, []);
-
-  const handleAccessLevelChange = async (level: AccessLevel) => {
-    // Prevent changing tiers if user has a paid subscription
-    if (
-      userProfile &&
-      (userProfile.access_level === "premium" ||
-        userProfile.access_level === "professional")
-    ) {
-      alert(
-        "Your tier is managed by your subscription. Please contact support to change your plan."
-      );
-      return;
-    }
-
-    // If Supabase is configured and switching to premium/professional, check auth
-    const supabaseConfigured =
-      import.meta.env.VITE_SUPABASE_URL &&
-      import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-    if (
-      supabaseConfigured &&
-      (level === "premium" || level === "professional")
-    ) {
-      const user = await getCurrentUser();
-      console.log("🔍 Tier change check - User:", user?.email);
-
-      if (!user) {
-        // User not authenticated - show upgrade/auth modal
-        console.log("❌ No user session - showing upgrade prompt");
-        setShowTierTwoPreview(true);
-        setUpgradeTarget(level === "premium" ? "premium" : "professional");
-        return;
-      }
-
-      // Check if user's profile allows this tier
-      const profile = await getUserProfile();
-      console.log(
-        "🔍 Profile loaded:",
-        profile?.email,
-        "access_level:",
-        profile?.access_level
-      );
-
-      if (profile && profile.access_level === "free") {
-        // User is authenticated but doesn't have access
-        console.log("❌ User has free tier - showing upgrade prompt");
-        setShowTierTwoPreview(true);
-        setUpgradeTarget(level === "premium" ? "premium" : "professional");
-        return;
-      }
-
-      console.log("✅ User has access to", level);
-    }
-
-    setAccessLevel(level);
-
-    // Automatically switch to writer mode when professional tier is selected
-    if (level === "professional") {
-      setViewMode("writer");
-    }
-    // If switching away from professional tier while in writer mode, switch to analysis
-    else if (viewMode === "writer") {
-      setViewMode("analysis");
-    }
-  };
 
   const handleDocumentScrollDepthChange = (hasScrolled: boolean) => {
     setContentScrolled(hasScrolled);
@@ -1816,6 +1821,36 @@ export const ChapterCheckerV2: React.FC = () => {
   const canEditChapter =
     viewMode === "writer" && tierFeatures.writerMode && !isAnalyzing;
 
+  // Show loading screen while profile is being fetched to prevent UI jerk
+  if (isLoadingProfile) {
+    return (
+      <div
+        style={{
+          height: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: "#dce4ec",
+          flexDirection: "column",
+          gap: "1rem",
+        }}
+      >
+        <div
+          style={{
+            width: "48px",
+            height: "48px",
+            border: "4px solid #e0c392",
+            borderTopColor: "#ef8432",
+            borderRadius: "50%",
+            animation: "spin 1s linear infinite",
+          }}
+        />
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        <div style={{ color: "#2c3e50", fontSize: "14px" }}>Loading...</div>
+      </div>
+    );
+  }
+
   return (
     <div
       style={{
@@ -2401,44 +2436,25 @@ export const ChapterCheckerV2: React.FC = () => {
                 >
                   Access Tier:
                 </span>
-                {userProfile &&
-                (userProfile.access_level === "premium" ||
-                  userProfile.access_level === "professional") ? (
-                  <span
-                    style={{
-                      fontSize: "0.875rem",
-                      fontWeight: "600",
-                      color: "#2c3e50",
-                      padding: "6px 30px 6px 12px",
-                      backgroundColor: "#fef5e7",
-                      border: "1.5px solid #2c3e50",
-                      borderRadius: "16px",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {accessLevel === "premium"
-                      ? "Tier 2 (Full Analysis)"
-                      : "Tier 3 (Pro Writer)"}
-                  </span>
-                ) : (
-                  <CustomDropdown
-                    value={accessLevel}
-                    onChange={(value) =>
-                      handleAccessLevelChange(value as AccessLevel)
-                    }
-                    options={[
-                      { value: "free", label: "Tier 1 (Limited Analysis)" },
-                      {
-                        value: "premium",
-                        label: "Tier 2 (Full Analysis)",
-                      },
-                      {
-                        value: "professional",
-                        label: "Tier 3 (Pro Writer)",
-                      },
-                    ]}
-                  />
-                )}
+                {/* Tier Badge - shows current access level */}
+                <span
+                  style={{
+                    fontSize: "0.875rem",
+                    fontWeight: "600",
+                    color: "#2c3e50",
+                    padding: "6px 12px",
+                    backgroundColor: "#fef5e7",
+                    border: "1.5px solid #2c3e50",
+                    borderRadius: "16px",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {accessLevel === "free"
+                    ? "Tier 1 (Limited Analysis)"
+                    : accessLevel === "premium"
+                    ? "Tier 2 (Full Analysis)"
+                    : "Tier 3 (Pro Writer)"}
+                </span>
               </div>
 
               {/* User Menu / Auth - Far Right */}
