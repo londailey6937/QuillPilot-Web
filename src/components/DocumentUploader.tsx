@@ -62,6 +62,98 @@ function base64ToArrayBuffer(base64: string) {
   return bytes.buffer;
 }
 
+/**
+ * Post-process HTML from mammoth to add proper formatting classes
+ * for title pages, chapter headings, and body text.
+ * Mammoth doesn't preserve Word alignment/indentation, so we infer it from content.
+ */
+function enhanceDocumentFormatting(html: string): string {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, "text/html");
+  const paragraphs = doc.querySelectorAll("p");
+
+  let foundBodyText = false; // Track when we've passed title/front matter
+  let consecutiveShortLines = 0; // Track clusters of short lines (front matter)
+
+  paragraphs.forEach((p, index) => {
+    const text = p.textContent?.trim() || "";
+    const hasImage = p.querySelector("img") !== null;
+    const hasOnlyBold =
+      p.children.length > 0 &&
+      Array.from(p.childNodes).every(
+        (node) =>
+          (node.nodeType === Node.ELEMENT_NODE &&
+            ((node as Element).tagName === "STRONG" ||
+              (node as Element).tagName === "B" ||
+              ((node as Element).tagName === "EM" &&
+                (node as Element).querySelector("strong")))) ||
+          (node.nodeType === Node.TEXT_NODE && node.textContent?.trim() === "")
+      );
+    const hasOnlyItalic =
+      p.children.length === 1 &&
+      (p.children[0].tagName === "EM" || p.children[0].tagName === "I");
+    const isShortLine = text.length < 80;
+    const isVeryShortLine = text.length < 50;
+    const isAllCaps = text === text.toUpperCase() && text.length > 2;
+    const looksLikeChapterHeading =
+      /^(chapter|part|book|section|prologue|epilogue|introduction|preface|contents|foreword)\s*\d*/i.test(
+        text
+      );
+    const looksLikeCopyright =
+      /copyright|©|all rights reserved|published by|printed in/i.test(text);
+    const looksLikeFrontMatter =
+      /^(by |illustrations|dedication|acknowledgments|table of contents)/i.test(
+        text
+      ) || looksLikeCopyright;
+
+    // Track consecutive short lines (indicates front matter block)
+    if (isShortLine && text.length > 0) {
+      consecutiveShortLines++;
+    } else if (text.length > 100) {
+      consecutiveShortLines = 0;
+    }
+
+    // Detect title page content (centered, no indent)
+    if (!foundBodyText) {
+      // Front matter indicators: short lines, all caps, images, copyright text, etc.
+      const isFrontMatter =
+        hasImage ||
+        looksLikeChapterHeading ||
+        looksLikeFrontMatter ||
+        text === "" ||
+        (isVeryShortLine && isAllCaps) ||
+        (isShortLine && (hasOnlyBold || hasOnlyItalic)) ||
+        (consecutiveShortLines > 3 && isShortLine); // In a cluster of short lines
+
+      if (isFrontMatter) {
+        p.classList.add("title-content");
+        // Check for main title (largest/first bold text)
+        if (hasOnlyBold && index < 5) {
+          p.classList.add("book-title");
+        }
+      } else if (text.length > 150) {
+        // Long paragraph = body text has started
+        foundBodyText = true;
+        p.classList.add("body-text");
+      } else if (text.length > 80) {
+        // Medium paragraph in front matter - might be dedication or intro
+        p.classList.add("title-content");
+      }
+    } else {
+      // After title page, mark chapter headings and body text
+      if (looksLikeChapterHeading || (isVeryShortLine && isAllCaps)) {
+        p.classList.add("chapter-heading");
+      } else if (hasImage) {
+        p.classList.add("image-paragraph");
+      } else if (text.length > 0) {
+        p.classList.add("body-text");
+      }
+    }
+  });
+
+  return doc.body.innerHTML;
+}
+
 export interface UploadedDocumentPayload {
   fileName: string;
   fileType: string;
@@ -173,6 +265,12 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
         {
           includeDefaultStyleMap: true,
           includeEmbeddedStyleMap: true,
+          styleMap: [
+            "p => p:fresh",
+            "p[style-name='Normal'] => p:fresh",
+            // Preserve indentation
+            "p => p.preserve-indent:fresh",
+          ].join("\n"),
           convertImage: mammoth.images.imgElement((image) => {
             imageCount += 1;
             return image.read("base64").then((base64String) => {
@@ -243,13 +341,16 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
         fileName
       );
 
+      // Enhance HTML with proper formatting classes (title pages, body text, etc.)
+      const enhancedHtml = screenplayResult.isScreenplay
+        ? screenplayResult.content
+        : enhanceDocumentFormatting(htmlResult.value);
+
       const payload: UploadedDocumentPayload = {
         fileName,
         fileType,
         format: screenplayResult.isScreenplay ? "html" : "html",
-        content: screenplayResult.isScreenplay
-          ? screenplayResult.content
-          : htmlResult.value,
+        content: enhancedHtml,
         plainText: screenplayResult.plainText,
         imageCount,
         isScreenplay: screenplayResult.isScreenplay,
@@ -631,6 +732,12 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
         const shouldUseWordFormatting =
           screenplayResult.isScreenplay && hasParagraphIndents && rawHtml;
 
+        // Enhance HTML with proper formatting classes for non-screenplay documents
+        const enhancedHtml =
+          !screenplayResult.isScreenplay && rawHtml
+            ? enhanceDocumentFormatting(rawHtml)
+            : rawHtml;
+
         const payload: UploadedDocumentPayload = {
           fileName,
           fileType,
@@ -639,7 +746,7 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
             ? rawHtml
             : screenplayResult.isScreenplay
             ? screenplayResult.content
-            : rawHtml || plainText,
+            : enhancedHtml || plainText,
           plainText: screenplayResult.plainText,
           imageCount,
           isScreenplay: screenplayResult.isScreenplay,

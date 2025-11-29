@@ -734,6 +734,9 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
         "transition",
       ];
 
+      // Custom paragraph styles (not native HTML tags)
+      const customParagraphStyles = ["title", "subtitle"];
+
       if (screenplayElements.includes(tag)) {
         const selection = window.getSelection();
         if (!selection || !editorRef.current) return;
@@ -765,6 +768,40 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
             .replace(/'/g, "&#39;");
 
           const blockHtml = `<p class="screenplay-block ${tag}" data-block="${tag}">${escapedText}</p>`;
+          document.execCommand("insertHTML", false, blockHtml);
+        }
+        setTimeout(() => handleInput(), 0);
+      } else if (customParagraphStyles.includes(tag)) {
+        // Handle custom paragraph styles (title, subtitle)
+        const selection = window.getSelection();
+        if (!selection || !editorRef.current) return;
+
+        // Get the current paragraph/block element
+        let currentBlock = selection.anchorNode;
+        while (
+          currentBlock &&
+          currentBlock.nodeName !== "P" &&
+          currentBlock !== editorRef.current
+        ) {
+          currentBlock = currentBlock.parentNode;
+        }
+
+        if (currentBlock && currentBlock.nodeName === "P") {
+          // Convert existing paragraph to styled paragraph
+          const p = currentBlock as HTMLElement;
+          p.className =
+            tag === "title"
+              ? "title-content book-title"
+              : "title-content subtitle";
+          p.removeAttribute("data-block");
+        } else {
+          // Create new styled paragraph
+          const selectedText = selection.toString() || "Title";
+          const className =
+            tag === "title"
+              ? "title-content book-title"
+              : "title-content subtitle";
+          const blockHtml = `<p class="${className}">${selectedText}</p>`;
           document.execCommand("insertHTML", false, blockHtml);
         }
         setTimeout(() => handleInput(), 0);
@@ -1576,6 +1613,8 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                 title="Block Type"
               >
                 <option value="p">Paragraph</option>
+                <option value="title">Title (Centered)</option>
+                <option value="subtitle">Subtitle</option>
                 <option value="h1">Heading 1</option>
                 <option value="h2">Heading 2</option>
                 <option value="h3">Heading 3</option>
@@ -2395,7 +2434,43 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           text-align: center;
           text-indent: 0 !important;
         }
-        /* Center copyright/boilerplate text (all caps, short lines) */
+        /* Title page content - centered, no indent */
+        .editor-content p.title-content {
+          text-align: center !important;
+          text-indent: 0 !important;
+          margin: 0.3em 0 !important;
+        }
+        .editor-content p.book-title {
+          text-align: center !important;
+          text-indent: 0 !important;
+          font-size: 1.5em !important;
+          font-weight: bold !important;
+          margin: 0.5em 0 !important;
+        }
+        .editor-content p.subtitle {
+          text-align: center !important;
+          text-indent: 0 !important;
+          font-size: 1.1em !important;
+          font-style: italic !important;
+          margin: 0.3em 0 !important;
+        }
+        .editor-content p.chapter-heading {
+          text-align: center !important;
+          text-indent: 0 !important;
+          font-weight: bold;
+          font-size: 1.2em;
+          margin: 1.5em 0 0.8em 0 !important;
+        }
+        .editor-content p.image-paragraph {
+          text-align: center !important;
+          text-indent: 0 !important;
+          margin: 1em 0 !important;
+        }
+        .editor-content p.body-text {
+          text-align: left !important;
+          text-indent: var(--first-line-indent, 48px) !important;
+        }
+        /* Copyright/boilerplate text (all caps, short lines) */
         .editor-content p:has(> strong:only-child):not(:has(em)),
         .editor-content p > strong:only-child {
           text-align: center;
