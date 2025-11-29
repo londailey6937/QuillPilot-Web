@@ -8,6 +8,15 @@ import {
   ImageRun,
   ShadingType,
   BorderStyle,
+  // TableOfContents - replaced with manual TOC generation
+  StyleLevel,
+  PageBreak,
+  convertInchesToTwip,
+  PageNumber,
+  Footer,
+  Header,
+  TabStopType,
+  LeaderType,
 } from "docx";
 import { saveAs } from "file-saver";
 import { ChapterAnalysis, PrincipleEvaluation, Recommendation } from "@/types";
@@ -24,12 +33,21 @@ import {
 } from "@/utils/dualCodingAnalyzer";
 import { buildContentHtml } from "./htmlBuilder";
 
+// Export mode determines the format of the output
+export type ExportMode = "writer" | "analysis";
+
 interface ExportDocxOptions {
   text: string;
   html?: string | null;
   fileName?: string;
   analysis?: ChapterAnalysis | null;
   includeHighlights?: boolean;
+  mode?: ExportMode; // "writer" = clean document, "analysis" = with metrics
+  includeToc?: boolean; // Include Table of Contents (auto-detected from content or explicit)
+  headerText?: string; // Custom header text
+  footerText?: string; // Custom footer text
+  showPageNumbers?: boolean; // Show page numbers (default true)
+  pageNumberPosition?: "header" | "footer"; // Where to show page numbers
 }
 
 export const exportToDocx = async ({
@@ -38,14 +56,36 @@ export const exportToDocx = async ({
   fileName = "edited-chapter",
   analysis,
   includeHighlights = true,
+  mode = "analysis", // Default to analysis for backwards compatibility
+  includeToc, // If undefined, auto-detect from content
+  headerText = "",
+  footerText = "",
+  showPageNumbers = true,
+  pageNumberPosition = "footer",
 }: ExportDocxOptions) => {
+  // In writer mode, we export a clean document without analysis
+  const isWriterMode = mode === "writer";
+  const effectiveAnalysis = isWriterMode ? null : analysis;
+  const effectiveIncludeHighlights = isWriterMode ? false : includeHighlights;
+
   // Build HTML content using shared builder for consistency
   const htmlContent = buildContentHtml({
     text,
     html,
-    analysis,
-    includeHighlights,
+    analysis: effectiveAnalysis,
+    includeHighlights: effectiveIncludeHighlights,
   });
+
+  // Check if content has a TOC placeholder or multiple headings
+  const hasTocPlaceholder =
+    html?.includes("toc-placeholder") ||
+    htmlContent.includes("toc-placeholder");
+  const headingMatches = htmlContent.match(/<h[1-6][^>]*>/gi) || [];
+  const hasMultipleHeadings = headingMatches.length >= 3;
+
+  // Auto-detect TOC: include if placeholder exists or if there are 3+ headings
+  const shouldIncludeToc =
+    includeToc ?? (hasTocPlaceholder || hasMultipleHeadings);
 
   // Convert HTML to DOCX paragraphs
   const paragraphs: Paragraph[] = [];
@@ -61,12 +101,81 @@ export const exportToDocx = async ({
     })
   );
 
-  // Parse HTML and convert to paragraphs
+  // Parse HTML and convert to paragraphs FIRST so we can calculate page numbers
   const htmlParagraphs = await convertHtmlToParagraphs(htmlContent);
+
+  // Add Table of Contents if enabled - using manual TOC with calculated page numbers
+  if (shouldIncludeToc) {
+    // Add TOC title - NOT as a heading so it won't appear in the TOC itself
+    paragraphs.push(
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: "Table of Contents",
+            bold: true,
+            size: 32, // 16pt
+            color: "2c3e50",
+          }),
+        ],
+        spacing: { before: 200, after: 300 },
+      })
+    );
+
+    // Extract headings from HTML content and calculate their page positions
+    const tocEntries = extractTocEntriesWithPageNumbers(
+      htmlContent,
+      htmlParagraphs
+    );
+
+    // Add manual TOC entries with calculated page numbers - justified with tab stops
+    // Page width is 8.5" with 1" margins = 6.5" content width = 9360 twips
+    const rightTabPosition = convertInchesToTwip(6.5);
+
+    for (const entry of tocEntries) {
+      const indent = (entry.level - 1) * 360; // 0.25 inch per level
+      paragraphs.push(
+        new Paragraph({
+          alignment: AlignmentType.LEFT,
+          tabStops: [
+            {
+              type: TabStopType.RIGHT,
+              position: rightTabPosition - indent,
+              leader: LeaderType.DOT,
+            },
+          ],
+          children: [
+            new TextRun({
+              text: entry.text,
+              size: entry.level === 1 ? 24 : entry.level === 2 ? 22 : 20,
+              bold: entry.level === 1,
+            }),
+            new TextRun({
+              text: "\t", // Tab character to trigger the dot leader
+            }),
+            new TextRun({
+              text: `${entry.pageNumber}`,
+              bold: true,
+            }),
+          ],
+          indent: { left: indent },
+          spacing: { after: 120 },
+        })
+      );
+    }
+
+    // Add a page break after TOC
+    paragraphs.push(
+      new Paragraph({
+        children: [new PageBreak()],
+      })
+    );
+  }
+
+  // Add the converted HTML paragraphs
   paragraphs.push(...htmlParagraphs);
 
-  // Add analysis summary if available
-  if (analysis && includeHighlights) {
+  // Add analysis summary if available (only in analysis mode)
+  if (effectiveAnalysis && effectiveIncludeHighlights) {
     paragraphs.push(
       new Paragraph({
         text: sanitizeText("Analysis Summary"),
@@ -80,7 +189,7 @@ export const exportToDocx = async ({
         children: [
           new TextRun({
             text: sanitizeText(
-              `Overall Score: ${Math.round(analysis.overallScore)}/100`
+              `Overall Score: ${Math.round(effectiveAnalysis.overallScore)}/100`
             ),
             bold: true,
             size: 24,
@@ -91,8 +200,8 @@ export const exportToDocx = async ({
     );
 
     // Add Spacing and Dual Coding principle details
-    const principleScores = (analysis as any).principleScores || [];
-    const principles = analysis.principles || [];
+    const principleScores = (effectiveAnalysis as any).principleScores || [];
+    const principles = effectiveAnalysis.principles || [];
     const spacingEvaluation = principles.find(
       (p) => p.principle === "spacedRepetition"
     );
@@ -294,7 +403,7 @@ export const exportToDocx = async ({
     }
 
     // Add high-priority recommendations
-    const highPriorityRecs = analysis.recommendations
+    const highPriorityRecs = effectiveAnalysis.recommendations
       ?.filter((rec: Recommendation) => rec.priority === "high")
       .slice(0, 3);
 
@@ -349,11 +458,125 @@ export const exportToDocx = async ({
   // Skip building paragraphs manually, use the HTML we already generated
   // (The convertHtmlToParagraphs call above already added them)
 
-  // Create document
+  // Create document with TOC-enabled features and proper page dimensions
+  // Build header children
+  const headerChildren: Paragraph[] = [];
+  if (headerText) {
+    headerChildren.push(
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        children: [
+          new TextRun({
+            text: headerText,
+            size: 20,
+            color: "6b7280",
+          }),
+          ...(showPageNumbers && pageNumberPosition === "header"
+            ? [
+                new TextRun({ text: "  |  ", color: "9ca3af" }),
+                new TextRun({
+                  children: [PageNumber.CURRENT],
+                  size: 20,
+                  color: "6b7280",
+                }),
+              ]
+            : []),
+        ],
+      })
+    );
+  } else if (showPageNumbers && pageNumberPosition === "header") {
+    headerChildren.push(
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        children: [
+          new TextRun({
+            children: [PageNumber.CURRENT],
+            size: 20,
+            color: "6b7280",
+          }),
+        ],
+      })
+    );
+  }
+
+  // Build footer children
+  const footerChildren: Paragraph[] = [];
+  if (footerText) {
+    footerChildren.push(
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        children: [
+          new TextRun({
+            text: footerText,
+            size: 20,
+            color: "6b7280",
+          }),
+          ...(showPageNumbers && pageNumberPosition === "footer"
+            ? [
+                new TextRun({ text: "  |  ", color: "9ca3af" }),
+                new TextRun({
+                  children: [PageNumber.CURRENT],
+                  size: 20,
+                  color: "6b7280",
+                }),
+              ]
+            : []),
+        ],
+      })
+    );
+  } else if (showPageNumbers && pageNumberPosition === "footer") {
+    footerChildren.push(
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        children: [
+          new TextRun({
+            children: [PageNumber.CURRENT],
+            size: 20,
+            color: "6b7280",
+          }),
+        ],
+      })
+    );
+  }
+
   const doc = new Document({
+    features: {
+      // Enable update fields on open - this makes Word update the TOC when opened
+      updateFields: true,
+    },
     sections: [
       {
-        properties: {},
+        properties: {
+          // US Letter size: 8.5" x 11"
+          page: {
+            size: {
+              width: convertInchesToTwip(8.5),
+              height: convertInchesToTwip(11),
+            },
+            margin: {
+              top: convertInchesToTwip(1),
+              right: convertInchesToTwip(1),
+              bottom: convertInchesToTwip(1),
+              left: convertInchesToTwip(1),
+            },
+          },
+        },
+        headers:
+          headerChildren.length > 0
+            ? {
+                default: new Header({
+                  children: headerChildren,
+                }),
+              }
+            : undefined,
+        footers:
+          footerChildren.length > 0
+            ? {
+                default: new Footer({
+                  children: footerChildren,
+                }),
+              }
+            : undefined,
         children: paragraphs,
       },
     ],
@@ -1006,6 +1229,14 @@ async function convertNodeToParagraphs(
 
   if (className.includes("dual-coding-callout")) {
     return convertDualCodingCallout(element);
+  }
+
+  // Skip TOC placeholder elements - real TOC is generated separately
+  if (
+    className.includes("toc-placeholder") ||
+    className.includes("index-placeholder")
+  ) {
+    return [];
   }
 
   // Handle screenplay blocks with industry standard formatting
@@ -2040,4 +2271,77 @@ function normalizeDocxFileName(fileName: string | null | undefined): string {
   const sanitized = trimmed.replace(/[<>:"/\\|?*]+/g, "-");
   const hasExtension = sanitized.toLowerCase().endsWith(".docx");
   return hasExtension ? sanitized : `${sanitized}.docx`;
+}
+
+interface TocEntry {
+  text: string;
+  level: number;
+  pageNumber: number;
+}
+
+/**
+ * Extract headings from HTML content and calculate estimated page numbers
+ * Based on US Letter (8.5" x 11") with 1" margins = ~54 lines per page at 12pt
+ */
+function extractTocEntriesWithPageNumbers(
+  htmlContent: string,
+  _paragraphs: Paragraph[]
+): TocEntry[] {
+  const entries: TocEntry[] = [];
+
+  // Parse HTML to find headings
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(htmlContent, "text/html");
+
+  // Get all heading elements
+  const headings = doc.querySelectorAll("h1, h2, h3");
+
+  // Estimate page numbers based on position in content
+  // US Letter with 1" margins: ~6.5" x 9" content area
+  // At 12pt font with 1.5 line spacing: ~40-45 lines per page
+  // Average ~500-600 words per page
+
+  const fullText = doc.body.textContent || "";
+  const totalChars = fullText.length;
+
+  // Estimate: ~3000 characters per page (roughly 500 words)
+  const CHARS_PER_PAGE = 3000;
+
+  // TOC takes about 1 page, content starts on page 2
+  const TOC_PAGES = 1;
+
+  headings.forEach((heading) => {
+    const text = heading.textContent?.trim() || "";
+    if (!text) return;
+
+    // Skip "Analysis Summary" and similar non-content headings
+    if (
+      text.toLowerCase().includes("analysis summary") ||
+      text.toLowerCase().includes("edited chapter text")
+    ) {
+      return;
+    }
+
+    const level = parseInt(heading.tagName.charAt(1), 10);
+
+    // Find position of this heading in the full text
+    const headingText = heading.textContent || "";
+    const position = fullText.indexOf(headingText);
+
+    // Calculate page number based on character position
+    // Add TOC_PAGES + 1 because TOC is on page 1, content starts on page 2
+    const charsBefore = position >= 0 ? position : 0;
+    const pageNumber = Math.max(
+      1,
+      Math.ceil(charsBefore / CHARS_PER_PAGE) + TOC_PAGES
+    );
+
+    entries.push({
+      text: sanitizeText(text),
+      level,
+      pageNumber,
+    });
+  });
+
+  return entries;
 }

@@ -248,8 +248,9 @@ export const WriterMode: React.FC<WriterModeProps> = ({
         text: editableText,
         html: null, // Writer mode uses plain text
         fileName: fileName || "writer-mode-draft",
-        analysis: analysisResult || undefined,
-        includeHighlights: true,
+        analysis: null, // Writer mode exports clean documents without analysis
+        includeHighlights: false,
+        mode: "writer", // Clean document export
       });
     } catch (error) {
       console.error("WriterMode DOCX export failed", error);

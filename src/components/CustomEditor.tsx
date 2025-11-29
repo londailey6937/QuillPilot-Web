@@ -27,10 +27,18 @@ interface CustomEditorProps {
   onOpenCharacterManager?: () => void;
   isProfessionalTier?: boolean;
   onLayoutChange?: (layout: { width: number; left: number }) => void;
+  // Header/Footer settings callback for export
+  onHeaderFooterChange?: (settings: {
+    headerText: string;
+    footerText: string;
+    showPageNumbers: boolean;
+    pageNumberPosition: "header" | "footer";
+  }) => void;
 }
 
 const INCH_IN_PX = 96;
 const PAGE_WIDTH_PX = INCH_IN_PX * 8;
+const PAGE_HEIGHT_PX = INCH_IN_PX * 11; // 11 inches for US Letter
 
 interface AnalysisData {
   spacing: Array<{
@@ -124,12 +132,13 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   viewMode = "analysis",
   leftMargin = 48,
   rightMargin = 48,
-  firstLineIndent = 96,
+  firstLineIndent = 32,
   characters = [],
   onCharacterLink,
   onOpenCharacterManager,
   isProfessionalTier = false,
   onLayoutChange,
+  onHeaderFooterChange,
 }) => {
   const editorRef = useRef<HTMLDivElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -187,6 +196,10 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   const characterPopoverRef = useRef<HTMLDivElement>(null);
   const characterButtonRef = useRef<HTMLButtonElement>(null);
 
+  // Pagination state
+  const [pageCount, setPageCount] = useState(1);
+  const PAGE_CONTENT_HEIGHT = PAGE_HEIGHT_PX - 2 * INCH_IN_PX; // 864px (9 inches of content area)
+
   // Format Painter state
   const [formatPainterActive, setFormatPainterActive] = useState(false);
   const [copiedFormat, setCopiedFormat] = useState<{
@@ -204,7 +217,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   const [showStylesPanel, setShowStylesPanel] = useState(false);
   const [documentStyles, setDocumentStyles] = useState({
     paragraph: {
-      firstLineIndent: 48,
+      firstLineIndent: 32,
       lineHeight: 1.5,
       marginBottom: 0.5,
       textAlign: "left" as "left" | "center" | "right" | "justify",
@@ -242,13 +255,31 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   });
 
   // Header/Footer state
-  const [showHeaderFooter, setShowHeaderFooter] = useState(false);
+  const [showHeaderFooter, setShowHeaderFooter] = useState(true);
   const [headerText, setHeaderText] = useState("");
   const [footerText, setFooterText] = useState("");
   const [showPageNumbers, setShowPageNumbers] = useState(true);
   const [pageNumberPosition, setPageNumberPosition] = useState<
     "header" | "footer"
   >("footer");
+
+  // Notify parent of header/footer changes for export
+  useEffect(() => {
+    if (onHeaderFooterChange) {
+      onHeaderFooterChange({
+        headerText,
+        footerText,
+        showPageNumbers,
+        pageNumberPosition,
+      });
+    }
+  }, [
+    headerText,
+    footerText,
+    showPageNumbers,
+    pageNumberPosition,
+    onHeaderFooterChange,
+  ]);
 
   const toolbarDividerStyle = {
     width: "1px",
@@ -306,6 +337,91 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
       document.removeEventListener("click", handleClickOutside);
     };
   }, [showCharacterPopover]);
+
+  // Sync firstLineIndent prop with documentStyles AND apply directly to DOM
+  useEffect(() => {
+    console.log(
+      "[CustomEditor] firstLineIndent prop changed to:",
+      firstLineIndent
+    );
+
+    // Update the documentStyles state
+    setDocumentStyles((prev) => ({
+      ...prev,
+      paragraph: {
+        ...prev.paragraph,
+        firstLineIndent: firstLineIndent,
+      },
+    }));
+
+    // Also apply directly to DOM for immediate visual feedback
+    const applyIndentToDOM = () => {
+      if (editorRef.current) {
+        console.log("[CustomEditor] Applying indent to DOM:", firstLineIndent);
+        // Update CSS variable
+        editorRef.current.style.setProperty(
+          "--first-line-indent",
+          `${firstLineIndent}px`
+        );
+        // Also directly update all paragraphs for immediate effect
+        // Use setProperty with 'important' to override CSS !important rules
+        const paragraphs = editorRef.current.querySelectorAll(
+          "p:not(.screenplay-block):not(.title-content):not(.book-title):not(.subtitle):not(.chapter-heading):not(.image-paragraph)"
+        );
+        console.log("[CustomEditor] Found paragraphs:", paragraphs.length);
+        paragraphs.forEach((p) => {
+          (p as HTMLElement).style.setProperty(
+            "text-indent",
+            `${firstLineIndent}px`,
+            "important"
+          );
+        });
+      }
+    };
+
+    applyIndentToDOM();
+    // Also try after a brief delay in case ref isn't ready
+    const timer = setTimeout(applyIndentToDOM, 0);
+    return () => clearTimeout(timer);
+  }, [firstLineIndent]);
+
+  // Gap between pages in pixels
+  const PAGE_GAP = 24;
+
+  // Calculate page count based on content height (accounting for page gaps)
+  useEffect(() => {
+    const calculatePages = () => {
+      if (!editorRef.current) return;
+      const contentHeight = editorRef.current.scrollHeight;
+      // Each page has PAGE_HEIGHT_PX total height (including margins)
+      // We need to figure out how many pages the content spans
+      const pages = Math.max(1, Math.ceil(contentHeight / PAGE_HEIGHT_PX));
+      setPageCount(pages);
+    };
+
+    calculatePages();
+
+    // Recalculate on input and resize
+    const resizeObserver = new ResizeObserver(calculatePages);
+    if (editorRef.current) {
+      resizeObserver.observe(editorRef.current);
+    }
+
+    // Also recalculate on mutation (content changes)
+    const mutationObserver = new MutationObserver(calculatePages);
+    if (editorRef.current) {
+      mutationObserver.observe(editorRef.current, {
+        childList: true,
+        subtree: true,
+        characterData: true,
+      });
+    }
+
+    return () => {
+      resizeObserver.disconnect();
+      mutationObserver.disconnect();
+    };
+  }, []);
 
   // Analyze content for spacing and dual-coding
   const analyzeContent = useCallback((text: string) => {
@@ -800,6 +916,70 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
 
       // Custom paragraph styles (not native HTML tags)
       const customParagraphStyles = ["title", "subtitle"];
+
+      // Special block elements (TOC, Index, Figure)
+      const specialBlockElements = ["toc", "index", "figure"];
+
+      if (specialBlockElements.includes(tag)) {
+        const selection = window.getSelection();
+        if (!selection || !editorRef.current) return;
+
+        // Get selected text content (for TOC entries or figure captions)
+        const selectedText = selection.toString().trim();
+
+        // Get the current paragraph/block element
+        let currentBlock = selection.anchorNode;
+        while (
+          currentBlock &&
+          currentBlock.nodeName !== "P" &&
+          currentBlock !== editorRef.current
+        ) {
+          currentBlock = currentBlock.parentNode;
+        }
+
+        if (tag === "toc") {
+          // For TOC: if text is selected, treat it as a heading that should be in TOC
+          // If no text selected, insert a TOC placeholder
+          if (selectedText) {
+            // Apply h1 style to selected text (making it a TOC entry)
+            if (currentBlock && currentBlock.nodeName === "P") {
+              const p = currentBlock as HTMLElement;
+              p.className = "toc-entry heading-1";
+              p.setAttribute("data-toc-level", "1");
+            } else {
+              const escapedText = selectedText
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;");
+              const blockHtml = `<p class="toc-entry heading-1" data-toc-level="1">${escapedText}</p>`;
+              document.execCommand("insertHTML", false, blockHtml);
+            }
+          } else {
+            // No text selected - insert TOC placeholder block
+            const tocHtml = `<div class="toc-placeholder" contenteditable="false" style="background: #fef5e7; border: 2px dashed #e0c392; border-radius: 8px; padding: 1em; margin: 1em 0; text-align: center; color: #6b7280;">
+              <strong style="color: #2c3e50;">📋 Table of Contents</strong><br/>
+              <span style="font-size: 0.9em;">TOC will be generated from headings on export</span>
+            </div><p><br></p>`;
+            document.execCommand("insertHTML", false, tocHtml);
+          }
+        } else if (tag === "index") {
+          const indexHtml = `<div class="index-placeholder" contenteditable="false" style="background: #f5ead9; border: 2px dashed #e0c392; border-radius: 8px; padding: 1em; margin: 1em 0; text-align: center; color: #6b7280;">
+            <strong style="color: #2c3e50;">📑 Index</strong><br/>
+            <span style="font-size: 0.9em;">Index will be generated on export</span>
+          </div><p><br></p>`;
+          document.execCommand("insertHTML", false, indexHtml);
+        } else if (tag === "figure") {
+          const caption = selectedText || "Figure caption";
+          const figureHtml = `<figure style="margin: 1.5em 0; text-align: center;">
+            <div style="background: #f0f0f0; padding: 2em; border: 1px dashed #ccc; color: #666;">[Image placeholder]</div>
+            <figcaption style="font-style: italic; color: #666; margin-top: 0.5em;">${caption}</figcaption>
+          </figure><p><br></p>`;
+          document.execCommand("insertHTML", false, figureHtml);
+        }
+        setTimeout(() => handleInput(), 0);
+        setBlockType(tag);
+        return;
+      }
 
       if (screenplayElements.includes(tag)) {
         const selection = window.getSelection();
@@ -2403,9 +2583,9 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
 
       {/* Styles Panel Modal */}
       {showStylesPanel && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center z-[100] p-4 pt-16 overflow-y-auto">
           <div
-            className="bg-white rounded-lg shadow-2xl w-full max-w-xl max-h-[70vh] overflow-hidden flex flex-col"
+            className="bg-white rounded-lg shadow-2xl w-full max-w-xl max-h-[80vh] overflow-hidden flex flex-col"
             style={{ border: "2px solid #e0c392" }}
           >
             <div className="p-3 border-b bg-gradient-to-r from-[#fef5e7] to-[#fff7ed] flex justify-between items-center flex-shrink-0">
@@ -2910,7 +3090,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                   // Reset to defaults
                   setDocumentStyles({
                     paragraph: {
-                      firstLineIndent: 48,
+                      firstLineIndent: 32,
                       lineHeight: 1.5,
                       marginBottom: 0.5,
                       textAlign: "left",
@@ -3044,119 +3224,219 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
         </div>
       )}
 
-      {/* Editor area with indicators */}
+      {/* Editor area with page view - tan background with white pages */}
       <div
         ref={wrapperRef}
-        className="editor-wrapper"
-        style={{ position: "relative", flex: 1, overflow: "auto" }}
+        className="editor-wrapper page-view"
+        style={{
+          position: "relative",
+          flex: 1,
+          overflow: "auto",
+          backgroundColor: "#eddcc5",
+          paddingTop: "24px",
+          paddingBottom: "24px",
+        }}
       >
-        {/* Header display */}
-        {showHeaderFooter &&
-          (headerText ||
-            (showPageNumbers && pageNumberPosition === "header")) && (
-            <div
-              style={{
-                width: `${PAGE_WIDTH_PX}px`,
-                maxWidth: "calc(100% - 8px)",
-                margin: "20px auto 0 auto",
-                padding: "8px 48px",
-                boxSizing: "border-box",
-                borderBottom: "1px solid #e0c392",
-                backgroundColor: "#fafafa",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                fontSize: "12px",
-                color: "#666",
-              }}
-            >
-              <span>{headerText}</span>
-              {showPageNumbers && pageNumberPosition === "header" && (
-                <span>Page 1</span>
-              )}
-            </div>
-          )}
-
+        {/* Page container */}
         <div
-          ref={editorRef}
-          contentEditable={isEditable}
-          onInput={handleInput}
-          onPaste={handlePaste}
-          onKeyDown={handleKeyDown}
-          className={`editor-content p-12 focus:outline-none ${
-            className || ""
-          }`}
+          className="pages-container"
           style={{
-            minHeight: "300px",
             width: `${PAGE_WIDTH_PX}px`,
-            maxWidth: "calc(100% - 8px)",
-            margin:
-              showHeaderFooter &&
-              (headerText ||
-                (showPageNumbers && pageNumberPosition === "header"))
-                ? "0 auto 0 auto"
-                : "20px auto",
-            marginBottom:
-              showHeaderFooter &&
-              (footerText ||
-                (showPageNumbers && pageNumberPosition === "footer"))
-                ? "0"
-                : "20px",
-            paddingLeft: `${leftMargin}px`,
-            paddingRight: `${rightMargin}px`,
-            boxSizing: "border-box",
-            border: isEditable ? "2px solid #10b981" : "1px solid #d1d5db",
-            borderTop:
-              showHeaderFooter &&
-              (headerText ||
-                (showPageNumbers && pageNumberPosition === "header"))
-                ? "none"
-                : undefined,
-            borderBottom:
-              showHeaderFooter &&
-              (footerText ||
-                (showPageNumbers && pageNumberPosition === "footer"))
-                ? "none"
-                : undefined,
-            backgroundColor: isEditable ? "#ffffff" : "#fafafa",
-            boxShadow: isEditable
-              ? "0 2px 8px rgba(16, 185, 129, 0.2)"
-              : "0 1px 3px rgba(0,0,0,0.1)",
-            caretColor: "#2c3e50",
-            cursor: isEditable ? "text" : "default",
-            transition: "all 0.2s ease",
-            // CSS variable for dynamic text-indent
-            ["--first-line-indent" as string]: `${documentStyles.paragraph.firstLineIndent}px`,
+            maxWidth: "calc(100% - 48px)",
+            margin: "0 auto",
+            position: "relative",
           }}
-          suppressContentEditableWarning
-        />
+        >
+          {/* The actual editable content */}
+          <div
+            ref={editorRef}
+            contentEditable={isEditable}
+            onInput={handleInput}
+            onPaste={handlePaste}
+            onKeyDown={handleKeyDown}
+            className={`editor-content page-editor focus:outline-none ${
+              className || ""
+            }`}
+            style={{
+              width: "100%",
+              minHeight: `${PAGE_HEIGHT_PX}px`,
+              paddingLeft: `${leftMargin}px`,
+              paddingRight: `${rightMargin}px`,
+              paddingTop: `${INCH_IN_PX}px`,
+              paddingBottom: `${INCH_IN_PX}px`,
+              boxSizing: "border-box",
+              backgroundColor: "#ffffff",
+              caretColor: "#2c3e50",
+              cursor: isEditable ? "text" : "default",
+              position: "relative",
+              zIndex: 1,
+              boxShadow:
+                "0 2px 8px rgba(0, 0, 0, 0.12), 0 4px 16px rgba(0, 0, 0, 0.08)",
+              borderRadius: "2px",
+              // CSS variable for dynamic text-indent
+              ["--first-line-indent" as string]: `${documentStyles.paragraph.firstLineIndent}px`,
+            }}
+            suppressContentEditableWarning
+          />
 
-        {/* Footer display */}
-        {showHeaderFooter &&
-          (footerText ||
-            (showPageNumbers && pageNumberPosition === "footer")) && (
-            <div
-              style={{
-                width: `${PAGE_WIDTH_PX}px`,
-                maxWidth: "calc(100% - 8px)",
-                margin: "0 auto 20px auto",
-                padding: "8px 48px",
-                boxSizing: "border-box",
-                borderTop: "1px solid #e0c392",
-                backgroundColor: "#fafafa",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                fontSize: "12px",
-                color: "#666",
-              }}
-            >
-              <span>{footerText}</span>
-              {showPageNumbers && pageNumberPosition === "footer" && (
-                <span>Page 1</span>
-              )}
-            </div>
-          )}
+          {/* Page break lines and page numbers */}
+          {pageCount > 1 &&
+            Array.from({ length: pageCount - 1 }, (_, i) => (
+              <div
+                key={`page-break-${i}`}
+                style={{
+                  position: "absolute",
+                  left: 0,
+                  right: 0,
+                  top: `${(i + 1) * PAGE_HEIGHT_PX}px`,
+                  height: "1px",
+                  borderTop: "1px dashed #e0c392",
+                  pointerEvents: "none",
+                  zIndex: 10,
+                }}
+              >
+                {/* Page number indicator */}
+                <div
+                  style={{
+                    position: "absolute",
+                    right: "8px",
+                    top: "-20px",
+                    fontSize: "10px",
+                    color: "#9ca3af",
+                    backgroundColor: "#ffffff",
+                    padding: "2px 8px",
+                    borderRadius: "4px",
+                  }}
+                >
+                  End of page {i + 1}
+                </div>
+              </div>
+            ))}
+
+          {/* Editable Header regions on each page - shown when showHeaderFooter is enabled */}
+          {showHeaderFooter &&
+            Array.from({ length: pageCount }, (_, pageIndex) => (
+              <div
+                key={`header-region-${pageIndex}`}
+                style={{
+                  position: "absolute",
+                  left: `${leftMargin}px`,
+                  right: `${rightMargin}px`,
+                  top: `${pageIndex * PAGE_HEIGHT_PX + INCH_IN_PX * 0.3}px`,
+                  height: `${INCH_IN_PX * 0.5}px`,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "8px",
+                  zIndex: 15,
+                  borderBottom: "1px dashed #e0c392",
+                  backgroundColor: "rgba(254, 245, 231, 0.5)",
+                }}
+              >
+                <input
+                  type="text"
+                  value={headerText}
+                  onChange={(e) => setHeaderText(e.target.value)}
+                  placeholder="Click to add header text..."
+                  style={{
+                    flex: 1,
+                    border: "none",
+                    background: "transparent",
+                    textAlign: "center",
+                    fontSize: "11px",
+                    color: "#6b7280",
+                    outline: "none",
+                  }}
+                />
+                {showPageNumbers && pageNumberPosition === "header" && (
+                  <span
+                    style={{
+                      fontSize: "11px",
+                      color: "#6b7280",
+                      paddingRight: "8px",
+                    }}
+                  >
+                    {pageIndex + 1}
+                  </span>
+                )}
+              </div>
+            ))}
+
+          {/* Editable Footer regions on each page - shown when showHeaderFooter is enabled */}
+          {showHeaderFooter &&
+            Array.from({ length: pageCount }, (_, pageIndex) => (
+              <div
+                key={`footer-region-${pageIndex}`}
+                style={{
+                  position: "absolute",
+                  left: `${leftMargin}px`,
+                  right: `${rightMargin}px`,
+                  top: `${
+                    (pageIndex + 1) * PAGE_HEIGHT_PX - INCH_IN_PX * 0.8
+                  }px`,
+                  height: `${INCH_IN_PX * 0.5}px`,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "8px",
+                  zIndex: 15,
+                  borderTop: "1px dashed #e0c392",
+                  backgroundColor: "rgba(254, 245, 231, 0.5)",
+                }}
+              >
+                <input
+                  type="text"
+                  value={footerText}
+                  onChange={(e) => setFooterText(e.target.value)}
+                  placeholder="Click to add footer text..."
+                  style={{
+                    flex: 1,
+                    border: "none",
+                    background: "transparent",
+                    textAlign: "center",
+                    fontSize: "11px",
+                    color: "#6b7280",
+                    outline: "none",
+                  }}
+                />
+                {showPageNumbers && pageNumberPosition === "footer" && (
+                  <span
+                    style={{
+                      fontSize: "11px",
+                      color: "#6b7280",
+                      paddingRight: "8px",
+                    }}
+                  >
+                    {pageIndex + 1}
+                  </span>
+                )}
+              </div>
+            ))}
+
+          {/* Legacy footer with page numbers (when showHeaderFooter is off but page numbers are on) */}
+          {!showHeaderFooter &&
+            showPageNumbers &&
+            Array.from({ length: pageCount }, (_, pageIndex) => (
+              <div
+                key={`footer-${pageIndex}`}
+                style={{
+                  position: "absolute",
+                  left: `${leftMargin}px`,
+                  right: `${rightMargin}px`,
+                  top: `${
+                    (pageIndex + 1) * PAGE_HEIGHT_PX - INCH_IN_PX * 0.6
+                  }px`,
+                  textAlign: "center",
+                  fontSize: "11px",
+                  color: "#6b7280",
+                  pointerEvents: "none",
+                  zIndex: 5,
+                }}
+              >
+                {pageIndex + 1}
+              </div>
+            ))}
+        </div>
 
         {/* Spacing indicators overlay */}
         {renderIndicators()}
@@ -3165,22 +3445,37 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
         {renderSuggestions()}
       </div>
 
-      <style>{`
+      <style
+        key={`editor-styles-${documentStyles.paragraph.firstLineIndent}-${documentStyles.paragraph.lineHeight}`}
+      >{`
         .editor-content {
           color: #000000;
+        }
+        /* Page editor styling */
+        .page-editor {
+          position: relative;
+          background-color: #ffffff;
+        }
+        /* Pages container */
+        .pages-container {
+          position: relative;
+        }
+        /* Apply text-indent to all block-level children for first line indent */
+        .editor-content > p,
+        .editor-content > div:not(.toc-placeholder):not(.index-placeholder) {
+          margin: ${documentStyles.paragraph.marginBottom}em 0;
+          line-height: ${documentStyles.paragraph.lineHeight};
+          text-indent: ${documentStyles.paragraph.firstLineIndent}px;
+          text-align: ${documentStyles.paragraph.textAlign};
         }
         .editor-content p {
           margin: ${documentStyles.paragraph.marginBottom}em 0;
           line-height: ${documentStyles.paragraph.lineHeight};
-          text-indent: var(--first-line-indent, ${
-            documentStyles.paragraph.firstLineIndent
-          }px);
+          text-indent: ${documentStyles.paragraph.firstLineIndent}px;
           text-align: ${documentStyles.paragraph.textAlign};
         }
         .editor-content p.body-text {
-          text-indent: var(--first-line-indent, ${
-            documentStyles.paragraph.firstLineIndent
-          }px) !important;
+          text-indent: ${documentStyles.paragraph.firstLineIndent}px !important;
           line-height: ${documentStyles.paragraph.lineHeight} !important;
         }
         /* Screenplay block formatting - highest priority */
@@ -3332,9 +3627,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
         }
         .editor-content p.body-text {
           text-align: ${documentStyles.paragraph.textAlign} !important;
-          text-indent: var(--first-line-indent, ${
-            documentStyles.paragraph.firstLineIndent
-          }px) !important;
+          text-indent: ${documentStyles.paragraph.firstLineIndent}px !important;
         }
         /* Copyright/boilerplate text (all caps, short lines) */
         .editor-content p:has(> strong:only-child):not(:has(em)),
@@ -3452,6 +3745,19 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           margin-bottom: 1em;
           border-bottom: 2px solid #ef8432;
           padding-bottom: 0.5em;
+        }
+        .editor-content .toc-entry {
+          font-weight: bold;
+          color: #2c3e50;
+          margin: 1.5em 0 0.5em 0;
+        }
+        .editor-content .toc-entry.heading-1 {
+          font-size: 1.5em;
+          border-bottom: 2px solid #e0c392;
+          padding-bottom: 0.25em;
+        }
+        .editor-content .toc-placeholder {
+          user-select: none;
         }
         .editor-content index {
           display: block;

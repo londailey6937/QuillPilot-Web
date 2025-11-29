@@ -984,18 +984,42 @@ When you see a yellow callout box in Writer Mode or exports, it contains:
 
 - ✅ Editable in Microsoft Word
 - ✅ Colored shaded backgrounds (Nov 2025 update!)
-- ✅ Same structure as HTML export
+- ✅ Mode-aware export (Writer vs Analysis)
+- ✅ **Automatic Table of Contents** with page numbers
 - ✅ Professional formatting
 
-**Contains:**
+**Export Modes:**
+
+| Mode              | When                         | Output                                                      |
+| ----------------- | ---------------------------- | ----------------------------------------------------------- |
+| **Writer Mode**   | Exporting from Writer view   | Clean Word document (no analysis, no highlights)            |
+| **Analysis Mode** | Exporting from Analysis view | Full document with analysis summary, scores, and highlights |
+
+**Table of Contents (Auto-Generated):**
+
+- Automatically included if document has 3+ headings or a TOC placeholder
+- Includes all H1, H2, and H3 headings with page references
+- Clickable links to jump to sections
+- Word prompts to update page numbers when opened
+
+**Analysis Mode Contains:**
 
 - Document title
+- Table of Contents (if applicable)
 - Analysis summary with colored scoring
 - Spacing indicators (blue/orange/red shaded paragraphs)
 - Sensory detail callouts (yellow shaded boxes)
 - Full chapter text
 
-**Color Coding:**
+**Writer Mode Contains:**
+
+- Document title
+- Table of Contents (if applicable)
+- Clean, formatted text only
+- No analysis metrics or highlights
+- Ready for submission or further editing
+
+**Color Coding (Analysis Mode only):**
 
 - Blue background = Good spacing
 - Orange background = Compact spacing warning
@@ -1004,10 +1028,12 @@ When you see a yellow callout box in Writer Mode or exports, it contains:
 
 **How to Use:**
 
-1. Click "📄 Export DOCX" button (Premium/Pro only)
-2. Open in Microsoft Word
-3. Edit directly in Word
-4. Save or share as needed
+1. Switch to your desired view mode (Writer or Analysis)
+2. Click "📄 Export DOCX" button (Premium/Pro only)
+3. Open in Microsoft Word
+4. When prompted, click "Yes" to update fields (populates TOC page numbers)
+5. Edit directly in Word
+6. Save or share as needed
 
 ---
 

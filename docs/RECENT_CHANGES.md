@@ -1,8 +1,120 @@
 # Recent Changes & Features
 
-**Last Updated:** November 16, 2025
+**Last Updated:** November 29, 2025
 
 This document tracks recent features, improvements, and changes to the Chapter Analysis system.
+
+---
+
+## November 29, 2025 Updates
+
+### Mode-Aware DOCX Export
+
+**Feature:** DOCX export now respects the current view mode
+
+**What it does:**
+
+- **Writer Mode Export:** Produces a clean Word document without analysis, metrics, or highlights - ready for submission
+- **Analysis Mode Export:** Includes full analysis summary, scores, recommendations, and color-coded highlights
+
+**How to use:**
+
+1. Switch to your desired view (Writer or Analysis toggle)
+2. Click "📄 Export DOCX" button
+3. The export format automatically matches your current mode
+
+**Files changed:**
+
+- `docxExport.ts` - Added `mode` parameter ("writer" | "analysis")
+- `ChapterCheckerV2.tsx` - Passes `viewMode` to export function
+- `WriterMode.tsx` - Always exports in "writer" mode
+
+---
+
+### Table of Contents (TOC) Formatting
+
+**Feature:** Block format dropdown now supports TOC elements
+
+**What it does:**
+
+- **With text selected:** Formats selected text as a TOC entry heading
+- **Without selection:** Inserts a TOC placeholder showing where auto-generated TOC will appear
+
+**How to use:**
+
+1. To mark text for TOC: Select your chapter heading → Choose "Table of Contents" from block format dropdown
+2. To insert placeholder: Place cursor → Choose "Table of Contents" (nothing selected)
+
+**Files changed:**
+
+- `CustomEditor.tsx` - Added special handling for TOC, Index, and Figure block types
+- Added CSS styles for `.toc-entry` and `.toc-placeholder`
+
+---
+
+### Automatic TOC Generation in DOCX Export
+
+**Feature:** DOCX exports now include a proper Table of Contents with page references
+
+**What it does:**
+
+- Automatically detects if document has 3+ headings or a TOC placeholder
+- Generates a Word-compatible Table of Contents at the beginning of the document
+- TOC includes H1, H2, and H3 headings with clickable links
+- Word will prompt to update page numbers when the document is opened
+- Page break inserted after TOC for clean separation
+
+**Auto-detection:**
+
+- If document contains a TOC placeholder → TOC is included
+- If document has 3+ heading elements → TOC is included
+- Can be explicitly controlled via `includeToc` parameter
+
+**How to use:**
+
+1. Add headings to your document (H1, H2, H3)
+2. Export to DOCX
+3. Open in Microsoft Word
+4. When prompted, click "Yes" to update field codes (this populates page numbers)
+
+**Files changed:**
+
+- `docxExport.ts`:
+  - Added `TableOfContents`, `StyleLevel`, `PageBreak` imports
+  - Added `includeToc` option to export interface
+  - Auto-detects TOC need from content
+  - Generates TOC with `headingStyleRange: "1-3"`
+  - Enabled `updateFields: true` for automatic page number updates
+
+---
+
+### Styles Panel Improvements
+
+**Feature:** Fixed Styles Panel positioning and visibility
+
+**What changed:**
+
+- Increased z-index to `z-[100]` to ensure panel appears above all other elements
+- Changed positioning to `items-start` with `pt-16` padding from top
+- Increased max height to `80vh` for better content visibility
+
+---
+
+### Auth Flow Optimization
+
+**Feature:** Faster, more reliable authentication on page load
+
+**What changed:**
+
+- `SIGNED_IN` events that fire before `INITIAL_SESSION` are now deferred
+- Eliminates "Profile fetch timeout" errors on page refresh
+- Profile loads immediately when session is ready
+- Increased timeouts for slower network conditions
+
+**Files changed:**
+
+- `ChapterCheckerV2.tsx` - Improved auth state change handling
+- `supabase.ts` - Added optional `userId` parameter to `getUserProfile()`
 
 ---
 

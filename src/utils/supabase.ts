@@ -268,22 +268,31 @@ export const resetPassword = async (email: string) => {
 
 /**
  * Get the current user's profile with timeout
+ * Optionally pass userId directly to avoid re-fetching session
  */
-export const getUserProfile = async (): Promise<Profile | null> => {
+export const getUserProfile = async (
+  userId?: string
+): Promise<Profile | null> => {
   if (!isSupabaseConfigured) return null;
 
-  const user = await getCurrentUser();
-  if (!user) return null;
+  let userIdToUse = userId;
+
+  // If no userId provided, get it from current session
+  if (!userIdToUse) {
+    const user = await getCurrentUser();
+    if (!user) return null;
+    userIdToUse = user.id;
+  }
 
   try {
     const profilePromise = supabase
       .from("profiles")
       .select("*")
-      .eq("id", user.id)
+      .eq("id", userIdToUse)
       .maybeSingle();
 
     const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error("Profile fetch timeout")), 3000)
+      setTimeout(() => reject(new Error("Profile fetch timeout")), 8000)
     );
 
     const result = await Promise.race([profilePromise, timeoutPromise]);

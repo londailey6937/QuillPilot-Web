@@ -2,6 +2,13 @@ import React from "react";
 import { CustomEditor } from "./CustomEditor";
 import { Character, CharacterMapping } from "../types";
 
+export interface HeaderFooterSettings {
+  headerText: string;
+  footerText: string;
+  showPageNumbers: boolean;
+  pageNumberPosition: "header" | "footer";
+}
+
 interface DocumentEditorProps {
   initialText: string;
   htmlContent?: string | null;
@@ -34,6 +41,8 @@ interface DocumentEditorProps {
   onOpenCharacterManager?: () => void;
   isProfessionalTier?: boolean;
   onEditorLayoutChange?: (layout: { width: number; left: number }) => void;
+  // Header/Footer settings for export
+  onHeaderFooterChange?: (settings: HeaderFooterSettings) => void;
 }
 
 export const DocumentEditor: React.FC<DocumentEditorProps> = ({
@@ -54,12 +63,13 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
   viewMode,
   leftMargin = 48,
   rightMargin = 48,
-  firstLineIndent = 96,
+  firstLineIndent = 32,
   characters,
   onCharacterLink,
   onOpenCharacterManager,
   isProfessionalTier = false,
   onEditorLayoutChange,
+  onHeaderFooterChange,
 }) => {
   // Determine initial content: prefer HTML if available, otherwise text
   const startContent = htmlContent || initialText;
@@ -95,6 +105,7 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
         onOpenCharacterManager={onOpenCharacterManager}
         isProfessionalTier={isProfessionalTier}
         onLayoutChange={onEditorLayoutChange}
+        onHeaderFooterChange={onHeaderFooterChange}
         style={{ flex: 1, minHeight: 0 }}
       />
     </div>

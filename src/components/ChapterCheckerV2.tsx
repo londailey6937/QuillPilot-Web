@@ -524,7 +524,7 @@ export const ChapterCheckerV2: React.FC = () => {
   // Ruler and margin state
   const [leftMargin, setLeftMargin] = useState(48); // pixels
   const [rightMargin, setRightMargin] = useState(48); // pixels
-  const [firstLineIndent, setFirstLineIndent] = useState(96); // pixels
+  const [firstLineIndent, setFirstLineIndent] = useState(32); // pixels - 4 spaces
   const [isDragging, setIsDragging] = useState<
     "left" | "right" | "indent" | null
   >(null);
@@ -554,6 +554,19 @@ export const ChapterCheckerV2: React.FC = () => {
     CharacterMapping[]
   >([]);
   const [isCharacterManagerOpen, setIsCharacterManagerOpen] = useState(false);
+
+  // Header/Footer settings for export (received from editor)
+  const [headerFooterSettings, setHeaderFooterSettings] = useState<{
+    headerText: string;
+    footerText: string;
+    showPageNumbers: boolean;
+    pageNumberPosition: "header" | "footer";
+  }>({
+    headerText: "",
+    footerText: "",
+    showPageNumbers: true,
+    pageNumberPosition: "footer",
+  });
 
   const [layoutMode, setLayoutMode] = useState<LayoutMode>(() => {
     if (typeof window === "undefined") {
@@ -656,92 +669,99 @@ export const ChapterCheckerV2: React.FC = () => {
   // Sync user profile and access level from Supabase
   useEffect(() => {
     let isMounted = true;
+    let initialSessionHandled = false;
+    let signedInBeforeInitial = false;
 
-    const loadUserProfile = async () => {
+    // Helper to load profile and update state - pass userId to avoid session fetch
+    const loadAndSetProfile = async (userId: string, userEmail?: string) => {
       try {
-        const user = await getCurrentUser();
+        const profile = await getUserProfile(userId);
         if (!isMounted) return;
 
-        if (user) {
-          const profile = await getUserProfile();
-          if (!isMounted) return;
-
-          if (profile) {
-            setUserProfile(profile);
-            // Set access level from profile subscription
-            const level = (profile.access_level as AccessLevel) || "free";
-            console.log("📋 Profile loaded, access_level:", level);
-            setAccessLevel(level);
-            // Cache in localStorage for instant load on next visit
-            localStorage.setItem("quillpilot_access_level", level);
-            // Only set viewMode to writer on initial load if no document loaded yet
-            // Don't override if user has already started working
-            if (level === "professional" && !chapterData) {
-              setViewMode("writer");
-            }
-          } else {
-            // User exists but no profile - this is unusual, keep cached value
-            console.warn("⚠️ User exists but no profile found");
+        if (profile) {
+          console.log(
+            "📋 Full profile data:",
+            JSON.stringify(profile, null, 2)
+          );
+          setUserProfile(profile);
+          const level = (profile.access_level as AccessLevel) || "free";
+          console.log(
+            "📋 Profile loaded, access_level:",
+            level,
+            "raw:",
+            profile.access_level
+          );
+          setAccessLevel(level);
+          localStorage.setItem("quillpilot_access_level", level);
+          if (level === "professional" && !chapterData) {
+            setViewMode("writer");
           }
         } else {
-          // No user - but don't clear cache here, wait for explicit auth event
-          console.log("📋 No user session found during initial load");
+          console.warn("⚠️ User exists but no profile found for:", userEmail);
         }
       } catch (error) {
-        console.error("Error loading user profile:", error);
-        // Don't block app if profile loading fails, keep cached value
-      } finally {
-        if (isMounted) {
-          setIsLoadingProfile(false);
-        }
+        console.error("Error loading profile:", error);
       }
     };
 
-    loadUserProfile();
-
-    // Listen for auth state changes (login/logout events)
+    // Listen for auth state changes - this is the primary way to get auth state
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log("🔐 Auth state change:", event, session?.user?.email);
 
-      // Skip INITIAL_SESSION - we handle initial load above
-      if (event === "INITIAL_SESSION") {
-        return;
-      }
-
       if (!isMounted) return;
 
       try {
-        if (event === "SIGNED_IN" && session?.user) {
-          const profile = await getUserProfile();
-          if (!isMounted) return;
-
-          if (profile) {
-            setUserProfile(profile);
-            const level = (profile.access_level as AccessLevel) || "free";
-            console.log("📋 Signed in, access_level:", level);
-            setAccessLevel(level);
-            localStorage.setItem("quillpilot_access_level", level);
-            if (level === "professional" && !chapterData) {
-              setViewMode("writer");
-            }
+        if (event === "INITIAL_SESSION") {
+          initialSessionHandled = true;
+          if (session?.user) {
+            console.log("📋 Initial session found for:", session.user.email);
+            await loadAndSetProfile(session.user.id, session.user.email);
+          } else {
+            console.log("📋 No initial session - user not logged in");
+            // No session - but keep cached value for returning users
           }
+          setIsLoadingProfile(false);
+        } else if (event === "SIGNED_IN" && session?.user) {
+          // If INITIAL_SESSION hasn't fired yet, skip - it will handle the profile load
+          // This avoids the race condition where SIGNED_IN fires before session is ready
+          if (!initialSessionHandled) {
+            console.log(
+              "📋 SIGNED_IN before INITIAL_SESSION - deferring to INITIAL_SESSION"
+            );
+            signedInBeforeInitial = true;
+            return;
+          }
+          console.log("📋 User signed in:", session.user.email);
+          await loadAndSetProfile(session.user.id, session.user.email);
         } else if (event === "SIGNED_OUT") {
-          // User explicitly logged out - clear everything
           console.log("📋 Signed out - clearing cache");
           setUserProfile(null);
           setAccessLevel("free");
           setViewMode("analysis");
           localStorage.removeItem("quillpilot_access_level");
+        } else if (event === "TOKEN_REFRESHED" && session?.user) {
+          // Token refresh - profile might have changed, reload it
+          console.log("📋 Token refreshed for:", session.user.email);
+          await loadAndSetProfile(session.user.id, session.user.email);
         }
       } catch (error) {
-        console.error("Error loading profile on auth change:", error);
+        console.error("Error handling auth state change:", error);
       }
     });
 
+    // Fallback: if INITIAL_SESSION doesn't fire within 5 seconds, stop loading
+    const fallbackTimeout = setTimeout(() => {
+      if (!initialSessionHandled && isMounted) {
+        console.log("📋 Auth initialization timeout - using cached state");
+        setIsLoadingProfile(false);
+      }
+    }, 5000);
+
     return () => {
       isMounted = false;
+      clearTimeout(fallbackTimeout);
       subscription.unsubscribe();
     };
   }, []);
@@ -928,9 +948,15 @@ export const ChapterCheckerV2: React.FC = () => {
           Math.min(constrainedX, maxWidth - rightMargin)
         );
         const snappedIndent = Math.round(rawIndent / 24) * 24;
-        setFirstLineIndent(
-          Math.max(leftMargin, Math.min(snappedIndent, maxWidth - rightMargin))
+        const newIndent = Math.max(
+          leftMargin,
+          Math.min(snappedIndent, maxWidth - rightMargin)
         );
+        console.log(
+          "[ChapterCheckerV2] Setting firstLineIndent to:",
+          newIndent
+        );
+        setFirstLineIndent(newIndent);
       }
     };
 
@@ -1644,19 +1670,29 @@ export const ChapterCheckerV2: React.FC = () => {
         (chapterData.isHybridDocx ? chapterData.html : null) ??
         null;
 
-      const fallbackAnalysis =
-        analysis ??
-        buildTierOneAnalysisSummary({
-          plainText: chapterData.plainText || chapterText,
-          htmlContent: richHtmlContent,
-        });
+      // In writer mode, export a clean document without analysis
+      // In analysis mode, include metrics and highlights
+      const isWriterMode = viewMode === "writer";
+
+      const fallbackAnalysis = isWriterMode
+        ? null
+        : analysis ??
+          buildTierOneAnalysisSummary({
+            plainText: chapterData.plainText || chapterText,
+            htmlContent: richHtmlContent,
+          });
 
       await exportToDocx({
         text: chapterText,
         html: richHtmlContent,
         fileName: fileName || "edited-chapter",
         analysis: fallbackAnalysis,
-        includeHighlights: true,
+        includeHighlights: !isWriterMode,
+        mode: isWriterMode ? "writer" : "analysis",
+        headerText: headerFooterSettings.headerText,
+        footerText: headerFooterSettings.footerText,
+        showPageNumbers: headerFooterSettings.showPageNumbers,
+        pageNumberPosition: headerFooterSettings.pageNumberPosition,
       });
     } catch (err) {
       alert(
@@ -2151,6 +2187,9 @@ export const ChapterCheckerV2: React.FC = () => {
                         fontWeight: "600",
                         transition: "all 0.2s",
                         whiteSpace: "nowrap",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "4px",
                       }}
                       onMouseEnter={(e) => {
                         e.currentTarget.style.backgroundColor = "#f7e6d0";
@@ -2158,9 +2197,36 @@ export const ChapterCheckerV2: React.FC = () => {
                       onMouseLeave={(e) => {
                         e.currentTarget.style.backgroundColor = "white";
                       }}
-                      title="Export DOCX"
+                      title="Export DOCX (Microsoft Word)"
                     >
-                      📥
+                      {/* MS Word icon */}
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <rect
+                          x="2"
+                          y="3"
+                          width="20"
+                          height="18"
+                          rx="2"
+                          fill="#2B579A"
+                        />
+                        <text
+                          x="12"
+                          y="16"
+                          textAnchor="middle"
+                          fill="white"
+                          fontSize="11"
+                          fontWeight="bold"
+                          fontFamily="Arial, sans-serif"
+                        >
+                          W
+                        </text>
+                      </svg>
                     </button>
 
                     <button
@@ -2176,6 +2242,9 @@ export const ChapterCheckerV2: React.FC = () => {
                         fontWeight: "600",
                         transition: "all 0.2s",
                         whiteSpace: "nowrap",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
                       }}
                       onMouseEnter={(e) => {
                         e.currentTarget.style.backgroundColor = "#f7e6d0";
@@ -2185,7 +2254,40 @@ export const ChapterCheckerV2: React.FC = () => {
                       }}
                       title="Export PDF (Manuscript Format)"
                     >
-                      📄
+                      {/* Adobe Acrobat PDF icon */}
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <rect
+                          x="3"
+                          y="2"
+                          width="18"
+                          height="20"
+                          rx="2"
+                          fill="#B30B00"
+                        />
+                        <path
+                          d="M7 7h10M7 10h10M7 13h6"
+                          stroke="white"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                        />
+                        <text
+                          x="12"
+                          y="19"
+                          textAnchor="middle"
+                          fill="white"
+                          fontSize="5"
+                          fontWeight="bold"
+                          fontFamily="Arial"
+                        >
+                          PDF
+                        </text>
+                      </svg>
                     </button>
 
                     <button
@@ -2201,6 +2303,9 @@ export const ChapterCheckerV2: React.FC = () => {
                         fontWeight: "600",
                         transition: "all 0.2s",
                         whiteSpace: "nowrap",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
                       }}
                       onMouseEnter={(e) => {
                         e.currentTarget.style.backgroundColor = "#f7e6d0";
@@ -2208,9 +2313,50 @@ export const ChapterCheckerV2: React.FC = () => {
                       onMouseLeave={(e) => {
                         e.currentTarget.style.backgroundColor = "white";
                       }}
-                      title="Export HTML"
+                      title="Export HTML (Open in Browser)"
                     >
-                      🌐
+                      {/* Chrome icon */}
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <circle
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="#2c3e50"
+                          strokeWidth="2"
+                          fill="none"
+                        />
+                        <circle cx="12" cy="12" r="4" fill="#ef8432" />
+                        <path
+                          d="M12 2C6.48 2 2 6.48 2 12h7.5"
+                          stroke="#4285f4"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                        />
+                        <path
+                          d="M12 2c5.52 0 10 4.48 10 10h-7.5"
+                          stroke="#ea4335"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                        />
+                        <path
+                          d="M22 12c0 5.52-4.48 10-10 10"
+                          stroke="#fbbc05"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                        />
+                        <path
+                          d="M2 12c0 5.52 4.48 10 10 10"
+                          stroke="#34a853"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                        />
+                      </svg>
                     </button>
 
                     {viewMode === "writer" &&
@@ -2237,7 +2383,7 @@ export const ChapterCheckerV2: React.FC = () => {
                           }}
                           title="Generate AI Template"
                         >
-                          🤖
+                          ✨ AI
                         </button>
                       )}
 
@@ -2840,35 +2986,43 @@ export const ChapterCheckerV2: React.FC = () => {
                           />
                         </div>
 
-                        {/* First line indent indicator - DRAGGABLE */}
+                        {/* First line indent indicator - DRAGGABLE (double-arrow style) */}
                         <div
                           style={{
                             position: "absolute",
                             left: `${firstLineIndent}px`,
-                            bottom: "4px",
-                            width: "0",
-                            height: "10px",
-                            borderLeft: "2px dashed #2c3e50",
+                            top: "4px",
+                            transform: "translateX(-50%)",
                             pointerEvents: "all",
+                            cursor: "ew-resize",
                           }}
                           title="First Line Indent (drag to adjust)"
+                          onMouseDown={(e) =>
+                            handleMarginDragStart("indent", e)
+                          }
                         >
-                          <div
-                            style={{
-                              position: "absolute",
-                              bottom: "-6px",
-                              left: "-5px",
-                              width: 0,
-                              height: 0,
-                              borderLeft: "5px solid transparent",
-                              borderRight: "5px solid transparent",
-                              borderTop: "8px solid #2c3e50",
-                              cursor: "ew-resize",
-                            }}
-                            onMouseDown={(e) =>
-                              handleMarginDragStart("indent", e)
-                            }
-                          />
+                          {/* Double-arrow icon like Word's indent marker */}
+                          <svg
+                            width="16"
+                            height="14"
+                            viewBox="0 0 16 14"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                            style={{ display: "block" }}
+                          >
+                            {/* Left arrow */}
+                            <path d="M4 7L0 4V10L4 7Z" fill="#2c3e50" />
+                            {/* Center bar */}
+                            <rect
+                              x="4"
+                              y="5.5"
+                              width="8"
+                              height="3"
+                              fill="#2c3e50"
+                            />
+                            {/* Right arrow */}
+                            <path d="M12 7L16 4V10L12 7Z" fill="#2c3e50" />
+                          </svg>
                         </div>
                       </div>
                     </div>
@@ -3007,6 +3161,7 @@ export const ChapterCheckerV2: React.FC = () => {
                       viewMode={viewMode}
                       isTemplateMode={isTemplateMode}
                       onExitTemplateMode={() => setIsTemplateMode(false)}
+                      onHeaderFooterChange={setHeaderFooterSettings}
                     />
                   </div>
                 </div>
@@ -4069,7 +4224,7 @@ export const ChapterCheckerV2: React.FC = () => {
                           e.currentTarget.style.backgroundColor = "white";
                         }}
                       >
-                        🤖 Generate AI Template
+                        ✨ Generate AI Template
                       </button>
                     )}
 

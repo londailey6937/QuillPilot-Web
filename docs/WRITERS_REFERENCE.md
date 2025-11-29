@@ -60,14 +60,34 @@ Writer Mode transforms QuillPilot from an analysis tool into a full-featured wri
 
 ### Block Formatting
 
-| Option      | Usage                              |
-| ----------- | ---------------------------------- |
-| Paragraph   | Normal body text                   |
-| Heading 1-6 | Chapter titles and section headers |
-| Quote       | Block quotations                   |
-| Pull Quote  | Emphasized quotations              |
-| Code Block  | Monospace text                     |
-| Footnote    | Reference notes                    |
+| Option                | Usage                                      |
+| --------------------- | ------------------------------------------ |
+| Paragraph             | Normal body text                           |
+| Title                 | Centered book/chapter title                |
+| Subtitle              | Centered subtitle                          |
+| Heading 1-6           | Chapter titles and section headers         |
+| Quote                 | Block quotations                           |
+| Pull Quote            | Emphasized quotations (centered, bordered) |
+| Code Block            | Monospace text                             |
+| Footnote              | Reference notes                            |
+| Citation              | Bibliography/citation format               |
+| **Table of Contents** | TOC placeholder or heading marker          |
+| Index                 | Index placeholder                          |
+| Figure                | Figure with caption                        |
+
+#### Table of Contents (TOC)
+
+The TOC option in the block format dropdown has two behaviors:
+
+1. **With text selected**: Formats the selected text as a TOC entry heading (styled as Heading 1 with special TOC marker)
+2. **Without selection**: Inserts a TOC placeholder that shows where auto-generated TOC will appear on export
+
+**How to use:**
+
+- To mark a chapter title for TOC: Select your chapter heading text → Choose "Table of Contents" from dropdown
+- To insert TOC placeholder: Place cursor where you want TOC → Choose "Table of Contents" (no selection)
+
+**Note**: The actual Table of Contents is generated automatically during export based on your Heading 1-6 elements.
 
 ### Text Alignment
 
