@@ -9,39 +9,13 @@
 
 export type AccessLevel = "free" | "premium" | "professional";
 
-// ============================================================================
-// TESTER ACCESS CONTROL
-// ============================================================================
-
-// Emails with full access to all tiers for testing
-// Add additional tester emails here as needed
-export const TESTER_EMAILS = [
-  "londailey6937@gmail.com", // Primary admin/developer
-  "lonwdailey@icloud.com",
-  "tamwrite@comcast.net",
-];
-
-// Check if user has tester access
-export const isTesterEmail = (email: string | undefined): boolean => {
-  if (!email) return false;
-  return TESTER_EMAILS.includes(email.toLowerCase());
-};
-
-// Check if user can actually use a feature (not just see it)
+// Check if user can use a feature based on their subscription tier
 export const canUseFeature = (
-  userEmail: string | undefined,
   requiredTier: AccessLevel,
   userTier: AccessLevel
 ): boolean => {
-  // Testers can use all features
-  if (isTesterEmail(userEmail)) return true;
-
-  // For non-testers, features are restricted to free tier only
-  // They can see premium/professional UI but can't actually use features
   const tierLevel = { free: 1, premium: 2, professional: 3 };
-  return (
-    tierLevel[userTier] >= tierLevel[requiredTier] && requiredTier === "free"
-  );
+  return tierLevel[userTier] >= tierLevel[requiredTier];
 };
 
 export interface AccessFeatures {

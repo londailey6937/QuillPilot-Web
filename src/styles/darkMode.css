@@ -126,6 +126,17 @@
   border-color: var(--border-primary) !important;
 }
 
+/* Modal search inputs should stay light for contrast */
+[data-theme="dark"] input.modal-search-input {
+  background-color: #ffffff !important;
+  color: #1f2937 !important;
+  border-color: #e0c392 !important;
+}
+
+[data-theme="dark"] input.modal-search-input::placeholder {
+  color: #9ca3af !important;
+}
+
 [data-theme="dark"] input::placeholder,
 [data-theme="dark"] textarea::placeholder {
   color: var(--text-muted) !important;

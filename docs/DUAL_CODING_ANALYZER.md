@@ -7,6 +7,8 @@ The Dual Coding Analyzer is an intelligent content analysis system that automati
 **Location**: `src/utils/dualCodingAnalyzer.ts`
 **Integration**: `src/components/DocumentEditor.tsx`
 
+> 📖 **For end-user documentation** on Dual Coding analysis, see the [Advanced Tools Guide](./ADVANCED_TOOLS_GUIDE.md) and [Reference Library](./REFERENCE_LIBRARY.md#sensory-detail-density-analysis-reference). This document covers technical implementation.
+
 ---
 
 ## Table of Contents

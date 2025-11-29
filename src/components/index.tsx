@@ -194,10 +194,10 @@ function ChapterInput({
         const arrayBuffer = await file.arrayBuffer();
         const textResult = await mammoth.extractRawText({ arrayBuffer });
         extractedText = textResult.value;
-      } else if (extension === "obt") {
+      } else if (extension === "txt") {
         extractedText = await file.text();
       } else {
-        setError("Please upload a .docx or .obt file");
+        setError("Please upload a .docx or .txt file");
         return;
       }
 

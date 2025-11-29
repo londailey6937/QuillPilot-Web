@@ -353,14 +353,16 @@ Planned additions:
 
 ---
 
-## 📚 Additional Resources
+## 📚 Related Documentation
 
-For more information:
-
-- See `USER_QUICK_START.md` for general QuillPilot usage
-- See `WRITER_MODE_IMPLEMENTATION.md` for Writer Mode features
-- See `PROFESSIONAL_FEATURES.md` for tier-specific features
+| Document                                                      | Description                                            |
+| ------------------------------------------------------------- | ------------------------------------------------------ |
+| [Writer's Reference](./WRITERS_REFERENCE.md)                  | Complete user guide for Writer Mode and all features   |
+| [Quick Start Guide](../public/QUICK_START.md)                 | Getting started with QuillPilot                        |
+| [Reference Library](./REFERENCE_LIBRARY.md)                   | All 33 analysis metrics explained with scoring details |
+| [Writer Mode Implementation](./WRITER_MODE_IMPLEMENTATION.md) | Technical implementation details for developers        |
+| [Professional Features](./PROFESSIONAL_FEATURES.md)           | Tier-specific features and capabilities                |
 
 ---
 
-**Need Help?** Contact support or check the troubleshooting guide in the main documentation.
+**Need Help?** Contact support@quillpilot.com or check the [Troubleshooting Guide](./TROUBLESHOOTING.md).

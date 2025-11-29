@@ -31,6 +31,7 @@ export function QuickStartModal({
     analysis: "Understanding Analysis",
     troubleshooting: "Troubleshooting",
     tips: "Pro Tips",
+    related: "📚 Related Resources",
   };
 
   const renderContent = () => {
@@ -222,6 +223,83 @@ export function QuickStartModal({
                     (1,000+ pages)
                   </li>
                 </ul>
+
+                <div
+                  style={{
+                    marginTop: "1.5rem",
+                    padding: "1rem",
+                    background: "#fef5e7",
+                    borderRadius: "8px",
+                    border: "1px solid #e0c392",
+                  }}
+                >
+                  <strong style={{ color: "#2c3e50" }}>🚀 Explore More:</strong>
+                  <div
+                    style={{
+                      marginTop: "0.5rem",
+                      display: "flex",
+                      gap: "0.5rem",
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <button
+                      onClick={() => setActiveSection("interface")}
+                      style={{
+                        background: "#ef8432",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "4px",
+                        padding: "4px 12px",
+                        fontSize: "0.8rem",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Interface Tour
+                    </button>
+                    <button
+                      onClick={() => setActiveSection("features")}
+                      style={{
+                        background: "#ef8432",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "4px",
+                        padding: "4px 12px",
+                        fontSize: "0.8rem",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Key Features
+                    </button>
+                    <button
+                      onClick={() => setActiveSection("writerMode")}
+                      style={{
+                        background: "#ef8432",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "4px",
+                        padding: "4px 12px",
+                        fontSize: "0.8rem",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Writer Mode
+                    </button>
+                    <button
+                      onClick={() => setActiveSection("tips")}
+                      style={{
+                        background: "#ef8432",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "4px",
+                        padding: "4px 12px",
+                        fontSize: "0.8rem",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Pro Tips
+                    </button>
+                  </div>
+                </div>
               </section>
             </div>
           </div>
@@ -1170,6 +1248,71 @@ export function QuickStartModal({
                     <strong>Cmd/Ctrl + Shift + Z:</strong> Redo
                   </li>
                 </ul>
+              </section>
+            </div>
+          </div>
+        );
+
+      case "related":
+        return (
+          <div className="quickstart-shell">
+            <div className="quickstart-content">
+              <section className="quickstart-card">
+                <h4>📚 Related Resources</h4>
+                <p style={{ marginBottom: "1.5rem", color: "#000000" }}>
+                  Explore these additional guides to get the most out of
+                  QuillPilot.
+                </p>
+
+                <h5 style={{ color: "#000000", marginTop: "1rem" }}>
+                  Reference Library
+                </h5>
+                <p style={{ marginBottom: "1rem", color: "#000000" }}>
+                  Deep-dive into every writing concept QuillPilot analyzes—from
+                  Pacing and Flow to Sensory Detail Density to the 12 Fiction
+                  Elements. Includes definitions, examples, and color coding
+                  explanations. Access it from the ☰ menu → Reference Library.
+                </p>
+
+                <h5 style={{ color: "#000000", marginTop: "1.5rem" }}>
+                  Writer's Reference
+                </h5>
+                <p style={{ marginBottom: "1rem", color: "#000000" }}>
+                  Comprehensive documentation for Writer Mode, including the
+                  editor toolbar, Advanced Tools Panel, AI Writing Assistant,
+                  and all productivity features like Focus Mode and Word
+                  Sprints. Access it from the ☰ menu → Writer's Reference.
+                </p>
+
+                <h5 style={{ color: "#000000", marginTop: "1.5rem" }}>
+                  Advanced Tools
+                </h5>
+                <p style={{ marginBottom: "1rem", color: "#000000" }}>
+                  Professional-tier features like the Beat Sheet Generator,
+                  Character Manager, Dialogue Enhancer, and POV Checker.
+                  Available in Writer Mode via the Advanced Tools Panel.
+                </p>
+
+                <div
+                  style={{
+                    background: "#fef5e7",
+                    borderLeft: "4px solid #ef8432",
+                    padding: "1rem 1.5rem",
+                    margin: "1rem 0",
+                    borderRadius: "0 0.5rem 0.5rem 0",
+                    color: "#000000",
+                  }}
+                >
+                  <p style={{ margin: 0, fontWeight: "600", color: "#000000" }}>
+                    💡 Tip:
+                  </p>
+                  <p style={{ margin: "0.5rem 0 0 0", color: "#000000" }}>
+                    Start here with Quick Start, then explore the Reference
+                    Library to understand what the analysis means, and finally
+                    dive into Writer's Reference when you're ready to use Writer
+                    Mode.
+                  </p>
+                </div>
               </section>
             </div>
           </div>

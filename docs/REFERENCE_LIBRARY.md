@@ -2,6 +2,12 @@
 
 **Complete feature reference and technical documentation**
 
+> 📖 **Related Guides:**
+>
+> - **Getting Started**: [Quick Start Guide](../public/QUICK_START.md) for new users
+> - **Writer Mode**: [Writer's Reference](./WRITERS_REFERENCE.md) for complete editing guide
+> - **Advanced Tools**: [Advanced Tools Guide](./ADVANCED_TOOLS_GUIDE.md) for AI Writing Assistant, Beat Sheet, POV Checker, etc.
+
 ---
 
 ## Table of Contents
@@ -1182,7 +1188,7 @@ You can now **Report False Positives** directly from the concept list. Look for 
 - ✅ Up to 200 pages per document
 - ✅ Spacing analysis (full)
 - ✅ Sensory detail density analysis (full)
-- ✅ Upload DOCX/OBT files
+- ✅ Upload DOCX/TXT files
 - ✅ View analysis dashboard
 - ✅ Access all built-in domains
 - ✅ **Save up to 3 analyzed documents** (requires free account)
@@ -1265,7 +1271,7 @@ You can now **Report False Positives** directly from the concept list. Look for 
 
 ### Accessing Writer Mode
 
-1. **Upload a document** (DOCX or OBT)
+1. **Upload a document** (DOCX or TXT)
 2. **Run analysis** (select domain first)
 3. **Click "✍️ Writer" tab** (Professional tier required)
 4. **Editor opens** with your document text
@@ -1433,10 +1439,10 @@ You can now **Report False Positives** directly from the concept list. Look for 
 
 ### Supported File Formats
 
-| Format         | Extension | Max Size | Notes                            |
-| -------------- | --------- | -------- | -------------------------------- |
-| Microsoft Word | `.docx`   | 200 MB   | Tested up to 800-1200 pages      |
-| Open Book Text | `.obt`    | 200 MB   | Proprietary format for textbooks |
+| Format         | Extension | Max Size | Notes                       |
+| -------------- | --------- | -------- | --------------------------- |
+| Microsoft Word | `.docx`   | 200 MB   | Tested up to 800-1200 pages |
+| Plain Text     | `.txt`    | 200 MB   | Simple text files           |
 
 **Typical Sizes:**
 
@@ -1580,8 +1586,8 @@ A: Yes! DOCX and HTML exports include your final edited text.
 
 ### Technical Questions
 
-**Q: What's the difference between OBT and DOCX?**
-A: OBT is a proprietary format for open textbooks. Functionally, both work the same in this app.
+**Q: What file formats are supported?**
+A: DOCX (Microsoft Word) and TXT (plain text) formats are supported. Markdown (.md) files are also accepted.
 
 **Q: Can I use this for languages other than English?**
 A: Currently optimized for English. Other languages may have reduced accuracy in concept extraction.

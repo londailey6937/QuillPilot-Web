@@ -118,6 +118,8 @@ Writer Mode transforms QuillPilot from an analysis tool into a full-featured wri
 
 Access by clicking the **🛠️ Advanced Tools** button. These professional-grade tools help you analyze and improve your manuscript.
 
+> 📖 **For comprehensive tool documentation**, see the [Advanced Tools Guide](./ADVANCED_TOOLS_GUIDE.md) which covers each tool in detail with usage examples, scoring explanations, and troubleshooting.
+
 ### Content Generation & Enhancement
 
 #### ✨ AI Writing Assistant
@@ -308,6 +310,8 @@ Detect point-of-view inconsistencies and head-hopping.
 
 Understand your text's reading level and complexity.
 
+> 📖 **For complete metric details**, see the [Reference Library - Readability Section](./REFERENCE_LIBRARY.md#complete-analysis-metrics-33-total) which covers all 33 analysis dimensions.
+
 **Metrics Explained:**
 
 | Metric               | Range | What It Measures             |
@@ -451,6 +455,8 @@ Set and track writing goals.
 
 Eliminate distractions for deep writing.
 
+**Location:** Editor toolbar (🎯 button) — see [The Editor Toolbar](#the-editor-toolbar) for all toolbar options.
+
 **What It Hides:**
 
 - Analysis indicators
@@ -458,7 +464,7 @@ Eliminate distractions for deep writing.
 - Statistics bar
 - Everything except your text
 
-**How to Use:** Click the 🎯 button in the toolbar to toggle.
+**How to Use:** Click the 🎯 button in the editor toolbar to toggle on/off.
 
 **💡 Tip**: Use Focus Mode for first drafts, disable it for revision.
 
@@ -467,6 +473,8 @@ Eliminate distractions for deep writing.
 ### ⌨️ Typewriter Mode
 
 Keep your current line centered on screen.
+
+**Location:** Editor toolbar (⌨️ button) — see [The Editor Toolbar](#the-editor-toolbar) for all toolbar options.
 
 **How It Works:**
 
@@ -666,8 +674,10 @@ This helps track character appearances and ensures consistency.
 
 ## Need More Help?
 
-- **Quick Start Guide**: Basic getting-started steps
-- **Reference Library**: Technical analysis metrics and scoring details
+- **[Quick Start Guide](../public/QUICK_START.md)**: Basic getting-started steps for new users
+- **[Reference Library](./REFERENCE_LIBRARY.md)**: Complete analysis metrics (33 total), scoring details, and technical specifications
+- **[Advanced Tools Guide](./ADVANCED_TOOLS_GUIDE.md)**: In-depth documentation for all advanced writing tools
+- **[Writer Productivity Features](./WRITER_PRODUCTIVITY_FEATURES.md)**: Technical details on Focus Mode, Typewriter Mode, Sprint Timer, and more
 - **Support**: support@quillpilot.com
 
 ---

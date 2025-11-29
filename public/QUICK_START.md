@@ -218,9 +218,13 @@ QuillPilot analyzes your writing across 10 learning science principles:
 
 ### Documentation
 
-- **PROFESSIONAL_FEATURES.md** - Complete feature list and technical details
-- **PRICING_STRATEGY.md** - Tier comparison and upgrade benefits
-- **REFERENCE_LIBRARY.md** - Concept definitions and writing principles
+| Guide                                                         | What It Covers                                                                     |
+| ------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| **[Writer's Reference](../docs/WRITERS_REFERENCE.md)**        | Complete Writer Mode guide with toolbar, advanced tools, and tips                  |
+| **[Advanced Tools Guide](../docs/ADVANCED_TOOLS_GUIDE.md)**   | In-depth coverage of AI Writing Assistant, Dialogue Enhancer, Beat Sheet, and more |
+| **[Reference Library](../docs/REFERENCE_LIBRARY.md)**         | All 33 analysis metrics, scoring systems, and concept definitions                  |
+| **[Professional Features](../docs/PROFESSIONAL_FEATURES.md)** | Complete feature list by tier                                                      |
+| **[Pricing Strategy](../docs/PRICING_STRATEGY.md)**           | Tier comparison and upgrade benefits                                               |
 
 ### Support
 
@@ -249,6 +253,8 @@ QuillPilot uses 10 evidence-based learning principles:
 8. **Schema Building** - Knowledge structure development
 9. **Cognitive Load** - Mental effort management
 10. **Emotion & Relevance** - Engagement and connection
+
+> 📖 **For detailed metric explanations and scoring**, see the [Reference Library](../docs/REFERENCE_LIBRARY.md#complete-analysis-metrics-33-total) which covers all 33 analysis dimensions.
 
 ### Genre-Specific Analysis
 

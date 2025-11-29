@@ -197,8 +197,8 @@ function QuickStartSection() {
             </li>
           </ul>
           <p>
-            <strong>Supported formats:</strong> <code>.docx</code>,{" "}
-            <code>.txt</code>, and <code>.obt</code>
+            <strong>Supported formats:</strong> <code>.docx</code> and{" "}
+            <code>.txt</code>
           </p>
         </section>
 
@@ -214,7 +214,7 @@ function QuickStartSection() {
                   Click "Upload Document" to select a file from your computer
                 </li>
                 <li>Or paste text directly into the Writer Mode editor</li>
-                <li>Supports .docx, .txt, and .obt formats</li>
+                <li>Supports .docx and .txt formats</li>
               </ul>
             </li>
             <li>

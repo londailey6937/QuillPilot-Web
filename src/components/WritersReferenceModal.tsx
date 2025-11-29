@@ -38,6 +38,7 @@ export function WritersReferenceModal({
     export: "Export Options",
     tips: "Tips & Best Practices",
     shortcuts: "Keyboard Shortcuts",
+    related: "📚 Related Resources",
   };
 
   // Search functionality - must be before early return to follow React hooks rules
@@ -110,6 +111,83 @@ export function WritersReferenceModal({
 ├─────────────────────────────────────────────────────────────┤
 │  Word Count: 3,247  |  Reading Time: 13 min  |  Grade: 8.2  │
 └─────────────────────────────────────────────────────────────┘`}</pre>
+            </div>
+
+            <div
+              style={{
+                marginTop: "1.5rem",
+                padding: "1rem",
+                background: "#fef5e7",
+                borderRadius: "8px",
+                border: "1px solid #e0c392",
+              }}
+            >
+              <strong style={{ color: "#2c3e50" }}>🚀 Quick Links:</strong>
+              <div
+                style={{
+                  marginTop: "0.5rem",
+                  display: "flex",
+                  gap: "0.5rem",
+                  flexWrap: "wrap",
+                }}
+              >
+                <button
+                  onClick={() => setActiveSection("toolbar")}
+                  style={{
+                    background: "#ef8432",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    padding: "4px 12px",
+                    fontSize: "0.8rem",
+                    cursor: "pointer",
+                  }}
+                >
+                  Editor Toolbar
+                </button>
+                <button
+                  onClick={() => setActiveSection("advancedTools")}
+                  style={{
+                    background: "#ef8432",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    padding: "4px 12px",
+                    fontSize: "0.8rem",
+                    cursor: "pointer",
+                  }}
+                >
+                  Advanced Tools
+                </button>
+                <button
+                  onClick={() => setActiveSection("productivity")}
+                  style={{
+                    background: "#ef8432",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    padding: "4px 12px",
+                    fontSize: "0.8rem",
+                    cursor: "pointer",
+                  }}
+                >
+                  Productivity Features
+                </button>
+                <button
+                  onClick={() => setActiveSection("shortcuts")}
+                  style={{
+                    background: "#ef8432",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    padding: "4px 12px",
+                    fontSize: "0.8rem",
+                    cursor: "pointer",
+                  }}
+                >
+                  Keyboard Shortcuts
+                </button>
+              </div>
             </div>
           </div>
         );
@@ -207,15 +285,66 @@ export function WritersReferenceModal({
               <tbody>
                 <tr>
                   <td>🎯</td>
-                  <td>Focus Mode (hide distractions)</td>
+                  <td>
+                    Focus Mode (hide distractions){" "}
+                    <button
+                      onClick={() => setActiveSection("productivity")}
+                      style={{
+                        background: "#ef8432",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "4px",
+                        padding: "2px 8px",
+                        fontSize: "0.75rem",
+                        cursor: "pointer",
+                        marginLeft: "0.5rem",
+                      }}
+                    >
+                      Learn More →
+                    </button>
+                  </td>
                 </tr>
                 <tr>
                   <td>⌨️</td>
-                  <td>Typewriter Mode (center current line)</td>
+                  <td>
+                    Typewriter Mode (center current line){" "}
+                    <button
+                      onClick={() => setActiveSection("productivity")}
+                      style={{
+                        background: "#ef8432",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "4px",
+                        padding: "2px 8px",
+                        fontSize: "0.75rem",
+                        cursor: "pointer",
+                        marginLeft: "0.5rem",
+                      }}
+                    >
+                      Learn More →
+                    </button>
+                  </td>
                 </tr>
                 <tr>
                   <td>⏱️</td>
-                  <td>Word Sprint Timer</td>
+                  <td>
+                    Word Sprint Timer{" "}
+                    <button
+                      onClick={() => setActiveSection("productivity")}
+                      style={{
+                        background: "#ef8432",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "4px",
+                        padding: "2px 8px",
+                        fontSize: "0.75rem",
+                        cursor: "pointer",
+                        marginLeft: "0.5rem",
+                      }}
+                    >
+                      Learn More →
+                    </button>
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -292,6 +421,113 @@ export function WritersReferenceModal({
               <strong>💡 Tip:</strong> Use Advanced Tools during revision, not
               first drafts. Write first, analyze later!
             </div>
+
+            <div
+              style={{
+                marginTop: "1.5rem",
+                padding: "1rem",
+                background: "#fef5e7",
+                borderRadius: "8px",
+                border: "1px solid #ef8432",
+              }}
+            >
+              <strong style={{ color: "#2c3e50" }}>
+                📖 Jump to Tool Details:
+              </strong>
+              <div
+                style={{
+                  marginTop: "0.5rem",
+                  display: "flex",
+                  gap: "0.5rem",
+                  flexWrap: "wrap",
+                }}
+              >
+                <button
+                  onClick={() => setActiveSection("aiAssistant")}
+                  style={{
+                    background: "#ef8432",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    padding: "4px 12px",
+                    fontSize: "0.8rem",
+                    cursor: "pointer",
+                  }}
+                >
+                  AI Assistant
+                </button>
+                <button
+                  onClick={() => setActiveSection("dialogue")}
+                  style={{
+                    background: "#ef8432",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    padding: "4px 12px",
+                    fontSize: "0.8rem",
+                    cursor: "pointer",
+                  }}
+                >
+                  Dialogue Enhancer
+                </button>
+                <button
+                  onClick={() => setActiveSection("beatSheet")}
+                  style={{
+                    background: "#ef8432",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    padding: "4px 12px",
+                    fontSize: "0.8rem",
+                    cursor: "pointer",
+                  }}
+                >
+                  Beat Sheet
+                </button>
+                <button
+                  onClick={() => setActiveSection("povChecker")}
+                  style={{
+                    background: "#ef8432",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    padding: "4px 12px",
+                    fontSize: "0.8rem",
+                    cursor: "pointer",
+                  }}
+                >
+                  POV Checker
+                </button>
+                <button
+                  onClick={() => setActiveSection("emotion")}
+                  style={{
+                    background: "#ef8432",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    padding: "4px 12px",
+                    fontSize: "0.8rem",
+                    cursor: "pointer",
+                  }}
+                >
+                  Emotion Tracker
+                </button>
+                <button
+                  onClick={() => setActiveSection("motif")}
+                  style={{
+                    background: "#ef8432",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    padding: "4px 12px",
+                    fontSize: "0.8rem",
+                    cursor: "pointer",
+                  }}
+                >
+                  Motif Tracker
+                </button>
+              </div>
+            </div>
           </div>
         );
 
@@ -340,6 +576,69 @@ export function WritersReferenceModal({
                   Enhance works best on action scenes lacking sensory detail
                 </li>
               </ul>
+            </div>
+
+            <div
+              style={{
+                marginTop: "1.5rem",
+                padding: "1rem",
+                background: "#fef5e7",
+                borderRadius: "8px",
+                border: "1px solid #ef8432",
+              }}
+            >
+              <strong style={{ color: "#2c3e50" }}>📖 See Also:</strong>
+              <div
+                style={{
+                  marginTop: "0.5rem",
+                  display: "flex",
+                  gap: "0.5rem",
+                  flexWrap: "wrap",
+                }}
+              >
+                <button
+                  onClick={() => setActiveSection("dialogue")}
+                  style={{
+                    background: "#ef8432",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    padding: "4px 12px",
+                    fontSize: "0.8rem",
+                    cursor: "pointer",
+                  }}
+                >
+                  Dialogue Enhancer
+                </button>
+                <button
+                  onClick={() => setActiveSection("cliche")}
+                  style={{
+                    background: "#ef8432",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    padding: "4px 12px",
+                    fontSize: "0.8rem",
+                    cursor: "pointer",
+                  }}
+                >
+                  Cliché Detector
+                </button>
+                <button
+                  onClick={() => setActiveSection("advancedTools")}
+                  style={{
+                    background: "#ef8432",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    padding: "4px 12px",
+                    fontSize: "0.8rem",
+                    cursor: "pointer",
+                  }}
+                >
+                  Advanced Tools
+                </button>
+              </div>
             </div>
           </div>
         );
@@ -390,6 +689,69 @@ export function WritersReferenceModal({
                   exactly what they mean
                 </li>
               </ul>
+            </div>
+
+            <div
+              style={{
+                marginTop: "1.5rem",
+                padding: "1rem",
+                background: "#fef5e7",
+                borderRadius: "8px",
+                border: "1px solid #ef8432",
+              }}
+            >
+              <strong style={{ color: "#2c3e50" }}>📖 See Also:</strong>
+              <div
+                style={{
+                  marginTop: "0.5rem",
+                  display: "flex",
+                  gap: "0.5rem",
+                  flexWrap: "wrap",
+                }}
+              >
+                <button
+                  onClick={() => setActiveSection("aiAssistant")}
+                  style={{
+                    background: "#ef8432",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    padding: "4px 12px",
+                    fontSize: "0.8rem",
+                    cursor: "pointer",
+                  }}
+                >
+                  AI Writing Assistant
+                </button>
+                <button
+                  onClick={() => setActiveSection("characters")}
+                  style={{
+                    background: "#ef8432",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    padding: "4px 12px",
+                    fontSize: "0.8rem",
+                    cursor: "pointer",
+                  }}
+                >
+                  Character Management
+                </button>
+                <button
+                  onClick={() => setActiveSection("povChecker")}
+                  style={{
+                    background: "#ef8432",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    padding: "4px 12px",
+                    fontSize: "0.8rem",
+                    cursor: "pointer",
+                  }}
+                >
+                  POV Checker
+                </button>
+              </div>
             </div>
           </div>
         );
@@ -860,6 +1222,21 @@ export function WritersReferenceModal({
             <div className="tip-box">
               <strong>💡 Tip:</strong> Use Focus Mode for first drafts, disable
               it for revision.
+              <button
+                onClick={() => setActiveSection("toolbar")}
+                style={{
+                  background: "#ef8432",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "4px",
+                  padding: "2px 8px",
+                  fontSize: "0.75rem",
+                  cursor: "pointer",
+                  marginLeft: "0.5rem",
+                }}
+              >
+                See Toolbar →
+              </button>
             </div>
 
             <h3>⌨️ Typewriter Mode</h3>
@@ -870,6 +1247,21 @@ export function WritersReferenceModal({
             <div className="tip-box">
               <strong>💡 Tip:</strong> Combine with Focus Mode for ultimate
               immersion.
+              <button
+                onClick={() => setActiveSection("toolbar")}
+                style={{
+                  background: "#ef8432",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "4px",
+                  padding: "2px 8px",
+                  fontSize: "0.75rem",
+                  cursor: "pointer",
+                  marginLeft: "0.5rem",
+                }}
+              >
+                See Toolbar →
+              </button>
             </div>
 
             <h3>⏱️ Word Sprint Timer</h3>
@@ -1200,6 +1592,45 @@ export function WritersReferenceModal({
           </div>
         );
 
+      case "related":
+        return (
+          <div className="writers-ref-content">
+            <h2>📚 Related Resources</h2>
+            <p>
+              Explore these additional guides to get the most out of QuillPilot.
+            </p>
+
+            <h3>Quick Start Guide</h3>
+            <p>
+              New to QuillPilot? The Quick Start Guide walks you through
+              uploading your first document, running analysis, and understanding
+              results. Access it from the ☰ menu → Quick Start.
+            </p>
+
+            <h3>Reference Library</h3>
+            <p>
+              Learn about every writing concept QuillPilot analyzes—from Show vs
+              Tell to Pacing to Dialogue Tags. Each entry includes definitions,
+              examples, and practical improvement tips. Access it from the ☰
+              menu → Reference Library.
+            </p>
+
+            <h3>Advanced Tools Panel</h3>
+            <p>
+              Deep-dive into specialized analysis tools like the Dual Coding
+              Analyzer, Beat Sheet Generator, and Character Manager. See the
+              Advanced Tools section in this guide or access the panel directly
+              in Writer Mode.
+            </p>
+
+            <div className="tip-box">
+              <strong>💡 Tip:</strong> Use the sidebar navigation to jump
+              between any section of this Writer's Reference. Use the search box
+              above to quickly find specific topics.
+            </div>
+          </div>
+        );
+
       default:
         return (
           <div className="writers-ref-content">
@@ -1324,6 +1755,7 @@ export function WritersReferenceModal({
                   placeholder="Search topics..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
+                  className="modal-search-input"
                   style={{
                     width: "100%",
                     padding: "0.625rem 0.75rem 0.625rem 2.25rem",
@@ -1440,11 +1872,21 @@ export function WritersReferenceModal({
             style={{
               flex: 1,
               overflowY: "auto",
-              padding: "2rem",
-              background: "white",
+              padding: "1.5rem",
+              background: "linear-gradient(180deg, #fef5e7 0%, #fff7ed 100%)",
             }}
           >
-            {renderContent()}
+            <div
+              style={{
+                padding: "1.5rem",
+                borderRadius: "1rem",
+                background: "#fef5e7",
+                border: "1px solid rgba(217, 119, 6, 0.12)",
+                boxShadow: "0 12px 24px rgba(15, 23, 42, 0.06)",
+              }}
+            >
+              {renderContent()}
+            </div>
           </div>
         </div>
       </div>
@@ -1477,18 +1919,19 @@ export function WritersReferenceModal({
         .writers-ref-content p {
           margin: 0 0 1rem 0;
           line-height: 1.7;
-          color: #374151;
+          color: #000000;
         }
 
         .writers-ref-content ul, .writers-ref-content ol {
           margin: 0 0 1rem 0;
           padding-left: 1.5rem;
           line-height: 1.8;
-          color: #374151;
+          color: #000000;
         }
 
         .writers-ref-content li {
           margin-bottom: 0.5rem;
+          color: #000000;
         }
 
         .writers-ref-content strong {
@@ -1501,10 +1944,11 @@ export function WritersReferenceModal({
           padding: 1rem 1.25rem;
           border-radius: 0 8px 8px 0;
           margin: 1rem 0;
+          color: #000000;
         }
 
         .tip-box strong {
-          color: #ef8432;
+          color: #000000;
         }
 
         .tip-box ul {

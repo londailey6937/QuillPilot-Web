@@ -4,6 +4,8 @@
 
 Successfully cloned the battle-tested rich text editor from Chapter-Analysis to QuillPilot for the Professional tier.
 
+> 📖 **For end-user documentation**, see the [Writer's Reference](./WRITERS_REFERENCE.md). This document covers technical implementation details for developers.
+
 ## Files Copied from Chapter-Analysis
 
 ### Core Editor Components

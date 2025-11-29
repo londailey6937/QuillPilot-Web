@@ -16,7 +16,7 @@ interface FileUploadButtonProps {
  * FileUploadButton Component
  *
  * Provides a styled button for uploading chapter files.
- * Accepts .docx, .obt, and .txt files.
+ * Accepts .docx and .txt files.
  *
  * Parent: ChapterInput
  *
@@ -40,10 +40,10 @@ function FileUploadButton({
       <input
         ref={fileInputRef}
         type="file"
-        accept=".docx,.obt,.txt"
+        accept=".docx,.txt"
         onChange={onUpload}
         className="hidden"
-        aria-label="Upload chapter file (.docx, .obt, or .txt)"
+        aria-label="Upload chapter file (.docx or .txt)"
       />
     </>
   );

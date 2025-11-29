@@ -220,7 +220,7 @@ interface ReferenceLibraryModalProps {
 **Purpose**: File upload and text input interface
 **Responsibility**:
 
-- Handle .docx, .obt, .pdf uploads
+- Handle .docx, .txt uploads
 - Parse documents using mammoth/pdf.js
 - Extract images and WMF graphics
 - Text area for direct input
@@ -772,7 +772,7 @@ interface InfoCardProps {
 ```tsx
 interface FileUploadButtonProps {
   onFileSelect: (file: File) => void;
-  accept?: string; // ".docx,.obt,.pdf"
+  accept?: string; // ".docx,.txt"
   disabled?: boolean;
   label?: string;
 }

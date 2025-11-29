@@ -4,6 +4,8 @@
 
 Quill Pilot is a **React + TypeScript** application using **Web Workers** for background processing and **domain-specific pattern recognition** for intelligent analysis of educational content.
 
+> 📖 **For end-user documentation**, see the [Writer's Reference](./WRITERS_REFERENCE.md) or [Quick Start Guide](../public/QUICK_START.md). This document is for developers extending or maintaining the system.
+
 ---
 
 ## Table of Contents
@@ -63,7 +65,7 @@ PDF Processing: pdf.js (text extraction)
 ### Data Flow
 
 ```
-1. User uploads DOCX/OBT
+1. User uploads DOCX/TXT
    ↓
 2. Text extraction (mammoth.js for DOCX)
    ↓

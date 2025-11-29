@@ -1,5 +1,12 @@
 # Writer Productivity & Technical Improvements - Implementation Summary
 
+> 📖 **For end-user documentation** on these features, see:
+>
+> - [Writer's Reference](./WRITERS_REFERENCE.md) - Complete user guide for Writer Mode
+> - [Advanced Tools Guide](./ADVANCED_TOOLS_GUIDE.md) - How to use each tool
+>
+> This document covers technical implementation details for developers.
+
 ## ✅ Completed Features
 
 ### 19. Writing Streak Tracker ✓
@@ -57,7 +64,7 @@ import { GoalSettingProgress } from "@/components";
 
 ### 21. Focus Mode Enhancements ✓
 
-**Location**: `CustomEditor.tsx`
+**Location**: `CustomEditor.tsx` — accessible via the **editor toolbar** in Writer Mode
 
 **New Features**:
 
@@ -66,11 +73,13 @@ import { GoalSettingProgress } from "@/components";
 - **Sprint Statistics**: Words written and words per minute
 - Enhanced focus mode to hide analysis indicators
 
-**Toolbar Buttons**:
+**Toolbar Buttons** (in the editor toolbar when a document is loaded):
 
 - 🎯 Focus Mode (hide indicators)
 - ⌨️ Typewriter Mode (center current line)
 - ⏱️ Sprint Timer (default 15 minutes)
+
+> 📖 **See also**: [WRITERS_REFERENCE.md](./WRITERS_REFERENCE.md#-focus-mode) for user-facing documentation.
 
 **Sprint Display**:
 

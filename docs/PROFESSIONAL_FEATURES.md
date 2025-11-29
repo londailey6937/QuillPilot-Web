@@ -4,6 +4,13 @@
 
 QuillPilot now includes professional-grade writing tools that compete with industry-leading writing software like Scrivener, Ulysses, and MS Word.
 
+> 📖 **Related Documentation:**
+>
+> - **User Guide**: [Writer's Reference](./WRITERS_REFERENCE.md) - Complete guide to using these features
+> - **Advanced Tools**: [Advanced Tools Guide](./ADVANCED_TOOLS_GUIDE.md) - AI Writing Assistant, Beat Sheet, etc.
+> - **Pricing**: [Pricing Strategy](./PRICING_STRATEGY.md) - Feature availability by tier
+> - **Reference**: [Reference Library](./REFERENCE_LIBRARY.md) - All 33 analysis metrics explained
+
 ## ✅ Completed Features
 
 ### 1. PDF Export (📄 NEW)

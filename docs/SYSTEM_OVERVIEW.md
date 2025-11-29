@@ -4,12 +4,20 @@
 
 A **complete, production-ready React application** that evaluates educational chapters against 10 evidence-based learning science principles. This system includes data structures, extraction engines, evaluation engines, analysis orchestration, and interactive visualizations—all working together.
 
+> 📖 **Related Documentation:**
+>
+> - **End Users**: See [Quick Start Guide](../public/QUICK_START.md) or [Writer's Reference](./WRITERS_REFERENCE.md)
+> - **Developers**: See [Technical Architecture](./TECHNICAL_ARCHITECTURE.md) for detailed implementation
+> - **Analysis Metrics**: See [Reference Library](./REFERENCE_LIBRARY.md) for all 33 metrics
+
 ---
 
 ## 📦 The Complete File Set
 
 ### **1. types.ts** - Core Data Structures
+
 Your TypeScript foundation that defines:
+
 - Concept, ConceptGraph, and ConceptRelationship types
 - Chapter structure and sections
 - PrincipleEvaluation, Finding, Suggestion types
@@ -19,6 +27,7 @@ Your TypeScript foundation that defines:
 **Why it matters**: Type safety across the entire system; enables IntelliSense and compile-time error checking.
 
 ### **2. ConceptExtractor.ts** - NLP Concept Extraction
+
 Six-phase extraction engine:
 
 ```
@@ -40,6 +49,7 @@ Output: ConceptGraph with 50+ related properties
 ```
 
 **Key Capabilities**:
+
 - Detects 6+ types of defining patterns
 - Tracks mention positions and context
 - Estimates explanation depth (shallow/moderate/deep)
@@ -47,6 +57,7 @@ Output: ConceptGraph with 50+ related properties
 - Calculates optimal spacing
 
 **Example Output**:
+
 ```
 Concept {
   name: "Spaced Repetition"
@@ -60,61 +71,73 @@ Concept {
 ```
 
 ### **3. LearningPrincipleEvaluators.ts** - 10 Principle Evaluators
+
 Each principle has its own evaluator class:
 
 **DeepProcessingEvaluator**
+
 - Counts "Why?" and "How?" questions
 - Analyzes explanation variety (examples, analogies, definitions, etc.)
 - Detects prior knowledge connections
 - Identifies analogies and concept mapping instructions
 
 **SpacedRepetitionEvaluator**
+
 - Analyzes concept mention patterns
 - Calculates spacing gaps between mentions
 - Identifies even vs. uneven distribution
 - Suggests optimal review intervals
 
 **RetrievalPracticeEvaluator**
+
 - Counts direct recall questions
 - Detects summary/recap prompts
 - Identifies application scenarios
 - Scores opportunity for active recall
 
 **InterleavingEvaluator**
+
 - Identifies blocking segments (same topic consecutive)
 - Calculates blocking ratio
 - Suggests topic mixing improvements
 
 **DualCodingEvaluator**
+
 - Counts visual references (diagrams, charts, images)
 - Flags text-heavy sections without visuals
 
 **GenerativeLearningEvaluator**
+
 - Detects prediction prompts
 - Finds generation/creation tasks
 - Counts problem-solving opportunities
 
 **MetacognitionEvaluator**
+
 - Finds self-assessment prompts
 - Identifies confusion acknowledgment
 - Locates metacognitive checkpoints
 
 **SchemaBuildingEvaluator**
+
 - Analyzes concept hierarchy balance
 - Evaluates scaffolding quality
 - Measures progression from simple → complex
 
 **CognitiveLoadEvaluator**
+
 - Analyzes section lengths
 - Calculates variance in cognitive load
 - Identifies overloaded segments
 
 **EmotionAndRelevanceEvaluator**
+
 - Counts storytelling and examples
 - Detects relevance statements
 - Finds emotional/novelty elements
 
 **Output Pattern**:
+
 ```
 {
   principle: "deepProcessing",
@@ -139,6 +162,7 @@ Each principle has its own evaluator class:
 ```
 
 ### **4. AnalysisEngine.ts** - Orchestration & Report Generation
+
 The conductor that brings everything together:
 
 ```typescript
@@ -153,6 +177,7 @@ analyzeChapter(chapter, config)
 ```
 
 **What It Does**:
+
 - Orchestrates the full pipeline
 - Calculates weighted overall score
 - Generates context-aware recommendations
@@ -160,6 +185,7 @@ analyzeChapter(chapter, config)
 - Handles all error cases gracefully
 
 **Key Calculations**:
+
 - **Weighted Score**: Each principle weighted by importance
 - **Concept Density**: Concepts per 1000 words
 - **Hierarchy Balance**: Deviation from optimal 20-30-50 split
@@ -167,47 +193,57 @@ analyzeChapter(chapter, config)
 - **Blocking Ratio**: Percentage of consecutive same-topic content
 
 ### **5. VisualizationComponents.tsx** - Interactive React Visualizations
+
 React components using Recharts + D3:
 
 **PrincipleScoresRadar**
+
 - 10-axis radar chart showing all principles
 - Color-coded by performance
 - Shows overall weighted score
 
 **CognitiveLoadCurve**
+
 - Line chart of cognitive load across sections
 - Overlays novel concepts and complexity
 - Identifies challenging sections
 
 **ConceptMentionFrequency**
+
 - Bar chart of mention counts per concept
 - Highlights optimal vs. problematic spacing
 - Shows spaced repetition status
 
 **ConceptMapVisualization**
+
 - Force-directed graph of concept relationships
 - Color-coded by importance (core/supporting/detail)
 - Clickable nodes for detail view
 
 **InterleavingPattern**
+
 - Horizontal sequence visualization
 - Shows topic switching patterns
 - Highlights blocking segments
 
 **ReviewScheduleTimeline**
+
 - Timeline of concept mentions
 - Shows gap sizes
 - Green/orange indicators for optimal/suboptimal
 
 **PrincipleFindings**
+
 - Expandable cards for each principle
 - Shows findings, suggestions, evidence
 - Prioritized action items
 
 ### **6. ChapterChecker.tsx** - Main Application Component
+
 Complete React application with:
 
 **Features**:
+
 - Chapter text input with paste/upload
 - Real-time word count
 - Progress indicator during analysis
@@ -216,6 +252,7 @@ Complete React application with:
 - Responsive design (mobile-friendly)
 
 **User Flow**:
+
 1. User pastes/uploads chapter
 2. App validates (>200 words)
 3. Real-time progress updates
@@ -223,6 +260,7 @@ Complete React application with:
 5. User can export or analyze another
 
 ### **7. README.md** - Comprehensive Documentation
+
 - Architecture explanation
 - Installation instructions
 - API reference
@@ -232,6 +270,7 @@ Complete React application with:
 - Research citations
 
 ### **8. QUICK_START.md** - Implementation Guide
+
 - 5-minute setup
 - 5 detailed usage examples
 - 10+ code recipes
@@ -255,7 +294,7 @@ Sections: [Intro, Background, Methods, Results, Conclusion]
 ConceptGraph with:
   - 28 total concepts
   - 12 core concepts
-  - 8 supporting concepts  
+  - 8 supporting concepts
   - 8 detail concepts
   - 45 relationships
   - Hierarchical organization
@@ -304,37 +343,42 @@ User sees complete analysis with:
 ## 💡 How to Use Each Component
 
 ### For Simple Integration
-```tsx
-import { ChapterChecker } from './ChapterChecker';
 
-<ChapterChecker /> // That's all!
+```tsx
+import { ChapterChecker } from "./ChapterChecker";
+
+<ChapterChecker />; // That's all!
 ```
 
 ### For Custom Analysis
+
 ```tsx
-import { AnalysisEngine } from './AnalysisEngine';
+import { AnalysisEngine } from "./AnalysisEngine";
 
 const analysis = await AnalysisEngine.analyzeChapter(chapter, config);
 console.log(`Score: ${analysis.overallScore}`);
 ```
 
 ### For Specific Principles
+
 ```tsx
-import { DeepProcessingEvaluator } from './LearningPrincipleEvaluators';
+import { DeepProcessingEvaluator } from "./LearningPrincipleEvaluators";
 
 const evaluation = DeepProcessingEvaluator.evaluate(chapter, concepts);
 console.log(evaluation.score); // 0-100
 ```
 
 ### For Concept Extraction Only
+
 ```tsx
-import ConceptExtractor from './ConceptExtractor';
+import ConceptExtractor from "./ConceptExtractor";
 
 const graph = await ConceptExtractor.extractConceptsFromChapter(text, sections);
 console.log(graph.concepts.length); // Number of extracted concepts
 ```
 
 ### For Visualizations Only
+
 ```tsx
 import {
   PrincipleScoresRadar,
@@ -352,30 +396,36 @@ import {
 ## 🎯 Key Metrics Explained
 
 ### Overall Score (0-100)
+
 - **80+**: Excellent learning design
 - **60-79**: Good foundation with improvements needed
 - **40-59**: Adequate but significant room for improvement
 - **<40**: Needs substantial revision
 
 ### Principle Scores
+
 Each principle scored independently with context-specific thresholds:
+
 - **80+**: Strong implementation
 - **60-79**: Good, minor improvements possible
 - **40-59**: Adequate, should improve
 - **<40**: Needs significant work
 
 ### Concept Metrics
+
 - **Density**: 3-5 concepts per 1000 words (optimal)
 - **Mentions**: Core concepts should appear 3-5 times each
 - **Spacing**: Even distribution across chapter (not all at start)
 - **Hierarchy**: 20% core, 30% supporting, 50% detail (ideal)
 
 ### Cognitive Load
+
 - **0.3-0.5**: Comfortable learning pace
 - **0.5-0.7**: Appropriate challenge
 - **>0.7**: Risk of cognitive overload
 
 ### Blocking Ratio
+
 - **<0.4**: Good interleaving
 - **0.4-0.6**: Moderate (acceptable)
 - **>0.6**: Heavy blocking (needs improvement)
@@ -385,27 +435,31 @@ Each principle scored independently with context-specific thresholds:
 ## 🔧 Customization Points
 
 ### 1. Adjust Principle Weights
+
 ```typescript
 // Higher weight = more important for final score
-principles.find(p => p.principle === 'deepProcessing')!.weight = 1.0;
-principles.find(p => p.principle === 'emotionAndRelevance')!.weight = 0.6;
+principles.find((p) => p.principle === "deepProcessing")!.weight = 1.0;
+principles.find((p) => p.principle === "emotionAndRelevance")!.weight = 0.6;
 ```
 
 ### 2. Modify Thresholds
+
 ```typescript
 // Example: More strict on questions
 const threshold = Math.ceil(chapter.wordCount / 300); // vs. 500
 ```
 
 ### 3. Add Domain-Specific Rules
+
 ```typescript
-if (config.domain === 'STEM') {
+if (config.domain === "STEM") {
   // Expect more equations, less narrative
   // Adjust thresholds accordingly
 }
 ```
 
 ### 4. Change Scoring Logic
+
 ```typescript
 // Example: Exponential scoring instead of linear
 score = Math.pow(score / 100, 2) * 100;
@@ -416,36 +470,39 @@ score = Math.pow(score / 100, 2) * 100;
 ## 📊 Integration with External Systems
 
 ### Learning Management Systems (Canvas, Blackboard, Moodle)
+
 ```typescript
 const lmsPayload = {
-  courseId: 'course-123',
+  courseId: "course-123",
   chapterId: analysis.chapterId,
   score: analysis.overallScore,
-  rubric: analysis.principles.map(p => ({
+  rubric: analysis.principles.map((p) => ({
     criterion: p.principle,
     score: p.score,
-    maxScore: 100
-  }))
+    maxScore: 100,
+  })),
 };
 ```
 
 ### Data Analytics Platforms
+
 ```typescript
-analytics.track('chapter_analyzed', {
+analytics.track("chapter_analyzed", {
   score: analysis.overallScore,
-  principleScores: analysis.principles.map(p => p.score),
+  principleScores: analysis.principles.map((p) => p.score),
   recommendationCount: analysis.recommendations.length,
-  analysisTime: Date.now() - startTime
+  analysisTime: Date.now() - startTime,
 });
 ```
 
 ### Content Management Systems
+
 ```typescript
 const metadata = {
   pedagogicalQuality: analysis.overallScore,
   learningObjectives: analysis.conceptAnalysis.coreConceptCount,
   estimatedDifficulty: analysis.structureAnalysis.pacing,
-  readingLevel: chapter.metadata.readingLevel
+  readingLevel: chapter.metadata.readingLevel,
 };
 ```
 
@@ -453,16 +510,17 @@ const metadata = {
 
 ## 🚀 Performance Characteristics
 
-| Aspect | Value |
-|--------|-------|
-| Analysis Time | 2-5 seconds (typical 3000-word chapter) |
-| Memory Usage | ~50MB (concept graph with 50 concepts) |
-| Concepts Extracted | 20-60 (typical chapter) |
-| Relationships Found | 30-100+ |
-| Recommendations Generated | 5-20 |
-| Bundle Size | ~150KB (minified) |
+| Aspect                    | Value                                   |
+| ------------------------- | --------------------------------------- |
+| Analysis Time             | 2-5 seconds (typical 3000-word chapter) |
+| Memory Usage              | ~50MB (concept graph with 50 concepts)  |
+| Concepts Extracted        | 20-60 (typical chapter)                 |
+| Relationships Found       | 30-100+                                 |
+| Recommendations Generated | 5-20                                    |
+| Bundle Size               | ~150KB (minified)                       |
 
 ### Optimization Tips
+
 1. Cache concept extraction for repeated analyses
 2. Reduce visualization complexity for large chapters
 3. Use lazy loading for visualization components
@@ -474,20 +532,30 @@ const metadata = {
 
 ```typescript
 // Unit test each evaluator
-describe('DeepProcessingEvaluator', () => {
-  test('detects why/how questions', () => { /* ... */ });
-  test('identifies explanation variety', () => { /* ... */ });
+describe("DeepProcessingEvaluator", () => {
+  test("detects why/how questions", () => {
+    /* ... */
+  });
+  test("identifies explanation variety", () => {
+    /* ... */
+  });
 });
 
 // Integration test full pipeline
-describe('AnalysisEngine', () => {
-  test('produces valid ChapterAnalysis', () => { /* ... */ });
-  test('calculates weighted score correctly', () => { /* ... */ });
+describe("AnalysisEngine", () => {
+  test("produces valid ChapterAnalysis", () => {
+    /* ... */
+  });
+  test("calculates weighted score correctly", () => {
+    /* ... */
+  });
 });
 
 // Snapshot test visualizations
-describe('PrincipleScoresRadar', () => {
-  test('renders with valid data', () => { /* ... */ });
+describe("PrincipleScoresRadar", () => {
+  test("renders with valid data", () => {
+    /* ... */
+  });
 });
 ```
 
@@ -513,18 +581,21 @@ Each principle is backed by peer-reviewed research:
 ## 🎁 What You Can Do With This
 
 ✅ **Immediately**
+
 - Analyze any chapter for learning effectiveness
 - Get actionable improvement recommendations
 - Export detailed reports
 - Share visualizations
 
 ✅ **Short Term**
+
 - Build custom dashboards
 - Integrate with LMS platforms
 - Batch analyze textbooks
 - Generate quality metrics
 
 ✅ **Long Term**
+
 - Track improvement over multiple versions
 - Benchmark against other content
 - Build predictive models of learning outcomes

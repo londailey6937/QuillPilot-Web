@@ -19,7 +19,7 @@ The HTML export feature allows you to export your analyzed documents as beautifu
 ### 1. Upload & Analyze Document
 
 ```
-1. Upload your DOCX or OBT file
+1. Upload your DOCX or TXT file
 2. Run the analysis
 3. Review results in the interface
 ```

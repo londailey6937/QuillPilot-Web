@@ -95,7 +95,7 @@ export interface SavedAnalysis {
 
 // Track if we've had repeated failures to avoid spamming
 let sessionFailureCount = 0;
-const MAX_FAILURES = 3;
+const MAX_FAILURES = 5;
 
 /**
  * Get the current user session with timeout
@@ -103,17 +103,19 @@ const MAX_FAILURES = 3;
 export const getCurrentUser = async () => {
   if (!isSupabaseConfigured) return null;
 
-  // If we've failed too many times, stop trying
+  // If we've failed too many times, stop trying until reset
   if (sessionFailureCount >= MAX_FAILURES) {
-    console.warn("⚠️ Supabase session check disabled due to repeated failures");
+    console.warn(
+      "⚠️ Supabase session check disabled due to repeated failures. Run window.emergencyReset() to retry."
+    );
     return null;
   }
 
   try {
-    // Reduced timeout to 5 seconds for faster failure
+    // Increased timeout to 10 seconds for slower connections
     const sessionPromise = supabase.auth.getSession();
     const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error("Session fetch timeout")), 5000)
+      setTimeout(() => reject(new Error("Session fetch timeout")), 10000)
     );
 
     const result = await Promise.race([sessionPromise, timeoutPromise]);
@@ -134,15 +136,10 @@ export const getCurrentUser = async () => {
       error
     );
 
-    // If session fetch fails repeatedly, clear local storage to reset state
-    if (error instanceof Error && error.message.includes("timeout")) {
-      localStorage.removeItem("supabase.auth.token");
-    }
-
     // After max failures, suggest manual reset
     if (sessionFailureCount >= MAX_FAILURES) {
       console.error(
-        "🚨 Supabase connection failed. Run window.emergencyReset() to clear auth state, or check your .env credentials."
+        "🚨 Supabase connection failed. Run window.emergencyReset() to clear auth state and retry."
       );
     }
 

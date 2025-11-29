@@ -31,6 +31,7 @@ export function ReferenceLibraryModal({
     matching: "Character & Element Tracking",
     fictionElements: "12 Fiction Elements",
     faq: "FAQ",
+    related: "📚 Related Resources",
   };
 
   const renderContent = () => {
@@ -54,7 +55,13 @@ export function ReferenceLibraryModal({
                 >
                   How We Identify Characters & Story Elements
                 </h3>
-                <p style={{ marginBottom: "1rem", lineHeight: "1.6", color: "#000000" }}>
+                <p
+                  style={{
+                    marginBottom: "1rem",
+                    lineHeight: "1.6",
+                    color: "#000000",
+                  }}
+                >
                   Our analysis engine uses intelligent{" "}
                   <strong>pattern recognition</strong> to identify and track
                   characters, story elements, themes, and narrative devices
@@ -110,12 +117,24 @@ export function ReferenceLibraryModal({
                 >
                   Improving Accuracy
                 </h3>
-                <p style={{ marginBottom: "1rem", lineHeight: "1.6", color: "#000000" }}>
+                <p
+                  style={{
+                    marginBottom: "1rem",
+                    lineHeight: "1.6",
+                    color: "#000000",
+                  }}
+                >
                   Fiction writing is nuanced, and sometimes the system might
                   flag common words as character names (e.g., "Will" as a name
                   vs. "will" as a helping verb).
                 </p>
-                <p style={{ marginBottom: "1rem", lineHeight: "1.6", color: "#000000" }}>
+                <p
+                  style={{
+                    marginBottom: "1rem",
+                    lineHeight: "1.6",
+                    color: "#000000",
+                  }}
+                >
                   You can <strong>Report False Positives</strong> directly from
                   the element list. Look for the flag icon{" "}
                   <span
@@ -162,7 +181,13 @@ export function ReferenceLibraryModal({
                 >
                   What is Pacing & Flow Analysis?
                 </h3>
-                <p style={{ marginBottom: "1rem", lineHeight: "1.6", color: "#000000" }}>
+                <p
+                  style={{
+                    marginBottom: "1rem",
+                    lineHeight: "1.6",
+                    color: "#000000",
+                  }}
+                >
                   Pacing analysis evaluates how narrative elements are
                   distributed throughout your manuscript to maintain{" "}
                   <strong>reader engagement</strong> - balancing action with
@@ -242,7 +267,13 @@ export function ReferenceLibraryModal({
                 >
                   How Pacing Scores Are Calculated
                 </h3>
-                <p style={{ marginBottom: "1rem", lineHeight: "1.6", color: "#000000" }}>
+                <p
+                  style={{
+                    marginBottom: "1rem",
+                    lineHeight: "1.6",
+                    color: "#000000",
+                  }}
+                >
                   <strong>Score Range: 0-100</strong>
                 </p>
                 <ul style={{ marginBottom: "1rem", paddingLeft: "1.5rem" }}>
@@ -259,6 +290,69 @@ export function ReferenceLibraryModal({
                     paragraph variety
                   </li>
                 </ul>
+
+                <div
+                  style={{
+                    marginTop: "1.5rem",
+                    padding: "1rem",
+                    background: "#fef5e7",
+                    borderRadius: "8px",
+                    border: "1px solid #e0c392",
+                  }}
+                >
+                  <strong style={{ color: "#2c3e50" }}>📖 Learn More:</strong>
+                  <div
+                    style={{
+                      marginTop: "0.5rem",
+                      display: "flex",
+                      gap: "0.5rem",
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <button
+                      onClick={() => setActiveSection("dualCoding")}
+                      style={{
+                        background: "#ef8432",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "4px",
+                        padding: "4px 12px",
+                        fontSize: "0.8rem",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Sensory Details
+                    </button>
+                    <button
+                      onClick={() => setActiveSection("fictionElements")}
+                      style={{
+                        background: "#ef8432",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "4px",
+                        padding: "4px 12px",
+                        fontSize: "0.8rem",
+                        cursor: "pointer",
+                      }}
+                    >
+                      12 Fiction Elements
+                    </button>
+                    <button
+                      onClick={() => setActiveSection("colors")}
+                      style={{
+                        background: "#ef8432",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "4px",
+                        padding: "4px 12px",
+                        fontSize: "0.8rem",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Color Coding
+                    </button>
+                  </div>
+                </div>
               </section>
             </div>
           </div>
@@ -283,7 +377,13 @@ export function ReferenceLibraryModal({
                 >
                   What is Sensory Detail Density?
                 </h3>
-                <p style={{ marginBottom: "1rem", lineHeight: "1.6", color: "#000000" }}>
+                <p
+                  style={{
+                    marginBottom: "1rem",
+                    lineHeight: "1.6",
+                    color: "#000000",
+                  }}
+                >
                   <strong>Sensory Detail Density</strong> measures how much
                   immersive, sensory language appears in your writing. Effective
                   fiction engages readers through the five senses, making scenes
@@ -397,7 +497,13 @@ export function ReferenceLibraryModal({
                 >
                   How Sensory Detail Scores Are Calculated
                 </h3>
-                <p style={{ marginBottom: "1rem", lineHeight: "1.6", color: "#000000" }}>
+                <p
+                  style={{
+                    marginBottom: "1rem",
+                    lineHeight: "1.6",
+                    color: "#000000",
+                  }}
+                >
                   Score is based on the ratio of paragraphs needing more sensory
                   details:
                 </p>
@@ -427,7 +533,13 @@ export function ReferenceLibraryModal({
                     improvement
                   </li>
                 </ul>
-                <p style={{ marginBottom: "1rem", lineHeight: "1.6", color: "#000000" }}>
+                <p
+                  style={{
+                    marginBottom: "1rem",
+                    lineHeight: "1.6",
+                    color: "#000000",
+                  }}
+                >
                   <strong>Target:</strong> Aim for at least 12% sensory word
                   density across your manuscript. Strong descriptive passages
                   may reach 15-20%, while dialogue-heavy scenes naturally have
@@ -443,7 +555,13 @@ export function ReferenceLibraryModal({
                 >
                   Five Sensory Categories
                 </h3>
-                <p style={{ marginBottom: "1rem", lineHeight: "1.6", color: "#000000" }}>
+                <p
+                  style={{
+                    marginBottom: "1rem",
+                    lineHeight: "1.6",
+                    color: "#000000",
+                  }}
+                >
                   The analyzer tracks 540+ sensory words across five categories:
                 </p>
                 <ul style={{ marginBottom: "1rem", paddingLeft: "1.5rem" }}>
@@ -468,7 +586,13 @@ export function ReferenceLibraryModal({
                     tangy, savory, bland, zesty
                   </li>
                 </ul>
-                <p style={{ marginBottom: "1rem", lineHeight: "1.6", color: "#000000" }}>
+                <p
+                  style={{
+                    marginBottom: "1rem",
+                    lineHeight: "1.6",
+                    color: "#000000",
+                  }}
+                >
                   <strong>Pro Tip:</strong> The analyzer identifies which senses
                   are missing from each paragraph. A well-rounded scene engages
                   multiple senses, not just sight. Try adding sound, smell, or
@@ -695,7 +819,13 @@ export function ReferenceLibraryModal({
                 >
                   What Are Genre Libraries?
                 </h3>
-                <p style={{ marginBottom: "1rem", lineHeight: "1.6", color: "#000000" }}>
+                <p
+                  style={{
+                    marginBottom: "1rem",
+                    lineHeight: "1.6",
+                    color: "#000000",
+                  }}
+                >
                   Genre libraries are specialized pattern databases tailored to
                   specific fiction genres. They help the analyzer recognize
                   genre-specific tropes, character archetypes, plot structures,
@@ -789,7 +919,13 @@ export function ReferenceLibraryModal({
                 >
                   Genre-Specific Analysis Details
                 </h3>
-                <p style={{ marginBottom: "1rem", lineHeight: "1.6", color: "#000000" }}>
+                <p
+                  style={{
+                    marginBottom: "1rem",
+                    lineHeight: "1.6",
+                    color: "#000000",
+                  }}
+                >
                   Each genre library includes specialized analysis for common
                   storytelling patterns:
                 </p>
@@ -855,7 +991,13 @@ export function ReferenceLibraryModal({
                 >
                   Auto-Detection Feature
                 </h3>
-                <p style={{ marginBottom: "1rem", lineHeight: "1.6", color: "#000000" }}>
+                <p
+                  style={{
+                    marginBottom: "1rem",
+                    lineHeight: "1.6",
+                    color: "#000000",
+                  }}
+                >
                   When you upload a manuscript, Quill Pilot analyzes your
                   content and suggests the most likely genre based on character
                   patterns, plot structure, and stylistic markers. You can
@@ -869,10 +1011,13 @@ export function ReferenceLibraryModal({
                     padding: "1rem",
                     borderRadius: "8px",
                     border: "1px solid #e0c392",
+                    color: "#000000",
                   }}
                 >
-                  <p style={{ margin: 0, fontWeight: "600" }}>💡 Tip:</p>
-                  <p style={{ margin: "0.5rem 0 0 0" }}>
+                  <p style={{ margin: 0, fontWeight: "600", color: "#000000" }}>
+                    💡 Tip:
+                  </p>
+                  <p style={{ margin: "0.5rem 0 0 0", color: "#000000" }}>
                     Always verify the detected genre matches your manuscript's
                     primary subject for best results!
                   </p>
@@ -992,7 +1137,7 @@ export function ReferenceLibraryModal({
                       color: "#2c3e50",
                     }}
                   >
-                    👑 Premium Tier - Unlock Everything
+                    👑 Premium Tier - Full Analysis
                   </h3>
                   <p style={{ marginBottom: "0.5rem", fontWeight: "600" }}>
                     <strong>Everything in Free, PLUS:</strong>
@@ -1139,8 +1284,7 @@ export function ReferenceLibraryModal({
                 </h3>
                 <ol style={{ marginBottom: "1rem", paddingLeft: "1.5rem" }}>
                   <li style={{ marginBottom: "0.5rem", color: "#000000" }}>
-                    <strong>Upload a document</strong> (.docx, .txt, .md, or
-                    .obt)
+                    <strong>Upload a document</strong> (.docx, .txt, or .md)
                   </li>
                   <li style={{ marginBottom: "0.5rem", color: "#000000" }}>
                     <strong>Run analysis</strong> (select genre first)
@@ -1191,7 +1335,13 @@ export function ReferenceLibraryModal({
                 >
                   Autosave Behavior & Recovery
                 </h4>
-                <p style={{ marginBottom: "0.75rem", lineHeight: "1.5", color: "#000000" }}>
+                <p
+                  style={{
+                    marginBottom: "0.75rem",
+                    lineHeight: "1.5",
+                    color: "#000000",
+                  }}
+                >
                   Writer Mode keeps one rolling backup named&nbsp;
                   <code>quillpilot_autosave</code> in your browser's local
                   storage. Every new edit replaces the previous snapshot, so
@@ -1255,10 +1405,13 @@ export function ReferenceLibraryModal({
                     padding: "1rem",
                     borderRadius: "8px",
                     marginBottom: "1rem",
+                    color: "#000000",
                   }}
                 >
-                  <p style={{ margin: 0, fontWeight: "600" }}>💡 Pro Tip:</p>
-                  <p style={{ margin: "0.5rem 0 0 0" }}>
+                  <p style={{ margin: 0, fontWeight: "600", color: "#000000" }}>
+                    💡 Pro Tip:
+                  </p>
+                  <p style={{ margin: "0.5rem 0 0 0", color: "#000000" }}>
                     Edit in your external editor, then upload new versions to
                     track improvement over time!
                   </p>
@@ -1542,18 +1695,6 @@ export function ReferenceLibraryModal({
                         Professional: 1,000 pages
                       </td>
                     </tr>
-                    <tr>
-                      <td style={{ padding: "0.5rem" }}>Open Book Text</td>
-                      <td style={{ padding: "0.5rem" }}>.obt</td>
-                      <td style={{ padding: "0.5rem" }}>200 MB</td>
-                      <td style={{ padding: "0.5rem", fontSize: "0.9em" }}>
-                        Free: 200 pages
-                        <br />
-                        Premium: 650 pages
-                        <br />
-                        Professional: 1,000 pages
-                      </td>
-                    </tr>
                   </tbody>
                 </table>
 
@@ -1581,7 +1722,13 @@ export function ReferenceLibraryModal({
                 >
                   Browser Requirements
                 </h3>
-                <p style={{ marginBottom: "0.5rem", lineHeight: "1.6", color: "#000000" }}>
+                <p
+                  style={{
+                    marginBottom: "0.5rem",
+                    lineHeight: "1.6",
+                    color: "#000000",
+                  }}
+                >
                   <strong>Minimum:</strong>
                 </p>
                 <ul style={{ marginBottom: "1rem", paddingLeft: "1.5rem" }}>
@@ -1732,7 +1879,7 @@ export function ReferenceLibraryModal({
 
                 <div
                   style={{
-                    backgroundColor: "#f0f9ff",
+                    backgroundColor: "#fef5e7",
                     borderLeft: "4px solid #3b82f6",
                     padding: "1rem",
                     marginBottom: "1rem",
@@ -1963,8 +2110,8 @@ export function ReferenceLibraryModal({
 
                 <div
                   style={{
-                    backgroundColor: "#f0f9ff",
-                    borderLeft: "4px solid #0ea5e9",
+                    backgroundColor: "#fef5e7",
+                    borderLeft: "4px solid #ef8432",
                     padding: "1rem",
                     marginBottom: "1rem",
                     borderRadius: "0 0.5rem 0.5rem 0",
@@ -2249,6 +2396,117 @@ export function ReferenceLibraryModal({
                   >
                     A: Yes! DOCX and HTML exports include your final edited
                     text.
+                  </p>
+                </div>
+              </section>
+            </div>
+          </div>
+        );
+
+      case "related":
+        return (
+          <div className="quickstart-shell">
+            <div className="quickstart-content">
+              <section
+                className="quickstart-card"
+                style={{ borderRadius: "1rem" }}
+              >
+                <h4>📚 Related Resources</h4>
+                <p
+                  style={{
+                    marginBottom: "1.5rem",
+                    lineHeight: "1.6",
+                    color: "#000000",
+                  }}
+                >
+                  Explore these additional guides to get the most out of
+                  QuillPilot.
+                </p>
+
+                <h3
+                  style={{
+                    marginTop: "1.5rem",
+                    marginBottom: "0.5rem",
+                    color: "#000000",
+                  }}
+                >
+                  Quick Start Guide
+                </h3>
+                <p
+                  style={{
+                    marginBottom: "1rem",
+                    lineHeight: "1.6",
+                    color: "#000000",
+                  }}
+                >
+                  New to QuillPilot? The Quick Start Guide walks you through
+                  uploading your first document, running analysis, and
+                  understanding results. Access it from the ☰ menu → Quick
+                  Start.
+                </p>
+
+                <h3
+                  style={{
+                    marginTop: "1.5rem",
+                    marginBottom: "0.5rem",
+                    color: "#000000",
+                  }}
+                >
+                  Writer's Reference
+                </h3>
+                <p
+                  style={{
+                    marginBottom: "1rem",
+                    lineHeight: "1.6",
+                    color: "#000000",
+                  }}
+                >
+                  Comprehensive documentation for Writer Mode, including the
+                  editor toolbar, Advanced Tools Panel, AI Writing Assistant,
+                  and all productivity features. Access it from the ☰ menu →
+                  Writer's Reference.
+                </p>
+
+                <h3
+                  style={{
+                    marginTop: "1.5rem",
+                    marginBottom: "0.5rem",
+                    color: "#000000",
+                  }}
+                >
+                  12 Fiction Elements
+                </h3>
+                <p
+                  style={{
+                    marginBottom: "1rem",
+                    lineHeight: "1.6",
+                    color: "#000000",
+                  }}
+                >
+                  Learn about every writing concept QuillPilot analyzes—from
+                  Show vs Tell to Pacing to Dialogue Tags. See the "12 Fiction
+                  Elements" section in this Reference Library for definitions
+                  and examples.
+                </p>
+
+                <div
+                  style={{
+                    background: "#fef5e7",
+                    padding: "1rem",
+                    borderRadius: "8px",
+                    marginTop: "1.5rem",
+                    borderLeft: "4px solid #ef8432",
+                    color: "#000000",
+                  }}
+                >
+                  <p style={{ margin: 0, fontWeight: "600", color: "#000000" }}>
+                    💡 Tip:
+                  </p>
+                  <p style={{ margin: "0.5rem 0 0 0", color: "#000000" }}>
+                    Use the sidebar navigation to jump between any section. Each
+                    guide is designed to complement the others—start with Quick
+                    Start, then explore the Reference Library and Writer's
+                    Reference as you grow.
                   </p>
                 </div>
               </section>

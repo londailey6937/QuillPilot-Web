@@ -283,7 +283,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
 - `isDisabled: boolean`
 - `fileInputRef: React.RefObject<HTMLInputElement>`
   **Lines:** 35
-  **Accepts:** .docx and .obt files
+  **Accepts:** .docx and .txt files
 
 #### `src/components/Input/AnalyzeButton.tsx`
 

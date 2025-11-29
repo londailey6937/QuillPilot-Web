@@ -220,7 +220,7 @@ export function NavigationMenu({
                 padding: "0.875rem 1rem",
                 backgroundColor: "white",
                 color: "#2c3e50",
-                border: "2px solid #10b981",
+                border: "2px solid #ef8432",
                 borderRadius: "20px",
                 fontSize: "1rem",
                 fontWeight: "600",
@@ -233,7 +233,7 @@ export function NavigationMenu({
                 boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = "#d1fae5";
+                e.currentTarget.style.backgroundColor = "#f7e6d0";
                 e.currentTarget.style.transform = "translateY(-2px)";
                 e.currentTarget.style.boxShadow =
                   "0 4px 12px rgba(0, 0, 0, 0.15)";
@@ -588,7 +588,7 @@ export function NavigationMenu({
               {
                 icon: "🌐",
                 title: "Character Network",
-                desc: "Interactive concept connection graphs",
+                desc: "Interactive character connection graphs",
               },
             ]}
           />
@@ -606,11 +606,6 @@ export function NavigationMenu({
                 desc: "View document while analyzing",
               },
               {
-                icon: "🎯",
-                title: "Concept Highlighting",
-                desc: "Click concepts to highlight in text",
-              },
-              {
                 icon: "📊",
                 title: "Interactive Charts",
                 desc: "Rich data visualizations",
@@ -618,14 +613,14 @@ export function NavigationMenu({
               {
                 icon: "🎨",
                 title: "Color-Coded Scores",
-                desc: "Visual principle performance",
+                desc: "Visual element performance",
               },
             ]}
           />
 
           {/* Data & Export */}
           <FeatureSection
-            title="Data Management"
+            title="Export Options"
             icon="💼"
             isExpanded={expandedSection === "data"}
             onToggle={() => toggleSection("data")}
@@ -633,22 +628,12 @@ export function NavigationMenu({
               {
                 icon: "💾",
                 title: "Export Analysis",
-                desc: "Save results as JSON",
+                desc: "Save as HTML, DOCX, PDF, or JSON",
               },
               {
-                icon: "📂",
-                title: "Load Previous",
-                desc: "Review past evaluations",
-              },
-              {
-                icon: "⚙️",
-                title: "Custom Concepts",
-                desc: "Add domain vocabulary",
-              },
-              {
-                icon: "🎛️",
-                title: "Configurable",
-                desc: "Section hints & TOC management",
+                icon: "📄",
+                title: "Document Export",
+                desc: "Export edited document with formatting",
               },
             ]}
           />
@@ -691,6 +676,16 @@ export function NavigationMenu({
                 title: "Historical Details",
                 desc: "Period accuracy, cultural context",
               },
+              {
+                icon: "🎬",
+                title: "Screenplay Format",
+                desc: "Industry formatting, scene structure",
+              },
+              {
+                icon: "🪶",
+                title: "Poetry Analysis",
+                desc: "Verse, rhythm, imagery, form",
+              },
             ]}
           />
         </div>
@@ -720,10 +715,10 @@ export function NavigationMenu({
           <MenuLink
             icon="ℹ️"
             title="About"
-            desc="Learn about our mission and team"
+            desc="Learn about Quill Pilot"
             onClick={() => {
               alert(
-                "About: Quill Pilot is an AI-powered tool that helps educators create better learning materials using evidence-based cognitive science principles."
+                "About Quill Pilot:\n\nQuill Pilot is a fiction and screenplay analysis tool that helps writers craft compelling stories. Using pattern recognition and craft analysis, it evaluates 12 key fiction elements including character development, plot structure, dialogue, pacing, and more.\n\n✨ Key Features:\n• 12 Fiction Elements Analysis\n• Genre-Specific Intelligence\n• Craft Quality Scoring\n• Writer Mode with productivity tools\n• Screenplay formatting support\n\nPerfect for novelists, screenwriters, and anyone crafting fiction."
               );
             }}
           />
@@ -732,11 +727,11 @@ export function NavigationMenu({
           <MenuLink
             icon="💳"
             title="Pricing"
-            desc="Plans for individuals and teams"
+            desc="Access tiers and features"
             badge="FREE"
             onClick={() => {
               alert(
-                "Pricing:\n\n🎓 Free Plan:\n- Unlimited chapter analysis\n- All 10 learning principles\n- Export results as JSON\n- Community support\n\n🚀 Pro Plan (Coming Soon):\n- Priority processing\n- Custom report exports\n- Custom branding\n- API access\n- Priority support"
+                "Access Tiers:\n\n🌟 Free Tier:\n• 2 Fiction Elements (Spacing & Show vs Tell)\n• Up to 200 pages\n• Export to PDF\n• No full analysis dashboard\n\n👑 Premium Tier:\n• Full analysis of 12 fiction elements\n• Up to 650 pages\n• Export to HTML, DOCX, PDF, JSON\n• Custom genres\n• View full analysis dashboard\n\n✨ Professional Tier:\n• Everything in Premium\n• Up to 1,000 pages\n• Writer Mode with editing tools\n• Beat Sheet Generator\n• AI Writing Assistant\n• Focus & Typewriter modes"
               );
             }}
           />
@@ -748,7 +743,7 @@ export function NavigationMenu({
             desc="Get help with your analysis"
             onClick={() => {
               alert(
-                "Support:\n\nNeed help? We're here for you!\n\n📧 Email: support@quillpilot.ai\n💬 Live Chat: Available Mon-Fri 9am-5pm EST\n📚 Documentation: Quick Start Guide from Quick Actions\n🐛 Report Bug: Use feedback option below"
+                "Support:\n\nNeed help? Here are your options:\n\n📚 Documentation:\n• Quick Start Guide - Basic workflow\n• Reference Library - All features\n• Writer's Reference - Pro writing tools\n\n💡 Tips:\n• Select a genre before analysis for best results\n• Use sidebar navigation in documentation\n• Hover over elements for tooltips\n\n💬 Community:\nShare feedback through GitHub Issues."
               );
             }}
           />
@@ -757,10 +752,10 @@ export function NavigationMenu({
           <MenuLink
             icon="📧"
             title="Contact"
-            desc="Reach out to our team"
+            desc="Reach out with questions"
             onClick={() => {
               alert(
-                "Contact Us:\n\n📧 General: hello@quillpilot.ai\n💼 Partnerships: partners@quillpilot.ai\n🎓 Education: education@quillpilot.ai\n📰 Press: press@quillpilot.ai\n\n📍 Location: San Francisco, CA"
+                "Contact:\n\n💡 Feature Requests:\nSubmit feature ideas through GitHub Issues.\n\n💬 Community:\nJoin discussions and share your experience with other writers using Quill Pilot.\n\n📝 Feedback:\nWe welcome suggestions for improving Quill Pilot!"
               );
             }}
           />
@@ -769,10 +764,10 @@ export function NavigationMenu({
           <MenuLink
             icon="📚"
             title="Resources"
-            desc="Guides, tutorials, and research"
+            desc="Guides and documentation"
             onClick={() => {
               alert(
-                "Resources:\n\n📖 User Guide: Built into the app\n🎥 Video Tutorials: Coming soon\n📊 Case Studies: See how educators use Quill Pilot\n🔬 Research: Based on peer-reviewed cognitive science\n📝 Blog: Tips for better educational content\n🎓 Webinars: Monthly learning science workshops"
+                "Resources:\n\n📖 Built-in Guides:\n• Quick Start Guide - Get started in minutes\n• Reference Library - Complete feature docs\n• Writer's Reference - Pro tier writing tools\n\n🎭 Genre Support:\n• Romance, Thriller, Mystery\n• Fantasy, Sci-Fi, Horror\n• Literary Fiction\n• Western, Historical\n• Screenplay formatting\n• Poetry analysis\n\n✨ Analysis Features:\n• 12 Fiction Elements\n• Craft Quality Scoring\n• Character & Plot tracking\n• Pacing & Dialogue analysis"
               );
             }}
           />
@@ -784,7 +779,7 @@ export function NavigationMenu({
             desc="Share your ideas and suggestions"
             onClick={() => {
               alert(
-                "We'd love to hear from you!\n\n💡 Feature Requests: What would make Quill Pilot better?\n🐛 Bug Reports: Found an issue? Let us know\n⭐ Testimonials: Share your success story\n\n📧 Send feedback to: feedback@quillpilot.ai"
+                "We'd love to hear from you!\n\n💡 Feature Requests:\nWhat would make Quill Pilot better for your writing workflow?\n\n⭐ Success Stories:\nTell us how Quill Pilot helped improve your manuscript!\n\n🎯 Genre Requests:\nWant analysis for a specific genre? Let us know!\n\nSubmit feedback through GitHub Issues."
               );
             }}
           />
@@ -817,7 +812,7 @@ export function NavigationMenu({
             desc="Usage terms and conditions"
             onClick={() => {
               alert(
-                "Terms of Service:\n\n• Available for purchase - not free to use\n• Analyze unlimited manuscripts\n• Export and share your results\n• No warranty on analysis accuracy\n• Use responsibly and ethically\n\nFull terms available at:\nquillpilot.ai/terms"
+                "Terms of Service:\n\n• Free tier available with full analysis features\n• Premium and Professional tiers unlock additional features\n• Analyze manuscripts across all fiction genres\n• Export and share your analysis results\n• Analysis is pattern-based, not a substitute for human editing\n• Use responsibly - respect copyright on uploaded content\n• Your manuscripts are processed locally in your browser"
               );
             }}
           />

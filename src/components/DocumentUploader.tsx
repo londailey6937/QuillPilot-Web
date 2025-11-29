@@ -141,14 +141,6 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
     }
   };
 
-  // TEMPORARY: Reset upload count for testing
-  const resetUploadCount = () => {
-    const uploadKey = "quillpilot_upload_count";
-    localStorage.setItem(uploadKey, "0");
-    alert("✅ Upload count reset to 0");
-    console.log("🔄 Upload count reset to 0");
-  };
-
   const loadSampleStory = async () => {
     if (!checkUploadLimit()) {
       return;
@@ -662,82 +654,6 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
         setHasScreenplay(screenplayResult.isScreenplay);
         incrementUploadCount();
         onDocumentLoad(payload);
-      } else if (fileType === "obt") {
-        const textContent = await file.text();
-
-        if (!textContent.trim()) {
-          alert(
-            "Could not extract text from the document. Please try a different file."
-          );
-          // Reset file input
-          if (fileInputRef.current) {
-            fileInputRef.current.value = "";
-          }
-          return;
-        }
-
-        // Estimate page count (approximately 350 words per page for textbooks)
-        const wordCount = textContent
-          .split(/\s+/)
-          .filter((w) => w.length > 0).length;
-        const estimatedPages = Math.ceil(wordCount / 350);
-        const maxPages = ACCESS_TIERS[accessLevel].maxPages;
-
-        // Check page limit
-        if (estimatedPages > maxPages) {
-          const tierName =
-            accessLevel === "free"
-              ? "Free (Single Chapter)"
-              : accessLevel === "premium"
-              ? "Premium (Full Textbook)"
-              : "Professional";
-          alert(
-            `Document too large: ~${estimatedPages} pages detected.\n\n` +
-              `Your ${tierName} tier allows up to ${maxPages} pages.\n\n` +
-              (accessLevel === "free"
-                ? "Free tier: Up to 200 pages (multiple chapters)\n" +
-                  "Premium tier: Up to 650 pages (full textbooks)\n" +
-                  "Professional tier: Up to 1,000 pages (large comprehensive texts)\n\n" +
-                  "Please upgrade or split your document into smaller sections."
-                : accessLevel === "premium"
-                ? "Premium tier: Up to 650 pages (typical undergraduate textbook)\n" +
-                  "Professional tier: Up to 1,000 pages (comprehensive texts)\n\n" +
-                  "Please upgrade."
-                : "Please split your document into smaller sections.")
-          );
-          // Reset file input
-          if (fileInputRef.current) {
-            fileInputRef.current.value = "";
-          }
-          return;
-        }
-
-        // Auto-detect and convert screenplay format
-        const screenplayResult = processScreenplayDocument(
-          textContent,
-          textContent,
-          fileName
-        );
-
-        const payload: UploadedDocumentPayload = {
-          fileName,
-          fileType,
-          format: screenplayResult.isScreenplay ? "html" : "text",
-          content: screenplayResult.isScreenplay
-            ? screenplayResult.content
-            : textContent,
-          plainText: screenplayResult.plainText,
-          imageCount: 0,
-          isScreenplay: screenplayResult.isScreenplay,
-        };
-
-        console.log("✅ OBT document processed, calling onDocumentLoad", {
-          fileName,
-          contentLength: textContent.length,
-        });
-        setHasScreenplay(screenplayResult.isScreenplay);
-        incrementUploadCount();
-        onDocumentLoad(payload);
       } else if (fileType === "txt") {
         const textContent = await file.text();
 
@@ -807,7 +723,7 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
         onDocumentLoad(payload);
       } else {
         alert(
-          "Please upload a .docx, .obt, or .txt file.\n\n" +
+          "Please upload a .docx or .txt file.\n\n" +
             "Note: Legacy .doc files are not supported. Please save as .docx or convert to .txt first."
         );
         // Reset file input
@@ -836,7 +752,7 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
           "Error reading document.\n\n" +
             "Please ensure:\n" +
             "• File is not corrupted\n" +
-            "• File is in .docx, .txt, or .obt format\n" +
+            "• File is in .docx or .txt format\n" +
             "• File size is reasonable\n\n" +
             "Try again or convert to a supported format."
         );
@@ -859,7 +775,7 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
       <input
         ref={fileInputRef}
         type="file"
-        accept=".docx,.txt,.md,.markdown,.obt,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown"
+        accept=".docx,.txt,.md,.markdown,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown"
         onChange={handleFileChange}
         disabled={disabled}
         style={{ display: "none" }}
@@ -906,32 +822,6 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
             <>📄 Upload Document</>
           )}
         </label>
-
-        {/* TEMPORARY: Reset button for testing */}
-        {accessLevel === "free" && (
-          <button
-            onClick={resetUploadCount}
-            style={{
-              padding: "8px 16px",
-              backgroundColor: "#fee2e2",
-              color: "#991b1b",
-              border: "1.5px solid #f87171",
-              borderRadius: "20px",
-              cursor: "pointer",
-              fontWeight: "600",
-              fontSize: "12px",
-              transition: "all 0.2s",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = "#fecaca";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = "#fee2e2";
-            }}
-          >
-            🔄 Reset Count
-          </button>
-        )}
 
         {/* Sample Story Button - Hidden when screenplay is loaded */}
         {!hasScreenplay && (

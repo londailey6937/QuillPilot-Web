@@ -1,6 +1,6 @@
 /**
  * Simplified Chapter Checker - DOCX First Workflow
- * Upload DOCX/OBT → Analyze → Edit → Export
+ * Upload DOCX/TXT → Analyze → Edit → Export
  */
 
 import React, { useState, useMemo, useRef, useEffect } from "react";
@@ -21,9 +21,6 @@ import { ChapterAnalysis, Section } from "@/types";
 import {
   AccessLevel,
   ACCESS_TIERS,
-  TESTER_EMAILS,
-  isTesterEmail,
-  canUseFeature,
   Character,
   CharacterMapping,
 } from "../../types";
@@ -619,21 +616,9 @@ export const ChapterCheckerV2: React.FC = () => {
           const profile = await getUserProfile();
           if (profile) {
             setUserProfile(profile);
-            // Check if user is a tester - testers get full access
-            const isTester = TESTER_EMAILS.includes(
-              profile.email.toLowerCase()
-            );
-
-            if (isTester) {
-              // Testers can manually switch tiers for testing
-              console.log("🔓 Tester access granted:", profile.email);
-              // Keep current accessLevel (allows manual tier switching)
-            } else {
-              // Non-testers: Only set access level from profile if authenticated
-              // This prevents dropdown changes from overriding actual subscription
-              if (profile.access_level) {
-                setAccessLevel(profile.access_level as AccessLevel);
-              }
+            // Set access level from profile subscription
+            if (profile.access_level) {
+              setAccessLevel(profile.access_level as AccessLevel);
             }
           }
         }
@@ -654,12 +639,7 @@ export const ChapterCheckerV2: React.FC = () => {
           const profile = await getUserProfile();
           if (profile) {
             setUserProfile(profile);
-            const isTester = TESTER_EMAILS.includes(
-              profile.email.toLowerCase()
-            );
-
-            if (!isTester && profile.access_level) {
-              // Only update tier for non-testers
+            if (profile.access_level) {
               setAccessLevel(profile.access_level as AccessLevel);
             }
           }
@@ -781,25 +761,7 @@ export const ChapterCheckerV2: React.FC = () => {
   }, []);
 
   const handleAccessLevelChange = async (level: AccessLevel) => {
-    // Check if user is a tester - testers can switch freely
-    const isTester = isTesterEmail(userProfile?.email);
-
-    if (isTester) {
-      // Testers: Allow free tier switching for testing
-      console.log("🔓 Tester switching to:", level);
-      setAccessLevel(level);
-
-      // Automatically switch to writer mode when professional tier is selected
-      if (level === "professional") {
-        setViewMode("writer");
-      } else if (viewMode === "writer") {
-        // If switching away from professional tier while in writer mode, switch to analysis
-        setViewMode("analysis");
-      }
-      return;
-    }
-
-    // Non-testers: Prevent changing tiers if user has a paid subscription
+    // Prevent changing tiers if user has a paid subscription
     if (
       userProfile &&
       (userProfile.access_level === "premium" ||
@@ -811,7 +773,6 @@ export const ChapterCheckerV2: React.FC = () => {
       return;
     }
 
-    // In demo mode (no Supabase), allow free tier switching
     // If Supabase is configured and switching to premium/professional, check auth
     const supabaseConfigured =
       import.meta.env.VITE_SUPABASE_URL &&
@@ -822,8 +783,11 @@ export const ChapterCheckerV2: React.FC = () => {
       (level === "premium" || level === "professional")
     ) {
       const user = await getCurrentUser();
+      console.log("🔍 Tier change check - User:", user?.email);
+
       if (!user) {
         // User not authenticated - show upgrade/auth modal
+        console.log("❌ No user session - showing upgrade prompt");
         setShowTierTwoPreview(true);
         setUpgradeTarget(level === "premium" ? "premium" : "professional");
         return;
@@ -831,12 +795,22 @@ export const ChapterCheckerV2: React.FC = () => {
 
       // Check if user's profile allows this tier
       const profile = await getUserProfile();
+      console.log(
+        "🔍 Profile loaded:",
+        profile?.email,
+        "access_level:",
+        profile?.access_level
+      );
+
       if (profile && profile.access_level === "free") {
         // User is authenticated but doesn't have access
+        console.log("❌ User has free tier - showing upgrade prompt");
         setShowTierTwoPreview(true);
         setUpgradeTarget(level === "premium" ? "premium" : "professional");
         return;
       }
+
+      console.log("✅ User has access to", level);
     }
 
     setAccessLevel(level);
@@ -1337,38 +1311,15 @@ export const ChapterCheckerV2: React.FC = () => {
       }
     }
 
-    // FEATURE RESTRICTION: Check if user is a tester first
-    const isTester = isTesterEmail(userProfile?.email);
-
-    console.log("🔍 Analysis Access Check:", {
-      email: userProfile?.email,
-      isTester,
-      accessLevel,
-      userProfileExists: !!userProfile,
-    });
-
-    if (!isTester) {
-      // Non-testers: Check access level and block if needed
-      const features = ACCESS_TIERS[accessLevel];
-      if (!features.fullAnalysis) {
-        setUpgradeFeature("Full 10-Principle Analysis");
-        setUpgradeTarget("premium");
-        setShowUpgradePrompt(true);
-        return;
-      }
-
-      // Even with premium/professional tier, non-testers can't use it yet
-      if (accessLevel !== "free") {
-        alert(
-          "🔒 Premium and Professional features are coming soon!\n\n" +
-            "You can see the interface, but full functionality is not yet available for non-tester accounts.\n\n" +
-            "For now, only free tier features are accessible."
-        );
-        return;
-      }
+    // Check if user has access to full analysis based on subscription
+    const features = ACCESS_TIERS[accessLevel];
+    if (!features.fullAnalysis) {
+      setUpgradeFeature("Full 10-Principle Analysis");
+      setUpgradeTarget("premium");
+      setShowUpgradePrompt(true);
+      return;
     }
 
-    // Testers: Full access to all features regardless of tier
     // Premium/Professional tier: Run full analysis
     setIsAnalyzing(true);
     setError(null);
@@ -1650,13 +1601,12 @@ export const ChapterCheckerV2: React.FC = () => {
       return;
     }
 
-    // FEATURE RESTRICTION: Only testers can export
-    const isTester = isTesterEmail(userProfile?.email);
-    if (!isTester) {
+    // Check if user has export access based on subscription
+    const features = ACCESS_TIERS[accessLevel];
+    if (!features.exportResults) {
       alert(
-        "🔒 Export features are coming soon!\n\n" +
-          "This feature is currently available only to testers.\n\n" +
-          "Full export functionality will be available in the next release."
+        "🔒 Export features require a Premium or Professional subscription.\n\n" +
+          "Upgrade to export your documents in DOCX format."
       );
       return;
     }
@@ -1696,13 +1646,12 @@ export const ChapterCheckerV2: React.FC = () => {
       return;
     }
 
-    // FEATURE RESTRICTION: Only testers can export
-    const isTester = isTesterEmail(userProfile?.email);
-    if (!isTester) {
+    // Check if user has export access based on subscription
+    const features = ACCESS_TIERS[accessLevel];
+    if (!features.exportResults) {
       alert(
-        "🔒 Export features are coming soon!\n\n" +
-          "This feature is currently available only to testers.\n\n" +
-          "Full export functionality will be available in the next release."
+        "🔒 Export features require a Premium or Professional subscription.\n\n" +
+          "Upgrade to export your documents in PDF format."
       );
       return;
     }
@@ -1737,13 +1686,12 @@ export const ChapterCheckerV2: React.FC = () => {
       return;
     }
 
-    // FEATURE RESTRICTION: Only testers can export
-    const isTester = isTesterEmail(userProfile?.email);
-    if (!isTester) {
+    // Check if user has export access based on subscription
+    const features = ACCESS_TIERS[accessLevel];
+    if (!features.exportResults) {
       alert(
-        "🔒 Export features are coming soon!\n\n" +
-          "This feature is currently available only to testers.\n\n" +
-          "Full export functionality will be available in the next release."
+        "🔒 Export features require a Premium or Professional subscription.\n\n" +
+          "Upgrade to export your documents in HTML format."
       );
       return;
     }
@@ -2329,14 +2277,12 @@ export const ChapterCheckerV2: React.FC = () => {
                   </button>
                   <button
                     onClick={() => {
-                      // FEATURE RESTRICTION: Only testers can use Writer Mode
-                      const isTester = isTesterEmail(userProfile?.email);
-
-                      if (!isTester) {
+                      // Check if user has writer mode access based on subscription
+                      const features = ACCESS_TIERS[accessLevel];
+                      if (!features.writerMode) {
                         alert(
-                          "🔒 Writer Mode is coming soon!\n\n" +
-                            "This professional-tier feature is currently available only to testers.\n\n" +
-                            "Full Writer Mode functionality will be available in the next release."
+                          "🔒 Writer Mode requires a Professional subscription.\n\n" +
+                            "Upgrade to access the full writing environment with advanced tools."
                         );
                         return;
                       }
@@ -3227,9 +3173,44 @@ export const ChapterCheckerV2: React.FC = () => {
                   </li>
 
                   <li>
-                    <strong style={{ color: "#111827" }}>
-                      Tier 2 · Full Analysis
-                    </strong>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        marginBottom: "4px",
+                      }}
+                    >
+                      <strong style={{ color: "#111827" }}>
+                        Tier 2 · Full Analysis
+                      </strong>
+                      <button
+                        onClick={() => {
+                          setUpgradeFeature("Premium Author");
+                          setUpgradeTarget("premium");
+                          setShowUpgradePrompt(true);
+                        }}
+                        style={{
+                          padding: "6px 14px",
+                          backgroundColor: "white",
+                          color: "#2c3e50",
+                          border: "1.5px solid #ef8432",
+                          borderRadius: "20px",
+                          fontSize: "12px",
+                          fontWeight: 600,
+                          cursor: "pointer",
+                          transition: "background-color 0.2s",
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = "#f7e6d0";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = "white";
+                        }}
+                      >
+                        Upgrade
+                      </button>
+                    </div>
                     <p style={{ margin: "4px 0" }}>
                       Complete manuscript analysis up to 650 pages with advanced
                       writing insights and export capabilities for serious
@@ -3269,44 +3250,53 @@ export const ChapterCheckerV2: React.FC = () => {
                         fiction subgenres.
                       </li>
                     </ul>
-                    <button
-                      onClick={() => {
-                        setUpgradeFeature("Premium Author");
-                        setUpgradeTarget("premium");
-                        setShowUpgradePrompt(true);
-                      }}
-                      style={{
-                        marginTop: "12px",
-                        marginLeft: "18px",
-                        padding: "8px 16px",
-                        backgroundColor: "white",
-                        color: "#2c3e50",
-                        border: "1.5px solid #ef8432",
-                        borderRadius: "20px",
-                        fontSize: "13px",
-                        fontWeight: 600,
-                        cursor: "pointer",
-                        transition: "background-color 0.2s",
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = "#f7e6d0";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = "white";
-                      }}
-                    >
-                      Upgrade
-                    </button>
                   </li>
 
                   <li>
-                    <strong style={{ color: "#111827" }}>
-                      Tier 3 · Professional Writer
-                    </strong>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        marginBottom: "4px",
+                      }}
+                    >
+                      <strong style={{ color: "#111827" }}>
+                        Tier 3 · Professional Writer
+                      </strong>
+                      <button
+                        onClick={() => {
+                          setUpgradeFeature("Professional Writer");
+                          setUpgradeTarget("professional");
+                          setShowUpgradePrompt(true);
+                        }}
+                        style={{
+                          padding: "6px 14px",
+                          backgroundColor: "white",
+                          color: "#2c3e50",
+                          border: "1.5px solid #ef8432",
+                          borderRadius: "20px",
+                          fontSize: "12px",
+                          fontWeight: 600,
+                          cursor: "pointer",
+                          transition: "background-color 0.2s",
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = "#f7e6d0";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = "white";
+                        }}
+                      >
+                        Upgrade
+                      </button>
+                    </div>
                     <p style={{ margin: "4px 0" }}>
-                      Everything in Premium plus Writer Mode for real-time
-                      editing, unlimited analyses (up to 1,000 pages), perfect
-                      for professional authors and writing teams.
+                      Everything in Premium plus Writer Mode with 8+ advanced
+                      productivity tools for real-time editing, unlimited
+                      analyses (up to 1,000 pages), and full support for
+                      screenplays and poetry—perfect for professional authors
+                      and writing teams.
                     </p>
                     <ul
                       style={{
@@ -3322,54 +3312,41 @@ export const ChapterCheckerV2: React.FC = () => {
                         collections).
                       </li>
                       <li>
-                        Writer Mode: Full word processor with live analysis
-                        updates as you draft and revise.
+                        <strong>Writer Mode:</strong> Full word processor with
+                        live analysis updates as you draft and revise.
+                      </li>
+                      <li>
+                        <strong>AI Writing Assistant:</strong> Get contextual
+                        suggestions for word choice, sentence structure, and
+                        style improvements.
+                      </li>
+                      <li>
+                        <strong>Dialogue Enhancer:</strong> Polish character
+                        dialogue with voice consistency and subtext suggestions.
+                      </li>
+                      <li>
+                        <strong>Beat Sheet Generator:</strong> Create story
+                        structure outlines based on your genre and narrative
+                        arc.
+                      </li>
+                      <li>
+                        <strong>Focus Mode & Typewriter Mode:</strong>{" "}
+                        Distraction-free writing environments for deep work.
+                      </li>
+                      <li>
+                        <strong>Screenplay & Poetry Support:</strong> Industry
+                        formatting for scripts and specialized analysis for
+                        verse, rhythm, and imagery.
                       </li>
                       <li>
                         Unlimited manuscript analyses with no upload
                         restrictions or quotas.
                       </li>
                       <li>
-                        Priority support with faster response times for urgent
-                        deadlines.
-                      </li>
-                      <li>
-                        Advanced formatting tools and collaborative features for
-                        writing teams.
-                      </li>
-                      <li>
                         Version tracking and comprehensive export options for
                         agent/editor submission workflows.
                       </li>
                     </ul>
-                    <button
-                      onClick={() => {
-                        setUpgradeFeature("Professional Writer");
-                        setUpgradeTarget("professional");
-                        setShowUpgradePrompt(true);
-                      }}
-                      style={{
-                        marginTop: "12px",
-                        marginLeft: "18px",
-                        padding: "8px 16px",
-                        backgroundColor: "white",
-                        color: "#2c3e50",
-                        border: "1.5px solid #ef8432",
-                        borderRadius: "20px",
-                        fontSize: "13px",
-                        fontWeight: 600,
-                        cursor: "pointer",
-                        transition: "background-color 0.2s",
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = "#f7e6d0";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = "white";
-                      }}
-                    >
-                      Upgrade
-                    </button>
                   </li>
                 </ul>
 
