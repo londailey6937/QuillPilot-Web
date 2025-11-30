@@ -2165,21 +2165,21 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     jumpToPage(0, { suppressSelectionSync: true });
   }, [jumpToPage]);
 
-  // Render spacing indicators
+  // Render spacing indicators - positioned relative to pagesContainer
   const renderIndicators = () => {
-    if (!editorRef.current || !showSpacingIndicators) return null;
+    if (!editorRef.current || !pagesContainerRef.current || !showSpacingIndicators) return null;
     // In free mode, always show indicators. In paid mode, respect focus mode toggle.
     if (!isFreeMode && focusMode) return null;
 
     const paragraphs = Array.from(editorRef.current.querySelectorAll("p, div"));
-    const pagesRect = pagesContainerRef.current?.getBoundingClientRect();
-    if (!pagesRect) return null;
+    const editorEl = editorRef.current as HTMLElement;
 
     return analysis.spacing.map((item, idx) => {
-      const para = paragraphs[item.index];
+      const para = paragraphs[item.index] as HTMLElement;
       if (!para) return null;
 
-      const rect = para.getBoundingClientRect();
+      // Use offsetTop relative to the editor for positioning
+      const paraTop = para.offsetTop;
 
       const colors = {
         compact: "bg-blue-100 text-blue-800 border-blue-200",
@@ -2190,11 +2190,11 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
       return (
         <div
           key={`spacing-${idx}`}
-          className={`absolute text-xs px-2 py-0.5 rounded-full border shadow-sm z-10 ${
+          className={`absolute text-xs px-2 py-0.5 rounded-full border shadow-sm z-20 ${
             colors[item.tone as keyof typeof colors] || colors.balanced
           } select-none whitespace-nowrap pointer-events-none`}
           style={{
-            top: `${rect.top - pagesRect.top - 24}px`,
+            top: `${paraTop}px`,
             left: "-10px",
             transform: "translateX(-100%)",
           }}
@@ -2205,9 +2205,9 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     });
   };
 
-  // Render visual suggestions
+  // Render visual suggestions - positioned relative to pagesContainer
   const renderSuggestions = () => {
-    if (!editorRef.current || !showVisualSuggestions) {
+    if (!editorRef.current || !pagesContainerRef.current || !showVisualSuggestions) {
       return null;
     }
     // In free mode, always show suggestions. In paid mode, respect focus mode toggle.
@@ -2216,11 +2216,9 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     }
 
     const paragraphs = Array.from(editorRef.current.querySelectorAll("p, div"));
-    const pagesRect = pagesContainerRef.current?.getBoundingClientRect();
-    if (!pagesRect) return null;
 
     return analysis.visuals.map((item, idx) => {
-      const para = paragraphs[item.index];
+      const para = paragraphs[item.index] as HTMLElement;
       if (!para) {
         console.log(
           `[CustomEditor] renderSuggestions: paragraph ${item.index} not found in DOM`
@@ -2228,14 +2226,15 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
         return null;
       }
 
-      const rect = para.getBoundingClientRect();
+      // Use offsetTop relative to the editor for positioning
+      const paraTop = para.offsetTop;
 
       return (
         <div
           key={`visual-${idx}`}
-          className="absolute p-1.5 bg-yellow-50 border-l-3 border-yellow-400 rounded text-xs text-yellow-900 select-none pointer-events-none"
+          className="absolute p-1.5 bg-yellow-50 border-l-3 border-yellow-400 rounded text-xs text-yellow-900 select-none pointer-events-none z-20"
           style={{
-            top: `${rect.top - pagesRect.top - 24}px`,
+            top: `${paraTop}px`,
             right: "-10px",
             transform: "translateX(100%)",
             maxWidth: "200px",
@@ -2608,40 +2607,18 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               {/* View options */}
               <button
                 onClick={() => setFocusMode(!focusMode)}
-                className="px-2 py-1 rounded transition-colors text-xs"
-                style={
-                  focusMode
-                    ? {
-                        background: "#2c3e50",
-                        color: "#ffffff",
-                        border: "1px solid #2c3e50",
-                      }
-                    : {
-                        background: "transparent",
-                        color: "#374151",
-                        border: "1px solid transparent",
-                      }
-                }
+                className={`px-2 py-1 rounded transition-colors text-xs toolbar-view-button ${
+                  focusMode ? "active" : ""
+                }`}
                 title="Focus Mode"
               >
                 🎯
               </button>
               <button
                 onClick={() => setTypewriterMode(!typewriterMode)}
-                className="px-2 py-1 rounded transition-colors text-xs"
-                style={
-                  typewriterMode
-                    ? {
-                        background: "#2c3e50",
-                        color: "#ffffff",
-                        border: "1px solid #2c3e50",
-                      }
-                    : {
-                        background: "transparent",
-                        color: "#374151",
-                        border: "1px solid transparent",
-                      }
-                }
+                className={`px-2 py-1 rounded transition-colors text-xs toolbar-view-button ${
+                  typewriterMode ? "active" : ""
+                }`}
                 title="Typewriter Mode"
               >
                 ⌨️
@@ -2668,20 +2645,9 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                         }
                         setShowCharacterPopover(!showCharacterPopover);
                       }}
-                      className="px-2 py-1 rounded transition-colors text-xs"
-                      style={
-                        showCharacterPopover
-                          ? {
-                              background: "#2c3e50",
-                              color: "#ffffff",
-                              border: "1px solid #2c3e50",
-                            }
-                          : {
-                              background: "transparent",
-                              color: "#374151",
-                              border: "1px solid transparent",
-                            }
-                      }
+                      className={`px-2 py-1 rounded transition-colors text-xs toolbar-view-button ${
+                        showCharacterPopover ? "active" : ""
+                      }`}
                       title="Character Tools"
                     >
                       👥
@@ -3704,6 +3670,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           ref={wrapperRef}
           className="editor-wrapper page-view"
           style={{
+            position: "relative",
             width: "100%",
             height: "100%",
             display: "flex",
@@ -3941,6 +3908,12 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                   position: "relative",
                 }}
               >
+                {/* Spacing indicators - inside pages container for natural scrolling */}
+                {renderIndicators()}
+
+                {/* Visual suggestions - inside pages container for natural scrolling */}
+                {renderSuggestions()}
+
                 {/* The actual editable content - single continuous page */}
                 <div
                   ref={editorRef}
@@ -4042,11 +4015,6 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                     );
                   })}
               </div>
-              {/* Spacing indicators overlay */}
-              {renderIndicators()}
-
-              {/* Visual suggestions overlay */}
-              {renderSuggestions()}
             </div>
             {/* End pages-container and pages-stack-shell */}
           </div>

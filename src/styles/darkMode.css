@@ -169,6 +169,46 @@
   color: var(--text-primary) !important;
 }
 
+/* Custom Editor toolbar button dark mode styles */
+[data-theme="dark"] .writer-toolbar-shell button {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"]
+  .writer-toolbar-shell
+  button[style*="background: transparent"] {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .writer-toolbar-shell button[style*="#2c3e50"] {
+  background-color: var(--tome-orange) !important;
+  color: #ffffff !important;
+  border-color: var(--tome-orange) !important;
+}
+
+/* Toolbar view buttons (Focus Mode, Typewriter Mode, Character Tools) */
+.toolbar-view-button {
+  background: transparent;
+  color: #374151;
+  border: 1px solid transparent;
+}
+
+.toolbar-view-button.active {
+  background: #2c3e50;
+  color: #ffffff;
+  border: 1px solid #2c3e50;
+}
+
+[data-theme="dark"] .toolbar-view-button {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .toolbar-view-button.active {
+  background: var(--tome-orange) !important;
+  color: #ffffff !important;
+  border-color: var(--tome-orange) !important;
+}
+
 [data-theme="dark"] [style*="border: 1px solid #d1d5db"],
 [data-theme="dark"] [style*="border: 2px solid #e0c392"] {
   border-color: var(--border-primary) !important;
