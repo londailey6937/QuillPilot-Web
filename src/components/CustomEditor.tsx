@@ -47,8 +47,8 @@ interface CustomEditorProps {
 const INCH_IN_PX = 96;
 const PAGE_WIDTH_PX = INCH_IN_PX * 8;
 const PAGE_HEIGHT_PX = INCH_IN_PX * 11; // 11 inches for US Letter
-const RULER_BACKGROUND_LEFT_OVERHANG = 6;
-const RULER_BACKGROUND_RIGHT_OVERHANG = 12;
+const RULER_BACKGROUND_LEFT_OVERHANG = 0;
+const RULER_BACKGROUND_RIGHT_OVERHANG = 0;
 
 interface TextNodeMap {
   node: Text;
@@ -185,7 +185,9 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
 }) => {
   const editorRef = useRef<HTMLDivElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const scrollShellRef = useRef<HTMLDivElement>(null);
   const pagesContainerRef = useRef<HTMLDivElement>(null);
+  const rulerFrameRef = useRef<HTMLDivElement>(null);
   // Header/footer preview inputs removed - ref no longer needed
   const [analysis, setAnalysis] = useState<AnalysisData>({
     spacing: [],
@@ -313,6 +315,58 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
       resizeObserver?.disconnect();
     };
   }, [showRuler]);
+
+  // Ruler alignment is now handled by CSS flexbox centering - no dynamic shift needed
+  const alignRulerToPage = useCallback(() => {
+    // No-op: ruler and editor are both centered by the parent flex container
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    alignRulerToPage();
+
+    window.addEventListener("resize", alignRulerToPage);
+
+    // Debounce the ResizeObserver to prevent rapid recalculations during paste/input
+    let debounceTimer: NodeJS.Timeout;
+    const debouncedAlign = () => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => alignRulerToPage(), 150);
+    };
+
+    const resizeObserver =
+      typeof ResizeObserver !== "undefined"
+        ? new ResizeObserver(debouncedAlign)
+        : null;
+
+    const observerTargets = [
+      scrollShellRef.current,
+      wrapperRef.current,
+      pagesContainerRef.current,
+      editorRef.current,
+    ].filter((el): el is HTMLDivElement => Boolean(el));
+
+    observerTargets.forEach((target) => resizeObserver?.observe(target));
+
+    return () => {
+      clearTimeout(debounceTimer);
+      window.removeEventListener("resize", alignRulerToPage);
+      resizeObserver?.disconnect();
+    };
+  }, [alignRulerToPage]);
+
+  useEffect(() => {
+    alignRulerToPage();
+  }, [
+    alignRulerToPage,
+    pageCount,
+    showThumbnailRail,
+    showFindReplace,
+    viewMode,
+  ]);
 
   const updatePageSnippets = useCallback((pages: number) => {
     const safePages = Math.max(1, pages);
@@ -2458,186 +2512,6 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
             </div>
           </div>
 
-          {/* Ruler - left-aligned to match content */}
-          {showRuler && (
-            <div
-              style={{
-                position: "relative",
-                width: `${PAGE_WIDTH_PX}px`,
-                height: "24px",
-                display: "flex",
-                alignItems: "flex-end",
-                flexShrink: 0,
-                marginLeft: "12px",
-              }}
-            >
-              <div
-                aria-hidden="true"
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  bottom: 0,
-                  left: `-${RULER_BACKGROUND_LEFT_OVERHANG}px`,
-                  right: `-${RULER_BACKGROUND_RIGHT_OVERHANG}px`,
-                  backgroundColor: "rgba(255,255,255,0.6)",
-                  borderRadius: "4px",
-                  border: "1px solid #e0c392",
-                  boxShadow: "0 4px 12px rgba(44, 62, 80, 0.12)",
-                  pointerEvents: "none",
-                  zIndex: 0,
-                }}
-              />
-              <div
-                ref={rulerContainerRef}
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  position: "relative",
-                  userSelect: rulerDragging ? "none" : "auto",
-                  cursor: rulerDragging ? "ew-resize" : "default",
-                  zIndex: 1,
-                }}
-              >
-                {/* Ruler tick marks */}
-                {Array.from({ length: 9 }, (_, i) => i).map((inch) => (
-                  <div
-                    key={inch}
-                    style={{
-                      position: "absolute",
-                      left: `${(inch / 8) * 100}%`,
-                      height: "100%",
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      justifyContent: "flex-end",
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontSize: "9px",
-                        color: "#6b7280",
-                        marginBottom: "2px",
-                      }}
-                    >
-                      {inch}
-                    </div>
-                    <div
-                      style={{
-                        width: "1px",
-                        height: "8px",
-                        backgroundColor: "#9ca3af",
-                      }}
-                    />
-                  </div>
-                ))}
-
-                {/* Half-inch markers */}
-                {Array.from({ length: 8 }, (_, i) => i).map((idx) => (
-                  <div
-                    key={`half-${idx}`}
-                    style={{
-                      position: "absolute",
-                      left: `${((idx + 0.5) / 8) * 100}%`,
-                      bottom: 0,
-                      height: "5px",
-                      width: "1px",
-                      backgroundColor: "#d1d5db",
-                    }}
-                  />
-                ))}
-
-                {/* Left margin indicator */}
-                <div
-                  style={{
-                    position: "absolute",
-                    left: `${(leftMargin / PAGE_WIDTH_PX) * 100}%`,
-                    top: 0,
-                    bottom: 0,
-                    width: "0",
-                    borderLeft: "2px solid #ef8432",
-                    pointerEvents: "all",
-                  }}
-                  title="Left Margin"
-                >
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: "2px",
-                      left: "-5px",
-                      width: "10px",
-                      height: "10px",
-                      backgroundColor: "#ef8432",
-                      border: "1px solid #fff",
-                      borderRadius: "50%",
-                      cursor: "ew-resize",
-                      boxShadow: "0 1px 2px rgba(0,0,0,0.2)",
-                    }}
-                    onMouseDown={(e) => handleRulerDragStart("left", e)}
-                  />
-                </div>
-
-                {/* Right margin indicator */}
-                <div
-                  style={{
-                    position: "absolute",
-                    right: `${(rightMargin / PAGE_WIDTH_PX) * 100}%`,
-                    top: 0,
-                    bottom: 0,
-                    width: "0",
-                    borderRight: "2px solid #ef8432",
-                    pointerEvents: "all",
-                  }}
-                  title="Right Margin"
-                >
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: "2px",
-                      right: "-5px",
-                      width: "10px",
-                      height: "10px",
-                      backgroundColor: "#ef8432",
-                      border: "1px solid #fff",
-                      borderRadius: "50%",
-                      cursor: "ew-resize",
-                      boxShadow: "0 1px 2px rgba(0,0,0,0.2)",
-                    }}
-                    onMouseDown={(e) => handleRulerDragStart("right", e)}
-                  />
-                </div>
-
-                {/* First line indent indicator */}
-                <div
-                  style={{
-                    position: "absolute",
-                    left: `${
-                      ((leftMargin + firstLineIndent) / PAGE_WIDTH_PX) * 100
-                    }%`,
-                    top: "3px",
-                    transform: "translateX(-50%)",
-                    pointerEvents: "all",
-                    cursor: "ew-resize",
-                  }}
-                  title="First Line Indent"
-                  onMouseDown={(e) => handleRulerDragStart("indent", e)}
-                >
-                  <svg
-                    width="12"
-                    height="10"
-                    viewBox="0 0 16 14"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                    style={{ display: "block" }}
-                  >
-                    <path d="M4 7L0 4V10L4 7Z" fill="#2c3e50" />
-                    <rect x="4" y="5.5" width="8" height="3" fill="#2c3e50" />
-                    <path d="M12 7L16 4V10L12 7Z" fill="#2c3e50" />
-                  </svg>
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* Right Toolbar Half */}
           <div
             className="writer-toolbar-shell"
@@ -3044,16 +2918,10 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
             className="bg-white rounded-lg shadow-2xl w-full max-w-xl max-h-[80vh] overflow-hidden flex flex-col"
             style={{ border: "2px solid #e0c392" }}
           >
-            <div className="p-3 border-b bg-gradient-to-r from-[#fef5e7] to-[#fff7ed] flex justify-between items-center flex-shrink-0">
+            <div className="p-3 border-b bg-gradient-to-r from-[#fef5e7] to-[#fff7ed] flex-shrink-0">
               <h2 className="text-lg font-bold text-[#2c3e50]">
                 Modify Styles
               </h2>
-              <button
-                onClick={() => setShowStylesPanel(false)}
-                className="text-gray-500 hover:text-gray-700 text-xl leading-none px-2"
-              >
-                ×
-              </button>
             </div>
 
             <div className="p-3 overflow-y-auto flex-1">
@@ -3739,21 +3607,25 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
       <div
         className="writer-stage"
         style={{
-          display: "flex",
-          gap: "18px",
-          alignItems: "stretch",
+          position: "relative",
           minHeight: 0,
           flex: 1,
-          padding: "0",
+          backgroundColor: "#eddcc5",
+          marginTop:
+            viewMode === "writer" && !showFindReplace ? "-12px" : "0px",
         }}
       >
+        {/* Page Rail - absolutely positioned to not affect centering */}
         {showThumbnailRail && (
           <aside
             ref={pageRailRef}
             className="page-thumbnail-rail"
             style={{
+              position: "absolute",
+              left: "8px",
+              top: "8px",
               width: "220px",
-              flexShrink: 0,
+              zIndex: 10,
               borderRadius: "18px",
               border: "1px solid #e0c392",
               background:
@@ -3761,7 +3633,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               boxShadow: "0 16px 32px rgba(44, 62, 80, 0.12)",
               padding: "16px 12px",
               overflowY: "auto",
-              maxHeight: "100%",
+              maxHeight: "calc(100vh - 200px)",
             }}
           >
             <div className="flex items-center justify-between mb-3">
@@ -3837,142 +3709,354 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
             </div>
           </aside>
         )}
+
+        {/* Main editor area - centers the ruler/page in full viewport */}
         <div
           ref={wrapperRef}
           className="editor-wrapper page-view"
           style={{
-            position: "relative",
-            flex: 1,
+            width: "100%",
+            height: "100%",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
             overflowX: "hidden",
-            overflowY: "auto",
-            backgroundColor: "#eddcc5",
-            paddingTop: "8px",
-            paddingBottom: "24px",
-            paddingLeft: "24px",
-            paddingRight: "12px",
+            overflowY: "hidden",
           }}
         >
-          {/* Page container - scrollable content area */}
+          {/* Scrollable page container - contains both ruler and page */}
           <div
-            className="pages-stack-shell"
+            ref={scrollShellRef}
             style={{
-              width: `${PAGE_WIDTH_PX}px`,
-              maxWidth: "100%",
-              marginLeft: "325px",
-              paddingTop: "0px",
-              paddingBottom: "16px",
+              flex: 1,
+              width: "100%",
+              overflowY: "auto",
+              display: "flex",
+              justifyContent: "center",
             }}
           >
             <div
-              ref={pagesContainerRef}
-              className="pages-container"
+              className="pages-stack-shell"
               style={{
-                width: "100%",
-                position: "relative",
+                width: `${PAGE_WIDTH_PX}px`,
+                maxWidth: "100%",
+                paddingTop: "0px",
+                paddingBottom: "16px",
               }}
             >
-              {/* The actual editable content - single continuous page */}
-              <div
-                ref={editorRef}
-                contentEditable={isEditable}
-                onInput={handleInput}
-                onPaste={handlePaste}
-                onKeyDown={handleKeyDown}
-                className={`editor-content page-editor focus:outline-none ${
-                  className || ""
-                }`}
-                style={{
-                  width: "100%",
-                  minHeight: `${PAGE_HEIGHT_PX}px`,
-                  paddingLeft: `${leftMargin}px`,
-                  paddingRight: `${rightMargin}px`,
-                  paddingTop: `${INCH_IN_PX}px`,
-                  paddingBottom: `${INCH_IN_PX}px`,
-                  boxSizing: "border-box",
-                  backgroundColor: "#ffffff",
-                  caretColor: "#2c3e50",
-                  cursor: isEditable ? "text" : "default",
-                  position: "relative",
-                  zIndex: 5,
-                  boxShadow:
-                    "0 14px 32px rgba(44, 62, 80, 0.16), 0 2px 6px rgba(44, 62, 80, 0.08)",
-                  borderRadius: "2px",
-                  // CSS variable for dynamic text-indent
-                  ["--first-line-indent" as string]: `${documentStyles.paragraph.firstLineIndent}px`,
-                }}
-                suppressContentEditableWarning
-              />
-
-              {/* Page break lines (visual indicators only) */}
-              {pageCount > 1 &&
-                Array.from({ length: pageCount - 1 }, (_, i) => (
+              {/* Ruler - inside the same container as the page */}
+              {showRuler && (
+                <div
+                  ref={rulerFrameRef}
+                  style={{
+                    width: "100%",
+                    flexShrink: 0,
+                    paddingTop: 0,
+                    position: "sticky",
+                    top: 0,
+                    zIndex: 20,
+                    backgroundColor: "transparent",
+                  }}
+                >
                   <div
-                    key={`page-break-${i}`}
                     style={{
-                      position: "absolute",
-                      left: 0,
-                      right: 0,
-                      top: `${(i + 1) * PAGE_HEIGHT_PX}px`,
-                      height: "1px",
-                      borderTop: "1px dashed #e0c392",
-                      pointerEvents: "none",
-                      zIndex: 10,
+                      position: "relative",
+                      width: "100%",
+                      height: "24px",
+                      display: "flex",
+                      alignItems: "flex-end",
+                      marginBottom: "2px",
                     }}
                   >
-                    {/* Page number indicator */}
                     <div
+                      aria-hidden="true"
                       style={{
                         position: "absolute",
-                        right: "8px",
-                        top: "-20px",
-                        fontSize: "10px",
-                        color: "#9ca3af",
-                        backgroundColor: "#ffffff",
-                        padding: "2px 8px",
+                        top: 0,
+                        bottom: 0,
+                        left: `-${RULER_BACKGROUND_LEFT_OVERHANG}px`,
+                        right: `-${RULER_BACKGROUND_RIGHT_OVERHANG}px`,
+                        backgroundColor: "rgba(255,255,255,0.6)",
                         borderRadius: "4px",
+                        border: "1px solid #e0c392",
+                        boxShadow: "0 4px 12px rgba(44, 62, 80, 0.12)",
+                        pointerEvents: "none",
+                        zIndex: 0,
+                      }}
+                    />
+                    <div
+                      ref={rulerContainerRef}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        position: "relative",
+                        userSelect: rulerDragging ? "none" : "auto",
+                        cursor: rulerDragging ? "ew-resize" : "default",
+                        zIndex: 1,
                       }}
                     >
-                      End of page {i + 1}
+                      {/* Ruler tick marks */}
+                      {Array.from({ length: 9 }, (_, i) => i).map((inch) => (
+                        <div
+                          key={inch}
+                          style={{
+                            position: "absolute",
+                            left: `${(inch / 8) * 100}%`,
+                            bottom: 0,
+                            width: "1px",
+                            height: inch === 0 || inch === 8 ? "16px" : "12px",
+                            backgroundColor:
+                              inch === 0 || inch === 8 ? "#b45309" : "#d97706",
+                          }}
+                        />
+                      ))}
+                      {/* Half-inch marks */}
+                      {Array.from({ length: 8 }, (_, i) => i).map((i) => (
+                        <div
+                          key={`half-${i}`}
+                          style={{
+                            position: "absolute",
+                            left: `${((i + 0.5) / 8) * 100}%`,
+                            bottom: 0,
+                            width: "1px",
+                            height: "8px",
+                            backgroundColor: "#f59e0b",
+                          }}
+                        />
+                      ))}
+                      {/* Inch labels */}
+                      {Array.from({ length: 9 }, (_, i) => i).map((inch) => (
+                        <div
+                          key={`label-${inch}`}
+                          style={{
+                            position: "absolute",
+                            left: `${(inch / 8) * 100}%`,
+                            top: "0px",
+                            transform:
+                              inch === 0
+                                ? "translateX(0)"
+                                : inch === 8
+                                ? "translateX(-100%)"
+                                : "translateX(-50%)",
+                            fontSize: "9px",
+                            fontWeight: 600,
+                            color: "#92400e",
+                          }}
+                        >
+                          {inch}
+                        </div>
+                      ))}
+                      {/* Left margin indicator */}
+                      <div
+                        style={{
+                          position: "absolute",
+                          left: `${(leftMargin / PAGE_WIDTH_PX) * 100}%`,
+                          top: 0,
+                          bottom: 0,
+                          width: "2px",
+                          backgroundColor: "#ef4444",
+                          cursor: "ew-resize",
+                          zIndex: 2,
+                        }}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          setRulerDragging("left");
+                        }}
+                      >
+                        <div
+                          style={{
+                            position: "absolute",
+                            top: "-2px",
+                            left: "50%",
+                            transform: "translateX(-50%)",
+                            width: "8px",
+                            height: "8px",
+                            backgroundColor: "#ef4444",
+                            borderRadius: "2px",
+                          }}
+                        />
+                      </div>
+                      {/* Right margin indicator */}
+                      <div
+                        style={{
+                          position: "absolute",
+                          left: `${
+                            ((PAGE_WIDTH_PX - rightMargin) / PAGE_WIDTH_PX) *
+                            100
+                          }%`,
+                          top: 0,
+                          bottom: 0,
+                          width: "2px",
+                          backgroundColor: "#ef4444",
+                          cursor: "ew-resize",
+                          zIndex: 2,
+                        }}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          setRulerDragging("right");
+                        }}
+                      >
+                        <div
+                          style={{
+                            position: "absolute",
+                            top: "-2px",
+                            left: "50%",
+                            transform: "translateX(-50%)",
+                            width: "8px",
+                            height: "8px",
+                            backgroundColor: "#ef4444",
+                            borderRadius: "2px",
+                          }}
+                        />
+                      </div>
+                      {/* First line indent indicator */}
+                      <div
+                        style={{
+                          position: "absolute",
+                          left: `${
+                            ((leftMargin + firstLineIndent) / PAGE_WIDTH_PX) *
+                            100
+                          }%`,
+                          top: "2px",
+                          transform: "translateX(-50%)",
+                          cursor: "ew-resize",
+                          zIndex: 3,
+                        }}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          setRulerDragging("indent");
+                        }}
+                        title="First Line Indent"
+                      >
+                        <svg
+                          width="12"
+                          height="12"
+                          viewBox="0 0 12 12"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg"
+                          style={{ display: "block" }}
+                        >
+                          <path d="M6 0L12 6H8V12H4V6H0L6 0Z" fill="#2c3e50" />
+                        </svg>
+                      </div>
                     </div>
                   </div>
-                ))}
+                </div>
+              )}
 
-              {/* Legacy footer with page numbers (when showHeaderFooter is off but page numbers are on) */}
-              {!showHeaderFooter &&
-                showPageNumbers &&
-                Array.from({ length: pageCount }, (_, pageIndex) => {
-                  const isEvenPage = pageIndex % 2 === 0;
-                  const alignment = facingPages
-                    ? isEvenPage
-                      ? "left"
-                      : "right"
-                    : "center";
+              <div
+                ref={pagesContainerRef}
+                className="pages-container"
+                style={{
+                  width: "100%",
+                  position: "relative",
+                }}
+              >
+                {/* The actual editable content - single continuous page */}
+                <div
+                  ref={editorRef}
+                  contentEditable={isEditable}
+                  onInput={handleInput}
+                  onPaste={handlePaste}
+                  onKeyDown={handleKeyDown}
+                  className={`editor-content page-editor focus:outline-none ${
+                    className || ""
+                  }`}
+                  style={{
+                    width: "100%",
+                    minHeight: `${PAGE_HEIGHT_PX}px`,
+                    paddingLeft: `${leftMargin}px`,
+                    paddingRight: `${rightMargin}px`,
+                    paddingTop: `${INCH_IN_PX}px`,
+                    paddingBottom: `${INCH_IN_PX}px`,
+                    boxSizing: "border-box",
+                    backgroundColor: "#ffffff",
+                    caretColor: "#2c3e50",
+                    cursor: isEditable ? "text" : "default",
+                    position: "relative",
+                    zIndex: 5,
+                    boxShadow:
+                      "0 14px 32px rgba(44, 62, 80, 0.16), 0 2px 6px rgba(44, 62, 80, 0.08)",
+                    borderRadius: "2px",
+                    // CSS variable for dynamic text-indent
+                    ["--first-line-indent" as string]: `${documentStyles.paragraph.firstLineIndent}px`,
+                  }}
+                  suppressContentEditableWarning
+                />
 
-                  return (
+                {/* Page break lines (visual indicators only) */}
+                {pageCount > 1 &&
+                  Array.from({ length: pageCount - 1 }, (_, i) => (
                     <div
-                      key={`footer-${pageIndex}`}
+                      key={`page-break-${i}`}
                       style={{
                         position: "absolute",
-                        left: `${leftMargin}px`,
-                        right: `${rightMargin}px`,
-                        top: `${
-                          (pageIndex + 1) * PAGE_HEIGHT_PX - INCH_IN_PX * 0.6
-                        }px`,
-                        textAlign: alignment,
-                        fontSize: "11px",
-                        color: "#6b7280",
+                        left: 0,
+                        right: 0,
+                        top: `${(i + 1) * PAGE_HEIGHT_PX}px`,
+                        height: "1px",
+                        borderTop: "1px dashed #e0c392",
                         pointerEvents: "none",
-                        zIndex: 5,
-                        paddingLeft: alignment === "left" ? "8px" : "0",
-                        paddingRight: alignment === "right" ? "8px" : "0",
+                        zIndex: 10,
                       }}
                     >
-                      {pageIndex + 1}
+                      {/* Page number indicator */}
+                      <div
+                        style={{
+                          position: "absolute",
+                          right: "8px",
+                          top: "-20px",
+                          fontSize: "10px",
+                          color: "#9ca3af",
+                          backgroundColor: "#ffffff",
+                          padding: "2px 8px",
+                          borderRadius: "4px",
+                        }}
+                      >
+                        End of page {i + 1}
+                      </div>
                     </div>
-                  );
-                })}
+                  ))}
+
+                {/* Legacy footer with page numbers (when showHeaderFooter is off but page numbers are on) */}
+                {!showHeaderFooter &&
+                  showPageNumbers &&
+                  Array.from({ length: pageCount }, (_, pageIndex) => {
+                    const isEvenPage = pageIndex % 2 === 0;
+                    const alignment = facingPages
+                      ? isEvenPage
+                        ? "left"
+                        : "right"
+                      : "center";
+
+                    return (
+                      <div
+                        key={`footer-${pageIndex}`}
+                        style={{
+                          position: "absolute",
+                          left: `${leftMargin}px`,
+                          right: `${rightMargin}px`,
+                          top: `${
+                            (pageIndex + 1) * PAGE_HEIGHT_PX - INCH_IN_PX * 0.6
+                          }px`,
+                          textAlign: alignment,
+                          fontSize: "11px",
+                          color: "#6b7280",
+                          pointerEvents: "none",
+                          zIndex: 5,
+                          paddingLeft: alignment === "left" ? "8px" : "0",
+                          paddingRight: alignment === "right" ? "8px" : "0",
+                        }}
+                      >
+                        {pageIndex + 1}
+                      </div>
+                    );
+                  })}
+              </div>
             </div>
+            {/* End pages-container and pages-stack-shell */}
           </div>
+          {/* End scrollable page container */}
 
           {/* Spacing indicators overlay */}
           {renderIndicators()}
