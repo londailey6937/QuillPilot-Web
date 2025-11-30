@@ -39,6 +39,16 @@ export const ResearchNotesPanel: React.FC<ResearchNotesPanelProps> = ({
       created: new Date(),
       isPinned: false,
     },
+    {
+      id: "3",
+      title: "Sarah - Protagonist",
+      content:
+        "Age 28, journalist. Quirk: twirls hair when nervous. Goal: uncover the truth about her father's disappearance. Flaw: too trusting.",
+      tags: ["protagonist", "female"],
+      category: "characters",
+      created: new Date(),
+      isPinned: false,
+    },
   ]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
@@ -47,13 +57,17 @@ export const ResearchNotesPanel: React.FC<ResearchNotesPanelProps> = ({
     title: "",
     content: "",
     tags: [],
-    category: "research",
+    category: "general",
     isPinned: false,
   });
 
   const categories = [
+    { id: "general", label: "General", icon: "📝" },
+    { id: "characters", label: "Characters", icon: "👤" },
+    { id: "worldbuilding", label: "World Building", icon: "🌍" },
+    { id: "plot", label: "Plot Notes", icon: "📖" },
     { id: "research", label: "Research", icon: "🔬" },
-    { id: "reference", label: "Reference", icon: "📖" },
+    { id: "reference", label: "Reference", icon: "📚" },
     { id: "ideas", label: "Ideas", icon: "💡" },
     { id: "quotes", label: "Quotes", icon: "💬" },
   ];
@@ -81,7 +95,7 @@ export const ResearchNotesPanel: React.FC<ResearchNotesPanelProps> = ({
       title: newNote.title,
       content: newNote.content,
       tags: newNote.tags || [],
-      category: newNote.category || "research",
+      category: newNote.category || "general",
       created: new Date(),
       isPinned: newNote.isPinned || false,
     };
@@ -91,7 +105,7 @@ export const ResearchNotesPanel: React.FC<ResearchNotesPanelProps> = ({
       title: "",
       content: "",
       tags: [],
-      category: "research",
+      category: "general",
       isPinned: false,
     });
     setIsCreating(false);
@@ -128,9 +142,9 @@ export const ResearchNotesPanel: React.FC<ResearchNotesPanelProps> = ({
       }}
     >
       <div className="mb-4">
-        <h2 className="text-2xl font-bold text-black">📝 Research Notes</h2>
+        <h2 className="text-2xl font-bold text-black">📝 Writer's Notes</h2>
         <p className="text-sm" style={{ color: palette.mutedText }}>
-          Quick notes without leaving your editor
+          Characters, world building, research & ideas - all in one place
         </p>
       </div>
 

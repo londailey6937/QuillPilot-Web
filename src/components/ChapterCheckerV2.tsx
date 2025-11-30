@@ -736,6 +736,15 @@ export const ChapterCheckerV2: React.FC = () => {
             signedInBeforeInitial = true;
             return;
           }
+          // Skip if we already have a profile loaded for this user (avoid redundant fetches after HMR)
+          if (userProfile && userProfile.email === session.user.email) {
+            console.log(
+              "📋 Profile already loaded for:",
+              session.user.email,
+              "- skipping redundant fetch"
+            );
+            return;
+          }
           console.log("📋 User signed in:", session.user.email);
           await loadAndSetProfile(session.user.id, session.user.email);
         } else if (event === "SIGNED_OUT") {

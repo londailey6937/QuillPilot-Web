@@ -56,6 +56,8 @@ const VISUAL_WORDS = new Set([
   "shadow",
   "shine",
   "shined",
+  "shining",
+  "shines",
   "glow",
   "glowed",
   "sparkle",
@@ -158,6 +160,16 @@ const AUDITORY_WORDS = new Set([
   "buzzed",
   "hiss",
   "hissed",
+  "bark",
+  "barked",
+  "barking",
+  "barks",
+  "growl",
+  "growled",
+  "growling",
+  "howl",
+  "howled",
+  "howling",
   "click",
   "clicked",
   "clack",
@@ -387,14 +399,42 @@ export class SensoryDetailAnalyzer {
     let gustatoryCount = 0;
 
     words.forEach((word) => {
-      // Remove punctuation for matching
-      const cleanWord = word.replace(/[.,!?;:"'()[\]{}]/g, "");
+      // Split on hyphens to check each part of hyphenated words (e.g., "dim-lit" -> "dim", "lit")
+      // This ensures compound words like "dim-lit" are recognized when "dim" is a sensory word
+      const wordParts = word
+        .toLowerCase()
+        .split("-")
+        .map((p) => p.replace(/[.,!?;:"'()[\]{}]/g, ""));
 
-      if (VISUAL_WORDS.has(cleanWord)) visualCount++;
-      if (AUDITORY_WORDS.has(cleanWord)) auditoryCount++;
-      if (OLFACTORY_WORDS.has(cleanWord)) olfactoryCount++;
-      if (TACTILE_WORDS.has(cleanWord)) tactileCount++;
-      if (GUSTATORY_WORDS.has(cleanWord)) gustatoryCount++;
+      // Track if we found any match for this word to avoid double-counting
+      let foundVisual = false;
+      let foundAuditory = false;
+      let foundOlfactory = false;
+      let foundTactile = false;
+      let foundGustatory = false;
+
+      wordParts.forEach((w) => {
+        if (!foundVisual && VISUAL_WORDS.has(w)) {
+          visualCount++;
+          foundVisual = true;
+        }
+        if (!foundAuditory && AUDITORY_WORDS.has(w)) {
+          auditoryCount++;
+          foundAuditory = true;
+        }
+        if (!foundOlfactory && OLFACTORY_WORDS.has(w)) {
+          olfactoryCount++;
+          foundOlfactory = true;
+        }
+        if (!foundTactile && TACTILE_WORDS.has(w)) {
+          tactileCount++;
+          foundTactile = true;
+        }
+        if (!foundGustatory && GUSTATORY_WORDS.has(w)) {
+          gustatoryCount++;
+          foundGustatory = true;
+        }
+      });
     });
 
     const totalSensoryWords =
@@ -414,40 +454,14 @@ export class SensoryDetailAnalyzer {
     if (gustatoryCount === 0) missingSenses.push("gustatory");
 
     // Determine if paragraph needs more sensory details
-    // Thresholds: <5% = high priority, 5-8% = medium, 8-12% = low, >12% = good
-    if (sensoryDensity < 12 && wordCount >= 20) {
-      let priority: "high" | "medium" | "low" = "low";
-      let reason = "";
-      let sensoryType: SensorySuggestion["sensoryType"] = "general";
-
-      if (sensoryDensity < 5) {
-        priority = "high";
-        reason =
-          "Very low sensory detail density. Add concrete sensory descriptions.";
-      } else if (sensoryDensity < 8) {
-        priority = "medium";
-        reason =
-          "Low sensory detail density. Consider adding more sensory language.";
-      } else {
-        priority = "low";
-        reason =
-          "Moderate sensory detail. Could benefit from more immersive description.";
-      }
-
-      // Suggest specific sense if multiple are missing
-      if (missingSenses.length >= 4) {
-        reason += " Missing most senses - add visual, sound, or touch details.";
-        sensoryType = "general";
-      } else if (missingSenses.includes("visual") && visualCount === 0) {
-        reason += " No visual details found.";
-        sensoryType = "visual";
-      } else if (missingSenses.includes("auditory") && auditoryCount === 0) {
-        reason += " No auditory details found.";
-        sensoryType = "auditory";
-      } else if (missingSenses.includes("tactile") && tactileCount === 0) {
-        reason += " No tactile/touch details found.";
-        sensoryType = "tactile";
-      }
+    // If paragraph has ANY sensory word, consider it having sensory detail
+    // Only flag if paragraph has ZERO sensory words and is substantial enough
+    if (totalSensoryWords === 0 && wordCount >= 30) {
+      const priority: "high" | "medium" | "low" =
+        wordCount >= 50 ? "high" : "medium";
+      const reason =
+        "No sensory details found. Add sight, sound, smell, touch, or taste.";
+      const sensoryType: SensorySuggestion["sensoryType"] = "general";
 
       suggestions.push({
         position,
@@ -455,7 +469,7 @@ export class SensoryDetailAnalyzer {
         reason,
         sensoryType,
         priority,
-        sensoryDensity: Math.round(sensoryDensity * 10) / 10,
+        sensoryDensity: 0,
         missingSenses,
       });
     }

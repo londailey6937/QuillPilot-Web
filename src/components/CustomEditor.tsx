@@ -1,6 +1,10 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { creamPalette as palette } from "../styles/palette";
-import { analyzeParagraphSpacing, countWords } from "@/utils/spacingInsights";
+import {
+  analyzeParagraphSpacing,
+  countWords,
+  detectPassiveVoice,
+} from "@/utils/spacingInsights";
 import { SensoryDetailAnalyzer } from "@/utils/sensoryDetailAnalyzer";
 import { Character, CharacterMapping } from "../types";
 import { AdvancedToolsPanel } from "./AdvancedToolsPanel";
@@ -63,6 +67,8 @@ interface SpacingIndicator {
   wordCount: number;
   tone: SpacingTone;
   label: string;
+  hasPassive?: boolean;
+  passiveCount?: number;
 }
 
 interface VisualIndicator {
@@ -731,30 +737,38 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     const domParagraphs = Array.from(
       editorRef.current.querySelectorAll("p, div")
     );
-    const paragraphs = domParagraphs
-      .map((p) => (p as HTMLElement).innerText || "")
-      .filter((p) => p.trim());
+    // Map to {text, domIndex} to preserve original DOM indices after filtering
+    const paragraphsWithIndices = domParagraphs
+      .map((p, domIndex) => ({
+        text: (p as HTMLElement).innerText || "",
+        domIndex,
+      }))
+      .filter((p) => p.text.trim());
 
     const spacingData: AnalysisData["spacing"] = [];
     const visualsData: AnalysisData["visuals"] = [];
 
     // For very large documents (>2000 paragraphs / ~800 pages), sample analysis
     // For medium-large documents (500-2000 paragraphs), analyze all but limit dual-coding
-    const isVeryLarge = paragraphs.length > 2000;
-    const isLarge = paragraphs.length > 500;
+    const isVeryLarge = paragraphsWithIndices.length > 2000;
+    const isLarge = paragraphsWithIndices.length > 500;
 
     if (isVeryLarge) {
       // Sample every 4th paragraph for extremely large documents
-      paragraphs.forEach((para, index) => {
-        if (index % 4 === 0) {
+      paragraphsWithIndices.forEach(({ text: para, domIndex }, arrayIndex) => {
+        if (arrayIndex % 4 === 0) {
           const wordCount = countWords(para);
-          if (wordCount > 0) {
+          // Skip paragraphs with fewer than 5 words
+          if (wordCount >= 5) {
             const spacingInfo = analyzeParagraphSpacing(wordCount);
+            const passiveInfo = detectPassiveVoice(para);
             spacingData.push({
-              index,
+              index: domIndex, // Use original DOM index
               wordCount,
               tone: spacingInfo.tone,
               label: spacingInfo.shortLabel,
+              hasPassive: passiveInfo.hasPassive,
+              passiveCount: passiveInfo.count,
             });
           }
 
@@ -762,25 +776,30 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           if (wordCount >= 50) {
             const suggestions = SensoryDetailAnalyzer.analyzeParagraph(
               para,
-              index
+              domIndex // Use original DOM index
             );
             if (suggestions.length > 0) {
-              visualsData.push({ index, suggestions });
+              visualsData.push({ index: domIndex, suggestions });
             }
           }
         }
       });
     } else {
       // Normal or large documents: analyze all spacing, limit dual-coding for large docs
-      paragraphs.forEach((para, index) => {
+      paragraphsWithIndices.forEach(({ text: para, domIndex }) => {
         const wordCount = countWords(para);
-        if (wordCount > 0) {
+
+        // Skip paragraphs with fewer than 5 words
+        if (wordCount >= 5) {
           const spacingInfo = analyzeParagraphSpacing(wordCount);
+          const passiveInfo = detectPassiveVoice(para);
           spacingData.push({
-            index,
+            index: domIndex, // Use original DOM index
             wordCount,
             tone: spacingInfo.tone,
             label: spacingInfo.shortLabel,
+            hasPassive: passiveInfo.hasPassive,
+            passiveCount: passiveInfo.count,
           });
         }
 
@@ -793,10 +812,10 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
         if (shouldAnalyzeDualCoding) {
           const suggestions = SensoryDetailAnalyzer.analyzeParagraph(
             para,
-            index
+            domIndex // Use original DOM index
           );
           if (suggestions.length > 0) {
-            visualsData.push({ index, suggestions });
+            visualsData.push({ index: domIndex, suggestions });
           }
         }
       });
@@ -828,7 +847,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     setStatistics({
       words,
       characters,
-      paragraphs: paragraphs.length,
+      paragraphs: paragraphsWithIndices.length,
       readingTime,
       readingLevel: Math.max(0, Math.round(readingLevel * 10) / 10),
     });
@@ -1997,10 +2016,11 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   }, [updateFormatState]);
 
   // Track scroll position for back to top button
+  // NOTE: scrollShellRef is the actual scrollable container (wrapperRef has overflow:hidden)
   useEffect(() => {
     const handleScroll = () => {
-      if (!wrapperRef.current) return;
-      const scrollTop = wrapperRef.current.scrollTop;
+      if (!scrollShellRef.current) return;
+      const scrollTop = scrollShellRef.current.scrollTop;
       setShowBackToTop(scrollTop > 300);
 
       const currentPage = Math.min(
@@ -2015,14 +2035,14 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
       }
     };
 
-    const wrapper = wrapperRef.current;
-    if (!wrapper) {
+    const scrollShell = scrollShellRef.current;
+    if (!scrollShell) {
       return;
     }
 
-    wrapper.addEventListener("scroll", handleScroll);
+    scrollShell.addEventListener("scroll", handleScroll);
     handleScroll();
-    return () => wrapper.removeEventListener("scroll", handleScroll);
+    return () => scrollShell.removeEventListener("scroll", handleScroll);
   }, [pageCount]);
 
   // Typewriter mode - center current line
@@ -2166,7 +2186,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     jumpToPage(0, { suppressSelectionSync: true });
   }, [jumpToPage]);
 
-  // Render spacing indicators - positioned relative to pagesContainer
+  // Render spacing indicators - small colored dots inside the left margin
   const renderIndicators = () => {
     if (
       !editorRef.current ||
@@ -2178,40 +2198,78 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     if (!isFreeMode && focusMode) return null;
 
     const paragraphs = Array.from(editorRef.current.querySelectorAll("p, div"));
-    const editorEl = editorRef.current as HTMLElement;
 
-    return analysis.spacing.map((item, idx) => {
+    // Get the editor's offset from the pages container
+    const editorOffset = editorRef.current.offsetTop;
+
+    // Only show dots for paragraphs that need attention:
+    // - Orange: Long paragraphs (>150 words)
+    // - Purple: Passive voice detected
+    const indicators: React.ReactNode[] = [];
+
+    analysis.spacing.forEach((item, idx) => {
       const para = paragraphs[item.index] as HTMLElement;
-      if (!para) return null;
+      if (!para) return;
 
-      // Use offsetTop relative to the editor for positioning
-      const paraTop = para.offsetTop;
+      // Calculate position relative to pages container
+      // para.offsetTop is relative to the editor, so add editor's offset
+      const paraTop = para.offsetTop + editorOffset;
 
-      const colors = {
-        compact: "bg-blue-100 text-blue-800 border-blue-200",
-        extended: "bg-orange-100 text-orange-800 border-orange-200",
-        balanced: "bg-green-100 text-green-800 border-green-200",
-      };
+      // Show orange dot for long paragraphs
+      if (item.tone === "extended") {
+        indicators.push(
+          <div
+            key={`long-${idx}`}
+            className="absolute pointer-events-none z-20"
+            style={{
+              top: `${paraTop + 4}px`,
+              left: "12px",
+            }}
+            title={`Long paragraph · ${item.wordCount} words - consider breaking up`}
+          >
+            <div
+              style={{
+                width: "8px",
+                height: "8px",
+                borderRadius: "50%",
+                backgroundColor: "#f97316", // orange
+                boxShadow: "0 1px 2px rgba(0,0,0,0.2)",
+              }}
+            />
+          </div>
+        );
+      }
 
-      return (
-        <div
-          key={`spacing-${idx}`}
-          className={`absolute text-xs px-2 py-0.5 rounded-full border shadow-sm z-20 ${
-            colors[item.tone as keyof typeof colors] || colors.balanced
-          } select-none whitespace-nowrap pointer-events-none`}
-          style={{
-            top: `${paraTop}px`,
-            left: "-10px",
-            transform: "translateX(-100%)",
-          }}
-        >
-          {item.label} · {item.wordCount} words
-        </div>
-      );
+      // Show purple dot for passive voice (offset slightly if also long)
+      if (item.hasPassive && item.passiveCount && item.passiveCount > 0) {
+        indicators.push(
+          <div
+            key={`passive-${idx}`}
+            className="absolute pointer-events-none z-20"
+            style={{
+              top: `${paraTop + 4}px`,
+              left: item.tone === "extended" ? "24px" : "12px", // offset if also long
+            }}
+            title={`Passive voice detected (${item.passiveCount}× ) - consider active voice`}
+          >
+            <div
+              style={{
+                width: "8px",
+                height: "8px",
+                borderRadius: "50%",
+                backgroundColor: "#8b5cf6", // purple
+                boxShadow: "0 1px 2px rgba(0,0,0,0.2)",
+              }}
+            />
+          </div>
+        );
+      }
     });
+
+    return indicators;
   };
 
-  // Render visual suggestions - positioned relative to pagesContainer
+  // Render visual suggestions - small yellow dots inside the right margin
   const renderSuggestions = () => {
     if (
       !editorRef.current ||
@@ -2227,40 +2285,108 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
 
     const paragraphs = Array.from(editorRef.current.querySelectorAll("p, div"));
 
+    // Get the editor's offset from the pages container
+    const editorOffset = editorRef.current.offsetTop;
+
     return analysis.visuals.map((item, idx) => {
       const para = paragraphs[item.index] as HTMLElement;
-      if (!para) {
-        console.log(
-          `[CustomEditor] renderSuggestions: paragraph ${item.index} not found in DOM`
-        );
-        return null;
-      }
+      if (!para) return null;
 
-      // Use offsetTop relative to the editor for positioning
-      const paraTop = para.offsetTop;
+      // Calculate position relative to pages container
+      const paraTop = para.offsetTop + editorOffset;
+
+      // Combine all suggestions into a tooltip
+      const tooltipText = item.suggestions
+        .map((s) => `${s.visualType}: ${s.reason}`)
+        .join("\n");
 
       return (
         <div
           key={`visual-${idx}`}
-          className="absolute p-1.5 bg-yellow-50 border-l-3 border-yellow-400 rounded text-xs text-yellow-900 select-none pointer-events-none z-20"
+          className="absolute pointer-events-none z-20"
           style={{
-            top: `${paraTop}px`,
-            right: "-10px",
-            transform: "translateX(100%)",
-            maxWidth: "200px",
+            top: `${paraTop + 4}px`,
+            right: "12px",
           }}
+          title={tooltipText}
         >
-          {item.suggestions.map((s, i) => (
-            <div key={i} className="mb-1 last:mb-0">
-              <div className="font-semibold mb-0.5 text-xs">
-                💡 {s.visualType}
-              </div>
-              <div className="opacity-90 text-[11px]">{s.reason}</div>
-            </div>
-          ))}
+          <div
+            style={{
+              width: "8px",
+              height: "8px",
+              borderRadius: "50%",
+              backgroundColor: "#eab308", // yellow
+              boxShadow: "0 1px 2px rgba(0,0,0,0.2)",
+            }}
+          />
         </div>
       );
     });
+  };
+
+  // Render the analysis legend (positioned in toolbar row)
+  const renderAnalysisLegend = () => {
+    if (!showSpacingIndicators && !showVisualSuggestions) return null;
+    if (!isFreeMode && focusMode) return null;
+
+    return (
+      <div
+        className="analysis-legend"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "12px",
+          padding: "6px 12px",
+          fontSize: "11px",
+          fontWeight: 500,
+          color: "#78716c",
+          borderRadius: "20px",
+          background: "linear-gradient(135deg, #fffaf3 0%, #fef5e7 100%)",
+          border: "1.5px solid #e0c392",
+          boxShadow: "0 4px 12px rgba(239, 132, 50, 0.12)",
+        }}
+      >
+        {showSpacingIndicators && (
+          <>
+            <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+              <div
+                style={{
+                  width: "8px",
+                  height: "8px",
+                  borderRadius: "50%",
+                  backgroundColor: "#f97316",
+                }}
+              />
+              <span>Long ¶</span>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+              <div
+                style={{
+                  width: "8px",
+                  height: "8px",
+                  borderRadius: "50%",
+                  backgroundColor: "#8b5cf6",
+                }}
+              />
+              <span>Passive</span>
+            </div>
+          </>
+        )}
+        {showVisualSuggestions && (
+          <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+            <div
+              style={{
+                width: "8px",
+                height: "8px",
+                borderRadius: "50%",
+                backgroundColor: "#eab308",
+              }}
+            />
+            <span>Senses</span>
+          </div>
+        )}
+      </div>
+    );
   };
 
   // Ruler drag start handler
@@ -2509,6 +2635,9 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               </button>
             </div>
           </div>
+
+          {/* Analysis Legend - positioned between toolbars */}
+          {renderAnalysisLegend()}
 
           {/* Right Toolbar Half */}
           <div
@@ -3909,6 +4038,84 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                   </div>
                 </div>
               )}
+
+              {/* Legend fallback when ruler is hidden */}
+              {!showRuler &&
+                (showSpacingIndicators || showVisualSuggestions) &&
+                !(!isFreeMode && focusMode) && (
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "flex-end",
+                      padding: "2px 8px",
+                      fontSize: "9px",
+                      color: "#78716c",
+                    }}
+                  >
+                    {showSpacingIndicators && (
+                      <>
+                        <span
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "2px",
+                            marginRight: "8px",
+                          }}
+                        >
+                          <span
+                            style={{
+                              width: "5px",
+                              height: "5px",
+                              borderRadius: "50%",
+                              backgroundColor: "#3b82f6",
+                              display: "inline-block",
+                            }}
+                          />
+                          Short
+                        </span>
+                        <span
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "2px",
+                            marginRight: "8px",
+                          }}
+                        >
+                          <span
+                            style={{
+                              width: "5px",
+                              height: "5px",
+                              borderRadius: "50%",
+                              backgroundColor: "#f97316",
+                              display: "inline-block",
+                            }}
+                          />
+                          Long
+                        </span>
+                      </>
+                    )}
+                    {showVisualSuggestions && (
+                      <span
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "2px",
+                        }}
+                      >
+                        <span
+                          style={{
+                            width: "5px",
+                            height: "5px",
+                            borderRadius: "50%",
+                            backgroundColor: "#eab308",
+                            display: "inline-block",
+                          }}
+                        />
+                        Senses
+                      </span>
+                    )}
+                  </div>
+                )}
 
               <div
                 ref={pagesContainerRef}

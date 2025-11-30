@@ -68,28 +68,55 @@ export function extractParagraphs(text: string): ParagraphSummary[] {
 export function analyzeParagraphSpacing(
   wordCount: number
 ): ParagraphSpacingAssessment {
-  if (wordCount < 60) {
+  // Long paragraphs: suggest condensing or splitting (over 150 words)
+  if (wordCount > 150) {
     return {
-      tone: "compact",
-      shortLabel: "Expand detail",
+      tone: "extended",
+      shortLabel: "Long ¶",
       message:
-        "This paragraph is compact—consider adding examples or explanation if the idea feels rushed.",
+        "This paragraph is long—consider splitting it into smaller sections so readers can absorb it in steps.",
     };
   }
 
-  if (wordCount > 160) {
-    return {
-      tone: "extended",
-      shortLabel: "Split para",
-      message:
-        "This paragraph is long—split it or add a subheading so readers can process the concept in steps.",
-    };
+  // Well-paced paragraphs (most paragraphs)
+  return {
+    tone: "balanced",
+    shortLabel: "Good pace",
+    message: "This paragraph is well-paced—keep the current flow.",
+  };
+}
+
+// Passive voice detection patterns
+const PASSIVE_PATTERNS = [
+  /\b(is|are|was|were|been|being|be)\s+(\w+ed|\w+en)\b/gi,
+  /\b(is|are|was|were|been|being|be)\s+\w+\s+(\w+ed|\w+en)\b/gi,
+  /\b(got|get|gets|getting)\s+(\w+ed|\w+en)\b/gi,
+];
+
+export function detectPassiveVoice(text: string): {
+  hasPassive: boolean;
+  count: number;
+  examples: string[];
+} {
+  const examples: string[] = [];
+  let totalCount = 0;
+
+  // Common passive constructions
+  const matches = text.match(
+    /\b(is|are|was|were|been|being|be|got|get|gets|getting)\s+\w*\s*(\w+ed|\w+en|made|done|seen|given|taken|written|spoken|chosen|broken|frozen|stolen|worn|torn|born|sworn|drawn|grown|known|shown|thrown|blown|flown)\b/gi
+  );
+
+  if (matches) {
+    totalCount = matches.length;
+    // Get up to 3 unique examples
+    const uniqueMatches = [...new Set(matches.map((m) => m.toLowerCase()))];
+    examples.push(...uniqueMatches.slice(0, 3));
   }
 
   return {
-    tone: "balanced",
-    shortLabel: "On target",
-    message: "This paragraph sits in the target range—keep the current pacing.",
+    hasPassive: totalCount > 0,
+    count: totalCount,
+    examples,
   };
 }
 
