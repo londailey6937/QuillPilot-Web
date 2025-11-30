@@ -21,6 +21,11 @@ interface CustomEditorProps {
   leftMargin?: number;
   rightMargin?: number;
   firstLineIndent?: number;
+  // Ruler and margin callbacks
+  showRuler?: boolean;
+  onLeftMarginChange?: (value: number) => void;
+  onRightMarginChange?: (value: number) => void;
+  onFirstLineIndentChange?: (value: number) => void;
   // Tier 3 - Character management
   characters?: Character[];
   onCharacterLink?: (textOccurrence: string, characterId: string) => void;
@@ -42,27 +47,60 @@ interface CustomEditorProps {
 const INCH_IN_PX = 96;
 const PAGE_WIDTH_PX = INCH_IN_PX * 8;
 const PAGE_HEIGHT_PX = INCH_IN_PX * 11; // 11 inches for US Letter
-
-interface AnalysisData {
-  spacing: Array<{
-    index: number;
-    wordCount: number;
-    tone: string;
-    label: string;
-  }>;
-  visuals: Array<{ index: number; suggestions: any[] }>;
-}
-
-type TextMatch = {
-  start: number;
-  end: number;
-};
+const HEADER_PREVIEW_SAFEZONE = 180;
+const FOOTER_PREVIEW_SAFEZONE = 180;
+const RULER_BACKGROUND_LEFT_OVERHANG = 6;
+const RULER_BACKGROUND_RIGHT_OVERHANG = 12;
 
 interface TextNodeMap {
   node: Text;
   start: number;
   end: number;
 }
+
+type SpacingTone = "compact" | "balanced" | "extended";
+
+interface SpacingIndicator {
+  index: number;
+  wordCount: number;
+  tone: SpacingTone;
+  label: string;
+}
+
+interface VisualIndicator {
+  visualType?: string;
+  sensoryType?: string;
+  reason: string;
+  priority?: "high" | "medium" | "low";
+  context?: string;
+}
+
+interface VisualAnalysisEntry {
+  index: number;
+  suggestions: VisualIndicator[];
+}
+
+interface AnalysisData {
+  spacing: SpacingIndicator[];
+  visuals: VisualAnalysisEntry[];
+}
+
+interface TextMatch {
+  start: number;
+  end: number;
+}
+
+const buildSnippet = (raw: string) => {
+  const normalized = (raw || "").replace(/\s+/g, " ").trim();
+  if (!normalized) {
+    return "";
+  }
+
+  const words = normalized.split(" ").filter(Boolean);
+  const previewWords = words.slice(0, 35);
+  const preview = previewWords.join(" ");
+  return words.length > previewWords.length ? `${preview}…` : preview;
+};
 
 const extractTextWithMap = (root: Node) => {
   let text = "";
@@ -136,6 +174,10 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   leftMargin = 48,
   rightMargin = 48,
   firstLineIndent = 32,
+  showRuler = false,
+  onLeftMarginChange,
+  onRightMarginChange,
+  onFirstLineIndentChange,
   characters = [],
   onCharacterLink,
   onOpenCharacterManager,
@@ -145,6 +187,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
 }) => {
   const editorRef = useRef<HTMLDivElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const pagesContainerRef = useRef<HTMLDivElement>(null);
   const isEditingHeaderFooterRef = useRef(false); // Track when editing header/footer inputs
   const [analysis, setAnalysis] = useState<AnalysisData>({
     spacing: [],
@@ -199,10 +242,163 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   const [popoverPosition, setPopoverPosition] = useState({ top: 0, right: 0 });
   const characterPopoverRef = useRef<HTMLDivElement>(null);
   const characterButtonRef = useRef<HTMLButtonElement>(null);
+  const [rulerAlignedLeft, setRulerAlignedLeft] = useState<number | null>(null);
 
   // Pagination state
   const [pageCount, setPageCount] = useState(1);
-  const PAGE_CONTENT_HEIGHT = PAGE_HEIGHT_PX - 2 * INCH_IN_PX; // 864px (9 inches of content area)
+  const [pageSnippets, setPageSnippets] = useState<string[]>([]);
+  const [activePage, setActivePage] = useState(0);
+  const showThumbnailRail = viewMode === "writer" && !isFreeMode;
+  const activePageRef = useRef(0);
+  const selectionSyncLockRef = useRef(false);
+
+  // Ruler dragging state
+  const [rulerDragging, setRulerDragging] = useState<
+    "left" | "right" | "indent" | null
+  >(null);
+  const rulerContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    activePageRef.current = activePage;
+  }, [activePage]);
+
+  useEffect(() => {
+    if (!showRuler) {
+      setRulerAlignedLeft(null);
+      return;
+    }
+
+    const computeAlignment = () => {
+      if (!rulerContainerRef.current || !wrapperRef.current) {
+        setRulerAlignedLeft(null);
+        return;
+      }
+
+      const rulerRect = rulerContainerRef.current.getBoundingClientRect();
+      const wrapperRect = wrapperRef.current.getBoundingClientRect();
+      let paddingLeft = 0;
+
+      if (typeof window !== "undefined") {
+        const styles = window.getComputedStyle(wrapperRef.current);
+        paddingLeft = parseFloat(styles.paddingLeft || "0") || 0;
+      }
+
+      const relativeLeft = rulerRect.left - wrapperRect.left - paddingLeft;
+
+      if (!Number.isFinite(relativeLeft)) {
+        setRulerAlignedLeft(null);
+        return;
+      }
+
+      setRulerAlignedLeft(relativeLeft);
+    };
+
+    computeAlignment();
+
+    window.addEventListener("resize", computeAlignment);
+    const resizeObserver =
+      typeof ResizeObserver !== "undefined"
+        ? new ResizeObserver(() => computeAlignment())
+        : null;
+
+    if (resizeObserver && rulerContainerRef.current) {
+      resizeObserver.observe(rulerContainerRef.current);
+    }
+    if (resizeObserver && wrapperRef.current) {
+      resizeObserver.observe(wrapperRef.current);
+    }
+
+    return () => {
+      window.removeEventListener("resize", computeAlignment);
+      resizeObserver?.disconnect();
+    };
+  }, [showRuler]);
+
+  const updatePageSnippets = useCallback((pages: number) => {
+    const safePages = Math.max(1, pages);
+    const editor = editorRef.current;
+
+    if (!editor) {
+      setPageSnippets(Array.from({ length: safePages }, () => ""));
+      return;
+    }
+
+    const wrapperRect = wrapperRef.current?.getBoundingClientRect();
+    const scrollOffset = wrapperRef.current?.scrollTop ?? 0;
+    const blocks = Array.from(
+      editor.querySelectorAll<HTMLElement>(
+        "p, div, h1, h2, h3, h4, h5, h6, blockquote, ul, ol, li, pre"
+      )
+    ).filter((block) => block.innerText && block.innerText.trim().length);
+
+    const buckets = Array.from({ length: safePages }, () => "");
+
+    if (blocks.length === 0) {
+      buckets[0] = editor.innerText || "";
+    } else {
+      blocks.forEach((block) => {
+        const text = block.innerText || "";
+        if (!text.trim()) return;
+
+        const rect = block.getBoundingClientRect();
+        const relativeMid =
+          rect.top - (wrapperRect?.top ?? 0) + scrollOffset + rect.height / 2;
+
+        const bucketIndex = Math.min(
+          Math.max(Math.floor(relativeMid / PAGE_HEIGHT_PX), 0),
+          safePages - 1
+        );
+
+        buckets[bucketIndex] += `${text}\n`;
+      });
+    }
+
+    setPageSnippets(buckets.map((chunk) => buildSnippet(chunk)));
+  }, []);
+
+  const recomputePagination = useCallback(() => {
+    if (!editorRef.current) return;
+
+    const contentHeight = editorRef.current.scrollHeight;
+    const pages = Math.max(1, Math.ceil(contentHeight / PAGE_HEIGHT_PX));
+    setPageCount(pages);
+
+    updatePageSnippets(pages);
+  }, [updatePageSnippets]);
+
+  const jumpToPage = useCallback(
+    (pageIndex: number, options?: { suppressSelectionSync?: boolean }) => {
+      if (pageCount <= 0) {
+        setActivePage(0);
+        return;
+      }
+
+      const target = Math.min(Math.max(pageIndex, 0), pageCount - 1);
+
+      if (options?.suppressSelectionSync) {
+        selectionSyncLockRef.current = true;
+        window.setTimeout(() => {
+          selectionSyncLockRef.current = false;
+        }, 200);
+      }
+
+      if (wrapperRef.current) {
+        wrapperRef.current.scrollTo({
+          top: target * PAGE_HEIGHT_PX,
+          behavior: "smooth",
+        });
+      }
+
+      setActivePage(target);
+    },
+    [pageCount]
+  );
+
+  useEffect(() => {
+    setActivePage((prev) =>
+      Math.min(Math.max(prev, 0), Math.max(0, pageCount - 1))
+    );
+  }, [pageCount]);
 
   // Format Painter state
   const [formatPainterActive, setFormatPainterActive] = useState(false);
@@ -408,25 +604,16 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
 
   // Calculate page count based on content height (accounting for page gaps)
   useEffect(() => {
-    const calculatePages = () => {
-      if (!editorRef.current) return;
-      const contentHeight = editorRef.current.scrollHeight;
-      // Each page has PAGE_HEIGHT_PX total height (including margins)
-      // We need to figure out how many pages the content spans
-      const pages = Math.max(1, Math.ceil(contentHeight / PAGE_HEIGHT_PX));
-      setPageCount(pages);
-    };
-
-    calculatePages();
+    recomputePagination();
 
     // Recalculate on input and resize
-    const resizeObserver = new ResizeObserver(calculatePages);
+    const resizeObserver = new ResizeObserver(() => recomputePagination());
     if (editorRef.current) {
       resizeObserver.observe(editorRef.current);
     }
 
     // Also recalculate on mutation (content changes)
-    const mutationObserver = new MutationObserver(calculatePages);
+    const mutationObserver = new MutationObserver(() => recomputePagination());
     if (editorRef.current) {
       mutationObserver.observe(editorRef.current, {
         childList: true,
@@ -439,7 +626,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
       resizeObserver.disconnect();
       mutationObserver.disconnect();
     };
-  }, []);
+  }, [recomputePagination]);
 
   // Analyze content for spacing and dual-coding
   const analyzeContent = useCallback((text: string) => {
@@ -604,7 +791,8 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
       onUpdate?.({ html, text });
       analyzeContent(text);
     }, 300);
-  }, [onUpdate, saveToHistory, analyzeContent]);
+    recomputePagination();
+  }, [onUpdate, saveToHistory, analyzeContent, recomputePagination]);
 
   // Initialize content (only on mount)
   useEffect(() => {
@@ -636,6 +824,8 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               .join("");
           }
 
+          recomputePagination();
+
           // Initialize history with initial content
           const html = editorRef.current.innerHTML;
           historyRef.current = [html];
@@ -655,6 +845,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     } else if (editorRef.current && !content) {
       // Initialize empty editor with a paragraph
       editorRef.current.innerHTML = `<p><br></p>`;
+      recomputePagination();
 
       // Place cursor in the paragraph
       const range = document.createRange();
@@ -861,6 +1052,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     const text = editorRef.current.innerText;
     onUpdate?.({ html, text });
     analyzeContent(text);
+    recomputePagination();
 
     // Restore scroll position after DOM update
     requestAnimationFrame(() => {
@@ -872,7 +1064,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     // Update button states
     setCanUndo(historyIndexRef.current > 0);
     setCanRedo(historyIndexRef.current < historyRef.current.length - 1);
-  }, [onUpdate, analyzeContent]);
+  }, [onUpdate, analyzeContent, recomputePagination]);
 
   // Redo function
   const performRedo = useCallback(() => {
@@ -894,6 +1086,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     const text = editorRef.current.innerText;
     onUpdate?.({ html, text });
     analyzeContent(text);
+    recomputePagination();
 
     // Restore scroll position after DOM update
     requestAnimationFrame(() => {
@@ -905,7 +1098,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     // Update button states
     setCanUndo(historyIndexRef.current > 0);
     setCanRedo(historyIndexRef.current < historyRef.current.length - 1);
-  }, [onUpdate, analyzeContent]);
+  }, [onUpdate, analyzeContent, recomputePagination]);
 
   // Format text
   const formatText = useCallback(
@@ -1714,18 +1907,31 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   // Track scroll position for back to top button
   useEffect(() => {
     const handleScroll = () => {
-      if (wrapperRef.current) {
-        const scrollTop = wrapperRef.current.scrollTop;
-        setShowBackToTop(scrollTop > 300);
+      if (!wrapperRef.current) return;
+      const scrollTop = wrapperRef.current.scrollTop;
+      setShowBackToTop(scrollTop > 300);
+
+      const currentPage = Math.min(
+        Math.max(
+          0,
+          Math.floor((scrollTop + PAGE_HEIGHT_PX / 2) / PAGE_HEIGHT_PX)
+        ),
+        Math.max(0, pageCount - 1)
+      );
+      if (currentPage !== activePageRef.current) {
+        setActivePage(currentPage);
       }
     };
 
     const wrapper = wrapperRef.current;
-    if (wrapper) {
-      wrapper.addEventListener("scroll", handleScroll);
-      return () => wrapper.removeEventListener("scroll", handleScroll);
+    if (!wrapper) {
+      return;
     }
-  }, []);
+
+    wrapper.addEventListener("scroll", handleScroll);
+    handleScroll();
+    return () => wrapper.removeEventListener("scroll", handleScroll);
+  }, [pageCount]);
 
   // Typewriter mode - center current line
   useEffect(() => {
@@ -1773,6 +1979,53 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     };
   }, [typewriterMode]);
 
+  // Listen for selection changes and sync the active page when typing flows past a page break
+  useEffect(() => {
+    if (!showThumbnailRail) return;
+
+    const handleSelectionSync = () => {
+      if (selectionSyncLockRef.current) {
+        return;
+      }
+
+      const selection = window.getSelection();
+      if (!selection || selection.rangeCount === 0) {
+        return;
+      }
+
+      if (!editorRef.current || !wrapperRef.current) {
+        return;
+      }
+
+      if (!editorRef.current.contains(selection.anchorNode)) {
+        return;
+      }
+
+      const range = selection.getRangeAt(0).cloneRange();
+      range.collapse(true);
+      const rect = range.getClientRects()[0] || range.getBoundingClientRect();
+      if (!rect) {
+        return;
+      }
+
+      const wrapperRect = wrapperRef.current.getBoundingClientRect();
+      const scrollTop = wrapperRef.current.scrollTop;
+      const relativeTop = rect.top - wrapperRect.top + scrollTop;
+      const inferredPage = Math.min(
+        Math.max(Math.floor(relativeTop / PAGE_HEIGHT_PX), 0),
+        Math.max(0, pageCount - 1)
+      );
+
+      if (inferredPage !== activePageRef.current) {
+        setActivePage(inferredPage);
+      }
+    };
+
+    document.addEventListener("selectionchange", handleSelectionSync);
+    return () =>
+      document.removeEventListener("selectionchange", handleSelectionSync);
+  }, [showThumbnailRail, pageCount]);
+
   // Sprint timer
   useEffect(() => {
     if (!sprintMode || sprintTimeRemaining <= 0) return;
@@ -1818,13 +2071,8 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
 
   // Scroll to top function
   const scrollToTop = useCallback(() => {
-    if (wrapperRef.current) {
-      wrapperRef.current.scrollTo({
-        top: 0,
-        behavior: "smooth",
-      });
-    }
-  }, []);
+    jumpToPage(0, { suppressSelectionSync: true });
+  }, [jumpToPage]);
 
   // Render spacing indicators
   const renderIndicators = () => {
@@ -1838,13 +2086,15 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
 
     const scrollTop = wrapperRef.current?.scrollTop || 0;
 
+    // Use the pages container rect (the white page area) for alignment
+    const pagesRect = pagesContainerRef.current?.getBoundingClientRect();
+    if (!pagesRect) return null;
+
     return analysis.spacing.map((item, idx) => {
       const para = paragraphs[item.index];
       if (!para) return null;
 
       const rect = para.getBoundingClientRect();
-      const container = editorRef.current?.getBoundingClientRect();
-      if (!container) return null;
 
       const colors = {
         compact: "bg-blue-100 text-blue-800 border-blue-200",
@@ -1860,7 +2110,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           } select-none whitespace-nowrap pointer-events-none`}
           style={{
             top: `${rect.top - wrapperRect.top + scrollTop - 24}px`,
-            left: `${container.left - wrapperRect.left - 10}px`,
+            left: `${pagesRect.left - wrapperRect.left - 10}px`,
             transform: "translateX(-100%)",
           }}
         >
@@ -1886,6 +2136,10 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
 
     const scrollTop = wrapperRef.current?.scrollTop || 0;
 
+    // Use the pages container rect (the white page area) for alignment
+    const pagesRect = pagesContainerRef.current?.getBoundingClientRect();
+    if (!pagesRect) return null;
+
     return analysis.visuals.map((item, idx) => {
       const para = paragraphs[item.index];
       if (!para) {
@@ -1896,8 +2150,6 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
       }
 
       const rect = para.getBoundingClientRect();
-      const container = editorRef.current?.getBoundingClientRect();
-      if (!container) return null;
 
       return (
         <div
@@ -1905,7 +2157,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           className="absolute p-1.5 bg-yellow-50 border-l-3 border-yellow-400 rounded text-xs text-yellow-900 select-none pointer-events-none"
           style={{
             top: `${rect.top - wrapperRect.top + scrollTop - 24}px`,
-            left: `${container.right - wrapperRect.left + 10}px`,
+            left: `${pagesRect.right - wrapperRect.left + 10}px`,
             maxWidth: "200px",
           }}
         >
@@ -1922,6 +2174,72 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     });
   };
 
+  // Ruler drag start handler
+  const handleRulerDragStart = useCallback(
+    (type: "left" | "right" | "indent", e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setRulerDragging(type);
+    },
+    []
+  );
+
+  // Ruler drag effect
+  useEffect(() => {
+    if (!rulerDragging) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (!rulerContainerRef.current) return;
+
+      const rect = rulerContainerRef.current.getBoundingClientRect();
+      const relativeX = Math.max(0, e.clientX - rect.left);
+      const maxWidth = Math.min(rect.width, PAGE_WIDTH_PX);
+      const constrainedX = Math.max(0, Math.min(relativeX, maxWidth));
+
+      if (rulerDragging === "left") {
+        const newLeft = Math.max(0, Math.min(constrainedX, 200));
+        onLeftMarginChange?.(newLeft);
+      } else if (rulerDragging === "right") {
+        const fromRight = maxWidth - constrainedX;
+        onRightMarginChange?.(Math.max(0, Math.min(fromRight, 200)));
+      } else if (rulerDragging === "indent") {
+        const rawAbsolutePos = Math.max(
+          leftMargin,
+          Math.min(constrainedX, maxWidth - rightMargin)
+        );
+        const relativeIndent = rawAbsolutePos - leftMargin;
+        const snappedIndent = Math.round(relativeIndent / 24) * 24;
+        const newIndent = Math.max(
+          0,
+          Math.min(snappedIndent, maxWidth - rightMargin - leftMargin)
+        );
+        onFirstLineIndentChange?.(newIndent);
+      }
+    };
+
+    const handleMouseUp = () => {
+      setRulerDragging(null);
+    };
+
+    document.addEventListener("mousemove", handleMouseMove, true);
+    document.addEventListener("mouseup", handleMouseUp, true);
+
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove, true);
+      document.removeEventListener("mouseup", handleMouseUp, true);
+    };
+  }, [
+    rulerDragging,
+    leftMargin,
+    rightMargin,
+    onLeftMarginChange,
+    onRightMarginChange,
+    onFirstLineIndentChange,
+  ]);
+
   return (
     <div
       className="custom-editor-container"
@@ -1933,40 +2251,39 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
         ...style,
       }}
     >
-      {/* Toolbar */}
+      {/* Toolbar Row - spread to edges */}
       {viewMode === "writer" && !isFreeMode && (
         <div
-          className="writer-toolbar-shell"
           style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "6px 12px",
             position: "sticky",
             top: 0,
             zIndex: 20,
-            margin: "0 auto 12px",
-            width: "fit-content",
-            maxWidth: "calc(100% - 24px)",
-            padding: "10px 14px",
-            borderRadius: "28px",
-            background: "linear-gradient(135deg, #fffaf3 0%, #fef5e7 100%)",
-            border: "1.5px solid #e0c392",
-            boxShadow: "0 10px 24px rgba(239, 132, 50, 0.18)",
-            overflow: "hidden",
+            backgroundColor: "transparent",
           }}
         >
+          {/* Left Toolbar Half */}
           <div
+            className="writer-toolbar-shell"
             style={{
-              overflowX: "auto",
-              overflowY: "hidden",
-              borderRadius: "18px",
-              margin: "-2px",
-              padding: "2px",
+              padding: "6px 10px",
+              borderRadius: "20px",
+              background: "linear-gradient(135deg, #fffaf3 0%, #fef5e7 100%)",
+              border: "1.5px solid #e0c392",
+              boxShadow: "0 4px 12px rgba(239, 132, 50, 0.12)",
+              overflow: "hidden",
+              flexShrink: 0,
             }}
           >
             <div
-              className="toolbar flex items-center gap-2"
+              className="toolbar flex items-center gap-1"
               style={{
                 flexWrap: "nowrap",
                 alignItems: "center",
-                gap: "8px",
+                gap: "4px",
                 whiteSpace: "nowrap",
               }}
             >
@@ -1974,386 +2291,488 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               <select
                 value={blockType}
                 onChange={(e) => changeBlockType(e.target.value)}
-                className="px-2 py-1.5 rounded border bg-white hover:bg-gray-50 transition-colors text-sm"
+                className="px-1.5 py-1 rounded border bg-white hover:bg-gray-50 transition-colors text-xs"
                 title="Block Type"
               >
-                <option value="p">Paragraph</option>
-                <option value="title">Title (Centered)</option>
-                <option value="subtitle">Subtitle</option>
-                <option value="h1">Heading 1</option>
-                <option value="h2">Heading 2</option>
-                <option value="h3">Heading 3</option>
-                <option value="h4">Heading 4</option>
-                <option value="h5">Heading 5</option>
-                <option value="h6">Heading 6</option>
-                <option value="blockquote">Quote</option>
-                <option value="pullquote">Pull Quote</option>
-                <option value="pre">Code Block</option>
-                <option value="footnote">Footnote</option>
-                <option value="citation">Bibliography/Citation</option>
-                <option value="toc">Table of Contents</option>
-                <option value="index">Index</option>
-                <option value="figure">Figure</option>
-                <optgroup label="Screenplay Format">
-                  <option value="scene-heading">Scene Heading (INT/EXT)</option>
+                <optgroup label="Basic">
+                  <option value="p">Paragraph</option>
+                  <option value="title">Title</option>
+                  <option value="h1">Heading 1</option>
+                  <option value="h2">Heading 2</option>
+                  <option value="h3">Heading 3</option>
+                  <option value="blockquote">Quote</option>
+                  <option value="pre">Code</option>
+                </optgroup>
+                <optgroup label="Screenplay">
+                  <option value="scene-heading">Scene Heading</option>
                   <option value="action">Action</option>
-                  <option value="character">Character Name</option>
+                  <option value="character">Character</option>
                   <option value="dialogue">Dialogue</option>
                   <option value="parenthetical">Parenthetical</option>
-                  <option value="transition">Transition</option>
+                </optgroup>
+                <optgroup label="Book">
+                  <option value="chapter-heading">Chapter Heading</option>
+                  <option value="book-title">Book Title</option>
+                  <option value="subtitle">Subtitle</option>
                 </optgroup>
               </select>
 
-              {/* Styles Panel Button - next to block type */}
+              {/* Styles Panel Button */}
               <button
                 onClick={() => setShowStylesPanel(true)}
-                className="px-2 py-1.5 rounded border bg-white hover:bg-[#f7e6d0] text-[#2c3e50] transition-colors text-sm"
-                title="Modify Styles (Paragraph, Title, Headings, Header/Footer)"
+                className="px-1.5 py-1 rounded border bg-white hover:bg-[#f7e6d0] text-[#2c3e50] transition-colors text-xs"
+                title="Styles"
               >
                 ⚙
               </button>
 
-              {/* Format Painter - next to Styles */}
+              <div style={toolbarDividerStyle} aria-hidden="true" />
+
+              {/* Text formatting */}
               <button
                 onMouseDown={(e) => {
                   e.preventDefault();
-                  if (formatPainterActive) {
-                    setFormatPainterActive(false);
-                    setCopiedFormat(null);
-                  } else {
-                    copyFormat();
-                  }
+                  formatText("bold");
                 }}
-                className={`px-2 py-1.5 rounded border transition-colors text-sm ${
-                  formatPainterActive
-                    ? "bg-amber-100 text-amber-700 ring-2 ring-amber-400"
-                    : "bg-white hover:bg-[#f7e6d0] text-[#2c3e50]"
+                className={`px-2 py-1 rounded font-bold transition-colors text-xs ${
+                  isBold
+                    ? "bg-blue-100 text-blue-700"
+                    : "hover:bg-gray-200 text-gray-700"
                 }`}
-                title={
-                  formatPainterActive
-                    ? "Format Painter Active - Click to cancel"
-                    : "Format Painter - Copy formatting (select text first)"
-                }
+                title="Bold"
               >
-                🖌️
+                B
+              </button>
+              <button
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  formatText("italic");
+                }}
+                className={`px-2 py-1 rounded italic transition-colors text-xs ${
+                  isItalic
+                    ? "bg-blue-100 text-blue-700"
+                    : "hover:bg-gray-200 text-gray-700"
+                }`}
+                title="Italic"
+              >
+                I
+              </button>
+              <button
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  formatText("underline");
+                }}
+                className={`px-2 py-1 rounded underline transition-colors text-xs ${
+                  isUnderline
+                    ? "bg-blue-100 text-blue-700"
+                    : "hover:bg-gray-200 text-gray-700"
+                }`}
+                title="Underline"
+              >
+                U
               </button>
 
               <div style={toolbarDividerStyle} aria-hidden="true" />
 
-              {/* Font family dropdown */}
-              <select
-                value={fontFamily}
-                onChange={(e) => {
-                  setFontFamily(e.target.value);
-                  if (editorRef.current) {
-                    editorRef.current.style.fontFamily =
-                      e.target.value === "default" ? "" : e.target.value;
-                  }
-                }}
-                className="px-2 py-1.5 rounded border bg-white hover:bg-gray-50 transition-colors text-sm"
-                title="Font Family"
-              >
-                <option value="default">Default</option>
-                <option value="Georgia, serif">Georgia</option>
-                <option value="'Times New Roman', Times, serif">
-                  Times New Roman
-                </option>
-                <option value="'Courier New', Courier, monospace">
-                  Courier New
-                </option>
-                <option value="Arial, sans-serif">Arial</option>
-                <option value="Helvetica, sans-serif">Helvetica</option>
-                <option value="Verdana, sans-serif">Verdana</option>
-                <option value="'Comic Sans MS', cursive">Comic Sans</option>
-                <option value="'Palatino Linotype', 'Book Antiqua', Palatino, serif">
-                  Palatino
-                </option>
-                <option value="'Trebuchet MS', sans-serif">Trebuchet</option>
-                <option value="'Lucida Console', Monaco, monospace">
-                  Lucida Console
-                </option>
-              </select>
-
-              {/* Font size dropdown */}
-              <select
-                value={fontSize}
-                onChange={(e) => {
-                  setFontSize(e.target.value);
-                  if (editorRef.current) {
-                    editorRef.current.style.fontSize = e.target.value;
-                  }
-                }}
-                className="px-2 py-1.5 rounded border bg-white hover:bg-gray-50 transition-colors text-sm"
-                title="Font Size"
-              >
-                <option value="12px">12px</option>
-                <option value="14px">14px</option>
-                <option value="16px">16px</option>
-                <option value="18px">18px</option>
-                <option value="20px">20px</option>
-                <option value="22px">22px</option>
-                <option value="24px">24px</option>
-                <option value="28px">28px</option>
-                <option value="32px">32px</option>
-                <option value="36px">36px</option>
-              </select>
-
-              <div style={toolbarDividerStyle} aria-hidden="true" />
-
-              {/* Text formatting */}
-              <div className="flex gap-1">
-                <button
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    formatText("bold");
-                  }}
-                  className={`px-3 py-1.5 rounded font-bold transition-colors ${
-                    isBold
-                      ? "bg-blue-100 text-blue-700"
-                      : "hover:bg-gray-200 text-gray-700"
-                  }`}
-                  title="Bold (⌘B / Ctrl+B)"
-                >
-                  B
-                </button>
-                <button
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    formatText("italic");
-                  }}
-                  className={`px-3 py-1.5 rounded italic transition-colors ${
-                    isItalic
-                      ? "bg-blue-100 text-blue-700"
-                      : "hover:bg-gray-200 text-gray-700"
-                  }`}
-                  title="Italic (⌘I / Ctrl+I)"
-                >
-                  I
-                </button>
-                <button
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    formatText("underline");
-                  }}
-                  className={`px-3 py-1.5 rounded underline transition-colors ${
-                    isUnderline
-                      ? "bg-blue-100 text-blue-700"
-                      : "hover:bg-gray-200 text-gray-700"
-                  }`}
-                  title="Underline (⌘U / Ctrl+U)"
-                >
-                  U
-                </button>
-                <button
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    formatText("strikeThrough");
-                  }}
-                  className="px-3 py-1.5 rounded line-through hover:bg-gray-200 text-gray-700 transition-colors"
-                  title="Strikethrough"
-                >
-                  S
-                </button>
-              </div>
-
-              <div style={toolbarDividerStyle} aria-hidden="true" />
-
               {/* Text alignment */}
-              <div className="flex gap-1">
-                <button
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    alignText("left");
+              <button
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  alignText("left");
+                }}
+                className={`px-1.5 py-1 rounded transition-colors text-xs ${
+                  textAlign === "left"
+                    ? "bg-blue-100 text-blue-700"
+                    : "hover:bg-gray-200 text-gray-700"
+                }`}
+                title="Align Left"
+              >
+                ≡
+              </button>
+              <button
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  alignText("center");
+                }}
+                className={`px-1.5 py-1 rounded transition-colors text-xs ${
+                  textAlign === "center"
+                    ? "bg-blue-100 text-blue-700"
+                    : "hover:bg-gray-200 text-gray-700"
+                }`}
+                title="Center"
+              >
+                ≡
+              </button>
+              <button
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  alignText("right");
+                }}
+                className={`px-1.5 py-1 rounded transition-colors text-xs ${
+                  textAlign === "right"
+                    ? "bg-blue-100 text-blue-700"
+                    : "hover:bg-gray-200 text-gray-700"
+                }`}
+                title="Align Right"
+              >
+                ≡
+              </button>
+            </div>
+          </div>
+
+          {/* Ruler - left-aligned to match content */}
+          {showRuler && (
+            <div
+              style={{
+                position: "relative",
+                width: `${PAGE_WIDTH_PX}px`,
+                height: "24px",
+                display: "flex",
+                alignItems: "flex-end",
+                flexShrink: 0,
+                marginLeft: "12px",
+              }}
+            >
+              <div
+                aria-hidden="true"
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  bottom: 0,
+                  left: `-${RULER_BACKGROUND_LEFT_OVERHANG}px`,
+                  right: `-${RULER_BACKGROUND_RIGHT_OVERHANG}px`,
+                  backgroundColor: "rgba(255,255,255,0.6)",
+                  borderRadius: "4px",
+                  border: "1px solid #e0c392",
+                  boxShadow: "0 4px 12px rgba(44, 62, 80, 0.12)",
+                  pointerEvents: "none",
+                  zIndex: 0,
+                }}
+              />
+              <div
+                ref={rulerContainerRef}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  position: "relative",
+                  userSelect: rulerDragging ? "none" : "auto",
+                  cursor: rulerDragging ? "ew-resize" : "default",
+                  zIndex: 1,
+                }}
+              >
+                {/* Ruler tick marks */}
+                {Array.from({ length: 9 }, (_, i) => i).map((inch) => (
+                  <div
+                    key={inch}
+                    style={{
+                      position: "absolute",
+                      left: `${(inch / 8) * 100}%`,
+                      height: "100%",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      justifyContent: "flex-end",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: "9px",
+                        color: "#6b7280",
+                        marginBottom: "2px",
+                      }}
+                    >
+                      {inch}
+                    </div>
+                    <div
+                      style={{
+                        width: "1px",
+                        height: "8px",
+                        backgroundColor: "#9ca3af",
+                      }}
+                    />
+                  </div>
+                ))}
+
+                {/* Half-inch markers */}
+                {Array.from({ length: 8 }, (_, i) => i).map((idx) => (
+                  <div
+                    key={`half-${idx}`}
+                    style={{
+                      position: "absolute",
+                      left: `${((idx + 0.5) / 8) * 100}%`,
+                      bottom: 0,
+                      height: "5px",
+                      width: "1px",
+                      backgroundColor: "#d1d5db",
+                    }}
+                  />
+                ))}
+
+                {/* Left margin indicator */}
+                <div
+                  style={{
+                    position: "absolute",
+                    left: `${(leftMargin / PAGE_WIDTH_PX) * 100}%`,
+                    top: 0,
+                    bottom: 0,
+                    width: "0",
+                    borderLeft: "2px solid #ef8432",
+                    pointerEvents: "all",
                   }}
-                  className={`px-2 py-1.5 rounded transition-colors ${
-                    textAlign === "left"
-                      ? "bg-blue-100 text-blue-700"
-                      : "hover:bg-gray-200 text-gray-700"
-                  }`}
-                  title="Align Left"
+                  title="Left Margin"
                 >
-                  ≡
-                </button>
-                <button
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    alignText("center");
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: "2px",
+                      left: "-5px",
+                      width: "10px",
+                      height: "10px",
+                      backgroundColor: "#ef8432",
+                      border: "1px solid #fff",
+                      borderRadius: "50%",
+                      cursor: "ew-resize",
+                      boxShadow: "0 1px 2px rgba(0,0,0,0.2)",
+                    }}
+                    onMouseDown={(e) => handleRulerDragStart("left", e)}
+                  />
+                </div>
+
+                {/* Right margin indicator */}
+                <div
+                  style={{
+                    position: "absolute",
+                    right: `${(rightMargin / PAGE_WIDTH_PX) * 100}%`,
+                    top: 0,
+                    bottom: 0,
+                    width: "0",
+                    borderRight: "2px solid #ef8432",
+                    pointerEvents: "all",
                   }}
-                  className={`px-2 py-1.5 rounded transition-colors ${
-                    textAlign === "center"
-                      ? "bg-blue-100 text-blue-700"
-                      : "hover:bg-gray-200 text-gray-700"
-                  }`}
-                  title="Align Center"
+                  title="Right Margin"
                 >
-                  ≡
-                </button>
-                <button
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    alignText("right");
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: "2px",
+                      right: "-5px",
+                      width: "10px",
+                      height: "10px",
+                      backgroundColor: "#ef8432",
+                      border: "1px solid #fff",
+                      borderRadius: "50%",
+                      cursor: "ew-resize",
+                      boxShadow: "0 1px 2px rgba(0,0,0,0.2)",
+                    }}
+                    onMouseDown={(e) => handleRulerDragStart("right", e)}
+                  />
+                </div>
+
+                {/* First line indent indicator */}
+                <div
+                  style={{
+                    position: "absolute",
+                    left: `${
+                      ((leftMargin + firstLineIndent) / PAGE_WIDTH_PX) * 100
+                    }%`,
+                    top: "3px",
+                    transform: "translateX(-50%)",
+                    pointerEvents: "all",
+                    cursor: "ew-resize",
                   }}
-                  className={`px-2 py-1.5 rounded transition-colors ${
-                    textAlign === "right"
-                      ? "bg-blue-100 text-blue-700"
-                      : "hover:bg-gray-200 text-gray-700"
-                  }`}
-                  title="Align Right"
+                  title="First Line Indent"
+                  onMouseDown={(e) => handleRulerDragStart("indent", e)}
                 >
-                  ≡
-                </button>
+                  <svg
+                    width="12"
+                    height="10"
+                    viewBox="0 0 16 14"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    style={{ display: "block" }}
+                  >
+                    <path d="M4 7L0 4V10L4 7Z" fill="#2c3e50" />
+                    <rect x="4" y="5.5" width="8" height="3" fill="#2c3e50" />
+                    <path d="M12 7L16 4V10L12 7Z" fill="#2c3e50" />
+                  </svg>
+                </div>
               </div>
+            </div>
+          )}
 
-              <div style={toolbarDividerStyle} aria-hidden="true" />
-
+          {/* Right Toolbar Half */}
+          <div
+            className="writer-toolbar-shell"
+            style={{
+              padding: "6px 10px",
+              borderRadius: "20px",
+              background: "linear-gradient(135deg, #fffaf3 0%, #fef5e7 100%)",
+              border: "1.5px solid #e0c392",
+              boxShadow: "0 4px 12px rgba(239, 132, 50, 0.12)",
+              overflow: "hidden",
+              flexShrink: 0,
+            }}
+          >
+            <div
+              className="toolbar flex items-center gap-1"
+              style={{
+                flexWrap: "nowrap",
+                alignItems: "center",
+                gap: "4px",
+                whiteSpace: "nowrap",
+              }}
+            >
               {/* Lists */}
-              <div className="flex gap-1">
-                <button
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    formatText("insertUnorderedList");
-                  }}
-                  className="px-3 py-1.5 rounded hover:bg-gray-200 text-gray-700 transition-colors"
-                  title="Bullet List"
-                >
-                  • List
-                </button>
-                <button
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    formatText("insertOrderedList");
-                  }}
-                  className="px-3 py-1.5 rounded hover:bg-gray-200 text-gray-700 transition-colors"
-                  title="Numbered List"
-                >
-                  1. List
-                </button>
-              </div>
+              <button
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  formatText("insertUnorderedList");
+                }}
+                className="px-2 py-1 rounded hover:bg-gray-200 text-gray-700 transition-colors text-xs"
+                title="Bullet List"
+              >
+                •
+              </button>
+              <button
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  formatText("insertOrderedList");
+                }}
+                className="px-2 py-1 rounded hover:bg-gray-200 text-gray-700 transition-colors text-xs"
+                title="Numbered List"
+              >
+                1.
+              </button>
 
               <div style={toolbarDividerStyle} aria-hidden="true" />
 
               {/* Insert options */}
-              <div className="flex gap-1">
-                <button
-                  onClick={() => setShowLinkModal(true)}
-                  className="px-3 py-1.5 rounded hover:bg-gray-200 text-gray-700 transition-colors"
-                  title="Insert Link (⌘K / Ctrl+K)"
-                >
-                  🔗
-                </button>
-                <button
-                  onClick={removeLink}
-                  className="px-3 py-1.5 rounded hover:bg-gray-200 text-gray-700 transition-colors"
-                  title="Remove Link"
-                >
-                  ⛓️‍💥
-                </button>
-                <label
-                  className="px-3 py-1.5 rounded hover:bg-gray-200 text-gray-700 transition-colors cursor-pointer"
-                  title="Upload Image"
-                >
-                  📸
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="hidden"
-                  />
-                </label>
-                <button
-                  onClick={insertTable}
-                  className="px-3 py-1.5 rounded hover:bg-gray-200 text-gray-700 transition-colors"
-                  title="Insert Table"
-                >
-                  ⊞
-                </button>
-              </div>
+              <button
+                onClick={() => setShowLinkModal(true)}
+                className="px-2 py-1 rounded hover:bg-gray-200 text-gray-700 transition-colors text-xs"
+                title="Link"
+              >
+                🔗
+              </button>
+              <label
+                className="px-2 py-1 rounded hover:bg-gray-200 text-gray-700 transition-colors cursor-pointer text-xs"
+                title="Image"
+              >
+                📸
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+              </label>
 
               <div style={toolbarDividerStyle} aria-hidden="true" />
 
               {/* Utilities */}
-              <div className="flex gap-1">
-                <button
-                  onClick={clearFormatting}
-                  className="px-3 py-1.5 rounded hover:bg-gray-200 text-gray-700 transition-colors text-sm"
-                  title="Clear Formatting"
-                >
-                  ⌫
-                </button>
-                <button
-                  onClick={() => setShowFindReplace(!showFindReplace)}
-                  className={`px-3 py-1.5 rounded transition-colors ${
-                    showFindReplace
-                      ? "bg-blue-100 text-blue-700"
-                      : "hover:bg-gray-200 text-gray-700"
-                  }`}
-                  title="Find & Replace (⌘F / Ctrl+F)"
-                >
-                  🔍
-                </button>
-              </div>
+              <button
+                onClick={() => setShowFindReplace(!showFindReplace)}
+                className={`px-2 py-1 rounded transition-colors text-xs ${
+                  showFindReplace
+                    ? "bg-blue-100 text-blue-700"
+                    : "hover:bg-gray-200 text-gray-700"
+                }`}
+                title="Find"
+              >
+                🔍
+              </button>
 
               <div style={toolbarDividerStyle} aria-hidden="true" />
 
               {/* History */}
-              <div className="flex gap-1">
-                <button
-                  onClick={performUndo}
-                  disabled={!canUndo}
-                  className="px-3 py-1.5 rounded hover:bg-gray-200 text-gray-700 transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent"
-                  title="Undo (⌘Z / Ctrl+Z)"
-                >
-                  ↶
-                </button>
-                <button
-                  onClick={performRedo}
-                  disabled={!canRedo}
-                  className="px-3 py-1.5 rounded hover:bg-gray-200 text-gray-700 transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent"
-                  title="Redo (⌘⇧Z / Ctrl+Y)"
-                >
-                  ↷
-                </button>
-              </div>
+              <button
+                onClick={performUndo}
+                disabled={!canUndo}
+                className="px-2 py-1 rounded hover:bg-gray-200 text-gray-700 transition-colors text-xs disabled:opacity-30"
+                title="Undo"
+              >
+                ↶
+              </button>
+              <button
+                onClick={performRedo}
+                disabled={!canRedo}
+                className="px-2 py-1 rounded hover:bg-gray-200 text-gray-700 transition-colors text-xs disabled:opacity-30"
+                title="Redo"
+              >
+                ↷
+              </button>
 
               <div style={toolbarDividerStyle} aria-hidden="true" />
 
               {/* View options */}
-              <div className="flex gap-1">
-                <button
-                  onClick={() => setFocusMode(!focusMode)}
-                  className="px-3 py-1.5 rounded transition-colors text-sm hover:bg-gray-200 text-gray-700"
-                  style={
-                    focusMode
-                      ? {
-                          background: palette.subtle,
-                          color: palette.navy,
-                          border: `1px solid ${palette.border}`,
-                        }
-                      : { border: "1px solid transparent" }
-                  }
-                  title="Focus Mode (Hide Indicators)"
-                >
-                  🎯
-                </button>
-                <button
-                  onClick={() => setTypewriterMode(!typewriterMode)}
-                  className="px-3 py-1.5 rounded transition-colors text-sm hover:bg-gray-200 text-gray-700"
-                  style={
-                    typewriterMode
-                      ? {
-                          background: palette.base,
-                          color: palette.navy,
-                          border: `1px solid ${palette.lightBorder}`,
-                        }
-                      : { border: "1px solid transparent" }
-                  }
-                  title="Typewriter Mode (Center Current Line)"
-                >
-                  ⌨️
-                </button>
-              </div>
+              <button
+                onClick={() => setFocusMode(!focusMode)}
+                className="px-2 py-1 rounded transition-colors text-xs"
+                style={
+                  focusMode
+                    ? {
+                        background: "#2c3e50",
+                        color: "#ffffff",
+                        border: "1px solid #2c3e50",
+                      }
+                    : {
+                        background: "transparent",
+                        color: "#374151",
+                        border: "1px solid transparent",
+                      }
+                }
+                title="Focus Mode"
+              >
+                🎯
+              </button>
+              <button
+                onClick={() => setTypewriterMode(!typewriterMode)}
+                className="px-2 py-1 rounded transition-colors text-xs"
+                style={
+                  typewriterMode
+                    ? {
+                        background: "#2c3e50",
+                        color: "#ffffff",
+                        border: "1px solid #2c3e50",
+                      }
+                    : {
+                        background: "transparent",
+                        color: "#374151",
+                        border: "1px solid transparent",
+                      }
+                }
+                title="Typewriter Mode"
+              >
+                ⌨️
+              </button>
 
-              {/* Character Management (Tier 3 only) - Dropdown approach */}
+              <div style={toolbarDividerStyle} aria-hidden="true" />
+
+              {/* Header/Footer toggle */}
+              <button
+                onClick={() => setShowHeaderFooter(!showHeaderFooter)}
+                className="px-2 py-1 rounded transition-colors text-xs"
+                style={
+                  showHeaderFooter
+                    ? {
+                        background: "#2c3e50",
+                        color: "#ffffff",
+                        border: "1px solid #2c3e50",
+                      }
+                    : {
+                        background: "transparent",
+                        color: "#374151",
+                        border: "1px solid transparent",
+                      }
+                }
+                title={
+                  showHeaderFooter ? "Hide Header/Footer" : "Show Header/Footer"
+                }
+              >
+                📄
+              </button>
+
+              {/* Character Management (Tier 3 only) */}
               {isProfessionalTier && onOpenCharacterManager && (
                 <>
                   <div style={toolbarDividerStyle} aria-hidden="true" />
@@ -2374,19 +2793,23 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                         }
                         setShowCharacterPopover(!showCharacterPopover);
                       }}
-                      className="px-3 py-1.5 rounded transition-colors text-sm"
+                      className="px-2 py-1 rounded transition-colors text-xs"
                       style={
                         showCharacterPopover
                           ? {
-                              background: palette.base,
-                              color: palette.navy,
-                              border: `1px solid ${palette.lightBorder}`,
+                              background: "#2c3e50",
+                              color: "#ffffff",
+                              border: "1px solid #2c3e50",
                             }
-                          : { border: "1px solid transparent" }
+                          : {
+                              background: "transparent",
+                              color: "#374151",
+                              border: "1px solid transparent",
+                            }
                       }
                       title="Character Tools"
                     >
-                      👥 Characters
+                      👥
                     </button>
                   </div>
                 </>
@@ -3311,290 +3734,437 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
 
       {/* Editor area with page view - tan background with white pages */}
       <div
-        ref={wrapperRef}
-        className="editor-wrapper page-view"
+        className="writer-stage"
         style={{
-          position: "relative",
+          display: "flex",
+          gap: "18px",
+          alignItems: "stretch",
+          minHeight: 0,
           flex: 1,
-          overflow: "auto",
-          backgroundColor: "#eddcc5",
-          paddingTop: "24px",
-          paddingBottom: "24px",
+          padding: "0",
         }}
       >
-        {/* Header preview sits outside the page canvas so body text never hides behind it */}
-        {showHeaderFooter && (
-          <div
-            className="header-preview"
+        {showThumbnailRail && (
+          <aside
+            className="page-thumbnail-rail"
             style={{
-              width: `${PAGE_WIDTH_PX}px`,
-              maxWidth: "calc(100% - 48px)",
-              margin: "0 auto 16px",
-              padding: "14px 18px",
-              borderRadius: "16px",
+              width: "220px",
+              flexShrink: 0,
+              borderRadius: "18px",
               border: "1px solid #e0c392",
               background:
-                "linear-gradient(135deg, rgba(255,250,243,0.96), rgba(254,245,231,0.96))",
+                "linear-gradient(180deg, rgba(254,245,231,0.98), rgba(247,230,208,0.92))",
               boxShadow: "0 16px 32px rgba(44, 62, 80, 0.12)",
+              padding: "16px 12px",
+              overflowY: "auto",
+              maxHeight: "100%",
             }}
           >
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-semibold tracking-wide uppercase text-gray-600">
-                Header Preview
-              </span>
-              <span className="text-[11px] text-gray-500">
-                Visible while writing • exported on every page
-              </span>
+            <div className="flex items-center justify-between mb-3">
+              <div className="text-[11px] font-semibold uppercase tracking-wide text-[#92400e]">
+                Page Rail
+              </div>
+              <span className="text-[11px] text-[#6b7280]">{pageCount}</span>
             </div>
-            <div
-              className="flex items-center gap-3"
-              style={{
-                justifyContent: facingPages
-                  ? "space-between"
-                  : headerAlign === "center"
-                  ? "center"
-                  : headerAlign === "right"
-                  ? "flex-end"
-                  : "flex-start",
-              }}
-            >
-              {showPageNumbers && pageNumberPosition === "header" && (
-                <span className="text-[11px] text-gray-600 px-2 py-1 rounded-full bg-white border border-gray-200 shadow-sm">
-                  {facingPages ? "Even" : "Pg #"}
-                </span>
-              )}
-              <input
-                type="text"
-                value={headerText}
-                onChange={(e) => setHeaderText(e.target.value)}
-                onFocus={() => (isEditingHeaderFooterRef.current = true)}
-                onBlur={() =>
-                  setTimeout(
-                    () => (isEditingHeaderFooterRef.current = false),
-                    100
-                  )
-                }
-                onMouseDown={(e) => e.stopPropagation()}
-                placeholder="Add header text..."
-                className="flex-1 px-3 py-2 rounded-lg border border-[#e0c392] bg-white/90 text-sm text-gray-700 shadow-sm focus:ring-2 focus:ring-[#ef8432]"
-              />
-              {showPageNumbers && pageNumberPosition === "header" && (
-                <span className="text-[11px] text-gray-600 px-2 py-1 rounded-full bg-white border border-gray-200 shadow-sm">
-                  {facingPages ? "Odd" : "Pg #"}
-                </span>
-              )}
+            <div className="flex flex-col gap-2">
+              {Array.from({ length: pageCount }, (_, index) => {
+                const snippet = pageSnippets[index] || "";
+                const isActive = index === activePage;
+                return (
+                  <button
+                    key={`thumbnail-${index}`}
+                    type="button"
+                    onClick={() =>
+                      jumpToPage(index, { suppressSelectionSync: true })
+                    }
+                    className="text-left focus-visible:ring-2 focus-visible:ring-[#ef8432]"
+                    style={{
+                      border: isActive
+                        ? "2px solid #ef8432"
+                        : "1px solid #f5d1ab",
+                      borderRadius: "16px",
+                      padding: "10px",
+                      backgroundColor: isActive ? "#fff" : "#fefdf9",
+                      boxShadow: isActive
+                        ? "0 10px 24px rgba(239, 132, 50, 0.25)"
+                        : "0 6px 14px rgba(44, 62, 80, 0.08)",
+                      transition: "border 0.2s ease, box-shadow 0.2s ease",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-semibold text-[#2c3e50]">
+                        Page {index + 1}
+                      </span>
+                      {isActive && (
+                        <span className="text-[10px] text-[#ef8432] font-semibold">
+                          Live
+                        </span>
+                      )}
+                    </div>
+                    <div
+                      style={{
+                        width: "100%",
+                        backgroundColor: "#ffffff",
+                        borderRadius: "10px",
+                        border: "1px solid rgba(224,195,146,0.9)",
+                        aspectRatio: "8.5 / 11",
+                        position: "relative",
+                        overflow: "hidden",
+                      }}
+                    >
+                      <div
+                        style={{
+                          position: "absolute",
+                          inset: "8px",
+                          fontSize: "10px",
+                          lineHeight: 1.25,
+                          color: "#374151",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        }}
+                      >
+                        {snippet || "Start writing to fill this page."}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
-          </div>
+          </aside>
         )}
-
-        {/* Page container */}
         <div
-          className="pages-container"
+          ref={wrapperRef}
+          className="editor-wrapper page-view"
           style={{
-            width: `${PAGE_WIDTH_PX}px`,
-            maxWidth: "calc(100% - 48px)",
-            margin: "0 auto",
             position: "relative",
+            flex: 1,
+            overflowX: "hidden",
+            overflowY: "auto",
+            backgroundColor: "#eddcc5",
+            paddingTop: "8px",
+            paddingBottom: "24px",
+            paddingLeft: "24px",
+            paddingRight: "12px",
           }}
         >
-          {/* Page backgrounds - white rectangles for each page */}
-          {Array.from({ length: pageCount }, (_, i) => (
+          {/* Header preview sits outside the page canvas so body text never hides behind it */}
+          {showHeaderFooter && (
             <div
-              key={`page-bg-${i}`}
               style={{
-                position: "absolute",
-                left: 0,
-                right: 0,
-                top: `${i * PAGE_HEIGHT_PX}px`,
-                height: `${PAGE_HEIGHT_PX}px`,
-                backgroundColor: "#ffffff",
-                boxShadow:
-                  i === 0
-                    ? "0 2px 8px rgba(0, 0, 0, 0.12), 0 4px 16px rgba(0, 0, 0, 0.08)"
-                    : "none",
-                borderRadius:
-                  i === 0
-                    ? "2px 2px 0 0"
-                    : i === pageCount - 1
-                    ? "0 0 2px 2px"
-                    : "0",
-                zIndex: 1,
+                position: "sticky",
+                top: "0",
+                zIndex: 40,
+                paddingBottom: "16px",
               }}
-            />
-          ))}
-
-          {/* The actual editable content */}
-          <div
-            ref={editorRef}
-            contentEditable={isEditable}
-            onInput={handleInput}
-            onPaste={handlePaste}
-            onKeyDown={handleKeyDown}
-            className={`editor-content page-editor focus:outline-none ${
-              className || ""
-            }`}
-            style={{
-              width: "100%",
-              minHeight: `${PAGE_HEIGHT_PX}px`,
-              paddingLeft: `${leftMargin}px`,
-              paddingRight: `${rightMargin}px`,
-              paddingTop: `${INCH_IN_PX}px`,
-              paddingBottom: `${INCH_IN_PX}px`,
-              boxSizing: "border-box",
-              backgroundColor: "#ffffff",
-              caretColor: "#2c3e50",
-              cursor: isEditable ? "text" : "default",
-              position: "relative",
-              zIndex: 5,
-              boxShadow:
-                "0 2px 8px rgba(0, 0, 0, 0.12), 0 4px 16px rgba(0, 0, 0, 0.08)",
-              borderRadius: "2px",
-              // CSS variable for dynamic text-indent
-              ["--first-line-indent" as string]: `${documentStyles.paragraph.firstLineIndent}px`,
-            }}
-            suppressContentEditableWarning
-          />
-
-          {/* Page break lines and page numbers */}
-          {pageCount > 1 &&
-            Array.from({ length: pageCount - 1 }, (_, i) => (
+            >
               <div
-                key={`page-break-${i}`}
+                className="header-preview"
                 style={{
-                  position: "absolute",
-                  left: 0,
-                  right: 0,
-                  top: `${(i + 1) * PAGE_HEIGHT_PX}px`,
-                  height: "1px",
-                  borderTop: "1px dashed #e0c392",
-                  pointerEvents: "none",
-                  zIndex: 10,
+                  width: `${PAGE_WIDTH_PX}px`,
+                  maxWidth: "calc(100% - 48px)",
+                  marginLeft:
+                    rulerAlignedLeft !== null
+                      ? `${rulerAlignedLeft}px`
+                      : "auto",
+                  marginRight: rulerAlignedLeft !== null ? undefined : "auto",
+                  padding: "14px 18px",
+                  borderRadius: "16px",
+                  border: "1px solid #e0c392",
+                  background:
+                    "linear-gradient(135deg, rgba(255,250,243,0.96), rgba(254,245,231,0.96))",
+                  boxShadow: "0 16px 32px rgba(44, 62, 80, 0.12)",
                 }}
               >
-                {/* Page number indicator */}
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-semibold tracking-wide uppercase text-gray-600">
+                    Header Preview
+                  </span>
+                  <span className="text-[11px] text-gray-500">
+                    Visible while writing • exported on every page
+                  </span>
+                </div>
                 <div
+                  className="flex items-center gap-3"
                   style={{
-                    position: "absolute",
-                    right: "8px",
-                    top: "-20px",
-                    fontSize: "10px",
-                    color: "#9ca3af",
-                    backgroundColor: "#ffffff",
-                    padding: "2px 8px",
-                    borderRadius: "4px",
+                    justifyContent: facingPages
+                      ? "space-between"
+                      : headerAlign === "center"
+                      ? "center"
+                      : headerAlign === "right"
+                      ? "flex-end"
+                      : "flex-start",
                   }}
                 >
-                  End of page {i + 1}
+                  {showPageNumbers && pageNumberPosition === "header" && (
+                    <span className="text-[11px] text-gray-600 px-2 py-1 rounded-full bg-white border border-gray-200 shadow-sm">
+                      {facingPages ? "Even" : "Pg #"}
+                    </span>
+                  )}
+                  <input
+                    type="text"
+                    value={headerText}
+                    onChange={(e) => setHeaderText(e.target.value)}
+                    onFocus={() => (isEditingHeaderFooterRef.current = true)}
+                    onBlur={() =>
+                      setTimeout(
+                        () => (isEditingHeaderFooterRef.current = false),
+                        100
+                      )
+                    }
+                    onMouseDown={(e) => e.stopPropagation()}
+                    placeholder="Add header text..."
+                    className="flex-1 px-3 py-2 rounded-lg border border-[#e0c392] bg-white/90 text-sm text-gray-700 shadow-sm focus:ring-2 focus:ring-[#ef8432]"
+                  />
+                  {showPageNumbers && pageNumberPosition === "header" && (
+                    <span className="text-[11px] text-gray-600 px-2 py-1 rounded-full bg-white border border-gray-200 shadow-sm">
+                      {facingPages ? "Odd" : "Pg #"}
+                    </span>
+                  )}
                 </div>
               </div>
-            ))}
+            </div>
+          )}
 
-          {/* Legacy footer with page numbers (when showHeaderFooter is off but page numbers are on) */}
-          {!showHeaderFooter &&
-            showPageNumbers &&
-            Array.from({ length: pageCount }, (_, pageIndex) => {
-              const isEvenPage = pageIndex % 2 === 0;
-              const alignment = facingPages
-                ? isEvenPage
-                  ? "left"
-                  : "right"
-                : "center";
-
-              return (
-                <div
-                  key={`footer-${pageIndex}`}
-                  style={{
-                    position: "absolute",
-                    left: `${leftMargin}px`,
-                    right: `${rightMargin}px`,
-                    top: `${
-                      (pageIndex + 1) * PAGE_HEIGHT_PX - INCH_IN_PX * 0.6
-                    }px`,
-                    textAlign: alignment,
-                    fontSize: "11px",
-                    color: "#6b7280",
-                    pointerEvents: "none",
-                    zIndex: 5,
-                    paddingLeft: alignment === "left" ? "8px" : "0",
-                    paddingRight: alignment === "right" ? "8px" : "0",
-                  }}
-                >
-                  {pageIndex + 1}
-                </div>
-              );
-            })}
-        </div>
-
-        {/* Footer preview mirrors the header treatment */}
-        {showHeaderFooter && (
+          {/* Page container */}
           <div
-            className="footer-preview"
+            className="pages-stack-shell"
             style={{
               width: `${PAGE_WIDTH_PX}px`,
               maxWidth: "calc(100% - 48px)",
-              margin: "16px auto 0",
-              padding: "14px 18px",
-              borderRadius: "16px",
-              border: "1px solid #e0c392",
-              background:
-                "linear-gradient(135deg, rgba(254,245,231,0.96), rgba(255,247,237,0.96))",
-              boxShadow: "0 -10px 28px rgba(44, 62, 80, 0.08)",
+              marginLeft:
+                rulerAlignedLeft !== null ? `${rulerAlignedLeft}px` : "auto",
+              marginRight: rulerAlignedLeft !== null ? undefined : "auto",
+              paddingTop: showHeaderFooter
+                ? `${HEADER_PREVIEW_SAFEZONE}px`
+                : "0px",
+              paddingBottom: showHeaderFooter
+                ? `${FOOTER_PREVIEW_SAFEZONE}px`
+                : "16px",
+              transition: "padding 0.2s ease",
             }}
           >
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-semibold tracking-wide uppercase text-gray-600">
-                Footer Preview
-              </span>
-              <span className="text-[11px] text-gray-500">
-                Always printed • mirrors export layout
-              </span>
-            </div>
             <div
-              className="flex items-center gap-3"
+              ref={pagesContainerRef}
+              className="pages-container"
               style={{
-                justifyContent: facingPages
-                  ? "space-between"
-                  : footerAlign === "center"
-                  ? "center"
-                  : footerAlign === "right"
-                  ? "flex-end"
-                  : "flex-start",
+                width: "100%",
+                position: "relative",
               }}
             >
-              {showPageNumbers && pageNumberPosition === "footer" && (
-                <span className="text-[11px] text-gray-600 px-2 py-1 rounded-full bg-white border border-gray-200 shadow-sm">
-                  {facingPages ? "Even" : "Pg #"}
-                </span>
-              )}
-              <input
-                type="text"
-                value={footerText}
-                onChange={(e) => setFooterText(e.target.value)}
-                onFocus={() => (isEditingHeaderFooterRef.current = true)}
-                onBlur={() =>
-                  setTimeout(
-                    () => (isEditingHeaderFooterRef.current = false),
-                    100
-                  )
-                }
-                onMouseDown={(e) => e.stopPropagation()}
-                placeholder="Add footer text..."
-                className="flex-1 px-3 py-2 rounded-lg border border-[#e0c392] bg-white/90 text-sm text-gray-700 shadow-sm focus:ring-2 focus:ring-[#ef8432]"
+              {/* Page backgrounds - white rectangles for each page */}
+              {Array.from({ length: pageCount }, (_, i) => (
+                <div
+                  key={`page-bg-${i}`}
+                  style={{
+                    position: "absolute",
+                    left: 0,
+                    right: 0,
+                    top: `${i * PAGE_HEIGHT_PX}px`,
+                    height: `${PAGE_HEIGHT_PX}px`,
+                    backgroundColor: "#ffffff",
+                    boxShadow:
+                      i === 0
+                        ? "0 2px 8px rgba(0, 0, 0, 0.12), 0 4px 16px rgba(0, 0, 0, 0.08)"
+                        : "none",
+                    borderRadius:
+                      i === 0
+                        ? "2px 2px 0 0"
+                        : i === pageCount - 1
+                        ? "0 0 2px 2px"
+                        : "0",
+                    zIndex: 1,
+                  }}
+                />
+              ))}
+
+              {/* The actual editable content */}
+              <div
+                ref={editorRef}
+                contentEditable={isEditable}
+                onInput={handleInput}
+                onPaste={handlePaste}
+                onKeyDown={handleKeyDown}
+                className={`editor-content page-editor focus:outline-none ${
+                  className || ""
+                }`}
+                style={{
+                  width: "100%",
+                  minHeight: `${PAGE_HEIGHT_PX}px`,
+                  paddingLeft: `${leftMargin}px`,
+                  paddingRight: `${rightMargin}px`,
+                  paddingTop: `${INCH_IN_PX}px`,
+                  paddingBottom: `${INCH_IN_PX}px`,
+                  boxSizing: "border-box",
+                  backgroundColor: "#ffffff",
+                  caretColor: "#2c3e50",
+                  cursor: isEditable ? "text" : "default",
+                  position: "relative",
+                  zIndex: 5,
+                  boxShadow:
+                    "0 2px 8px rgba(0, 0, 0, 0.12), 0 4px 16px rgba(0, 0, 0, 0.08)",
+                  borderRadius: "2px",
+                  // CSS variable for dynamic text-indent
+                  ["--first-line-indent" as string]: `${documentStyles.paragraph.firstLineIndent}px`,
+                }}
+                suppressContentEditableWarning
               />
-              {showPageNumbers && pageNumberPosition === "footer" && (
-                <span className="text-[11px] text-gray-600 px-2 py-1 rounded-full bg-white border border-gray-200 shadow-sm">
-                  {facingPages ? "Odd" : "Pg #"}
-                </span>
-              )}
+
+              {/* Page break lines and page numbers */}
+              {pageCount > 1 &&
+                Array.from({ length: pageCount - 1 }, (_, i) => (
+                  <div
+                    key={`page-break-${i}`}
+                    style={{
+                      position: "absolute",
+                      left: 0,
+                      right: 0,
+                      top: `${(i + 1) * PAGE_HEIGHT_PX}px`,
+                      height: "1px",
+                      borderTop: "1px dashed #e0c392",
+                      pointerEvents: "none",
+                      zIndex: 10,
+                    }}
+                  >
+                    {/* Page number indicator */}
+                    <div
+                      style={{
+                        position: "absolute",
+                        right: "8px",
+                        top: "-20px",
+                        fontSize: "10px",
+                        color: "#9ca3af",
+                        backgroundColor: "#ffffff",
+                        padding: "2px 8px",
+                        borderRadius: "4px",
+                      }}
+                    >
+                      End of page {i + 1}
+                    </div>
+                  </div>
+                ))}
+
+              {/* Legacy footer with page numbers (when showHeaderFooter is off but page numbers are on) */}
+              {!showHeaderFooter &&
+                showPageNumbers &&
+                Array.from({ length: pageCount }, (_, pageIndex) => {
+                  const isEvenPage = pageIndex % 2 === 0;
+                  const alignment = facingPages
+                    ? isEvenPage
+                      ? "left"
+                      : "right"
+                    : "center";
+
+                  return (
+                    <div
+                      key={`footer-${pageIndex}`}
+                      style={{
+                        position: "absolute",
+                        left: `${leftMargin}px`,
+                        right: `${rightMargin}px`,
+                        top: `${
+                          (pageIndex + 1) * PAGE_HEIGHT_PX - INCH_IN_PX * 0.6
+                        }px`,
+                        textAlign: alignment,
+                        fontSize: "11px",
+                        color: "#6b7280",
+                        pointerEvents: "none",
+                        zIndex: 5,
+                        paddingLeft: alignment === "left" ? "8px" : "0",
+                        paddingRight: alignment === "right" ? "8px" : "0",
+                      }}
+                    >
+                      {pageIndex + 1}
+                    </div>
+                  );
+                })}
             </div>
           </div>
-        )}
 
-        {/* Spacing indicators overlay */}
-        {renderIndicators()}
+          {/* Footer preview mirrors the header treatment */}
+          {showHeaderFooter && (
+            <div
+              style={{
+                position: "sticky",
+                bottom: "16px",
+                zIndex: 40,
+                paddingTop: "16px",
+              }}
+            >
+              <div
+                className="footer-preview"
+                style={{
+                  width: `${PAGE_WIDTH_PX}px`,
+                  maxWidth: "calc(100% - 48px)",
+                  marginLeft:
+                    rulerAlignedLeft !== null
+                      ? `${rulerAlignedLeft}px`
+                      : "auto",
+                  marginRight: rulerAlignedLeft !== null ? undefined : "auto",
+                  padding: "14px 18px",
+                  borderRadius: "16px",
+                  border: "1px solid #e0c392",
+                  background:
+                    "linear-gradient(135deg, rgba(254,245,231,0.96), rgba(255,247,237,0.96))",
+                  boxShadow: "0 -10px 28px rgba(44, 62, 80, 0.08)",
+                }}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-semibold tracking-wide uppercase text-gray-600">
+                    Footer Preview
+                  </span>
+                  <span className="text-[11px] text-gray-500">
+                    Always printed • mirrors export layout
+                  </span>
+                </div>
+                <div
+                  className="flex items-center gap-3"
+                  style={{
+                    justifyContent: facingPages
+                      ? "space-between"
+                      : footerAlign === "center"
+                      ? "center"
+                      : footerAlign === "right"
+                      ? "flex-end"
+                      : "flex-start",
+                  }}
+                >
+                  {showPageNumbers && pageNumberPosition === "footer" && (
+                    <span className="text-[11px] text-gray-600 px-2 py-1 rounded-full bg-white border border-gray-200 shadow-sm">
+                      {facingPages ? "Even" : "Pg #"}
+                    </span>
+                  )}
+                  <input
+                    type="text"
+                    value={footerText}
+                    onChange={(e) => setFooterText(e.target.value)}
+                    onFocus={() => (isEditingHeaderFooterRef.current = true)}
+                    onBlur={() =>
+                      setTimeout(
+                        () => (isEditingHeaderFooterRef.current = false),
+                        100
+                      )
+                    }
+                    onMouseDown={(e) => e.stopPropagation()}
+                    placeholder="Add footer text..."
+                    className="flex-1 px-3 py-2 rounded-lg border border-[#e0c392] bg-white/90 text-sm text-gray-700 shadow-sm focus:ring-2 focus:ring-[#ef8432]"
+                  />
+                  {showPageNumbers && pageNumberPosition === "footer" && (
+                    <span className="text-[11px] text-gray-600 px-2 py-1 rounded-full bg-white border border-gray-200 shadow-sm">
+                      {facingPages ? "Odd" : "Pg #"}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
 
-        {/* Visual suggestions overlay */}
-        {renderSuggestions()}
+          {/* Spacing indicators overlay */}
+          {renderIndicators()}
+
+          {/* Visual suggestions overlay */}
+          {renderSuggestions()}
+        </div>
       </div>
 
       <style

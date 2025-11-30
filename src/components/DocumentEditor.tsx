@@ -38,6 +38,11 @@ interface DocumentEditorProps {
   leftMargin?: number;
   rightMargin?: number;
   firstLineIndent?: number;
+  // Ruler props
+  showRuler?: boolean;
+  onLeftMarginChange?: (value: number) => void;
+  onRightMarginChange?: (value: number) => void;
+  onFirstLineIndentChange?: (value: number) => void;
   // Tier 3 - Character management
   characters?: Character[];
   onCharacterLink?: (textOccurrence: string, characterId: string) => void;
@@ -67,6 +72,10 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
   leftMargin = 48,
   rightMargin = 48,
   firstLineIndent = 32,
+  showRuler = false,
+  onLeftMarginChange,
+  onRightMarginChange,
+  onFirstLineIndentChange,
   characters,
   onCharacterLink,
   onOpenCharacterManager,
@@ -103,6 +112,10 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
         leftMargin={leftMargin}
         rightMargin={rightMargin}
         firstLineIndent={firstLineIndent}
+        showRuler={showRuler}
+        onLeftMarginChange={onLeftMarginChange}
+        onRightMarginChange={onRightMarginChange}
+        onFirstLineIndentChange={onFirstLineIndentChange}
         characters={characters}
         onCharacterLink={onCharacterLink}
         onOpenCharacterManager={onOpenCharacterManager}
