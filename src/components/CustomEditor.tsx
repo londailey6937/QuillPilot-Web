@@ -47,8 +47,8 @@ interface CustomEditorProps {
 const INCH_IN_PX = 96;
 const PAGE_WIDTH_PX = INCH_IN_PX * 8;
 const PAGE_HEIGHT_PX = INCH_IN_PX * 11; // 11 inches for US Letter
-const HEADER_PREVIEW_SAFEZONE = 180;
-const FOOTER_PREVIEW_SAFEZONE = 180;
+const HEADER_PREVIEW_HEIGHT = 80; // Fixed height for header preview bar
+const FOOTER_PREVIEW_HEIGHT = 80; // Fixed height for footer preview bar
 const RULER_BACKGROUND_LEFT_OVERHANG = 6;
 const RULER_BACKGROUND_RIGHT_OVERHANG = 12;
 
@@ -243,6 +243,8 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   const characterPopoverRef = useRef<HTMLDivElement>(null);
   const characterButtonRef = useRef<HTMLButtonElement>(null);
   const [rulerAlignedLeft, setRulerAlignedLeft] = useState<number | null>(null);
+  const pageRailRef = useRef<HTMLDivElement>(null);
+  const [footerAlignmentOffset, setFooterAlignmentOffset] = useState(0);
 
   // Pagination state
   const [pageCount, setPageCount] = useState(1);
@@ -399,6 +401,46 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
       Math.min(Math.max(prev, 0), Math.max(0, pageCount - 1))
     );
   }, [pageCount]);
+
+  useEffect(() => {
+    if (!showThumbnailRail) {
+      setFooterAlignmentOffset(0);
+      return;
+    }
+
+    const computeOffset = () => {
+      if (!pageRailRef.current || !wrapperRef.current) {
+        setFooterAlignmentOffset(0);
+        return;
+      }
+
+      const railRect = pageRailRef.current.getBoundingClientRect();
+      const wrapperRect = wrapperRef.current.getBoundingClientRect();
+      const diff = Math.round(wrapperRect.bottom - railRect.bottom);
+      setFooterAlignmentOffset(diff > 0 ? diff : 0);
+    };
+
+    computeOffset();
+    window.addEventListener("resize", computeOffset);
+
+    const observers: ResizeObserver[] = [];
+    if (typeof ResizeObserver !== "undefined") {
+      const attachObserver = (element: Element | null) => {
+        if (!element) return;
+        const observer = new ResizeObserver(() => computeOffset());
+        observer.observe(element);
+        observers.push(observer);
+      };
+
+      attachObserver(pageRailRef.current);
+      attachObserver(wrapperRef.current);
+    }
+
+    return () => {
+      window.removeEventListener("resize", computeOffset);
+      observers.forEach((observer) => observer.disconnect());
+    };
+  }, [showThumbnailRail, pageCount]);
 
   // Format Painter state
   const [formatPainterActive, setFormatPainterActive] = useState(false);
@@ -2263,6 +2305,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
             top: 0,
             zIndex: 20,
             backgroundColor: "transparent",
+            transform: "translateY(-10px)",
           }}
         >
           {/* Left Toolbar Half */}
@@ -3746,6 +3789,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
       >
         {showThumbnailRail && (
           <aside
+            ref={pageRailRef}
             className="page-thumbnail-rail"
             style={{
               width: "220px",
@@ -3848,39 +3892,38 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
             paddingRight: "12px",
           }}
         >
-          {/* Header preview sits outside the page canvas so body text never hides behind it */}
+          {/* Header preview - sticky at top of scroll container */}
           {showHeaderFooter && (
             <div
               style={{
                 position: "sticky",
-                top: "0",
+                top: 0,
                 zIndex: 40,
-                paddingBottom: "16px",
+                backgroundColor: "#eddcc5",
+                paddingBottom: "8px",
+                marginBottom: "8px",
               }}
             >
               <div
                 className="header-preview"
                 style={{
                   width: `${PAGE_WIDTH_PX}px`,
-                  maxWidth: "calc(100% - 48px)",
-                  marginLeft:
-                    rulerAlignedLeft !== null
-                      ? `${rulerAlignedLeft}px`
-                      : "auto",
-                  marginRight: rulerAlignedLeft !== null ? undefined : "auto",
-                  padding: "14px 18px",
-                  borderRadius: "16px",
+                  maxWidth: "100%",
+                  marginLeft: "12px",
+                  marginRight: "auto",
+                  padding: "10px 16px",
+                  borderRadius: "12px",
                   border: "1px solid #e0c392",
                   background:
-                    "linear-gradient(135deg, rgba(255,250,243,0.96), rgba(254,245,231,0.96))",
-                  boxShadow: "0 16px 32px rgba(44, 62, 80, 0.12)",
+                    "linear-gradient(135deg, rgba(255,250,243,0.98), rgba(254,245,231,0.98))",
+                  boxShadow: "0 4px 12px rgba(44, 62, 80, 0.08)",
                 }}
               >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-semibold tracking-wide uppercase text-gray-600">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[10px] font-semibold tracking-wide uppercase text-gray-500">
                     Header Preview
                   </span>
-                  <span className="text-[11px] text-gray-500">
+                  <span className="text-[10px] text-gray-400">
                     Visible while writing • exported on every page
                   </span>
                 </div>
@@ -3897,7 +3940,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                   }}
                 >
                   {showPageNumbers && pageNumberPosition === "header" && (
-                    <span className="text-[11px] text-gray-600 px-2 py-1 rounded-full bg-white border border-gray-200 shadow-sm">
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#3d3229] text-[#f5e6d3] border border-[#5a4a3a]">
                       {facingPages ? "Even" : "Pg #"}
                     </span>
                   )}
@@ -3914,10 +3957,10 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                     }
                     onMouseDown={(e) => e.stopPropagation()}
                     placeholder="Add header text..."
-                    className="flex-1 px-3 py-2 rounded-lg border border-[#e0c392] bg-white/90 text-sm text-gray-700 shadow-sm focus:ring-2 focus:ring-[#ef8432]"
+                    className="flex-1 px-3 py-1.5 rounded-lg border border-[#3d3229] bg-[#3d3229] text-sm text-[#f5e6d3] placeholder-[#a89a8a] focus:ring-2 focus:ring-[#ef8432] focus:outline-none"
                   />
                   {showPageNumbers && pageNumberPosition === "header" && (
-                    <span className="text-[11px] text-gray-600 px-2 py-1 rounded-full bg-white border border-gray-200 shadow-sm">
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#3d3229] text-[#f5e6d3] border border-[#5a4a3a]">
                       {facingPages ? "Odd" : "Pg #"}
                     </span>
                   )}
@@ -3926,22 +3969,15 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
             </div>
           )}
 
-          {/* Page container */}
+          {/* Page container - scrollable content area */}
           <div
             className="pages-stack-shell"
             style={{
               width: `${PAGE_WIDTH_PX}px`,
-              maxWidth: "calc(100% - 48px)",
-              marginLeft:
-                rulerAlignedLeft !== null ? `${rulerAlignedLeft}px` : "auto",
-              marginRight: rulerAlignedLeft !== null ? undefined : "auto",
-              paddingTop: showHeaderFooter
-                ? `${HEADER_PREVIEW_SAFEZONE}px`
-                : "0px",
-              paddingBottom: showHeaderFooter
-                ? `${FOOTER_PREVIEW_SAFEZONE}px`
-                : "16px",
-              transition: "padding 0.2s ease",
+              maxWidth: "100%",
+              marginLeft: "325px",
+              paddingTop: "0px",
+              paddingBottom: "16px",
             }}
           >
             <div
@@ -3952,33 +3988,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                 position: "relative",
               }}
             >
-              {/* Page backgrounds - white rectangles for each page */}
-              {Array.from({ length: pageCount }, (_, i) => (
-                <div
-                  key={`page-bg-${i}`}
-                  style={{
-                    position: "absolute",
-                    left: 0,
-                    right: 0,
-                    top: `${i * PAGE_HEIGHT_PX}px`,
-                    height: `${PAGE_HEIGHT_PX}px`,
-                    backgroundColor: "#ffffff",
-                    boxShadow:
-                      i === 0
-                        ? "0 2px 8px rgba(0, 0, 0, 0.12), 0 4px 16px rgba(0, 0, 0, 0.08)"
-                        : "none",
-                    borderRadius:
-                      i === 0
-                        ? "2px 2px 0 0"
-                        : i === pageCount - 1
-                        ? "0 0 2px 2px"
-                        : "0",
-                    zIndex: 1,
-                  }}
-                />
-              ))}
-
-              {/* The actual editable content */}
+              {/* The actual editable content - single continuous page */}
               <div
                 ref={editorRef}
                 contentEditable={isEditable}
@@ -4002,7 +4012,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                   position: "relative",
                   zIndex: 5,
                   boxShadow:
-                    "0 2px 8px rgba(0, 0, 0, 0.12), 0 4px 16px rgba(0, 0, 0, 0.08)",
+                    "0 14px 32px rgba(44, 62, 80, 0.16), 0 2px 6px rgba(44, 62, 80, 0.08)",
                   borderRadius: "2px",
                   // CSS variable for dynamic text-indent
                   ["--first-line-indent" as string]: `${documentStyles.paragraph.firstLineIndent}px`,
@@ -4010,7 +4020,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                 suppressContentEditableWarning
               />
 
-              {/* Page break lines and page numbers */}
+              {/* Page break lines (visual indicators only) */}
               {pageCount > 1 &&
                 Array.from({ length: pageCount - 1 }, (_, i) => (
                   <div
@@ -4081,39 +4091,38 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
             </div>
           </div>
 
-          {/* Footer preview mirrors the header treatment */}
+          {/* Footer preview - sticky at bottom of scroll container */}
           {showHeaderFooter && (
             <div
               style={{
                 position: "sticky",
-                bottom: "16px",
+                bottom: 0,
                 zIndex: 40,
-                paddingTop: "16px",
+                backgroundColor: "#eddcc5",
+                paddingTop: "8px",
+                marginTop: "8px",
               }}
             >
               <div
                 className="footer-preview"
                 style={{
                   width: `${PAGE_WIDTH_PX}px`,
-                  maxWidth: "calc(100% - 48px)",
-                  marginLeft:
-                    rulerAlignedLeft !== null
-                      ? `${rulerAlignedLeft}px`
-                      : "auto",
-                  marginRight: rulerAlignedLeft !== null ? undefined : "auto",
-                  padding: "14px 18px",
-                  borderRadius: "16px",
+                  maxWidth: "100%",
+                  marginLeft: "12px",
+                  marginRight: "auto",
+                  padding: "10px 16px",
+                  borderRadius: "12px",
                   border: "1px solid #e0c392",
                   background:
-                    "linear-gradient(135deg, rgba(254,245,231,0.96), rgba(255,247,237,0.96))",
-                  boxShadow: "0 -10px 28px rgba(44, 62, 80, 0.08)",
+                    "linear-gradient(135deg, rgba(254,245,231,0.98), rgba(255,247,237,0.98))",
+                  boxShadow: "0 -4px 12px rgba(44, 62, 80, 0.08)",
                 }}
               >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-semibold tracking-wide uppercase text-gray-600">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[10px] font-semibold tracking-wide uppercase text-gray-500">
                     Footer Preview
                   </span>
-                  <span className="text-[11px] text-gray-500">
+                  <span className="text-[10px] text-gray-400">
                     Always printed • mirrors export layout
                   </span>
                 </div>
@@ -4130,7 +4139,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                   }}
                 >
                   {showPageNumbers && pageNumberPosition === "footer" && (
-                    <span className="text-[11px] text-gray-600 px-2 py-1 rounded-full bg-white border border-gray-200 shadow-sm">
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#3d3229] text-[#f5e6d3] border border-[#5a4a3a]">
                       {facingPages ? "Even" : "Pg #"}
                     </span>
                   )}
@@ -4147,10 +4156,10 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                     }
                     onMouseDown={(e) => e.stopPropagation()}
                     placeholder="Add footer text..."
-                    className="flex-1 px-3 py-2 rounded-lg border border-[#e0c392] bg-white/90 text-sm text-gray-700 shadow-sm focus:ring-2 focus:ring-[#ef8432]"
+                    className="flex-1 px-3 py-1.5 rounded-lg border border-[#3d3229] bg-[#3d3229] text-sm text-[#f5e6d3] placeholder-[#a89a8a] focus:ring-2 focus:ring-[#ef8432] focus:outline-none"
                   />
                   {showPageNumbers && pageNumberPosition === "footer" && (
-                    <span className="text-[11px] text-gray-600 px-2 py-1 rounded-full bg-white border border-gray-200 shadow-sm">
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#3d3229] text-[#f5e6d3] border border-[#5a4a3a]">
                       {facingPages ? "Odd" : "Pg #"}
                     </span>
                   )}
