@@ -47,8 +47,6 @@ interface CustomEditorProps {
 const INCH_IN_PX = 96;
 const PAGE_WIDTH_PX = INCH_IN_PX * 8;
 const PAGE_HEIGHT_PX = INCH_IN_PX * 11; // 11 inches for US Letter
-const HEADER_PREVIEW_HEIGHT = 80; // Fixed height for header preview bar
-const FOOTER_PREVIEW_HEIGHT = 80; // Fixed height for footer preview bar
 const RULER_BACKGROUND_LEFT_OVERHANG = 6;
 const RULER_BACKGROUND_RIGHT_OVERHANG = 12;
 
@@ -188,7 +186,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   const editorRef = useRef<HTMLDivElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const pagesContainerRef = useRef<HTMLDivElement>(null);
-  const isEditingHeaderFooterRef = useRef(false); // Track when editing header/footer inputs
+  // Header/footer preview inputs removed - ref no longer needed
   const [analysis, setAnalysis] = useState<AnalysisData>({
     spacing: [],
     visuals: [],
@@ -496,8 +494,8 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     },
   });
 
-  // Header/Footer state
-  const [showHeaderFooter, setShowHeaderFooter] = useState(true);
+  // Header/Footer state - preview panels removed, keeping export functionality
+  const [showHeaderFooter] = useState(false);
   const [headerText, setHeaderText] = useState("");
   const [footerText, setFooterText] = useState("");
   const [showPageNumbers, setShowPageNumbers] = useState(true);
@@ -1147,10 +1145,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     (command: string, value?: string) => {
       document.execCommand(command, false, value);
       updateFormatState();
-      // Only focus the editor if we're not editing header/footer
-      if (!isEditingHeaderFooterRef.current) {
-        editorRef.current?.focus();
-      }
+      editorRef.current?.focus();
       // Trigger input to save to history
       setTimeout(() => handleInput(), 0);
     },
@@ -2789,32 +2784,6 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                 ⌨️
               </button>
 
-              <div style={toolbarDividerStyle} aria-hidden="true" />
-
-              {/* Header/Footer toggle */}
-              <button
-                onClick={() => setShowHeaderFooter(!showHeaderFooter)}
-                className="px-2 py-1 rounded transition-colors text-xs"
-                style={
-                  showHeaderFooter
-                    ? {
-                        background: "#2c3e50",
-                        color: "#ffffff",
-                        border: "1px solid #2c3e50",
-                      }
-                    : {
-                        background: "transparent",
-                        color: "#374151",
-                        border: "1px solid transparent",
-                      }
-                }
-                title={
-                  showHeaderFooter ? "Hide Header/Footer" : "Show Header/Footer"
-                }
-              >
-                📄
-              </button>
-
               {/* Character Management (Tier 3 only) */}
               {isProfessionalTier && onOpenCharacterManager && (
                 <>
@@ -3619,15 +3588,6 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                         </label>
                       </>
                     )}
-                    <label className="flex items-center gap-1 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={showHeaderFooter}
-                        onChange={(e) => setShowHeaderFooter(e.target.checked)}
-                        className="w-3 h-3 rounded border-gray-300 text-[#ef8432] focus:ring-[#ef8432]"
-                      />
-                      <span className="text-gray-600">Show in editor</span>
-                    </label>
                   </div>
                 </div>
               </div>
@@ -3892,83 +3852,6 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
             paddingRight: "12px",
           }}
         >
-          {/* Header preview - sticky at top of scroll container */}
-          {showHeaderFooter && (
-            <div
-              style={{
-                position: "sticky",
-                top: 0,
-                zIndex: 40,
-                backgroundColor: "#eddcc5",
-                paddingBottom: "8px",
-                marginBottom: "8px",
-              }}
-            >
-              <div
-                className="header-preview"
-                style={{
-                  width: `${PAGE_WIDTH_PX}px`,
-                  maxWidth: "100%",
-                  marginLeft: "12px",
-                  marginRight: "auto",
-                  padding: "10px 16px",
-                  borderRadius: "12px",
-                  border: "1px solid #e0c392",
-                  background:
-                    "linear-gradient(135deg, rgba(255,250,243,0.98), rgba(254,245,231,0.98))",
-                  boxShadow: "0 4px 12px rgba(44, 62, 80, 0.08)",
-                }}
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-[10px] font-semibold tracking-wide uppercase text-gray-500">
-                    Header Preview
-                  </span>
-                  <span className="text-[10px] text-gray-400">
-                    Visible while writing • exported on every page
-                  </span>
-                </div>
-                <div
-                  className="flex items-center gap-3"
-                  style={{
-                    justifyContent: facingPages
-                      ? "space-between"
-                      : headerAlign === "center"
-                      ? "center"
-                      : headerAlign === "right"
-                      ? "flex-end"
-                      : "flex-start",
-                  }}
-                >
-                  {showPageNumbers && pageNumberPosition === "header" && (
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#3d3229] text-[#f5e6d3] border border-[#5a4a3a]">
-                      {facingPages ? "Even" : "Pg #"}
-                    </span>
-                  )}
-                  <input
-                    type="text"
-                    value={headerText}
-                    onChange={(e) => setHeaderText(e.target.value)}
-                    onFocus={() => (isEditingHeaderFooterRef.current = true)}
-                    onBlur={() =>
-                      setTimeout(
-                        () => (isEditingHeaderFooterRef.current = false),
-                        100
-                      )
-                    }
-                    onMouseDown={(e) => e.stopPropagation()}
-                    placeholder="Add header text..."
-                    className="flex-1 px-3 py-1.5 rounded-lg border border-[#3d3229] bg-[#3d3229] text-sm text-[#f5e6d3] placeholder-[#a89a8a] focus:ring-2 focus:ring-[#ef8432] focus:outline-none"
-                  />
-                  {showPageNumbers && pageNumberPosition === "header" && (
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#3d3229] text-[#f5e6d3] border border-[#5a4a3a]">
-                      {facingPages ? "Odd" : "Pg #"}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* Page container - scrollable content area */}
           <div
             className="pages-stack-shell"
@@ -4090,83 +3973,6 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                 })}
             </div>
           </div>
-
-          {/* Footer preview - sticky at bottom of scroll container */}
-          {showHeaderFooter && (
-            <div
-              style={{
-                position: "sticky",
-                bottom: 0,
-                zIndex: 40,
-                backgroundColor: "#eddcc5",
-                paddingTop: "8px",
-                marginTop: "8px",
-              }}
-            >
-              <div
-                className="footer-preview"
-                style={{
-                  width: `${PAGE_WIDTH_PX}px`,
-                  maxWidth: "100%",
-                  marginLeft: "12px",
-                  marginRight: "auto",
-                  padding: "10px 16px",
-                  borderRadius: "12px",
-                  border: "1px solid #e0c392",
-                  background:
-                    "linear-gradient(135deg, rgba(254,245,231,0.98), rgba(255,247,237,0.98))",
-                  boxShadow: "0 -4px 12px rgba(44, 62, 80, 0.08)",
-                }}
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-[10px] font-semibold tracking-wide uppercase text-gray-500">
-                    Footer Preview
-                  </span>
-                  <span className="text-[10px] text-gray-400">
-                    Always printed • mirrors export layout
-                  </span>
-                </div>
-                <div
-                  className="flex items-center gap-3"
-                  style={{
-                    justifyContent: facingPages
-                      ? "space-between"
-                      : footerAlign === "center"
-                      ? "center"
-                      : footerAlign === "right"
-                      ? "flex-end"
-                      : "flex-start",
-                  }}
-                >
-                  {showPageNumbers && pageNumberPosition === "footer" && (
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#3d3229] text-[#f5e6d3] border border-[#5a4a3a]">
-                      {facingPages ? "Even" : "Pg #"}
-                    </span>
-                  )}
-                  <input
-                    type="text"
-                    value={footerText}
-                    onChange={(e) => setFooterText(e.target.value)}
-                    onFocus={() => (isEditingHeaderFooterRef.current = true)}
-                    onBlur={() =>
-                      setTimeout(
-                        () => (isEditingHeaderFooterRef.current = false),
-                        100
-                      )
-                    }
-                    onMouseDown={(e) => e.stopPropagation()}
-                    placeholder="Add footer text..."
-                    className="flex-1 px-3 py-1.5 rounded-lg border border-[#3d3229] bg-[#3d3229] text-sm text-[#f5e6d3] placeholder-[#a89a8a] focus:ring-2 focus:ring-[#ef8432] focus:outline-none"
-                  />
-                  {showPageNumbers && pageNumberPosition === "footer" && (
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#3d3229] text-[#f5e6d3] border border-[#5a4a3a]">
-                      {facingPages ? "Odd" : "Pg #"}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* Spacing indicators overlay */}
           {renderIndicators()}
