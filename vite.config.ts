@@ -2,6 +2,22 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
 
+// Debug: Log env vars during build (check Vercel build logs)
+console.log("🔍 BUILD ENV CHECK:");
+console.log("  VITE_SUPABASE_URL exists:", !!process.env.VITE_SUPABASE_URL);
+console.log(
+  "  VITE_SUPABASE_URL starts with https:",
+  process.env.VITE_SUPABASE_URL?.startsWith("https://")
+);
+console.log(
+  "  VITE_SUPABASE_ANON_KEY exists:",
+  !!process.env.VITE_SUPABASE_ANON_KEY
+);
+console.log(
+  "  VITE_SUPABASE_ANON_KEY length:",
+  process.env.VITE_SUPABASE_ANON_KEY?.length || 0
+);
+
 export default defineConfig({
   plugins: [react()],
   resolve: {
