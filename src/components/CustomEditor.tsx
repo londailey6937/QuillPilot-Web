@@ -2172,12 +2172,6 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     if (!isFreeMode && focusMode) return null;
 
     const paragraphs = Array.from(editorRef.current.querySelectorAll("p, div"));
-    const wrapperRect = wrapperRef.current?.getBoundingClientRect();
-    if (!wrapperRect) return null;
-
-    const scrollTop = wrapperRef.current?.scrollTop || 0;
-
-    // Use the pages container rect (the white page area) for alignment
     const pagesRect = pagesContainerRef.current?.getBoundingClientRect();
     if (!pagesRect) return null;
 
@@ -2200,8 +2194,8 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
             colors[item.tone as keyof typeof colors] || colors.balanced
           } select-none whitespace-nowrap pointer-events-none`}
           style={{
-            top: `${rect.top - wrapperRect.top + scrollTop - 24}px`,
-            left: `${pagesRect.left - wrapperRect.left - 10}px`,
+            top: `${rect.top - pagesRect.top - 24}px`,
+            left: "-10px",
             transform: "translateX(-100%)",
           }}
         >
@@ -2222,12 +2216,6 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     }
 
     const paragraphs = Array.from(editorRef.current.querySelectorAll("p, div"));
-    const wrapperRect = wrapperRef.current?.getBoundingClientRect();
-    if (!wrapperRect) return null;
-
-    const scrollTop = wrapperRef.current?.scrollTop || 0;
-
-    // Use the pages container rect (the white page area) for alignment
     const pagesRect = pagesContainerRef.current?.getBoundingClientRect();
     if (!pagesRect) return null;
 
@@ -2247,8 +2235,9 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           key={`visual-${idx}`}
           className="absolute p-1.5 bg-yellow-50 border-l-3 border-yellow-400 rounded text-xs text-yellow-900 select-none pointer-events-none"
           style={{
-            top: `${rect.top - wrapperRect.top + scrollTop - 24}px`,
-            left: `${pagesRect.right - wrapperRect.left + 10}px`,
+            top: `${rect.top - pagesRect.top - 24}px`,
+            right: "-10px",
+            transform: "translateX(100%)",
             maxWidth: "200px",
           }}
         >
@@ -3755,7 +3744,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                     position: "sticky",
                     top: 0,
                     zIndex: 20,
-                    backgroundColor: "transparent",
+                    backgroundColor: "#eddcc5",
                   }}
                 >
                   <div
@@ -3776,7 +3765,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                         bottom: 0,
                         left: `-${RULER_BACKGROUND_LEFT_OVERHANG}px`,
                         right: `-${RULER_BACKGROUND_RIGHT_OVERHANG}px`,
-                        backgroundColor: "rgba(255,255,255,0.6)",
+                        backgroundColor: "#fffaf3",
                         borderRadius: "4px",
                         border: "1px solid #e0c392",
                         boxShadow: "0 4px 12px rgba(44, 62, 80, 0.12)",
@@ -4053,16 +4042,15 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                     );
                   })}
               </div>
+              {/* Spacing indicators overlay */}
+              {renderIndicators()}
+
+              {/* Visual suggestions overlay */}
+              {renderSuggestions()}
             </div>
             {/* End pages-container and pages-stack-shell */}
           </div>
           {/* End scrollable page container */}
-
-          {/* Spacing indicators overlay */}
-          {renderIndicators()}
-
-          {/* Visual suggestions overlay */}
-          {renderSuggestions()}
         </div>
       </div>
 
