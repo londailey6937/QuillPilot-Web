@@ -436,8 +436,9 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
         }, 200);
       }
 
-      if (wrapperRef.current) {
-        wrapperRef.current.scrollTo({
+      // scrollShellRef is the actual scrollable container (wrapperRef has overflow:hidden)
+      if (scrollShellRef.current) {
+        scrollShellRef.current.scrollTo({
           top: target * PAGE_HEIGHT_PX,
           behavior: "smooth",
         });
@@ -2167,7 +2168,12 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
 
   // Render spacing indicators - positioned relative to pagesContainer
   const renderIndicators = () => {
-    if (!editorRef.current || !pagesContainerRef.current || !showSpacingIndicators) return null;
+    if (
+      !editorRef.current ||
+      !pagesContainerRef.current ||
+      !showSpacingIndicators
+    )
+      return null;
     // In free mode, always show indicators. In paid mode, respect focus mode toggle.
     if (!isFreeMode && focusMode) return null;
 
@@ -2207,7 +2213,11 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
 
   // Render visual suggestions - positioned relative to pagesContainer
   const renderSuggestions = () => {
-    if (!editorRef.current || !pagesContainerRef.current || !showVisualSuggestions) {
+    if (
+      !editorRef.current ||
+      !pagesContainerRef.current ||
+      !showVisualSuggestions
+    ) {
       return null;
     }
     // In free mode, always show suggestions. In paid mode, respect focus mode toggle.
