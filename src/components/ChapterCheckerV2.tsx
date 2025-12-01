@@ -1059,6 +1059,17 @@ export const ChapterCheckerV2: React.FC = () => {
       lastSaved: new Date().toISOString(),
     };
 
+    // Extract book title from HTML if present
+    const bookTitleMatch = content.html.match(
+      /<p[^>]*class="[^"]*book-title[^"]*"[^>]*>([^<]+)<\/p>/i
+    );
+    if (bookTitleMatch && bookTitleMatch[1]) {
+      const extractedTitle = bookTitleMatch[1].trim();
+      if (extractedTitle && extractedTitle !== "Book Title") {
+        setFileName(extractedTitle);
+      }
+    }
+
     setChapterData((prev) =>
       prev
         ? {
@@ -2230,53 +2241,53 @@ export const ChapterCheckerV2: React.FC = () => {
                   accessLevel={accessLevel}
                 />
 
-                <button
-                  onClick={() => {
-                    const confirm = window.confirm(
-                      "🗑️ Clear Document\n\nThis will clear your current document and start fresh. Continue?"
-                    );
-                    if (confirm) {
-                      setChapterData(null);
-                      setAnalysis(null);
-                      setFileName("");
-                      setError("");
-                      setGeneralConcepts([]);
-                      setSelectedDomain("none");
-                      setCustomDomainName("");
-                    }
-                  }}
-                  disabled={isAnalyzing || !chapterData}
-                  style={{
-                    padding: "6px 12px",
-                    backgroundColor:
-                      chapterData && !isAnalyzing ? "white" : "#e2e8f0",
-                    color: chapterData && !isAnalyzing ? "#2c3e50" : "#9ca3af",
-                    border: "1.5px solid #e0c392",
-                    borderRadius: "12px",
-                    cursor:
-                      chapterData && !isAnalyzing ? "pointer" : "not-allowed",
-                    fontSize: "12px",
-                    fontWeight: "600",
-                    transition: "all 0.2s",
-                    whiteSpace: "nowrap",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "4px",
-                  }}
-                  onMouseEnter={(e) => {
-                    if (chapterData && !isAnalyzing) {
-                      e.currentTarget.style.backgroundColor = "#f7e6d0";
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (chapterData && !isAnalyzing) {
-                      e.currentTarget.style.backgroundColor = "white";
-                    }
-                  }}
-                  title="Clear document and start fresh"
-                >
-                  🗑️
-                </button>
+                {viewMode === "writer" && chapterData && (
+                  <button
+                    onClick={() => {
+                      const confirm = window.confirm(
+                        "🗑️ Clear Document\n\nThis will clear your current document and start fresh. Continue?"
+                      );
+                      if (confirm) {
+                        setChapterData(null);
+                        setAnalysis(null);
+                        setFileName("");
+                        setError("");
+                        setGeneralConcepts([]);
+                        setSelectedDomain("none");
+                        setCustomDomainName("");
+                      }
+                    }}
+                    disabled={isAnalyzing}
+                    style={{
+                      padding: "6px 12px",
+                      backgroundColor: !isAnalyzing ? "#fef5e7" : "#e2e8f0",
+                      color: !isAnalyzing ? "#2c3e50" : "#9ca3af",
+                      border: "1.5px solid #e0c392",
+                      borderRadius: "12px",
+                      cursor: !isAnalyzing ? "pointer" : "not-allowed",
+                      fontSize: "12px",
+                      fontWeight: "600",
+                      transition: "all 0.2s",
+                      whiteSpace: "nowrap",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "4px",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isAnalyzing) {
+                        e.currentTarget.style.backgroundColor = "#f7e6d0";
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isAnalyzing) {
+                        e.currentTarget.style.backgroundColor = "#fef5e7";
+                      }
+                    }}
+                    title="Clear document and start fresh"
+                  >
+                    🗑️
+                  </button>
+                )}
 
                 {chapterData && !isAnalyzing && (
                   <>
@@ -2284,7 +2295,7 @@ export const ChapterCheckerV2: React.FC = () => {
                       onClick={handleExportDocx}
                       style={{
                         padding: "6px 12px",
-                        backgroundColor: "white",
+                        backgroundColor: "#fef5e7",
                         color: "#2c3e50",
                         border: "1.5px solid #e0c392",
                         borderRadius: "12px",
@@ -2301,7 +2312,7 @@ export const ChapterCheckerV2: React.FC = () => {
                         e.currentTarget.style.backgroundColor = "#f7e6d0";
                       }}
                       onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = "white";
+                        e.currentTarget.style.backgroundColor = "#fef5e7";
                       }}
                       title="Export DOCX (Microsoft Word)"
                     >
@@ -2339,7 +2350,7 @@ export const ChapterCheckerV2: React.FC = () => {
                       onClick={handleExportPdf}
                       style={{
                         padding: "6px 12px",
-                        backgroundColor: "white",
+                        backgroundColor: "#fef5e7",
                         color: "#2c3e50",
                         border: "1.5px solid #e0c392",
                         borderRadius: "12px",
@@ -2356,7 +2367,7 @@ export const ChapterCheckerV2: React.FC = () => {
                         e.currentTarget.style.backgroundColor = "#f7e6d0";
                       }}
                       onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = "white";
+                        e.currentTarget.style.backgroundColor = "#fef5e7";
                       }}
                       title="Export PDF (Manuscript Format)"
                     >
@@ -2400,7 +2411,7 @@ export const ChapterCheckerV2: React.FC = () => {
                       onClick={handleExportHtml}
                       style={{
                         padding: "6px 12px",
-                        backgroundColor: "white",
+                        backgroundColor: "#fef5e7",
                         color: "#2c3e50",
                         border: "1.5px solid #e0c392",
                         borderRadius: "12px",
@@ -2417,7 +2428,7 @@ export const ChapterCheckerV2: React.FC = () => {
                         e.currentTarget.style.backgroundColor = "#f7e6d0";
                       }}
                       onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = "white";
+                        e.currentTarget.style.backgroundColor = "#fef5e7";
                       }}
                       title="Export HTML (Open in Browser)"
                     >
@@ -2469,7 +2480,7 @@ export const ChapterCheckerV2: React.FC = () => {
                       onClick={handlePrint}
                       style={{
                         padding: "6px 12px",
-                        backgroundColor: "white",
+                        backgroundColor: "#fef5e7",
                         color: "#2c3e50",
                         border: "1.5px solid #e0c392",
                         borderRadius: "12px",
@@ -2486,7 +2497,7 @@ export const ChapterCheckerV2: React.FC = () => {
                         e.currentTarget.style.backgroundColor = "#f7e6d0";
                       }}
                       onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = "white";
+                        e.currentTarget.style.backgroundColor = "#fef5e7";
                       }}
                       title="Print Document"
                     >
@@ -2556,7 +2567,7 @@ export const ChapterCheckerV2: React.FC = () => {
                           onClick={() => setShowTemplateSelector(true)}
                           style={{
                             padding: "6px 12px",
-                            backgroundColor: "white",
+                            backgroundColor: "#fef5e7",
                             color: "#2c3e50",
                             border: "1.5px solid #e0c392",
                             borderRadius: "12px",
@@ -2570,7 +2581,7 @@ export const ChapterCheckerV2: React.FC = () => {
                             e.currentTarget.style.backgroundColor = "#f7e6d0";
                           }}
                           onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = "white";
+                            e.currentTarget.style.backgroundColor = "#fef5e7";
                           }}
                           title="Generate AI Template"
                         >

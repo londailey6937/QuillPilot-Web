@@ -236,6 +236,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   const [blockType, setBlockType] = useState("p");
   const [fontFamily, setFontFamily] = useState("default");
   const [fontSize, setFontSize] = useState("16px");
+  const [showStyleLabels, setShowStyleLabels] = useState(true);
   const [showLinkModal, setShowLinkModal] = useState(false);
   const [linkUrl, setLinkUrl] = useState("");
   const [showFindReplace, setShowFindReplace] = useState(false);
@@ -598,18 +599,21 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     heading1: {
       fontSize: 28,
       fontWeight: "bold" as "normal" | "bold",
+      textAlign: "left" as "left" | "center",
       marginTop: 1.5,
       marginBottom: 0.8,
     },
     heading2: {
       fontSize: 22,
       fontWeight: "bold" as "normal" | "bold",
+      textAlign: "left" as "left" | "center",
       marginTop: 1.2,
       marginBottom: 0.6,
     },
     heading3: {
       fontSize: 18,
       fontWeight: "bold" as "normal" | "bold",
+      textAlign: "left" as "left" | "center",
       marginTop: 1,
       marginBottom: 0.5,
     },
@@ -620,6 +624,9 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
       borderLeftColor: "#e0c392",
     },
   });
+
+  // Active style template tracking
+  const [activeTemplate, setActiveTemplate] = useState<string | null>(null);
 
   // Header/Footer state - preview panels removed, keeping export functionality
   const [showHeaderFooter] = useState(false);
@@ -1480,6 +1487,8 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
 
           p.className = styleMap[tag] || "";
           p.removeAttribute("data-block");
+          // Trigger handleInput to update stats panel
+          setTimeout(() => handleInput(), 0);
         } else {
           // Create new styled paragraph
           const placeholders: { [key: string]: string } = {
@@ -2241,6 +2250,70 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
         return;
       }
 
+      // Handle Enter key - reset title/heading styles to paragraph after Enter
+      if (e.key === "Enter" && !e.shiftKey && !modKey) {
+        const selection = window.getSelection();
+        if (selection && selection.anchorNode) {
+          let node = selection.anchorNode.parentElement;
+          while (node && node !== editorRef.current) {
+            const tag = node.tagName?.toLowerCase();
+            const className = node.className || "";
+            // Check for heading or special title elements
+            if (
+              ["h1", "h2", "h3", "h4", "h5", "h6"].includes(tag || "") ||
+              className.includes("book-title") ||
+              className.includes("chapter-heading") ||
+              className.includes("subtitle") ||
+              className.includes("title-content") ||
+              className.includes("part-title")
+            ) {
+              // Let the Enter happen, then reset to paragraph
+              setTimeout(() => {
+                const newSelection = window.getSelection();
+                if (newSelection && newSelection.anchorNode) {
+                  let newNode = newSelection.anchorNode;
+                  if (newNode.nodeType === Node.TEXT_NODE) {
+                    newNode = newNode.parentNode as Node;
+                  }
+                  // Check if we're now in a new element that inherited the heading style
+                  const newElement = newNode as HTMLElement;
+                  if (newElement && newElement.tagName) {
+                    const newTag = newElement.tagName.toLowerCase();
+                    const newClass = newElement.className || "";
+                    if (
+                      ["h1", "h2", "h3", "h4", "h5", "h6"].includes(newTag) ||
+                      newClass.includes("book-title") ||
+                      newClass.includes("chapter-heading") ||
+                      newClass.includes("subtitle") ||
+                      newClass.includes("title-content") ||
+                      newClass.includes("part-title")
+                    ) {
+                      // Convert this element to a paragraph
+                      document.execCommand("formatBlock", false, "p");
+                      // Remove any special classes
+                      const updatedSelection = window.getSelection();
+                      if (updatedSelection && updatedSelection.anchorNode) {
+                        let pNode = updatedSelection.anchorNode;
+                        if (pNode.nodeType === Node.TEXT_NODE) {
+                          pNode = pNode.parentNode as Node;
+                        }
+                        const pElement = pNode as HTMLElement;
+                        if (pElement) {
+                          pElement.className = "";
+                        }
+                      }
+                      handleInput();
+                    }
+                  }
+                }
+              }, 0);
+              return; // Let browser handle the Enter naturally
+            }
+            node = node.parentElement;
+          }
+        }
+      }
+
       // Only process keyboard shortcuts that use modifier keys (Cmd/Ctrl or Alt)
       // Let all other keys pass through without preventDefault for natural auto-repeat
       if (!modKey && !e.altKey && !e.shiftKey) {
@@ -2352,7 +2425,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           break;
       }
     },
-    [formatText, performUndo, performRedo, changeBlockType, onSave]
+    [formatText, performUndo, performRedo, changeBlockType, onSave, handleInput]
   );
 
   // Update format state
@@ -2580,7 +2653,8 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     if (
       !editorRef.current ||
       !pagesContainerRef.current ||
-      !showSpacingIndicators
+      !showSpacingIndicators ||
+      !showStyleLabels
     )
       return null;
     // In free mode, always show indicators. In paid mode, respect focus mode toggle.
@@ -2663,7 +2737,8 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     if (
       !editorRef.current ||
       !pagesContainerRef.current ||
-      !showVisualSuggestions
+      !showVisualSuggestions ||
+      !showStyleLabels
     ) {
       return null;
     }
@@ -2715,6 +2790,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
 
   // Render the analysis legend (positioned in toolbar row)
   const renderAnalysisLegend = () => {
+    if (!showStyleLabels) return null;
     if (!showSpacingIndicators && !showVisualSuggestions) return null;
     if (!isFreeMode && focusMode) return null;
 
@@ -2955,10 +3031,55 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               {/* Styles Panel Button */}
               <button
                 onClick={() => setShowStylesPanel(true)}
-                className="px-1.5 py-1 rounded border bg-white hover:bg-[#f7e6d0] text-[#2c3e50] transition-colors text-xs"
+                className="px-1.5 py-1 rounded border border-[#e0c392] bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50] transition-colors text-xs"
                 title="Styles"
               >
                 ⚙
+              </button>
+
+              {/* Font Family dropdown */}
+              <select
+                value={fontFamily}
+                onChange={(e) => {
+                  const newFont = e.target.value;
+                  setFontFamily(newFont);
+                  if (newFont === "default") {
+                    formatText("fontName", "inherit");
+                  } else {
+                    formatText("fontName", newFont);
+                  }
+                }}
+                className="px-1.5 py-1 rounded border bg-white hover:bg-gray-50 transition-colors text-xs"
+                title="Font Family"
+                style={{ maxWidth: "100px" }}
+              >
+                <option value="default">Default</option>
+                <option value="Georgia, serif">Georgia</option>
+                <option value="Times New Roman, serif">Times New Roman</option>
+                <option value="Palatino Linotype, serif">Palatino</option>
+                <option value="Garamond, serif">Garamond</option>
+                <option value="Arial, sans-serif">Arial</option>
+                <option value="Helvetica, sans-serif">Helvetica</option>
+                <option value="Verdana, sans-serif">Verdana</option>
+                <option value="Courier New, monospace">Courier New</option>
+                <option value="Courier Prime, monospace">Courier Prime</option>
+              </select>
+
+              {/* Style Labels Toggle */}
+              <button
+                onClick={() => setShowStyleLabels(!showStyleLabels)}
+                className={`px-1.5 py-1 rounded border transition-colors text-xs ${
+                  showStyleLabels
+                    ? "bg-[#f7e6d0] text-[#ef8432] border-[#ef8432]"
+                    : "bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50] border-[#e0c392]"
+                }`}
+                title={
+                  showStyleLabels
+                    ? "Hide Style Labels & Indicators"
+                    : "Show Style Labels & Indicators"
+                }
+              >
+                🏷️
               </button>
 
               <div style={toolbarDividerStyle} aria-hidden="true" />
@@ -2971,8 +3092,8 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                 }}
                 className={`px-2 py-1 rounded font-bold transition-colors text-xs ${
                   isBold
-                    ? "bg-blue-100 text-blue-700"
-                    : "hover:bg-gray-200 text-gray-700"
+                    ? "bg-[#f7e6d0] text-[#ef8432] border border-[#ef8432]"
+                    : "bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50]"
                 }`}
                 title="Bold"
               >
@@ -2985,8 +3106,8 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                 }}
                 className={`px-2 py-1 rounded italic transition-colors text-xs ${
                   isItalic
-                    ? "bg-blue-100 text-blue-700"
-                    : "hover:bg-gray-200 text-gray-700"
+                    ? "bg-[#f7e6d0] text-[#ef8432] border border-[#ef8432]"
+                    : "bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50]"
                 }`}
                 title="Italic"
               >
@@ -2999,8 +3120,8 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                 }}
                 className={`px-2 py-1 rounded underline transition-colors text-xs ${
                   isUnderline
-                    ? "bg-blue-100 text-blue-700"
-                    : "hover:bg-gray-200 text-gray-700"
+                    ? "bg-[#f7e6d0] text-[#ef8432] border border-[#ef8432]"
+                    : "bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50]"
                 }`}
                 title="Underline"
               >
@@ -3017,8 +3138,8 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                 }}
                 className={`px-1.5 py-1 rounded transition-colors text-xs ${
                   textAlign === "left"
-                    ? "bg-blue-100 text-blue-700"
-                    : "hover:bg-gray-200 text-gray-700"
+                    ? "bg-[#f7e6d0] text-[#ef8432] border border-[#ef8432]"
+                    : "bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50]"
                 }`}
                 title="Align Left"
               >
@@ -3031,8 +3152,8 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                 }}
                 className={`px-1.5 py-1 rounded transition-colors text-xs ${
                   textAlign === "center"
-                    ? "bg-blue-100 text-blue-700"
-                    : "hover:bg-gray-200 text-gray-700"
+                    ? "bg-[#f7e6d0] text-[#ef8432] border border-[#ef8432]"
+                    : "bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50]"
                 }`}
                 title="Center"
               >
@@ -3045,8 +3166,8 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                 }}
                 className={`px-1.5 py-1 rounded transition-colors text-xs ${
                   textAlign === "right"
-                    ? "bg-blue-100 text-blue-700"
-                    : "hover:bg-gray-200 text-gray-700"
+                    ? "bg-[#f7e6d0] text-[#ef8432] border border-[#ef8432]"
+                    : "bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50]"
                 }`}
                 title="Align Right"
               >
@@ -3083,7 +3204,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                   e.preventDefault();
                   formatText("insertUnorderedList");
                 }}
-                className="px-2 py-1 rounded hover:bg-gray-200 text-gray-700 transition-colors text-xs"
+                className="px-2 py-1 rounded bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50] transition-colors text-xs"
                 title="Bullet List"
               >
                 •
@@ -3093,7 +3214,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                   e.preventDefault();
                   formatText("insertOrderedList");
                 }}
-                className="px-2 py-1 rounded hover:bg-gray-200 text-gray-700 transition-colors text-xs"
+                className="px-2 py-1 rounded bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50] transition-colors text-xs"
                 title="Numbered List"
               >
                 1.
@@ -3106,8 +3227,8 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                 onClick={openBookmarkModal}
                 className={`px-2 py-1 rounded transition-colors text-xs ${
                   bookmarks.length > 0
-                    ? "bg-amber-50 text-amber-700 hover:bg-amber-100"
-                    : "hover:bg-gray-200 text-gray-700"
+                    ? "bg-[#f7e6d0] text-[#ef8432] border border-[#ef8432]"
+                    : "bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50]"
                 }`}
                 title="Add Bookmark"
               >
@@ -3117,8 +3238,8 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                 onClick={openCrossRefModal}
                 className={`px-2 py-1 rounded transition-colors text-xs ${
                   crossReferences.length > 0
-                    ? "bg-purple-50 text-purple-700 hover:bg-purple-100"
-                    : "hover:bg-gray-200 text-gray-700"
+                    ? "bg-[#f7e6d0] text-[#ef8432] border border-[#ef8432]"
+                    : "bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50]"
                 }`}
                 title="Add Cross-Reference"
               >
@@ -3128,8 +3249,8 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                 onClick={() => setShowBookmarksPanel(!showBookmarksPanel)}
                 className={`px-2 py-1 rounded transition-colors text-xs ${
                   showBookmarksPanel
-                    ? "bg-blue-100 text-blue-700"
-                    : "hover:bg-gray-200 text-gray-700"
+                    ? "bg-[#f7e6d0] text-[#ef8432] border border-[#ef8432]"
+                    : "bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50]"
                 }`}
                 title={`View Bookmarks & References (${
                   bookmarks.length + crossReferences.length
@@ -3138,7 +3259,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                 📋
               </button>
               <label
-                className="px-2 py-1 rounded hover:bg-gray-200 text-gray-700 transition-colors cursor-pointer text-xs"
+                className="px-2 py-1 rounded bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50] transition-colors cursor-pointer text-xs"
                 title="Image"
               >
                 📸
@@ -3157,8 +3278,8 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                 onClick={() => setShowFindReplace(!showFindReplace)}
                 className={`px-2 py-1 rounded transition-colors text-xs ${
                   showFindReplace
-                    ? "bg-blue-100 text-blue-700"
-                    : "hover:bg-gray-200 text-gray-700"
+                    ? "bg-[#f7e6d0] text-[#ef8432] border border-[#ef8432]"
+                    : "bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50]"
                 }`}
                 title="Find"
               >
@@ -3785,10 +3906,14 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
 
       {/* Styles Panel Modal */}
       {showStylesPanel && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center z-[100] p-4 pt-16 overflow-y-auto">
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center z-[100] p-4 pt-16 overflow-y-auto"
+          onClick={() => setShowStylesPanel(false)}
+        >
           <div
             className="bg-white rounded-lg shadow-2xl w-full max-w-xl max-h-[80vh] overflow-hidden flex flex-col"
             style={{ border: "2px solid #e0c392" }}
+            onClick={(e) => e.stopPropagation()}
           >
             <div className="p-3 border-b bg-gradient-to-r from-[#fef5e7] to-[#fff7ed] flex-shrink-0">
               <h2 className="text-lg font-bold text-[#2c3e50]">
@@ -4118,6 +4243,33 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                           step="0.1"
                         />
                       </div>
+                      <div>
+                        <label className="block text-xs text-gray-400">
+                          Align
+                        </label>
+                        <select
+                          value={
+                            (
+                              documentStyles[
+                                heading as keyof typeof documentStyles
+                              ] as any
+                            ).textAlign || "left"
+                          }
+                          onChange={(e) =>
+                            setDocumentStyles((prev) => ({
+                              ...prev,
+                              [heading]: {
+                                ...(prev as any)[heading],
+                                textAlign: e.target.value,
+                              },
+                            }))
+                          }
+                          className="w-full px-1 py-1 border rounded text-xs focus:ring-1 focus:ring-[#ef8432]"
+                        >
+                          <option value="left">Left</option>
+                          <option value="center">Center</option>
+                        </select>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -4353,18 +4505,21 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                     heading1: {
                       fontSize: 28,
                       fontWeight: "bold",
+                      textAlign: "left",
                       marginTop: 1.5,
                       marginBottom: 0.8,
                     },
                     heading2: {
                       fontSize: 22,
                       fontWeight: "bold",
+                      textAlign: "left",
                       marginTop: 1.2,
                       marginBottom: 0.6,
                     },
                     heading3: {
                       fontSize: 18,
                       fontWeight: "bold",
+                      textAlign: "left",
                       marginTop: 1,
                       marginBottom: 0.5,
                     },
@@ -4387,12 +4542,6 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                 Reset to Defaults
               </button>
               <div className="flex gap-2">
-                <button
-                  onClick={() => setShowStylesPanel(false)}
-                  className="px-3 py-1.5 text-sm border border-gray-300 rounded hover:bg-gray-100 transition-colors"
-                >
-                  Cancel
-                </button>
                 <button
                   onClick={() => {
                     // Apply styles to CSS variables and close
@@ -4468,7 +4617,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           </button>
           <button
             onClick={() => setShowFindReplace(false)}
-            className="px-3 py-1.5 hover:bg-gray-200 rounded transition-colors text-sm"
+            className="px-3 py-1.5 hover:bg-gray-200 text-gray-700 rounded transition-colors text-sm"
           >
             Close
           </button>
@@ -5246,7 +5395,8 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               }}
             >
               {/* Analysis Legend - centered above the ruler */}
-              {(showSpacingIndicators || showVisualSuggestions) &&
+              {showStyleLabels &&
+                (showSpacingIndicators || showVisualSuggestions) &&
                 !focusMode && (
                   <div
                     style={{
@@ -5462,6 +5612,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
 
               {/* Legend fallback when ruler is hidden */}
               {!showRuler &&
+                showStyleLabels &&
                 (showSpacingIndicators || showVisualSuggestions) &&
                 !(!isFreeMode && focusMode) && (
                   <div
@@ -5814,6 +5965,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           text-indent: 0 !important;
           font-size: ${documentStyles.title.fontSize * 0.85}px !important;
           margin: ${documentStyles.title.marginBottom * 0.7}em 0 !important;
+          position: relative;
         }
         .editor-content p.book-title {
           text-align: ${documentStyles.title.textAlign} !important;
@@ -5821,6 +5973,9 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           font-size: ${documentStyles.title.fontSize}px !important;
           font-weight: ${documentStyles.title.fontWeight} !important;
           margin: ${documentStyles.title.marginBottom}em 0 !important;
+          margin-top: 1.5em !important;
+          position: relative;
+          overflow: visible !important;
         }
         .editor-content p.subtitle {
           text-align: ${documentStyles.title.textAlign} !important;
@@ -5828,6 +5983,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           font-size: ${documentStyles.title.fontSize * 0.7}px !important;
           font-style: italic !important;
           margin: 0.3em 0 !important;
+          position: relative;
         }
         .editor-content p.chapter-heading {
           text-align: center !important;
@@ -5835,6 +5991,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           font-weight: bold;
           font-size: 1.2em;
           margin: 1.5em 0 0.8em 0 !important;
+          position: relative;
         }
         .editor-content p.image-paragraph {
           text-align: center !important;
@@ -5858,23 +6015,204 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
         .editor-content h1 {
           font-size: ${documentStyles.heading1.fontSize}px;
           font-weight: ${documentStyles.heading1.fontWeight};
+          text-align: ${documentStyles.heading1.textAlign || "left"};
           margin: ${documentStyles.heading1.marginTop}em 0 ${
         documentStyles.heading1.marginBottom
       }em 0;
+          position: relative;
         }
         .editor-content h2 {
           font-size: ${documentStyles.heading2.fontSize}px;
           font-weight: ${documentStyles.heading2.fontWeight};
+          text-align: ${documentStyles.heading2.textAlign || "left"};
           margin: ${documentStyles.heading2.marginTop}em 0 ${
         documentStyles.heading2.marginBottom
       }em 0;
+          position: relative;
         }
         .editor-content h3 {
           font-size: ${documentStyles.heading3.fontSize}px;
           font-weight: ${documentStyles.heading3.fontWeight};
+          text-align: ${documentStyles.heading3.textAlign || "left"};
           margin: ${documentStyles.heading3.marginTop}em 0 ${
         documentStyles.heading3.marginBottom
       }em 0;
+          position: relative;
+        }
+
+        /* Labels for styled elements - conditional on showStyleLabels */
+        .editor-content h1::before {
+          content: "H1";
+          position: absolute;
+          left: -40px;
+          top: 50%;
+          transform: translateY(-50%);
+          background: #fef5e7;
+          color: #ef8432;
+          font-size: 10px;
+          font-weight: bold;
+          padding: 2px 6px;
+          border-radius: 4px;
+          border: 1px solid #e0c392;
+          pointer-events: none;
+          transition: background 0.2s;
+          display: ${showStyleLabels ? "block" : "none"};
+        }
+        .editor-content h1:hover::before {
+          background: #f7e6d0;
+        }
+        .editor-content h2::before {
+          content: "H2";
+          position: absolute;
+          left: -40px;
+          top: 50%;
+          transform: translateY(-50%);
+          background: #fef5e7;
+          color: #ef8432;
+          font-size: 10px;
+          font-weight: bold;
+          padding: 2px 6px;
+          border-radius: 4px;
+          border: 1px solid #e0c392;
+          pointer-events: none;
+          transition: background 0.2s;
+          display: ${showStyleLabels ? "block" : "none"};
+        }
+        .editor-content h2:hover::before {
+          background: #f7e6d0;
+        }
+        .editor-content h3::before {
+          content: "H3";
+          position: absolute;
+          left: -40px;
+          top: 50%;
+          transform: translateY(-50%);
+          background: #fef5e7;
+          color: #ef8432;
+          font-size: 10px;
+          font-weight: bold;
+          padding: 2px 6px;
+          border-radius: 4px;
+          border: 1px solid #e0c392;
+          pointer-events: none;
+          transition: background 0.2s;
+          display: ${showStyleLabels ? "block" : "none"};
+        }
+        .editor-content h3:hover::before {
+          background: #f7e6d0;
+        }
+        .editor-content p.chapter-heading::before {
+          content: "CH";
+          position: absolute;
+          left: -40px;
+          top: 50%;
+          transform: translateY(-50%);
+          background: #fef5e7;
+          color: #2c3e50;
+          font-size: 10px;
+          font-weight: bold;
+          padding: 2px 6px;
+          border-radius: 4px;
+          border: 1px solid #e0c392;
+          pointer-events: none;
+          white-space: nowrap;
+          transition: background 0.2s;
+          display: ${showStyleLabels ? "block" : "none"};
+        }
+        .editor-content p.chapter-heading:hover::before {
+          background: #f7e6d0;
+        }
+        .editor-content p.title-content::before {
+          content: "T";
+          position: absolute;
+          left: -40px;
+          top: 50%;
+          transform: translateY(-50%);
+          background: #fef5e7;
+          color: #6b7280;
+          font-size: 10px;
+          font-weight: bold;
+          padding: 2px 6px;
+          border-radius: 4px;
+          border: 1px solid #e0c392;
+          pointer-events: none;
+          white-space: nowrap;
+          transition: background 0.2s;
+          display: ${showStyleLabels ? "block" : "none"};
+        }
+        .editor-content p.title-content:hover::before {
+          background: #f7e6d0;
+        }
+        .editor-content p.subtitle::before {
+          content: "ST";
+          position: absolute;
+          left: -40px;
+          top: 50%;
+          transform: translateY(-50%);
+          background: #fef5e7;
+          color: #6b7280;
+          font-size: 10px;
+          font-weight: bold;
+          padding: 2px 6px;
+          border-radius: 4px;
+          border: 1px solid #e0c392;
+          pointer-events: none;
+          white-space: nowrap;
+          transition: background 0.2s;
+          display: ${showStyleLabels ? "block" : "none"};
+        }
+        .editor-content p.subtitle:hover::before {
+          background: #f7e6d0;
+        }
+        .editor-content p.book-title::before {
+          content: "BT";
+          position: absolute;
+          left: -40px;
+          top: 50%;
+          transform: translateY(-50%);
+          background: #fef5e7;
+          color: #2c3e50;
+          font-size: 10px;
+          font-weight: bold;
+          padding: 2px 6px;
+          border-radius: 4px;
+          border: 1px solid #e0c392;
+          pointer-events: none;
+          white-space: nowrap;
+          transition: background 0.2s;
+          display: ${showStyleLabels ? "block" : "none"};
+        }
+        .editor-content p.book-title:hover::before {
+          background: #f7e6d0;
+        }
+        /* Position relative for labels */
+        .editor-content p.book-title,
+        .editor-content p.chapter-heading,
+        .editor-content p.title-content,
+        .editor-content p.subtitle,
+        .editor-content p.part-title {
+          position: relative;
+        }
+        .editor-content p.part-title::before {
+          content: "PT";
+          position: absolute;
+          left: -40px;
+          top: 50%;
+          transform: translateY(-50%);
+          background: #fef5e7;
+          color: #2c3e50;
+          font-size: 10px;
+          font-weight: bold;
+          padding: 2px 6px;
+          border-radius: 4px;
+          border: 1px solid #e0c392;
+          pointer-events: none;
+          white-space: nowrap;
+          transition: background 0.2s;
+          display: ${showStyleLabels ? "block" : "none"};
+        }
+        .editor-content p.part-title:hover::before {
+          background: #f7e6d0;
         }
         .editor-content h4 {
           font-size: 1.1em;
@@ -5979,6 +6317,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
         }
         /* Book Publishing Styles */
         .editor-content p.part-title {
+          position: relative;
           text-align: center;
           text-indent: 0 !important;
           font-size: 1.8em;
@@ -5988,6 +6327,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           letter-spacing: 0.1em;
         }
         .editor-content p.epigraph {
+          position: relative;
           text-align: right;
           text-indent: 0 !important;
           font-style: italic;
@@ -5996,6 +6336,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           font-size: 0.95em;
         }
         .editor-content p.dedication {
+          position: relative;
           text-align: center;
           text-indent: 0 !important;
           font-style: italic;
@@ -6003,10 +6344,12 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           font-size: 1.1em;
         }
         .editor-content p.acknowledgments {
+          position: relative;
           text-indent: ${documentStyles.paragraph.firstLineIndent}px !important;
           margin: 0.8em 0;
         }
         .editor-content p.copyright {
+          position: relative;
           text-align: center;
           text-indent: 0 !important;
           font-size: 0.85em;
@@ -6014,6 +6357,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           color: #666;
         }
         .editor-content p.verse {
+          position: relative;
           white-space: pre-wrap;
           font-family: 'Georgia', serif;
           text-indent: 0 !important;
@@ -6022,6 +6366,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
         }
         /* Screenplay Transition */
         .editor-content p.transition {
+          position: relative;
           text-align: right;
           text-indent: 0 !important;
           margin: 1em 0;

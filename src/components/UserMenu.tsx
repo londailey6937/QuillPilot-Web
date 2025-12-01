@@ -124,7 +124,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({ onAuthRequired }) => {
         onClick={onAuthRequired}
         style={{
           padding: "6px 12px",
-          backgroundColor: "white",
+          backgroundColor: "#f7e6d0",
           color: "#2c3e50",
           border: "1.5px solid #e0c392",
           borderRadius: "12px",
@@ -138,7 +138,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({ onAuthRequired }) => {
           e.currentTarget.style.backgroundColor = "#f7e6d0";
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.backgroundColor = "white";
+          e.currentTarget.style.backgroundColor = "#fef5e7";
         }}
       >
         🔐 Sign In
@@ -155,7 +155,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({ onAuthRequired }) => {
           alignItems: "center",
           gap: "0.5rem",
           padding: "0.25rem 0.75rem 0.25rem 0.25rem",
-          backgroundColor: "white",
+          backgroundColor: "#f7e6d0",
           border: "2px solid #ef8432",
           borderRadius: "9999px",
           cursor: "pointer",
@@ -165,7 +165,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({ onAuthRequired }) => {
           e.currentTarget.style.backgroundColor = "#f7e6d0";
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.backgroundColor = "white";
+          e.currentTarget.style.backgroundColor = "#fef5e7";
         }}
       >
         <img src="/favicon.svg" alt="User" className="w-8 h-8 rounded-full" />

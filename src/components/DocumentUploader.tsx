@@ -896,7 +896,7 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
             alignItems: "center",
             gap: "8px",
             padding: "12px 24px",
-            backgroundColor: "white",
+            backgroundColor: "#f7e6d0",
             color: disabled || isProcessing ? "#9ca3af" : "#c16659",
             border:
               disabled || isProcessing
@@ -916,7 +916,7 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
           }}
           onMouseLeave={(e) => {
             if (!disabled && !isProcessing) {
-              e.currentTarget.style.backgroundColor = "#ffffff";
+              e.currentTarget.style.backgroundColor = "#fef5e7";
             }
           }}
         >
@@ -937,7 +937,7 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
             disabled={disabled || isProcessing}
             style={{
               padding: "10px 24px",
-              backgroundColor: "#ffffff",
+              backgroundColor: "#f7e6d0",
               color: "#8b5a3c",
               border: "1.5px solid #c16659",
               borderRadius: "20px",
@@ -949,12 +949,12 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
             }}
             onMouseEnter={(e) => {
               if (!disabled && !isProcessing) {
-                e.currentTarget.style.backgroundColor = "#fef3e7";
+                e.currentTarget.style.backgroundColor = "#f7e6d0";
               }
             }}
             onMouseLeave={(e) => {
               if (!disabled && !isProcessing) {
-                e.currentTarget.style.backgroundColor = "#ffffff";
+                e.currentTarget.style.backgroundColor = "#fef5e7";
               }
             }}
           >

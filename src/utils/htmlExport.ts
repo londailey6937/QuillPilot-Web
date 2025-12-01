@@ -10,6 +10,48 @@ interface HtmlExportOptions {
 }
 
 /**
+ * Extract document title from HTML content
+ * Looks for: 1) book-title class, 2) first H1, 3) title-content class, 4) first heading
+ */
+function extractDocumentTitle(html: string | null | undefined): string | null {
+  if (!html) return null;
+
+  // Create a DOM parser to extract text content properly
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, "text/html");
+
+  // Priority 1: Look for book-title class
+  const bookTitle = doc.querySelector(".book-title");
+  if (bookTitle?.textContent?.trim()) {
+    return bookTitle.textContent.trim();
+  }
+
+  // Priority 2: Look for first H1
+  const h1 = doc.querySelector("h1");
+  if (h1?.textContent?.trim()) {
+    return h1.textContent.trim();
+  }
+
+  // Priority 3: Look for title-content that might be the title
+  const titleContent = doc.querySelector(".title-content");
+  if (titleContent?.textContent?.trim()) {
+    const text = titleContent.textContent.trim();
+    // Only use if it's reasonably short (likely a title, not body text)
+    if (text.length <= 100) {
+      return text;
+    }
+  }
+
+  // Priority 4: Look for any heading (H2-H6)
+  const heading = doc.querySelector("h2, h3, h4, h5, h6");
+  if (heading?.textContent?.trim()) {
+    return heading.textContent.trim();
+  }
+
+  return null;
+}
+
+/**
  * Export document as styled HTML using template
  */
 export const exportToHtml = ({
@@ -19,7 +61,10 @@ export const exportToHtml = ({
   analysis,
   includeHighlights = true,
 }: HtmlExportOptions): void => {
-  const documentTitle = fileName.replace(/\.[^/.]+$/, "") || "Edited Chapter";
+  // Extract document title from content, fallback to filename, then to "Untitled Document"
+  const extractedTitle = extractDocumentTitle(html);
+  const fileNameTitle = fileName.replace(/\.[^/.]+$/, "");
+  const documentTitle = extractedTitle || fileNameTitle || "Untitled Document";
 
   // Build HTML using shared builder
   const finalHtml = buildHtmlFromTemplate({
