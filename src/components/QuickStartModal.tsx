@@ -78,7 +78,7 @@ export function QuickStartModal({
                         </li>
                       </ul>
                     </li>
-                    <li>Your document loads instantly</li>
+                    <li>Your document loads quickly</li>
                   </ol>
                 </div>
 
@@ -135,6 +135,9 @@ export function QuickStartModal({
                         </li>
                         <li>
                           <strong>🌐 HTML</strong> - Web-ready format
+                        </li>
+                        <li>
+                          <strong>📋 JSON</strong> - Data format for developers
                         </li>
                       </ul>
                     </li>
@@ -329,13 +332,6 @@ export function QuickStartModal({
                     saved documents
                   </li>
                   <li>
-                    <strong>Help Button (?)</strong> - Open this guide anytime
-                  </li>
-                  <li>
-                    <strong>Reference Library (📖)</strong> - Browse concept
-                    definitions
-                  </li>
-                  <li>
                     <strong>Navigation Menu (☰)</strong> - Quick access to all
                     features
                   </li>
@@ -345,6 +341,10 @@ export function QuickStartModal({
                   Main Toolbar (After Upload)
                 </h5>
                 <ul className="quickstart-list">
+                  <li>
+                    <strong>📁 Upload Document</strong> - Load DOCX, TXT, or
+                    Markdown files
+                  </li>
                   <li>
                     <strong>🗑️ Clear</strong> - Start with a new document
                   </li>
@@ -358,29 +358,93 @@ export function QuickStartModal({
                     <strong>🌐 Export HTML</strong> - Save as webpage
                   </li>
                   <li>
+                    <strong>🖨️ Print</strong> - Print your document
+                  </li>
+                  <li>
                     <strong>🔍 Analyze</strong> - Run AI analysis on your
                     document
                   </li>
                 </ul>
 
                 <h5 style={{ color: "#000000", marginTop: "1.5rem" }}>
-                  Writer Mode Tools (Professional Tier)
+                  17 Advanced Writing Tools (Professional Tier)
                 </h5>
+                <p
+                  style={{
+                    fontSize: "0.9rem",
+                    color: "#64748b",
+                    marginBottom: "0.75rem",
+                  }}
+                >
+                  Access powerful analysis tools via the floating button (bottom
+                  right):
+                </p>
                 <ul className="quickstart-list">
                   <li>
-                    <strong>Page Format Controls</strong> - Adjust margins and
-                    indentation
+                    <strong>✨ AI Writing Assistant</strong> - Get suggestions
+                    and completions
                   </li>
                   <li>
-                    <strong>👥 Character Manager</strong> - Track characters and
-                    relationships
+                    <strong>💬 Dialogue Enhancer</strong> - Analyze dialogue
+                    flow and character voice
                   </li>
                   <li>
-                    <strong>📚 Template Library</strong> - Use story templates
+                    <strong>📊 Readability Analyzer</strong> - Check reading
+                    level and complexity
                   </li>
                   <li>
-                    <strong>Word Count</strong> - Real-time word and character
-                    count
+                    <strong>🎭 Cliché Detector</strong> - Find overused phrases
+                  </li>
+                  <li>
+                    <strong>🎬 Beat Sheet Generator</strong> - Structure your
+                    story arc
+                  </li>
+                  <li>
+                    <strong>👁️ POV Checker</strong> - Ensure consistent point of
+                    view
+                  </li>
+                  <li>
+                    <strong>💖 Emotion Tracker</strong> - Track emotional beats
+                  </li>
+                  <li>
+                    <strong>🔍 Motif Tracker</strong> - Identify recurring
+                    themes
+                  </li>
+                  <li>
+                    <strong>📝 Poetry Meter Analyzer</strong> - Analyze rhythm
+                    and meter
+                  </li>
+                  <li>
+                    <strong>📋 Nonfiction Outline Generator</strong> - Structure
+                    arguments
+                  </li>
+                  <li>
+                    <strong>📚 Academic Citation Manager</strong> - Format
+                    citations
+                  </li>
+                  <li>
+                    <strong>✍️ Character Name Generator</strong> - Generate
+                    character names
+                  </li>
+                  <li>
+                    <strong>🌍 World Building Notebook</strong> - Track world
+                    details
+                  </li>
+                  <li>
+                    <strong>📝 Research Notes Panel</strong> - Keep notes while
+                    writing
+                  </li>
+                  <li>
+                    <strong>🖼️ Image Mood Board</strong> - Upload reference
+                    images
+                  </li>
+                  <li>
+                    <strong>📜 Version History</strong> - Save and compare
+                    drafts
+                  </li>
+                  <li>
+                    <strong>💬 Comments & Annotations</strong> - Leave notes for
+                    yourself
                   </li>
                 </ul>
               </section>
@@ -591,7 +655,36 @@ export function QuickStartModal({
                   </ol>
                 </div>
 
-                <h5 style={{ color: "#000000", marginTop: "1.5rem" }}>
+                <div
+                  style={{
+                    background: "#fef5e7",
+                    borderLeft: "4px solid #ef8432",
+                    padding: "1rem 1.5rem",
+                    margin: "1rem 0",
+                    borderRadius: "0 0.5rem 0.5rem 0",
+                  }}
+                >
+                  <h5 style={{ margin: "0 0 0.5rem 0", color: "#ef8432" }}>
+                    How to Export as JSON
+                  </h5>
+                  <ol style={{ paddingLeft: "1.5rem", margin: 0 }}>
+                    <li>
+                      Click the <strong>"📋 JSON"</strong> button
+                    </li>
+                    <li>Structured data format for developers</li>
+                    <li>Includes all analysis results and metadata</li>
+                    <li>Perfect for integrations or custom processing</li>
+                  </ol>
+                </div>
+
+                <h5
+                  style={{
+                    color: "#000000",
+                    marginTop: "1.5rem",
+                    fontWeight: "600",
+                    fontSize: "1.1rem",
+                  }}
+                >
                   Export Tips
                 </h5>
                 <ul className="quickstart-list">
@@ -620,7 +713,14 @@ export function QuickStartModal({
               <section className="quickstart-card">
                 <h4>⚡ Key Features</h4>
 
-                <h5 style={{ color: "#000000", marginTop: "1rem" }}>
+                <h5
+                  style={{
+                    color: "#000000",
+                    marginTop: "1rem",
+                    fontWeight: "600",
+                    fontSize: "1.1rem",
+                  }}
+                >
                   📊 Analysis Dashboard
                 </h5>
                 <p>After clicking "Analyze," you'll see:</p>
@@ -634,67 +734,84 @@ export function QuickStartModal({
                     reading time
                   </li>
                   <li>
-                    <strong>Pacing Analysis:</strong> Chapter rhythm and flow
-                  </li>
-                  <li>
-                    <strong>Character Tracking:</strong> Character mentions and
-                    development
-                  </li>
-                  <li>
                     <strong>Show vs Tell:</strong> Balance of description and
                     action
                   </li>
                   <li>
                     <strong>Sensory Details:</strong> Visual, auditory, tactile
-                    elements
+                    elements (540+ tracked words)
                   </li>
                   <li>
-                    <strong>Concept Density:</strong> Idea distribution
-                    throughout text
+                    <strong>Character Tracking:</strong> Character mentions
+                    throughout your document
                   </li>
                   <li>
                     <strong>Cognitive Load:</strong> Reader comprehension
                     difficulty
                   </li>
+                  <li>
+                    <strong>Genre Detection:</strong> Auto-identifies Romance,
+                    Mystery, Fantasy, etc.
+                  </li>
                 </ul>
 
-                <h5 style={{ color: "#000000", marginTop: "1.5rem" }}>
-                  💡 Recommendations
+                <h5
+                  style={{
+                    color: "#000000",
+                    marginTop: "1.5rem",
+                    fontWeight: "600",
+                    fontSize: "1.1rem",
+                  }}
+                >
+                  💡 Smart Recommendations
                 </h5>
                 <p>Get actionable feedback:</p>
                 <ul className="quickstart-list">
                   <li>
-                    <strong>Prioritized suggestions</strong> (High/Medium/Low)
+                    <strong>Prioritized suggestions</strong> (High/Medium/Low
+                    impact)
                   </li>
                   <li>
-                    <strong>Specific implementation steps</strong>
+                    <strong>Specific improvement areas</strong> with examples
+                    from your text
                   </li>
                   <li>
-                    <strong>Expected impact</strong> on reader engagement
+                    <strong>Visual diagrams</strong> suggested where helpful
+                    (flowcharts, timelines)
                   </li>
                   <li>
-                    <strong>Examples</strong> from your text
+                    <strong>Genre-specific feedback</strong> tailored to your
+                    story type
                   </li>
                 </ul>
 
-                <h5 style={{ color: "#000000", marginTop: "1.5rem" }}>
+                <h5
+                  style={{
+                    color: "#000000",
+                    marginTop: "1.5rem",
+                    fontWeight: "600",
+                    fontSize: "1.1rem",
+                  }}
+                >
                   🎨 Inline Analysis Indicators
                 </h5>
                 <p>See feedback directly in your text:</p>
                 <ul className="quickstart-list">
                   <li>
-                    <strong>Green highlights:</strong> Strong sensory details
+                    <strong>Color-coded highlights:</strong> Sensory details,
+                    dialogue tags, pacing
                   </li>
                   <li>
-                    <strong>Yellow highlights:</strong> Opportunities for
-                    improvement
+                    <strong>Paragraph markers:</strong> Compact, balanced, or
+                    extended paragraphs
                   </li>
                   <li>
-                    <strong>Paragraph spacing:</strong> Visual pacing indicators
+                    <strong>Character tracking:</strong> See all character
+                    mentions highlighted
                   </li>
                   <li>
-                    <strong>Character mentions:</strong> Tracked throughout
-                    document
+                    <strong>Interactive cards:</strong> Click highlights for
+                    detailed explanations
                   </li>
                 </ul>
               </section>
@@ -712,7 +829,14 @@ export function QuickStartModal({
                   Focus on writing with live feedback and professional tools.
                 </p>
 
-                <h5 style={{ color: "#000000", marginTop: "1.5rem" }}>
+                <h5
+                  style={{
+                    color: "#000000",
+                    marginTop: "1.5rem",
+                    fontWeight: "600",
+                    fontSize: "1.1rem",
+                  }}
+                >
                   How to Use Writer Mode
                 </h5>
                 <ol className="quickstart-order">
@@ -725,60 +849,67 @@ export function QuickStartModal({
                   </li>
                   <li>Start writing in the clean, distraction-free editor</li>
                   <li>Get real-time feedback as you type</li>
+                  <li>
+                    Access 17 Advanced Writing Tools via the floating button
+                    (bottom right)
+                  </li>
                 </ol>
 
-                <h5 style={{ color: "#000000", marginTop: "1.5rem" }}>
-                  Character Manager
+                <h5
+                  style={{
+                    color: "#000000",
+                    marginTop: "1.5rem",
+                    fontWeight: "600",
+                    fontSize: "1.1rem",
+                  }}
+                >
+                  Focus Mode
                 </h5>
                 <ul className="quickstart-list">
                   <li>
-                    Click <strong>"👥 Character Manager"</strong> button
+                    <strong>Hide distractions:</strong> Removes page rail and
+                    advanced tools panel
                   </li>
                   <li>
-                    Add characters with:
-                    <ul className="quickstart-sublist">
-                      <li>Name and role</li>
-                      <li>Physical traits</li>
-                      <li>Personality traits</li>
-                      <li>Character arc notes</li>
-                      <li>Relationships to other characters</li>
-                    </ul>
+                    <strong>Full-screen writing:</strong> Clean, minimal
+                    interface for deep work
                   </li>
-                  <li>Insert character mentions directly in your text</li>
                   <li>
-                    Track character appearances throughout your manuscript
+                    <strong>Toggle anytime:</strong> Switch focus mode on/off as
+                    needed
+                  </li>
+                  <li>
+                    <strong>Word count visible:</strong> Track progress without
+                    clutter
                   </li>
                 </ul>
 
-                <h5 style={{ color: "#000000", marginTop: "1.5rem" }}>
-                  Page Formatting
+                <h5
+                  style={{
+                    color: "#000000",
+                    marginTop: "1.5rem",
+                    fontWeight: "600",
+                    fontSize: "1.1rem",
+                  }}
+                >
+                  Rich Text Editor
                 </h5>
                 <ul className="quickstart-list">
                   <li>
-                    <strong>Drag margin rulers</strong> to adjust left/right
-                    margins
+                    <strong>Full formatting:</strong> Headings, bold, italic,
+                    underline, lists
                   </li>
                   <li>
-                    <strong>Drag indent marker</strong> to set first-line
-                    indentation
+                    <strong>Tables & images:</strong> Insert and edit tables,
+                    upload images
                   </li>
                   <li>
-                    <strong>Live preview</strong> of how your manuscript will
-                    look
+                    <strong>Keyboard shortcuts:</strong> Cmd/Ctrl+B/I/U/K/F/Z
+                    for fast editing
                   </li>
                   <li>
-                    Professional formatting automatically applied to exports
+                    <strong>Auto-save:</strong> Your work is continuously saved
                   </li>
-                </ul>
-
-                <h5 style={{ color: "#000000", marginTop: "1.5rem" }}>
-                  Writing Progress
-                </h5>
-                <ul className="quickstart-list">
-                  <li>Real-time word count</li>
-                  <li>Character count (with and without spaces)</li>
-                  <li>Page count estimation</li>
-                  <li>Reading time calculation</li>
                 </ul>
               </section>
             </div>
@@ -815,7 +946,14 @@ export function QuickStartModal({
                   </ol>
                 </div>
 
-                <h5 style={{ color: "#000000", marginTop: "1.5rem" }}>
+                <h5
+                  style={{
+                    color: "#000000",
+                    marginTop: "1.5rem",
+                    fontWeight: "600",
+                    fontSize: "1.1rem",
+                  }}
+                >
                   Benefits of Dark Mode
                 </h5>
                 <ul className="quickstart-list">
@@ -838,7 +976,14 @@ export function QuickStartModal({
                   </li>
                 </ul>
 
-                <h5 style={{ color: "#000000", marginTop: "1.5rem" }}>
+                <h5
+                  style={{
+                    color: "#000000",
+                    marginTop: "1.5rem",
+                    fontWeight: "600",
+                    fontSize: "1.1rem",
+                  }}
+                >
                   Dark Mode Colors
                 </h5>
                 <p>
@@ -871,7 +1016,14 @@ export function QuickStartModal({
               <section className="quickstart-card">
                 <h4>📚 Understanding Analysis Results</h4>
 
-                <h5 style={{ color: "#000000", marginTop: "1rem" }}>
+                <h5
+                  style={{
+                    color: "#000000",
+                    marginTop: "1rem",
+                    fontWeight: "600",
+                    fontSize: "1.1rem",
+                  }}
+                >
                   10 Learning Science Principles
                 </h5>
                 <p>QuillPilot analyzes your writing across:</p>
@@ -914,7 +1066,14 @@ export function QuickStartModal({
                   </li>
                 </ol>
 
-                <h5 style={{ color: "#000000", marginTop: "1.5rem" }}>
+                <h5
+                  style={{
+                    color: "#000000",
+                    marginTop: "1.5rem",
+                    fontWeight: "600",
+                    fontSize: "1.1rem",
+                  }}
+                >
                   Genre-Specific Analysis
                 </h5>
                 <p>QuillPilot adapts analysis for your genre:</p>
@@ -945,7 +1104,14 @@ export function QuickStartModal({
                   </li>
                 </ul>
 
-                <h5 style={{ color: "#000000", marginTop: "1.5rem" }}>
+                <h5
+                  style={{
+                    color: "#000000",
+                    marginTop: "1.5rem",
+                    fontWeight: "600",
+                    fontSize: "1.1rem",
+                  }}
+                >
                   Score Interpretation
                 </h5>
                 <ul className="quickstart-list">
@@ -1124,7 +1290,14 @@ export function QuickStartModal({
               <section className="quickstart-card">
                 <h4>💡 Pro Tips</h4>
 
-                <h5 style={{ color: "#000000", marginTop: "1rem" }}>
+                <h5
+                  style={{
+                    color: "#000000",
+                    marginTop: "1rem",
+                    fontWeight: "600",
+                    fontSize: "1.1rem",
+                  }}
+                >
                   For First-Time Users
                 </h5>
                 <ul className="quickstart-list">
@@ -1264,7 +1437,14 @@ export function QuickStartModal({
                   QuillPilot.
                 </p>
 
-                <h5 style={{ color: "#000000", marginTop: "1rem" }}>
+                <h5
+                  style={{
+                    color: "#000000",
+                    marginTop: "1rem",
+                    fontWeight: "600",
+                    fontSize: "1.1rem",
+                  }}
+                >
                   Reference Library
                 </h5>
                 <p style={{ marginBottom: "1rem", color: "#000000" }}>
@@ -1274,7 +1454,14 @@ export function QuickStartModal({
                   explanations. Access it from the ☰ menu → Reference Library.
                 </p>
 
-                <h5 style={{ color: "#000000", marginTop: "1.5rem" }}>
+                <h5
+                  style={{
+                    color: "#000000",
+                    marginTop: "1.5rem",
+                    fontWeight: "600",
+                    fontSize: "1.1rem",
+                  }}
+                >
                   Writer's Reference
                 </h5>
                 <p style={{ marginBottom: "1rem", color: "#000000" }}>
@@ -1284,7 +1471,14 @@ export function QuickStartModal({
                   Sprints. Access it from the ☰ menu → Writer's Reference.
                 </p>
 
-                <h5 style={{ color: "#000000", marginTop: "1.5rem" }}>
+                <h5
+                  style={{
+                    color: "#000000",
+                    marginTop: "1.5rem",
+                    fontWeight: "600",
+                    fontSize: "1.1rem",
+                  }}
+                >
                   Advanced Tools
                 </h5>
                 <p style={{ marginBottom: "1rem", color: "#000000" }}>

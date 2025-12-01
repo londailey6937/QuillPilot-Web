@@ -1790,7 +1790,132 @@ export const ChapterCheckerV2: React.FC = () => {
   const canEditChapter =
     viewMode === "writer" && tierFeatures.writerMode && !isAnalyzing;
 
+  const handlePrint = () => {
+    // Extract just the editor content and print in a clean window
+    const editorContent = document.querySelector('[contenteditable="true"]');
+    if (!editorContent) {
+      alert("No content to print");
+      return;
+    }
+
+    // Get the HTML content with styles
+    const content = editorContent.innerHTML;
+
+    // Create a hidden iframe
+    const iframe = document.createElement("iframe");
+    iframe.style.position = "fixed";
+    iframe.style.right = "0";
+    iframe.style.bottom = "0";
+    iframe.style.width = "0";
+    iframe.style.height = "0";
+    iframe.style.border = "0";
+    document.body.appendChild(iframe);
+
+    // Get the iframe's document
+    const iframeDoc = iframe.contentWindow?.document;
+    if (!iframeDoc) {
+      alert("Could not create print frame");
+      document.body.removeChild(iframe);
+      return;
+    }
+
+    // Write clean HTML with just the content
+    iframeDoc.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>${fileName || "Document"}</title>
+        <style>
+          @page {
+            margin: 1in;
+            size: letter;
+          }
+          body {
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 12pt;
+            line-height: 1.6;
+            color: black;
+            background: white;
+            margin: 0;
+            padding: 20px;
+          }
+          h1 { font-size: 24pt; font-weight: bold; margin: 0.5em 0; }
+          h2 { font-size: 18pt; font-weight: bold; margin: 0.5em 0; }
+          h3 { font-size: 14pt; font-weight: bold; margin: 0.5em 0; }
+          h4 { font-size: 12pt; font-weight: bold; margin: 0.5em 0; }
+          p { margin: 0.5em 0; text-indent: ${firstLineIndent}in; }
+          blockquote { margin: 1em 2em; font-style: italic; }
+          ul, ol { margin: 0.5em 0; padding-left: 2em; }
+          a { color: black; text-decoration: underline; }
+          /* Preserve inline styles */
+          [style] { /* inline styles preserved */ }
+          @media print {
+            body { padding: 0; }
+            h1, h2, h3 { page-break-after: avoid; }
+            p { orphans: 3; widows: 3; }
+          }
+        </style>
+      </head>
+      <body>${content}</body>
+      </html>
+    `);
+    iframeDoc.close();
+
+    const doPrint = () => {
+      try {
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+      } catch (e) {
+        console.error("Print failed", e);
+      } finally {
+        // Cleanup: Remove iframe after printing
+        if (iframe.contentWindow) {
+          iframe.contentWindow.onafterprint = () => {
+            if (document.body.contains(iframe)) {
+              document.body.removeChild(iframe);
+            }
+          };
+        }
+
+        // Fallback cleanup (long timeout to be safe)
+        setTimeout(() => {
+          if (document.body.contains(iframe)) {
+            document.body.removeChild(iframe);
+          }
+        }, 60000);
+      }
+    };
+
+    // Wait for content to load
+    if (iframe.contentWindow) {
+      iframe.contentWindow.onload = () => setTimeout(doPrint, 100);
+    } else {
+      setTimeout(doPrint, 500);
+    }
+  };
+
+  // Handle Cmd+P / Ctrl+P to trigger custom print
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Check for Cmd/Ctrl + P (case insensitive)
+      if (
+        (e.metaKey || e.ctrlKey) &&
+        (e.key.toLowerCase() === "p" || e.code === "KeyP")
+      ) {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log("🖨️ Custom print triggered via keyboard shortcut");
+        handlePrint();
+      }
+    };
+
+    // Use capture phase to ensure we intercept before browser default
+    window.addEventListener("keydown", handleKeyDown, true);
+    return () => window.removeEventListener("keydown", handleKeyDown, true);
+  }, [fileName, firstLineIndent]);
+
   // Show loading screen while profile is being fetched to prevent UI jerk
+
   if (isLoadingProfile) {
     return (
       <div
@@ -2105,6 +2230,54 @@ export const ChapterCheckerV2: React.FC = () => {
                   accessLevel={accessLevel}
                 />
 
+                <button
+                  onClick={() => {
+                    const confirm = window.confirm(
+                      "🗑️ Clear Document\n\nThis will clear your current document and start fresh. Continue?"
+                    );
+                    if (confirm) {
+                      setChapterData(null);
+                      setAnalysis(null);
+                      setFileName("");
+                      setError("");
+                      setGeneralConcepts([]);
+                      setSelectedDomain("none");
+                      setCustomDomainName("");
+                    }
+                  }}
+                  disabled={isAnalyzing || !chapterData}
+                  style={{
+                    padding: "6px 12px",
+                    backgroundColor:
+                      chapterData && !isAnalyzing ? "white" : "#e2e8f0",
+                    color: chapterData && !isAnalyzing ? "#2c3e50" : "#9ca3af",
+                    border: "1.5px solid #e0c392",
+                    borderRadius: "12px",
+                    cursor:
+                      chapterData && !isAnalyzing ? "pointer" : "not-allowed",
+                    fontSize: "12px",
+                    fontWeight: "600",
+                    transition: "all 0.2s",
+                    whiteSpace: "nowrap",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "4px",
+                  }}
+                  onMouseEnter={(e) => {
+                    if (chapterData && !isAnalyzing) {
+                      e.currentTarget.style.backgroundColor = "#f7e6d0";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (chapterData && !isAnalyzing) {
+                      e.currentTarget.style.backgroundColor = "white";
+                    }
+                  }}
+                  title="Clear document and start fresh"
+                >
+                  🗑️
+                </button>
+
                 {chapterData && !isAnalyzing && (
                   <>
                     <button
@@ -2287,6 +2460,91 @@ export const ChapterCheckerV2: React.FC = () => {
                           d="M2 12c0 5.52 4.48 10 10 10"
                           stroke="#34a853"
                           strokeWidth="2"
+                          strokeLinecap="round"
+                        />
+                      </svg>
+                    </button>
+
+                    <button
+                      onClick={handlePrint}
+                      style={{
+                        padding: "6px 12px",
+                        backgroundColor: "white",
+                        color: "#2c3e50",
+                        border: "1.5px solid #e0c392",
+                        borderRadius: "12px",
+                        cursor: "pointer",
+                        fontSize: "12px",
+                        fontWeight: "600",
+                        transition: "all 0.2s",
+                        whiteSpace: "nowrap",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = "#f7e6d0";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = "white";
+                      }}
+                      title="Print Document"
+                    >
+                      {/* Print icon */}
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <rect
+                          x="6"
+                          y="2"
+                          width="12"
+                          height="6"
+                          rx="1"
+                          stroke="#2c3e50"
+                          strokeWidth="1.5"
+                          fill="none"
+                        />
+                        <rect
+                          x="4"
+                          y="8"
+                          width="16"
+                          height="8"
+                          rx="2"
+                          stroke="#2c3e50"
+                          strokeWidth="1.5"
+                          fill="#f7e6d0"
+                        />
+                        <rect
+                          x="7"
+                          y="14"
+                          width="10"
+                          height="8"
+                          rx="1"
+                          stroke="#2c3e50"
+                          strokeWidth="1.5"
+                          fill="white"
+                        />
+                        <circle cx="7" cy="11" r="1" fill="#ef8432" />
+                        <line
+                          x1="9"
+                          y1="17"
+                          x2="15"
+                          y2="17"
+                          stroke="#2c3e50"
+                          strokeWidth="1"
+                          strokeLinecap="round"
+                        />
+                        <line
+                          x1="9"
+                          y1="19"
+                          x2="15"
+                          y2="19"
+                          stroke="#2c3e50"
+                          strokeWidth="1"
                           strokeLinecap="round"
                         />
                       </svg>

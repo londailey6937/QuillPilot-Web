@@ -681,3 +681,123 @@ p {
   -webkit-mask-image: none;
   mask-image: none;
 }
+
+/* ============================================
+   PRINT STYLES
+   ============================================ */
+@media print {
+  /* Page setup */
+  @page {
+    margin: 0.75in 1in;
+    size: letter;
+  }
+
+  /* Hide everything except main content by default */
+  html,
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* Hide all UI chrome */
+  header,
+  footer,
+  nav,
+  aside,
+  button,
+  .toolbar,
+  .sidebar,
+  .menu,
+  .modal,
+  .overlay,
+  .popup,
+  .navigation-menu,
+  .user-menu,
+  .auth-modal,
+  .pages-container > *:not(.editor-content):not([contenteditable]),
+  .document-editor-wrapper > *:not(:has(.editor-content)),
+  [role="navigation"],
+  [role="banner"],
+  [role="complementary"],
+  .ruler,
+  .margin-indicator,
+  .highlight,
+  .tooltip,
+  .badge {
+    display: none !important;
+  }
+
+  /* Make all containers transparent and flow naturally */
+  /* Ensure the nested layout shells expand for printing */
+  #root,
+  .app-container,
+  .app-panel,
+  .document-editor-wrapper,
+  .editor-wrapper,
+  .page-view,
+  .editor-wrapper .hide-scrollbar,
+  .pages-stack-shell,
+  .pages-container {
+    display: block !important;
+    position: static !important;
+    width: 100% !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  /* The editor content - main print target */
+  .editor-content,
+  [contenteditable="true"] {
+    display: block !important;
+    position: static !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    font-size: 12pt !important;
+    line-height: 1.6 !important;
+    color: black !important;
+    background: white !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  /* Ensure all text is black */
+  .editor-content *,
+  [contenteditable="true"] * {
+    color: black !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  /* Page break handling */
+  h1,
+  h2,
+  h3 {
+    page-break-after: avoid;
+    page-break-inside: avoid;
+  }
+
+  p {
+    orphans: 3;
+    widows: 3;
+  }
+
+  /* Links */
+  a {
+    color: black !important;
+    text-decoration: underline !important;
+  }
+}

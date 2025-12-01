@@ -118,14 +118,14 @@ export const ReadabilityAnalyzer: React.FC<ReadabilityAnalyzerProps> = ({
   const metrics = calculateMetrics(text);
 
   const getScoreColor = (score: number): string => {
-    if (score >= 70) return palette.success;
+    if (score >= 70) return palette.navy;
     if (score >= 50) return palette.warning;
     if (score >= 30) return palette.info;
     return palette.danger;
   };
 
   const getGradeColor = (grade: number): string => {
-    if (grade <= 8) return palette.success;
+    if (grade <= 8) return palette.navy;
     if (grade <= 12) return palette.warning;
     if (grade <= 16) return palette.info;
     return palette.danger;

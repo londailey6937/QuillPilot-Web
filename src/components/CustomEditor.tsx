@@ -1306,7 +1306,32 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
       ];
 
       // Custom paragraph styles (not native HTML tags)
-      const customParagraphStyles = ["title", "subtitle"];
+      const customParagraphStyles = [
+        "title",
+        "subtitle",
+        "book-title",
+        "chapter-heading",
+        "part-title",
+        "epigraph",
+        "dedication",
+        "acknowledgments",
+        "copyright",
+        "verse",
+        "abstract",
+        "keywords",
+        "bibliography",
+        "references",
+        "appendix",
+        "author-info",
+        "date-info",
+        "address",
+        "salutation",
+        "closing",
+        "signature",
+        "sidebar",
+        "callout",
+        "lead",
+      ];
 
       // Special block elements (TOC, Index, Figure)
       const specialBlockElements = ["toc", "index", "figure"];
@@ -1424,18 +1449,96 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
         if (currentBlock && currentBlock.nodeName === "P") {
           // Convert existing paragraph to styled paragraph
           const p = currentBlock as HTMLElement;
-          p.className =
-            tag === "title"
-              ? "title-content book-title"
-              : "title-content subtitle";
+
+          // Map tags to their CSS classes
+          const styleMap: { [key: string]: string } = {
+            title: "title-content",
+            "book-title": "title-content book-title",
+            subtitle: "title-content subtitle",
+            "chapter-heading": "chapter-heading",
+            "part-title": "part-title",
+            epigraph: "epigraph",
+            dedication: "dedication",
+            acknowledgments: "acknowledgments",
+            copyright: "copyright",
+            verse: "verse",
+            abstract: "abstract",
+            keywords: "keywords",
+            bibliography: "bibliography",
+            references: "references",
+            appendix: "appendix",
+            "author-info": "author-info",
+            "date-info": "date-info",
+            address: "address",
+            salutation: "salutation",
+            closing: "closing",
+            signature: "signature",
+            sidebar: "sidebar",
+            callout: "callout",
+            lead: "lead",
+          };
+
+          p.className = styleMap[tag] || "";
           p.removeAttribute("data-block");
         } else {
           // Create new styled paragraph
-          const selectedText = selection.toString() || "Title";
-          const className =
-            tag === "title"
-              ? "title-content book-title"
-              : "title-content subtitle";
+          const placeholders: { [key: string]: string } = {
+            title: "Section Title",
+            "book-title": "Book Title",
+            subtitle: "Subtitle",
+            "chapter-heading": "Chapter 1",
+            "part-title": "Part I",
+            epigraph: "Epigraph text...",
+            dedication: "For...",
+            acknowledgments: "I would like to thank...",
+            copyright: "© 2025",
+            verse: "Poetry line...",
+            abstract: "Abstract...",
+            keywords: "Keywords: ",
+            bibliography: "Bibliography entry...",
+            references: "Reference...",
+            appendix: "Appendix content...",
+            "author-info": "Author Name",
+            "date-info": "Date",
+            address: "Address...",
+            salutation: "Dear...",
+            closing: "Sincerely,",
+            signature: "Name",
+            sidebar: "Sidebar content...",
+            callout: "Important note...",
+            lead: "Lead paragraph...",
+          };
+
+          const styleMap: { [key: string]: string } = {
+            title: "title-content",
+            "book-title": "title-content book-title",
+            subtitle: "title-content subtitle",
+            "chapter-heading": "chapter-heading",
+            "part-title": "part-title",
+            epigraph: "epigraph",
+            dedication: "dedication",
+            acknowledgments: "acknowledgments",
+            copyright: "copyright",
+            verse: "verse",
+            abstract: "abstract",
+            keywords: "keywords",
+            bibliography: "bibliography",
+            references: "references",
+            appendix: "appendix",
+            "author-info": "author-info",
+            "date-info": "date-info",
+            address: "address",
+            salutation: "salutation",
+            closing: "closing",
+            signature: "signature",
+            sidebar: "sidebar",
+            callout: "callout",
+            lead: "lead",
+          };
+
+          const selectedText =
+            selection.toString() || placeholders[tag] || "Text";
+          const className = styleMap[tag] || "";
           const blockHtml = `<p class="${className}">${selectedText}</p>`;
           document.execCommand("insertHTML", false, blockHtml);
         }
@@ -2138,58 +2241,118 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
         return;
       }
 
-      // Only process keyboard shortcuts that use modifier keys
+      // Only process keyboard shortcuts that use modifier keys (Cmd/Ctrl or Alt)
       // Let all other keys pass through without preventDefault for natural auto-repeat
-      if (!modKey) {
+      if (!modKey && !e.altKey && !e.shiftKey) {
         return; // Don't prevent default - let browser handle naturally
       }
 
+      // Use e.code for reliable key detection (especially with Alt on Mac)
+      const code = e.code;
+      const key = e.key.toLowerCase();
+
       // Handle modifier+key shortcuts
-      switch (e.key.toLowerCase()) {
+      // First check code-based shortcuts (for Alt combinations that change key output)
+      if (modKey && e.altKey) {
+        switch (code) {
+          case "Digit1":
+            e.preventDefault();
+            changeBlockType("h1");
+            return;
+          case "Digit2":
+            e.preventDefault();
+            changeBlockType("h2");
+            return;
+          case "Digit3":
+            e.preventDefault();
+            changeBlockType("h3");
+            return;
+          case "Digit4":
+            e.preventDefault();
+            changeBlockType("h4");
+            return;
+          case "Digit5":
+            e.preventDefault();
+            changeBlockType("h5");
+            return;
+          case "Digit6":
+            e.preventDefault();
+            changeBlockType("h6");
+            return;
+          case "Digit0":
+            e.preventDefault();
+            changeBlockType("p");
+            return;
+        }
+      }
+
+      // Quote shortcut - Cmd/Ctrl + Shift + .
+      if (modKey && e.shiftKey && (code === "Period" || key === ".")) {
+        e.preventDefault();
+        changeBlockType("blockquote");
+        return;
+      }
+
+      // Standard shortcuts (key-based)
+      switch (key) {
         case "s":
-          e.preventDefault();
-          if (onSave) {
-            onSave();
+          if (modKey && !e.altKey && !e.shiftKey) {
+            e.preventDefault();
+            if (onSave) {
+              onSave();
+            }
           }
           break;
         case "b":
-          e.preventDefault();
-          formatText("bold");
+          if (modKey && !e.altKey && !e.shiftKey) {
+            e.preventDefault();
+            formatText("bold");
+          }
           break;
         case "i":
-          e.preventDefault();
-          formatText("italic");
+          if (modKey && !e.altKey && !e.shiftKey) {
+            e.preventDefault();
+            formatText("italic");
+          }
           break;
         case "u":
-          e.preventDefault();
-          formatText("underline");
+          if (modKey && !e.altKey && !e.shiftKey) {
+            e.preventDefault();
+            formatText("underline");
+          }
           break;
         case "k":
-          e.preventDefault();
-          setShowLinkModal(true);
+          if (modKey && !e.altKey && !e.shiftKey) {
+            e.preventDefault();
+            setShowLinkModal(true);
+          }
           break;
         case "f":
-          e.preventDefault();
-          setShowFindReplace(true);
+          if (modKey && !e.altKey && !e.shiftKey) {
+            e.preventDefault();
+            setShowFindReplace(true);
+          }
           break;
         case "z":
-          if (e.shiftKey) {
-            e.preventDefault();
-            performRedo();
-          } else {
-            e.preventDefault();
-            performUndo();
+          if (modKey && !e.altKey) {
+            if (e.shiftKey) {
+              e.preventDefault();
+              performRedo();
+            } else {
+              e.preventDefault();
+              performUndo();
+            }
           }
           break;
         case "y":
-          if (!isMac) {
+          if (!isMac && modKey && !e.altKey && !e.shiftKey) {
             e.preventDefault();
             performRedo();
           }
           break;
       }
     },
-    [formatText, performUndo, performRedo, firstLineIndent, leftMargin, onSave]
+    [formatText, performUndo, performRedo, changeBlockType, onSave]
   );
 
   // Update format state
@@ -2737,13 +2900,47 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                 title="Block Type"
               >
                 <optgroup label="Basic">
-                  <option value="p">Paragraph</option>
-                  <option value="title">Title</option>
-                  <option value="h1">Heading 1</option>
-                  <option value="h2">Heading 2</option>
-                  <option value="h3">Heading 3</option>
-                  <option value="blockquote">Quote</option>
-                  <option value="pre">Code</option>
+                  <option value="p">Paragraph (⌘⌥0)</option>
+                  <option value="h1">Heading 1 (⌘⌥1)</option>
+                  <option value="h2">Heading 2 (⌘⌥2)</option>
+                  <option value="h3">Heading 3 (⌘⌥3)</option>
+                  <option value="h4">Heading 4 (⌘⌥4)</option>
+                  <option value="h5">Heading 5 (⌘⌥5)</option>
+                  <option value="h6">Heading 6 (⌘⌥6)</option>
+                  <option value="blockquote">Quote (⌘⇧.)</option>
+                  <option value="pre">Code Block</option>
+                  <option value="lead">Lead Paragraph</option>
+                </optgroup>
+                <optgroup label="Academic">
+                  <option value="abstract">Abstract</option>
+                  <option value="keywords">Keywords</option>
+                  <option value="bibliography">Bibliography</option>
+                  <option value="references">References</option>
+                  <option value="appendix">Appendix</option>
+                  <option value="footnote">Footnote</option>
+                  <option value="citation">Citation</option>
+                </optgroup>
+                <optgroup label="Professional">
+                  <option value="author-info">Author Info</option>
+                  <option value="date-info">Date</option>
+                  <option value="address">Address</option>
+                  <option value="salutation">Salutation</option>
+                  <option value="closing">Closing</option>
+                  <option value="signature">Signature Line</option>
+                  <option value="sidebar">Sidebar</option>
+                  <option value="callout">Callout/Alert</option>
+                </optgroup>
+                <optgroup label="Book Publishing">
+                  <option value="book-title">Book Title</option>
+                  <option value="title">Section Title</option>
+                  <option value="subtitle">Subtitle</option>
+                  <option value="chapter-heading">Chapter Heading</option>
+                  <option value="part-title">Part Title</option>
+                  <option value="epigraph">Epigraph</option>
+                  <option value="dedication">Dedication</option>
+                  <option value="acknowledgments">Acknowledgments</option>
+                  <option value="copyright">Copyright Notice</option>
+                  <option value="verse">Verse/Poetry</option>
                 </optgroup>
                 <optgroup label="Screenplay">
                   <option value="scene-heading">Scene Heading</option>
@@ -2751,11 +2948,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                   <option value="character">Character</option>
                   <option value="dialogue">Dialogue</option>
                   <option value="parenthetical">Parenthetical</option>
-                </optgroup>
-                <optgroup label="Book">
-                  <option value="chapter-heading">Chapter Heading</option>
-                  <option value="book-title">Book Title</option>
-                  <option value="subtitle">Subtitle</option>
+                  <option value="transition">Transition</option>
                 </optgroup>
               </select>
 
@@ -5619,7 +5812,8 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
         .editor-content p.title-content {
           text-align: ${documentStyles.title.textAlign} !important;
           text-indent: 0 !important;
-          margin: ${documentStyles.title.marginBottom}em 0 !important;
+          font-size: ${documentStyles.title.fontSize * 0.85}px !important;
+          margin: ${documentStyles.title.marginBottom * 0.7}em 0 !important;
         }
         .editor-content p.book-title {
           text-align: ${documentStyles.title.textAlign} !important;
@@ -5683,19 +5877,155 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
       }em 0;
         }
         .editor-content h4 {
-          font-size: 1em;
+          font-size: 1.1em;
           font-weight: bold;
-          margin: 1em 0;
+          margin: 1.2em 0 0.6em 0;
+          color: #2c3e50;
         }
         .editor-content h5 {
-          font-size: 0.83em;
+          font-size: 1em;
           font-weight: bold;
-          margin: 1.5em 0;
+          margin: 1em 0 0.5em 0;
+          color: #2c3e50;
         }
         .editor-content h6 {
-          font-size: 0.67em;
+          font-size: 0.9em;
           font-weight: bold;
-          margin: 2em 0;
+          margin: 1em 0 0.5em 0;
+          color: #2c3e50;
+          text-transform: uppercase;
+        }
+        /* Academic Styles */
+        .editor-content p.abstract {
+          font-size: 0.95em;
+          margin: 1.5em 3em;
+          text-align: justify;
+          text-indent: 0 !important;
+          line-height: 1.6;
+        }
+        .editor-content p.keywords {
+          font-size: 0.9em;
+          margin: 1em 3em;
+          text-indent: 0 !important;
+          font-style: italic;
+        }
+        .editor-content p.bibliography,
+        .editor-content p.references {
+          margin-left: 3em;
+          text-indent: -2em;
+          margin-bottom: 0.5em;
+          font-size: 0.95em;
+        }
+        .editor-content p.appendix {
+          margin: 1em 0;
+          text-indent: ${documentStyles.paragraph.firstLineIndent}px !important;
+        }
+        /* Professional Styles */
+        .editor-content p.author-info {
+          text-align: right;
+          text-indent: 0 !important;
+          margin: 0.5em 0;
+          font-weight: 500;
+        }
+        .editor-content p.date-info {
+          text-align: right;
+          text-indent: 0 !important;
+          margin: 0.5em 0;
+          font-size: 0.95em;
+        }
+        .editor-content p.address {
+          text-indent: 0 !important;
+          margin: 0.3em 0;
+          line-height: 1.4;
+        }
+        .editor-content p.salutation {
+          text-indent: 0 !important;
+          margin: 1.5em 0 1em 0;
+        }
+        .editor-content p.closing {
+          text-indent: 0 !important;
+          margin: 1.5em 0 0.5em 0;
+        }
+        .editor-content p.signature {
+          text-indent: 0 !important;
+          margin: 3em 0 0.5em 0;
+          font-weight: 500;
+        }
+        .editor-content p.sidebar {
+          background: #f5ead9;
+          border-left: 4px solid #ef8432;
+          padding: 1em;
+          margin: 1.5em 0;
+          text-indent: 0 !important;
+          font-size: 0.95em;
+          border-radius: 4px;
+        }
+        .editor-content p.callout {
+          background: #fef5e7;
+          border: 2px solid #ef8432;
+          padding: 1em 1.5em;
+          margin: 1.5em 0;
+          text-indent: 0 !important;
+          border-radius: 6px;
+          font-weight: 500;
+        }
+        .editor-content p.lead {
+          font-size: 1.15em;
+          font-weight: 400;
+          line-height: 1.6;
+          margin: 1em 0 1.5em 0;
+          text-indent: 0 !important;
+          color: #374151;
+        }
+        /* Book Publishing Styles */
+        .editor-content p.part-title {
+          text-align: center;
+          text-indent: 0 !important;
+          font-size: 1.8em;
+          font-weight: bold;
+          margin: 3em 0 2em 0;
+          text-transform: uppercase;
+          letter-spacing: 0.1em;
+        }
+        .editor-content p.epigraph {
+          text-align: right;
+          text-indent: 0 !important;
+          font-style: italic;
+          margin: 2em 4em 2em auto;
+          max-width: 60%;
+          font-size: 0.95em;
+        }
+        .editor-content p.dedication {
+          text-align: center;
+          text-indent: 0 !important;
+          font-style: italic;
+          margin: 4em 2em;
+          font-size: 1.1em;
+        }
+        .editor-content p.acknowledgments {
+          text-indent: ${documentStyles.paragraph.firstLineIndent}px !important;
+          margin: 0.8em 0;
+        }
+        .editor-content p.copyright {
+          text-align: center;
+          text-indent: 0 !important;
+          font-size: 0.85em;
+          margin: 0.5em 0;
+          color: #666;
+        }
+        .editor-content p.verse {
+          white-space: pre-wrap;
+          font-family: 'Georgia', serif;
+          text-indent: 0 !important;
+          margin: 0.5em 0 0.5em 3em;
+          line-height: 1.8;
+        }
+        /* Screenplay Transition */
+        .editor-content p.transition {
+          text-align: right;
+          text-indent: 0 !important;
+          margin: 1em 0;
+          font-weight: bold;
         }
         .editor-content blockquote {
           border-left: ${documentStyles.blockquote.borderLeftWidth}px solid ${

@@ -13,6 +13,9 @@ Your complete guide to mastering QuillPilot's writing tools and features.
 5. [Character Management](#character-management)
 6. [Export Options](#export-options)
 7. [Tips & Best Practices](#tips--best-practices)
+8. [Keyboard Shortcuts](#keyboard-shortcuts-reference)
+
+> **⌨️ Complete Keyboard Shortcuts Guide**: See [KEYBOARD_SHORTCUTS.md](./KEYBOARD_SHORTCUTS.md) for detailed shortcuts reference
 
 ---
 
@@ -58,22 +61,34 @@ Writer Mode transforms QuillPilot from an analysis tool into a full-featured wri
 | **U**  | Cmd/Ctrl+U | Underline text |
 | **S̶**  | —          | Strikethrough  |
 
+> **⌨️ Pro Tip**: Use keyboard shortcuts for faster formatting! See [KEYBOARD_SHORTCUTS.md](./KEYBOARD_SHORTCUTS.md) for complete list.
+
 ### Block Formatting
 
-| Option                | Usage                                      |
-| --------------------- | ------------------------------------------ |
-| Paragraph             | Normal body text                           |
-| Title                 | Centered book/chapter title                |
-| Subtitle              | Centered subtitle                          |
-| Heading 1-6           | Chapter titles and section headers         |
-| Quote                 | Block quotations                           |
-| Pull Quote            | Emphasized quotations (centered, bordered) |
-| Code Block            | Monospace text                             |
-| Footnote              | Reference notes                            |
-| Citation              | Bibliography/citation format               |
-| **Table of Contents** | TOC placeholder or heading marker          |
-| Index                 | Index placeholder                          |
-| Figure                | Figure with caption                        |
+Use the dropdown menu in the toolbar to change paragraph styles. Keyboard shortcuts available for headings (Cmd/Ctrl+Alt+1-6) and are shown in the dropdown.
+
+| Option                | Usage                                      | Shortcut         |
+| --------------------- | ------------------------------------------ | ---------------- |
+| Paragraph             | Normal body text                           | Cmd/Ctrl+Alt+0   |
+| Title                 | Centered section title (medium size)       | —                |
+| Subtitle              | Centered subtitle (smaller, italic)        | —                |
+| Heading 1-6           | Chapter titles and section headers         | Cmd/Ctrl+Alt+1-6 |
+| Quote                 | Block quotations                           | Cmd/Ctrl+Shift+. |
+| Pull Quote            | Emphasized quotations (centered, bordered) | —                |
+| Code Block            | Monospace text                             | —                |
+| Footnote              | Reference notes                            | —                |
+| Citation              | Bibliography/citation format               | —                |
+| **Book Title**        | Large, bold book title (for title pages)   | —                |
+| Chapter Heading       | Chapter heading style                      | —                |
+| **Table of Contents** | TOC placeholder or heading marker          | —                |
+| Index                 | Index placeholder                          | —                |
+| Figure                | Figure with caption                        | —                |
+
+> **Style Differences**:
+>
+> - **Title**: Medium-sized centered text for section titles
+> - **Book Title**: Large, bold centered text for book covers/title pages
+> - **Subtitle**: Smaller, italic centered text below titles
 
 #### Table of Contents (TOC)
 
@@ -704,15 +719,40 @@ This helps track character appearances and ensures consistency.
 
 ### Keyboard Shortcuts Reference
 
-| Shortcut         | Action         |
-| ---------------- | -------------- |
-| Cmd/Ctrl+B       | Bold           |
-| Cmd/Ctrl+I       | Italic         |
-| Cmd/Ctrl+U       | Underline      |
-| Cmd/Ctrl+K       | Add Bookmark   |
-| Cmd/Ctrl+Z       | Undo           |
-| Cmd/Ctrl+Shift+Z | Redo           |
-| Cmd/Ctrl+F       | Find & Replace |
+> **📖 For complete keyboard shortcuts documentation**, see [KEYBOARD_SHORTCUTS.md](./KEYBOARD_SHORTCUTS.md)
+
+**Text Formatting:**
+
+| Shortcut   | Action    |
+| ---------- | --------- |
+| Cmd/Ctrl+B | Bold      |
+| Cmd/Ctrl+I | Italic    |
+| Cmd/Ctrl+U | Underline |
+
+**Headings & Blocks:**
+
+| Shortcut         | Action    |
+| ---------------- | --------- |
+| Cmd/Ctrl+Alt+1   | Heading 1 |
+| Cmd/Ctrl+Alt+2   | Heading 2 |
+| Cmd/Ctrl+Alt+3   | Heading 3 |
+| Cmd/Ctrl+Alt+4   | Heading 4 |
+| Cmd/Ctrl+Alt+5   | Heading 5 |
+| Cmd/Ctrl+Alt+6   | Heading 6 |
+| Cmd/Ctrl+Alt+0   | Paragraph |
+| Cmd/Ctrl+Shift+. | Quote     |
+
+**Document Control:**
+
+| Shortcut         | Action            |
+| ---------------- | ----------------- |
+| Cmd/Ctrl+S       | Save              |
+| Cmd/Ctrl+Z       | Undo              |
+| Cmd/Ctrl+Shift+Z | Redo              |
+| Cmd/Ctrl+Y       | Redo (Win/Linux)  |
+| Cmd/Ctrl+F       | Find & Replace    |
+| Cmd/Ctrl+K       | Insert Link       |
+| Tab              | Indent (4 spaces) |
 
 ### Performance Tips
 

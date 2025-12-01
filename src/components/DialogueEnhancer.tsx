@@ -267,12 +267,15 @@ export const DialogueEnhancer: React.FC<DialogueEnhancerProps> = ({
             )}
             {analysis.naturalFlow.suggestions.length > 0 && (
               <div>
-                <div className="text-sm font-semibold text-green-700 mb-1">
+                <div
+                  className="text-sm font-semibold mb-1"
+                  style={{ color: palette.navy }}
+                >
                   Suggestions:
                 </div>
                 <ul className="text-sm space-y-1">
                   {analysis.naturalFlow.suggestions.map((suggestion, idx) => (
-                    <li key={idx} className="text-green-600">
+                    <li key={idx} style={{ color: palette.navy }}>
                       ✓ {suggestion}
                     </li>
                   ))}
@@ -291,11 +294,11 @@ export const DialogueEnhancer: React.FC<DialogueEnhancerProps> = ({
               <div className="text-sm">
                 Subtext detected:{" "}
                 <strong
-                  className={
-                    analysis.subtext.detected
-                      ? "text-green-600"
-                      : "text-red-600"
-                  }
+                  style={{
+                    color: analysis.subtext.detected
+                      ? palette.navy
+                      : palette.danger,
+                  }}
                 >
                   {analysis.subtext.detected ? "Yes" : "No"}
                 </strong>
@@ -324,12 +327,15 @@ export const DialogueEnhancer: React.FC<DialogueEnhancerProps> = ({
             )}
             {analysis.subtext.suggestions.length > 0 && (
               <div>
-                <div className="text-sm font-semibold text-green-700 mb-1">
+                <div
+                  className="text-sm font-semibold mb-1"
+                  style={{ color: palette.navy }}
+                >
                   Suggestions:
                 </div>
                 <ul className="text-sm space-y-1">
                   {analysis.subtext.suggestions.map((suggestion, idx) => (
-                    <li key={idx} className="text-green-600">
+                    <li key={idx} style={{ color: palette.navy }}>
                       ✓ {suggestion}
                     </li>
                   ))}
@@ -378,13 +384,16 @@ export const DialogueEnhancer: React.FC<DialogueEnhancerProps> = ({
             )}
             {analysis.characterVoice.suggestions.length > 0 && (
               <div>
-                <div className="text-sm font-semibold text-green-700 mb-1">
+                <div
+                  className="text-sm font-semibold mb-1"
+                  style={{ color: palette.navy }}
+                >
                   Suggestions:
                 </div>
                 <ul className="text-sm space-y-1">
                   {analysis.characterVoice.suggestions.map(
                     (suggestion, idx) => (
-                      <li key={idx} className="text-green-600">
+                      <li key={idx} style={{ color: palette.navy }}>
                         ✓ {suggestion}
                       </li>
                     )
@@ -423,12 +432,15 @@ export const DialogueEnhancer: React.FC<DialogueEnhancerProps> = ({
               )}
               {analysis.tags.suggestions.length > 0 && (
                 <div>
-                  <div className="text-sm font-semibold text-green-700 mb-1">
+                  <div
+                    className="text-sm font-semibold mb-1"
+                    style={{ color: palette.navy }}
+                  >
                     Suggestions:
                   </div>
                   <ul className="text-sm space-y-1">
                     {analysis.tags.suggestions.map((suggestion, idx) => (
-                      <li key={idx} className="text-green-600">
+                      <li key={idx} style={{ color: palette.navy }}>
                         ✓ {suggestion}
                       </li>
                     ))}

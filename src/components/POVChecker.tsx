@@ -439,7 +439,10 @@ export const POVChecker: React.FC<POVCheckerProps> = ({
           ) : (
             <div className="text-center py-8">
               <div className="text-5xl mb-3">✅</div>
-              <div className="text-xl font-bold text-green-600 mb-2">
+              <div
+                className="text-xl font-bold mb-2"
+                style={{ color: palette.navy }}
+              >
                 No POV Issues Detected!
               </div>
               <div className="text-gray-600">

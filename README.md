@@ -41,11 +41,12 @@ Professional-grade tools for serious manuscript development:
 Professional tier includes a full-featured text editor with:
 
 - Rich text formatting (bold, italic, underline, strikethrough)
-- Headers (H1, H2, H3)
+- Headers (H1-H6) with keyboard shortcuts (Cmd/Ctrl+Alt+1-6)
 - Lists (bulleted and numbered)
-- Blockquotes
+- Blockquotes and pull quotes
 - Auto-save functionality
 - Export to DOCX, HTML, and JSON
+- **Keyboard shortcuts** for fast formatting ([see full list](docs/KEYBOARD_SHORTCUTS.md))
 
 ### Access Tiers
 
@@ -143,6 +144,8 @@ QuillPilot runs in demo mode by default, allowing full access to all features wi
 
 ## 📖 Documentation
 
+- `docs/KEYBOARD_SHORTCUTS.md` - Complete keyboard shortcuts reference
+- `docs/WRITERS_REFERENCE.md` - Complete guide to Writer Mode
 - `docs/WRITER_MODE_IMPLEMENTATION.md` - Writer Mode architecture
 - `docs/UNIFIED_EXPORT_SYSTEM.md` - Export functionality
 - `docs/SYSTEM_OVERVIEW.md` - Technical overview

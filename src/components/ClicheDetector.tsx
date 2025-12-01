@@ -472,7 +472,10 @@ export const ClicheDetector: React.FC<ClicheDetectorProps> = ({
           {filteredDetections.length === 0 ? (
             <div className="text-center py-12">
               <div className="text-6xl mb-4">✅</div>
-              <div className="text-xl font-bold text-green-600 mb-2">
+              <div
+                className="text-xl font-bold mb-2"
+                style={{ color: palette.navy }}
+              >
                 No clichés detected!
               </div>
               <div className="text-gray-600">
