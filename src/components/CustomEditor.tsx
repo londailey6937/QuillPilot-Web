@@ -583,45 +583,131 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
 
   // Styles Panel state
   const [showStylesPanel, setShowStylesPanel] = useState(false);
+  const [stylesPanelCategory, setStylesPanelCategory] = useState<
+    "standard" | "book" | "special"
+  >("standard");
   const [documentStyles, setDocumentStyles] = useState({
     paragraph: {
+      fontSize: 16,
       firstLineIndent: 32,
       lineHeight: 1.5,
       marginBottom: 0.5,
+      marginTop: 0,
       textAlign: "left" as "left" | "center" | "right" | "justify",
+      fontWeight: "normal" as "normal" | "bold",
+      fontStyle: "normal" as "normal" | "italic",
+    },
+    "book-title": {
+      fontSize: 32,
+      fontWeight: "bold" as "normal" | "bold",
+      fontStyle: "normal" as "normal" | "italic",
+      textAlign: "center" as "left" | "center" | "right" | "justify",
+      marginTop: 2,
+      marginBottom: 1,
+      firstLineIndent: 0,
     },
     title: {
       fontSize: 24,
       fontWeight: "bold" as "normal" | "bold",
+      fontStyle: "normal" as "normal" | "italic",
       textAlign: "center" as "left" | "center" | "right" | "justify",
+      marginTop: 1.5,
       marginBottom: 0.5,
+      firstLineIndent: 0,
+    },
+    subtitle: {
+      fontSize: 18,
+      fontWeight: "normal" as "normal" | "bold",
+      fontStyle: "italic" as "normal" | "italic",
+      textAlign: "center" as "left" | "center" | "right" | "justify",
+      marginTop: 0.5,
+      marginBottom: 1,
+      firstLineIndent: 0,
+    },
+    "chapter-heading": {
+      fontSize: 26,
+      fontWeight: "bold" as "normal" | "bold",
+      fontStyle: "normal" as "normal" | "italic",
+      textAlign: "center" as "left" | "center" | "right" | "justify",
+      marginTop: 2,
+      marginBottom: 1,
+      firstLineIndent: 0,
+    },
+    "part-title": {
+      fontSize: 28,
+      fontWeight: "bold" as "normal" | "bold",
+      fontStyle: "normal" as "normal" | "italic",
+      textAlign: "center" as "left" | "center" | "right" | "justify",
+      marginTop: 3,
+      marginBottom: 1.5,
+      firstLineIndent: 0,
     },
     heading1: {
       fontSize: 28,
       fontWeight: "bold" as "normal" | "bold",
-      textAlign: "left" as "left" | "center",
+      fontStyle: "normal" as "normal" | "italic",
+      textAlign: "left" as "left" | "center" | "right" | "justify",
       marginTop: 1.5,
       marginBottom: 0.8,
+      firstLineIndent: 0,
     },
     heading2: {
       fontSize: 22,
       fontWeight: "bold" as "normal" | "bold",
-      textAlign: "left" as "left" | "center",
+      fontStyle: "normal" as "normal" | "italic",
+      textAlign: "left" as "left" | "center" | "right" | "justify",
       marginTop: 1.2,
       marginBottom: 0.6,
+      firstLineIndent: 0,
     },
     heading3: {
       fontSize: 18,
       fontWeight: "bold" as "normal" | "bold",
-      textAlign: "left" as "left" | "center",
+      fontStyle: "normal" as "normal" | "italic",
+      textAlign: "left" as "left" | "center" | "right" | "justify",
       marginTop: 1,
       marginBottom: 0.5,
+      firstLineIndent: 0,
     },
     blockquote: {
+      fontSize: 16,
       fontStyle: "italic" as "normal" | "italic",
+      fontWeight: "normal" as "normal" | "bold",
+      textAlign: "left" as "left" | "center" | "right" | "justify",
       marginLeft: 40,
+      marginTop: 1,
+      marginBottom: 1,
+      firstLineIndent: 0,
       borderLeftWidth: 4,
       borderLeftColor: "#e0c392",
+    },
+    epigraph: {
+      fontSize: 14,
+      fontStyle: "italic" as "normal" | "italic",
+      fontWeight: "normal" as "normal" | "bold",
+      textAlign: "right" as "left" | "center" | "right" | "justify",
+      marginTop: 1,
+      marginBottom: 1,
+      firstLineIndent: 0,
+    },
+    dedication: {
+      fontSize: 16,
+      fontStyle: "italic" as "normal" | "italic",
+      fontWeight: "normal" as "normal" | "bold",
+      textAlign: "center" as "left" | "center" | "right" | "justify",
+      marginTop: 2,
+      marginBottom: 2,
+      firstLineIndent: 0,
+    },
+    verse: {
+      fontSize: 15,
+      fontStyle: "normal" as "normal" | "italic",
+      fontWeight: "normal" as "normal" | "bold",
+      textAlign: "left" as "left" | "center" | "right" | "justify",
+      marginLeft: 40,
+      marginTop: 0.5,
+      marginBottom: 0.5,
+      firstLineIndent: 0,
     },
   });
 
@@ -4062,453 +4148,697 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
             onClick={(e) => e.stopPropagation()}
           >
             <div className="p-3 border-b bg-gradient-to-r from-[#fef5e7] to-[#fff7ed] flex-shrink-0">
-              <h2 className="text-lg font-bold text-[#2c3e50]">
+              <h2 className="text-lg font-bold text-[#2c3e50] mb-2">
                 Modify Styles
               </h2>
+              {/* Category Tabs */}
+              <div className="flex gap-1">
+                <button
+                  onClick={() => setStylesPanelCategory("standard")}
+                  className={`px-3 py-1 text-xs rounded-t transition-colors ${
+                    stylesPanelCategory === "standard"
+                      ? "bg-white text-[#ef8432] font-semibold"
+                      : "bg-[#f5e6d3] text-gray-600 hover:bg-[#ead5bb]"
+                  }`}
+                >
+                  Standard
+                </button>
+                <button
+                  onClick={() => setStylesPanelCategory("book")}
+                  className={`px-3 py-1 text-xs rounded-t transition-colors ${
+                    stylesPanelCategory === "book"
+                      ? "bg-white text-[#ef8432] font-semibold"
+                      : "bg-[#f5e6d3] text-gray-600 hover:bg-[#ead5bb]"
+                  }`}
+                >
+                  Book Publishing
+                </button>
+                <button
+                  onClick={() => setStylesPanelCategory("special")}
+                  className={`px-3 py-1 text-xs rounded-t transition-colors ${
+                    stylesPanelCategory === "special"
+                      ? "bg-white text-[#ef8432] font-semibold"
+                      : "bg-[#f5e6d3] text-gray-600 hover:bg-[#ead5bb]"
+                  }`}
+                >
+                  Special
+                </button>
+              </div>
             </div>
 
             <div className="p-3 overflow-y-auto flex-1">
-              {/* Paragraph Style */}
-              <div className="mb-4 p-3 border rounded-lg bg-[#fef5e7]">
-                <h3 className="font-semibold text-[#2c3e50] mb-2 text-sm flex items-center gap-2">
-                  <span>¶</span> Paragraph
-                </h3>
-                <div className="grid grid-cols-4 gap-2">
-                  <div>
-                    <label className="block text-xs text-gray-600 mb-1">
-                      Indent (px)
-                    </label>
-                    <input
-                      type="number"
-                      value={documentStyles.paragraph.firstLineIndent}
-                      onChange={(e) =>
-                        setDocumentStyles((prev) => ({
-                          ...prev,
-                          paragraph: {
-                            ...prev.paragraph,
-                            firstLineIndent: Number(e.target.value),
-                          },
-                        }))
-                      }
-                      className="w-full px-2 py-1 text-sm border rounded focus:ring-1 focus:ring-[#ef8432]"
-                      min="0"
-                      max="200"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-gray-600 mb-1">
-                      Line Height
-                    </label>
-                    <select
-                      value={documentStyles.paragraph.lineHeight}
-                      onChange={(e) =>
-                        setDocumentStyles((prev) => ({
-                          ...prev,
-                          paragraph: {
-                            ...prev.paragraph,
-                            lineHeight: Number(e.target.value),
-                          },
-                        }))
-                      }
-                      className="w-full px-2 py-1 text-sm border rounded focus:ring-1 focus:ring-[#ef8432]"
-                    >
-                      <option value="1">Single</option>
-                      <option value="1.15">1.15</option>
-                      <option value="1.5">1.5</option>
-                      <option value="2">Double</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs text-gray-600 mb-1">
-                      After (em)
-                    </label>
-                    <input
-                      type="number"
-                      value={documentStyles.paragraph.marginBottom}
-                      onChange={(e) =>
-                        setDocumentStyles((prev) => ({
-                          ...prev,
-                          paragraph: {
-                            ...prev.paragraph,
-                            marginBottom: Number(e.target.value),
-                          },
-                        }))
-                      }
-                      className="w-full px-2 py-1 text-sm border rounded focus:ring-1 focus:ring-[#ef8432]"
-                      min="0"
-                      max="5"
-                      step="0.1"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-gray-600 mb-1">
-                      Align
-                    </label>
-                    <select
-                      value={documentStyles.paragraph.textAlign}
-                      onChange={(e) =>
-                        setDocumentStyles((prev) => ({
-                          ...prev,
-                          paragraph: {
-                            ...prev.paragraph,
-                            textAlign: e.target.value as
-                              | "left"
-                              | "center"
-                              | "right"
-                              | "justify",
-                          },
-                        }))
-                      }
-                      className="w-full px-2 py-1 text-sm border rounded focus:ring-1 focus:ring-[#ef8432]"
-                    >
-                      <option value="left">Left</option>
-                      <option value="center">Center</option>
-                      <option value="right">Right</option>
-                      <option value="justify">Justify</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              {/* Title Style */}
-              <div className="mb-4 p-3 border rounded-lg bg-[#fef5e7]">
-                <h3 className="font-semibold text-[#2c3e50] mb-2 text-sm flex items-center gap-2">
-                  <span>T</span> Title
-                </h3>
-                <div className="grid grid-cols-4 gap-2">
-                  <div>
-                    <label className="block text-xs text-gray-600 mb-1">
-                      Size (px)
-                    </label>
-                    <input
-                      type="number"
-                      value={documentStyles.title.fontSize}
-                      onChange={(e) =>
-                        setDocumentStyles((prev) => ({
-                          ...prev,
-                          title: {
-                            ...prev.title,
-                            fontSize: Number(e.target.value),
-                          },
-                        }))
-                      }
-                      className="w-full px-2 py-1 text-sm border rounded focus:ring-1 focus:ring-[#ef8432]"
-                      min="12"
-                      max="72"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-gray-600 mb-1">
-                      Weight
-                    </label>
-                    <select
-                      value={documentStyles.title.fontWeight}
-                      onChange={(e) =>
-                        setDocumentStyles((prev) => ({
-                          ...prev,
-                          title: {
-                            ...prev.title,
-                            fontWeight: e.target.value as "normal" | "bold",
-                          },
-                        }))
-                      }
-                      className="w-full px-2 py-1 text-sm border rounded focus:ring-1 focus:ring-[#ef8432]"
-                    >
-                      <option value="normal">Normal</option>
-                      <option value="bold">Bold</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs text-gray-600 mb-1">
-                      Align
-                    </label>
-                    <select
-                      value={documentStyles.title.textAlign}
-                      onChange={(e) =>
-                        setDocumentStyles((prev) => ({
-                          ...prev,
-                          title: {
-                            ...prev.title,
-                            textAlign: e.target.value as
-                              | "left"
-                              | "center"
-                              | "right"
-                              | "justify",
-                          },
-                        }))
-                      }
-                      className="w-full px-2 py-1 text-sm border rounded focus:ring-1 focus:ring-[#ef8432]"
-                    >
-                      <option value="left">Left</option>
-                      <option value="center">Center</option>
-                      <option value="right">Right</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs text-gray-600 mb-1">
-                      After (em)
-                    </label>
-                    <input
-                      type="number"
-                      value={documentStyles.title.marginBottom}
-                      onChange={(e) =>
-                        setDocumentStyles((prev) => ({
-                          ...prev,
-                          title: {
-                            ...prev.title,
-                            marginBottom: Number(e.target.value),
-                          },
-                        }))
-                      }
-                      className="w-full px-2 py-1 text-sm border rounded focus:ring-1 focus:ring-[#ef8432]"
-                      min="0"
-                      max="5"
-                      step="0.1"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Heading Styles */}
-              <div className="mb-4 p-3 border rounded-lg bg-[#fef5e7]">
-                <h3 className="font-semibold text-[#2c3e50] mb-2 text-sm">
-                  Headings
-                </h3>
-                {["heading1", "heading2", "heading3"].map((heading, idx) => (
-                  <div key={heading} className="mb-2 last:mb-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs font-medium text-gray-600 w-10">
-                        H{idx + 1}
-                      </span>
-                      <div className="grid grid-cols-4 gap-2 flex-1">
+              {/* Standard Styles Tab */}
+              {stylesPanelCategory === "standard" && (
+                <>
+                  {/* Paragraph Style */}
+                  <div className="mb-3 p-3 border rounded-lg bg-[#fef5e7]">
+                    <h3 className="font-semibold text-[#2c3e50] mb-2 text-sm flex items-center gap-2">
+                      <span>¶</span> Paragraph
+                    </h3>
+                    <div className="grid grid-cols-5 gap-2 text-xs">
+                      <div>
+                        <label className="block text-gray-600 mb-1">
+                          Size
+                        </label>
                         <input
                           type="number"
-                          value={
-                            (
-                              documentStyles[
-                                heading as keyof typeof documentStyles
-                              ] as any
-                            ).fontSize
-                          }
+                          value={documentStyles.paragraph.fontSize}
                           onChange={(e) =>
                             setDocumentStyles((prev) => ({
                               ...prev,
-                              [heading]: {
-                                ...(prev as any)[heading],
+                              paragraph: {
+                                ...prev.paragraph,
                                 fontSize: Number(e.target.value),
                               },
                             }))
                           }
-                          className="w-full px-2 py-1 border rounded text-xs focus:ring-1 focus:ring-[#ef8432]"
-                          title="Font Size (px)"
-                          placeholder="Size"
-                          min="12"
-                          max="48"
+                          className="w-full px-2 py-1 border rounded focus:ring-1 focus:ring-[#ef8432]"
+                          min="10"
+                          max="24"
                         />
                       </div>
                       <div>
-                        <label className="block text-xs text-gray-400">
-                          Wt
-                        </label>
-                        <select
-                          value={
-                            (
-                              documentStyles[
-                                heading as keyof typeof documentStyles
-                              ] as any
-                            ).fontWeight
-                          }
-                          onChange={(e) =>
-                            setDocumentStyles((prev) => ({
-                              ...prev,
-                              [heading]: {
-                                ...(prev as any)[heading],
-                                fontWeight: e.target.value,
-                              },
-                            }))
-                          }
-                          className="w-full px-1 py-1 border rounded text-xs focus:ring-1 focus:ring-[#ef8432]"
-                        >
-                          <option value="normal">Normal</option>
-                          <option value="bold">Bold</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-xs text-gray-400">
-                          Before
+                        <label className="block text-gray-600 mb-1">
+                          Indent
                         </label>
                         <input
                           type="number"
-                          value={
-                            (
-                              documentStyles[
-                                heading as keyof typeof documentStyles
-                              ] as any
-                            ).marginTop
-                          }
+                          value={documentStyles.paragraph.firstLineIndent}
                           onChange={(e) =>
                             setDocumentStyles((prev) => ({
                               ...prev,
-                              [heading]: {
-                                ...(prev as any)[heading],
-                                marginTop: Number(e.target.value),
+                              paragraph: {
+                                ...prev.paragraph,
+                                firstLineIndent: Number(e.target.value),
                               },
                             }))
                           }
-                          className="w-full px-1 py-1 border rounded text-xs focus:ring-1 focus:ring-[#ef8432]"
+                          className="w-full px-2 py-1 border rounded focus:ring-1 focus:ring-[#ef8432]"
                           min="0"
-                          max="5"
-                          step="0.1"
+                          max="200"
                         />
                       </div>
                       <div>
-                        <label className="block text-xs text-gray-400">
+                        <label className="block text-gray-600 mb-1">
+                          Line Ht
+                        </label>
+                        <select
+                          value={documentStyles.paragraph.lineHeight}
+                          onChange={(e) =>
+                            setDocumentStyles((prev) => ({
+                              ...prev,
+                              paragraph: {
+                                ...prev.paragraph,
+                                lineHeight: Number(e.target.value),
+                              },
+                            }))
+                          }
+                          className="w-full px-2 py-1 border rounded focus:ring-1 focus:ring-[#ef8432]"
+                        >
+                          <option value="1">1.0</option>
+                          <option value="1.15">1.15</option>
+                          <option value="1.5">1.5</option>
+                          <option value="2">2.0</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-gray-600 mb-1">
                           After
                         </label>
                         <input
                           type="number"
-                          value={
-                            (
-                              documentStyles[
-                                heading as keyof typeof documentStyles
-                              ] as any
-                            ).marginBottom
-                          }
+                          value={documentStyles.paragraph.marginBottom}
                           onChange={(e) =>
                             setDocumentStyles((prev) => ({
                               ...prev,
-                              [heading]: {
-                                ...(prev as any)[heading],
+                              paragraph: {
+                                ...prev.paragraph,
                                 marginBottom: Number(e.target.value),
                               },
                             }))
                           }
-                          className="w-full px-1 py-1 border rounded text-xs focus:ring-1 focus:ring-[#ef8432]"
+                          className="w-full px-2 py-1 border rounded focus:ring-1 focus:ring-[#ef8432]"
                           min="0"
                           max="5"
                           step="0.1"
                         />
                       </div>
                       <div>
-                        <label className="block text-xs text-gray-400">
+                        <label className="block text-gray-600 mb-1">
                           Align
                         </label>
                         <select
-                          value={
-                            (
-                              documentStyles[
-                                heading as keyof typeof documentStyles
-                              ] as any
-                            ).textAlign || "left"
-                          }
+                          value={documentStyles.paragraph.textAlign}
                           onChange={(e) =>
                             setDocumentStyles((prev) => ({
                               ...prev,
-                              [heading]: {
-                                ...(prev as any)[heading],
-                                textAlign: e.target.value,
+                              paragraph: {
+                                ...prev.paragraph,
+                                textAlign: e.target.value as
+                                  | "left"
+                                  | "center"
+                                  | "right"
+                                  | "justify",
                               },
                             }))
                           }
-                          className="w-full px-1 py-1 border rounded text-xs focus:ring-1 focus:ring-[#ef8432]"
+                          className="w-full px-2 py-1 border rounded focus:ring-1 focus:ring-[#ef8432]"
                         >
                           <option value="left">Left</option>
-                          <option value="center">Center</option>
+                          <option value="center">Ctr</option>
+                          <option value="right">Right</option>
+                          <option value="justify">Just</option>
                         </select>
                       </div>
                     </div>
                   </div>
-                ))}
-              </div>
 
-              {/* Blockquote Style */}
-              <div className="mb-3 p-2 border rounded-lg bg-[#fef5e7]">
-                <h3 className="font-medium text-sm text-[#2c3e50] mb-2 flex items-center gap-2">
-                  <span>"</span> Block Quote
-                </h3>
-                <div className="grid grid-cols-4 gap-2">
-                  <div>
-                    <label className="block text-xs text-gray-400">Style</label>
-                    <select
-                      value={documentStyles.blockquote.fontStyle}
-                      onChange={(e) =>
-                        setDocumentStyles((prev) => ({
-                          ...prev,
-                          blockquote: {
-                            ...prev.blockquote,
-                            fontStyle: e.target.value as "normal" | "italic",
-                          },
-                        }))
-                      }
-                      className="w-full px-1 py-1 border rounded text-xs focus:ring-1 focus:ring-[#ef8432]"
-                    >
-                      <option value="normal">Normal</option>
-                      <option value="italic">Italic</option>
-                    </select>
+                  {/* Heading Styles */}
+                  <div className="mb-3 p-3 border rounded-lg bg-[#fef5e7]">
+                    <h3 className="font-semibold text-[#2c3e50] mb-2 text-sm">
+                      Headings
+                    </h3>
+                    {["heading1", "heading2", "heading3"].map((heading, idx) => (
+                      <div key={heading} className="mb-2 last:mb-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-medium text-gray-600 w-8">
+                            H{idx + 1}
+                          </span>
+                          <div className="grid grid-cols-5 gap-2 flex-1 text-xs">
+                            <input
+                              type="number"
+                              value={
+                                (
+                                  documentStyles[
+                                    heading as keyof typeof documentStyles
+                                  ] as any
+                                ).fontSize
+                              }
+                              onChange={(e) =>
+                                setDocumentStyles((prev) => ({
+                                  ...prev,
+                                  [heading]: {
+                                    ...(prev as any)[heading],
+                                    fontSize: Number(e.target.value),
+                                  },
+                                }))
+                              }
+                              className="w-full px-2 py-1 border rounded focus:ring-1 focus:ring-[#ef8432]"
+                              title="Font Size"
+                              min="12"
+                              max="48"
+                            />
+                            <select
+                              value={
+                                (
+                                  documentStyles[
+                                    heading as keyof typeof documentStyles
+                                  ] as any
+                                ).fontWeight
+                              }
+                              onChange={(e) =>
+                                setDocumentStyles((prev) => ({
+                                  ...prev,
+                                  [heading]: {
+                                    ...(prev as any)[heading],
+                                    fontWeight: e.target.value,
+                                  },
+                                }))
+                              }
+                              className="w-full px-1 py-1 border rounded focus:ring-1 focus:ring-[#ef8432]"
+                            >
+                              <option value="normal">Norm</option>
+                              <option value="bold">Bold</option>
+                            </select>
+                            <input
+                              type="number"
+                              value={
+                                (
+                                  documentStyles[
+                                    heading as keyof typeof documentStyles
+                                  ] as any
+                                ).marginTop
+                              }
+                              onChange={(e) =>
+                                setDocumentStyles((prev) => ({
+                                  ...prev,
+                                  [heading]: {
+                                    ...(prev as any)[heading],
+                                    marginTop: Number(e.target.value),
+                                  },
+                                }))
+                              }
+                              className="w-full px-1 py-1 border rounded focus:ring-1 focus:ring-[#ef8432]"
+                              title="Margin Before"
+                              min="0"
+                              max="5"
+                              step="0.1"
+                            />
+                            <input
+                              type="number"
+                              value={
+                                (
+                                  documentStyles[
+                                    heading as keyof typeof documentStyles
+                                  ] as any
+                                ).marginBottom
+                              }
+                              onChange={(e) =>
+                                setDocumentStyles((prev) => ({
+                                  ...prev,
+                                  [heading]: {
+                                    ...(prev as any)[heading],
+                                    marginBottom: Number(e.target.value),
+                                  },
+                                }))
+                              }
+                              className="w-full px-1 py-1 border rounded focus:ring-1 focus:ring-[#ef8432]"
+                              title="Margin After"
+                              min="0"
+                              max="5"
+                              step="0.1"
+                            />
+                            <select
+                              value={
+                                (
+                                  documentStyles[
+                                    heading as keyof typeof documentStyles
+                                  ] as any
+                                ).textAlign || "left"
+                              }
+                              onChange={(e) =>
+                                setDocumentStyles((prev) => ({
+                                  ...prev,
+                                  [heading]: {
+                                    ...(prev as any)[heading],
+                                    textAlign: e.target.value,
+                                  },
+                                }))
+                              }
+                              className="w-full px-1 py-1 border rounded focus:ring-1 focus:ring-[#ef8432]"
+                            >
+                              <option value="left">Left</option>
+                              <option value="center">Ctr</option>
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  <div>
-                    <label className="block text-xs text-gray-400">
-                      Indent
-                    </label>
-                    <input
-                      type="number"
-                      value={documentStyles.blockquote.marginLeft}
-                      onChange={(e) =>
-                        setDocumentStyles((prev) => ({
-                          ...prev,
-                          blockquote: {
-                            ...prev.blockquote,
-                            marginLeft: Number(e.target.value),
-                          },
-                        }))
-                      }
-                      className="w-full px-1 py-1 border rounded text-xs focus:ring-1 focus:ring-[#ef8432]"
-                      min="0"
-                      max="100"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-gray-400">
-                      Border
-                    </label>
-                    <input
-                      type="number"
-                      value={documentStyles.blockquote.borderLeftWidth}
-                      onChange={(e) =>
-                        setDocumentStyles((prev) => ({
-                          ...prev,
-                          blockquote: {
-                            ...prev.blockquote,
-                            borderLeftWidth: Number(e.target.value),
-                          },
-                        }))
-                      }
-                      className="w-full px-1 py-1 border rounded text-xs focus:ring-1 focus:ring-[#ef8432]"
-                      min="0"
-                      max="10"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-gray-400">Color</label>
-                    <input
-                      type="color"
-                      value={documentStyles.blockquote.borderLeftColor}
-                      onChange={(e) =>
-                        setDocumentStyles((prev) => ({
-                          ...prev,
-                          blockquote: {
-                            ...prev.blockquote,
-                            borderLeftColor: e.target.value,
-                          },
-                        }))
-                      }
-                      className="w-full h-6 px-1 border rounded cursor-pointer"
-                    />
-                  </div>
-                </div>
-              </div>
 
-              {/* Header & Footer */}
+                  {/* Blockquote Style */}
+                  <div className="mb-3 p-3 border rounded-lg bg-[#fef5e7]">
+                    <h3 className="font-medium text-sm text-[#2c3e50] mb-2 flex items-center gap-2">
+                      <span>"</span> Block Quote
+                    </h3>
+                    <div className="grid grid-cols-5 gap-2 text-xs">
+                      <div>
+                        <label className="block text-gray-600 mb-1">Size</label>
+                        <input
+                          type="number"
+                          value={documentStyles.blockquote.fontSize}
+                          onChange={(e) =>
+                            setDocumentStyles((prev) => ({
+                              ...prev,
+                              blockquote: {
+                                ...prev.blockquote,
+                                fontSize: Number(e.target.value),
+                              },
+                            }))
+                          }
+                          className="w-full px-1 py-1 border rounded focus:ring-1 focus:ring-[#ef8432]"
+                          min="10"
+                          max="24"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-gray-600 mb-1">Style</label>
+                        <select
+                          value={documentStyles.blockquote.fontStyle}
+                          onChange={(e) =>
+                            setDocumentStyles((prev) => ({
+                              ...prev,
+                              blockquote: {
+                                ...prev.blockquote,
+                                fontStyle: e.target.value as "normal" | "italic",
+                              },
+                            }))
+                          }
+                          className="w-full px-1 py-1 border rounded focus:ring-1 focus:ring-[#ef8432]"
+                        >
+                          <option value="normal">Norm</option>
+                          <option value="italic">Italic</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-gray-600 mb-1">
+                          Indent
+                        </label>
+                        <input
+                          type="number"
+                          value={documentStyles.blockquote.marginLeft}
+                          onChange={(e) =>
+                            setDocumentStyles((prev) => ({
+                              ...prev,
+                              blockquote: {
+                                ...prev.blockquote,
+                                marginLeft: Number(e.target.value),
+                              },
+                            }))
+                          }
+                          className="w-full px-1 py-1 border rounded focus:ring-1 focus:ring-[#ef8432]"
+                          min="0"
+                          max="100"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-gray-600 mb-1">
+                          Border
+                        </label>
+                        <input
+                          type="number"
+                          value={documentStyles.blockquote.borderLeftWidth}
+                          onChange={(e) =>
+                            setDocumentStyles((prev) => ({
+                              ...prev,
+                              blockquote: {
+                                ...prev.blockquote,
+                                borderLeftWidth: Number(e.target.value),
+                              },
+                            }))
+                          }
+                          className="w-full px-1 py-1 border rounded focus:ring-1 focus:ring-[#ef8432]"
+                          min="0"
+                          max="10"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-gray-600 mb-1">Color</label>
+                        <input
+                          type="color"
+                          value={documentStyles.blockquote.borderLeftColor}
+                          onChange={(e) =>
+                            setDocumentStyles((prev) => ({
+                              ...prev,
+                              blockquote: {
+                                ...prev.blockquote,
+                                borderLeftColor: e.target.value,
+                              },
+                            }))
+                          }
+                          className="w-full h-6 px-1 border rounded cursor-pointer"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* Book Publishing Styles Tab */}
+              {stylesPanelCategory === "book" && (
+                <>
+                  {["book-title", "title", "subtitle", "chapter-heading", "part-title"].map((styleName) => (
+                    <div key={styleName} className="mb-3 p-3 border rounded-lg bg-[#fef5e7]">
+                      <h3 className="font-medium text-sm text-[#2c3e50] mb-2 capitalize">
+                        {styleName.replace("-", " ")}
+                      </h3>
+                      <div className="grid grid-cols-5 gap-2 text-xs">
+                        <div>
+                          <label className="block text-gray-600 mb-1">Size</label>
+                          <input
+                            type="number"
+                            value={
+                              (
+                                documentStyles[
+                                  styleName as keyof typeof documentStyles
+                                ] as any
+                              ).fontSize
+                            }
+                            onChange={(e) =>
+                              setDocumentStyles((prev) => ({
+                                ...prev,
+                                [styleName]: {
+                                  ...(prev as any)[styleName],
+                                  fontSize: Number(e.target.value),
+                                },
+                              }))
+                            }
+                            className="w-full px-2 py-1 border rounded focus:ring-1 focus:ring-[#ef8432]"
+                            min="12"
+                            max="48"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-gray-600 mb-1">Weight</label>
+                          <select
+                            value={
+                              (
+                                documentStyles[
+                                  styleName as keyof typeof documentStyles
+                                ] as any
+                              ).fontWeight
+                            }
+                            onChange={(e) =>
+                              setDocumentStyles((prev) => ({
+                                ...prev,
+                                [styleName]: {
+                                  ...(prev as any)[styleName],
+                                  fontWeight: e.target.value,
+                                },
+                              }))
+                            }
+                            className="w-full px-1 py-1 border rounded focus:ring-1 focus:ring-[#ef8432]"
+                          >
+                            <option value="normal">Norm</option>
+                            <option value="bold">Bold</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-gray-600 mb-1">Style</label>
+                          <select
+                            value={
+                              (
+                                documentStyles[
+                                  styleName as keyof typeof documentStyles
+                                ] as any
+                              ).fontStyle
+                            }
+                            onChange={(e) =>
+                              setDocumentStyles((prev) => ({
+                                ...prev,
+                                [styleName]: {
+                                  ...(prev as any)[styleName],
+                                  fontStyle: e.target.value,
+                                },
+                              }))
+                            }
+                            className="w-full px-1 py-1 border rounded focus:ring-1 focus:ring-[#ef8432]"
+                          >
+                            <option value="normal">Norm</option>
+                            <option value="italic">Italic</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-gray-600 mb-1">Before</label>
+                          <input
+                            type="number"
+                            value={
+                              (
+                                documentStyles[
+                                  styleName as keyof typeof documentStyles
+                                ] as any
+                              ).marginTop
+                            }
+                            onChange={(e) =>
+                              setDocumentStyles((prev) => ({
+                                ...prev,
+                                [styleName]: {
+                                  ...(prev as any)[styleName],
+                                  marginTop: Number(e.target.value),
+                                },
+                              }))
+                            }
+                            className="w-full px-1 py-1 border rounded focus:ring-1 focus:ring-[#ef8432]"
+                            min="0"
+                            max="5"
+                            step="0.1"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-gray-600 mb-1">Align</label>
+                          <select
+                            value={
+                              (
+                                documentStyles[
+                                  styleName as keyof typeof documentStyles
+                                ] as any
+                              ).textAlign
+                            }
+                            onChange={(e) =>
+                              setDocumentStyles((prev) => ({
+                                ...prev,
+                                [styleName]: {
+                                  ...(prev as any)[styleName],
+                                  textAlign: e.target.value,
+                                },
+                              }))
+                            }
+                            className="w-full px-1 py-1 border rounded focus:ring-1 focus:ring-[#ef8432]"
+                          >
+                            <option value="left">Left</option>
+                            <option value="center">Ctr</option>
+                            <option value="right">Right</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </>
+              )}
+
+              {/* Special Styles Tab */}
+              {stylesPanelCategory === "special" && (
+                <>
+                  {["epigraph", "dedication", "verse"].map((styleName) => (
+                    <div key={styleName} className="mb-3 p-3 border rounded-lg bg-[#fef5e7]">
+                      <h3 className="font-medium text-sm text-[#2c3e50] mb-2 capitalize">
+                        {styleName}
+                      </h3>
+                      <div className="grid grid-cols-5 gap-2 text-xs">
+                        <div>
+                          <label className="block text-gray-600 mb-1">Size</label>
+                          <input
+                            type="number"
+                            value={
+                              (
+                                documentStyles[
+                                  styleName as keyof typeof documentStyles
+                                ] as any
+                              ).fontSize
+                            }
+                            onChange={(e) =>
+                              setDocumentStyles((prev) => ({
+                                ...prev,
+                                [styleName]: {
+                                  ...(prev as any)[styleName],
+                                  fontSize: Number(e.target.value),
+                                },
+                              }))
+                            }
+                            className="w-full px-2 py-1 border rounded focus:ring-1 focus:ring-[#ef8432]"
+                            min="10"
+                            max="24"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-gray-600 mb-1">Weight</label>
+                          <select
+                            value={
+                              (
+                                documentStyles[
+                                  styleName as keyof typeof documentStyles
+                                ] as any
+                              ).fontWeight
+                            }
+                            onChange={(e) =>
+                              setDocumentStyles((prev) => ({
+                                ...prev,
+                                [styleName]: {
+                                  ...(prev as any)[styleName],
+                                  fontWeight: e.target.value,
+                                },
+                              }))
+                            }
+                            className="w-full px-1 py-1 border rounded focus:ring-1 focus:ring-[#ef8432]"
+                          >
+                            <option value="normal">Norm</option>
+                            <option value="bold">Bold</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-gray-600 mb-1">Style</label>
+                          <select
+                            value={
+                              (
+                                documentStyles[
+                                  styleName as keyof typeof documentStyles
+                                ] as any
+                              ).fontStyle
+                            }
+                            onChange={(e) =>
+                              setDocumentStyles((prev) => ({
+                                ...prev,
+                                [styleName]: {
+                                  ...(prev as any)[styleName],
+                                  fontStyle: e.target.value,
+                                },
+                              }))
+                            }
+                            className="w-full px-1 py-1 border rounded focus:ring-1 focus:ring-[#ef8432]"
+                          >
+                            <option value="normal">Norm</option>
+                            <option value="italic">Italic</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-gray-600 mb-1">Before</label>
+                          <input
+                            type="number"
+                            value={
+                              (
+                                documentStyles[
+                                  styleName as keyof typeof documentStyles
+                                ] as any
+                              ).marginTop
+                            }
+                            onChange={(e) =>
+                              setDocumentStyles((prev) => ({
+                                ...prev,
+                                [styleName]: {
+                                  ...(prev as any)[styleName],
+                                  marginTop: Number(e.target.value),
+                                },
+                              }))
+                            }
+                            className="w-full px-1 py-1 border rounded focus:ring-1 focus:ring-[#ef8432]"
+                            min="0"
+                            max="5"
+                            step="0.1"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-gray-600 mb-1">Align</label>
+                          <select
+                            value={
+                              (
+                                documentStyles[
+                                  styleName as keyof typeof documentStyles
+                                ] as any
+                              ).textAlign
+                            }
+                            onChange={(e) =>
+                              setDocumentStyles((prev) => ({
+                                ...prev,
+                                [styleName]: {
+                                  ...(prev as any)[styleName],
+                                  textAlign: e.target.value,
+                                },
+                              }))
+                            }
+                            className="w-full px-1 py-1 border rounded focus:ring-1 focus:ring-[#ef8432]"
+                          >
+                            <option value="left">Left</option>
+                            <option value="center">Ctr</option>
+                            <option value="right">Right</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </>
+              )}
+
+              {/* Header & Footer - shown in all tabs */}
               <div className="mb-3 p-2 border rounded-lg bg-[#fef5e7]">
                 <h3 className="font-medium text-sm text-[#2c3e50] mb-2 flex items-center gap-2">
                   📄 Header & Footer
@@ -4637,43 +4967,126 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                   // Reset to defaults
                   setDocumentStyles({
                     paragraph: {
+                      fontSize: 16,
                       firstLineIndent: 32,
                       lineHeight: 1.5,
                       marginBottom: 0.5,
+                      marginTop: 0,
                       textAlign: "left",
+                      fontWeight: "normal",
+                      fontStyle: "normal",
+                    },
+                    "book-title": {
+                      fontSize: 32,
+                      fontWeight: "bold",
+                      fontStyle: "normal",
+                      textAlign: "center",
+                      marginTop: 2,
+                      marginBottom: 1,
+                      firstLineIndent: 0,
                     },
                     title: {
                       fontSize: 24,
                       fontWeight: "bold",
+                      fontStyle: "normal",
                       textAlign: "center",
+                      marginTop: 1.5,
                       marginBottom: 0.5,
+                      firstLineIndent: 0,
+                    },
+                    subtitle: {
+                      fontSize: 18,
+                      fontWeight: "normal",
+                      fontStyle: "italic",
+                      textAlign: "center",
+                      marginTop: 0.5,
+                      marginBottom: 1,
+                      firstLineIndent: 0,
+                    },
+                    "chapter-heading": {
+                      fontSize: 26,
+                      fontWeight: "bold",
+                      fontStyle: "normal",
+                      textAlign: "center",
+                      marginTop: 2,
+                      marginBottom: 1,
+                      firstLineIndent: 0,
+                    },
+                    "part-title": {
+                      fontSize: 28,
+                      fontWeight: "bold",
+                      fontStyle: "normal",
+                      textAlign: "center",
+                      marginTop: 3,
+                      marginBottom: 1.5,
+                      firstLineIndent: 0,
                     },
                     heading1: {
                       fontSize: 28,
                       fontWeight: "bold",
+                      fontStyle: "normal",
                       textAlign: "left",
                       marginTop: 1.5,
                       marginBottom: 0.8,
+                      firstLineIndent: 0,
                     },
                     heading2: {
                       fontSize: 22,
                       fontWeight: "bold",
+                      fontStyle: "normal",
                       textAlign: "left",
                       marginTop: 1.2,
                       marginBottom: 0.6,
+                      firstLineIndent: 0,
                     },
                     heading3: {
                       fontSize: 18,
                       fontWeight: "bold",
+                      fontStyle: "normal",
                       textAlign: "left",
                       marginTop: 1,
                       marginBottom: 0.5,
+                      firstLineIndent: 0,
                     },
                     blockquote: {
+                      fontSize: 16,
                       fontStyle: "italic",
+                      fontWeight: "normal",
+                      textAlign: "left",
                       marginLeft: 40,
+                      marginTop: 1,
+                      marginBottom: 1,
+                      firstLineIndent: 0,
                       borderLeftWidth: 4,
                       borderLeftColor: "#e0c392",
+                    },
+                    epigraph: {
+                      fontSize: 14,
+                      fontStyle: "italic",
+                      fontWeight: "normal",
+                      textAlign: "right",
+                      marginTop: 1,
+                      marginBottom: 1,
+                      firstLineIndent: 0,
+                    },
+                    dedication: {
+                      fontSize: 16,
+                      fontStyle: "italic",
+                      fontWeight: "normal",
+                      textAlign: "center",
+                      marginTop: 2,
+                      marginBottom: 2,
+                      firstLineIndent: 0,
+                    },
+                    verse: {
+                      fontSize: 15,
+                      fontStyle: "normal",
+                      fontWeight: "normal",
+                      textAlign: "left",
+                      marginLeft: 40,
+                      marginTop: 0.5,
+                      marginBottom: 0.5,
+                      firstLineIndent: 0,
                     },
                   });
                   setHeaderText("");
