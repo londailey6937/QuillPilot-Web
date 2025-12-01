@@ -3072,43 +3072,42 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                   const selection = window.getSelection();
                   if (!selection || selection.rangeCount === 0) return;
 
-                  // Capture the current selection before mutations
-                  let preservedRange = selection.getRangeAt(0).cloneRange();
-
                   const currentSize = parseInt(fontSize) || 16;
                   const newSize = Math.max(8, currentSize - 1);
                   setFontSize(`${newSize}px`);
 
                   // Apply inline style for precise control
                   document.execCommand("fontSize", false, "7");
+
+                  // Capture selection AFTER execCommand but BEFORE manual replacement
+                  // The selection is now on the text nodes inside the <font> tags
+                  let preservedRange: Range | null = null;
+                  const selAfterExec = window.getSelection();
+                  if (selAfterExec && selAfterExec.rangeCount > 0) {
+                    preservedRange = selAfterExec.getRangeAt(0).cloneRange();
+                  }
+
                   const fontElements =
                     editorRef.current?.querySelectorAll('font[size="7"]');
                   fontElements?.forEach((el) => {
                     const span = document.createElement("span");
                     span.style.fontSize = `${newSize}px`;
+                    // Moving children preserves the Range if it points to the children
                     while (el.firstChild) {
                       span.appendChild(el.firstChild);
                     }
                     el.parentNode?.replaceChild(span, el);
                   });
 
-                  // Refresh preserved range after DOM changes
-                  const updatedSelection = window.getSelection();
-                  if (updatedSelection && updatedSelection.rangeCount > 0) {
-                    preservedRange = updatedSelection
-                      .getRangeAt(0)
-                      .cloneRange();
-                  }
-
-                  // Restore focus to editor and selection once React finishes re-rendering
+                  // Restore focus and selection
                   editorRef.current?.focus();
-                  requestAnimationFrame(() => {
+                  if (preservedRange) {
                     const newSelection = window.getSelection();
                     if (newSelection) {
                       newSelection.removeAllRanges();
                       newSelection.addRange(preservedRange);
                     }
-                  });
+                  }
                 }}
                 className="px-1.5 py-1 rounded border border-[#e0c392] bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50] transition-colors text-xs font-bold"
                 title="Decrease Font Size"
@@ -3127,43 +3126,42 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                   const selection = window.getSelection();
                   if (!selection || selection.rangeCount === 0) return;
 
-                  // Capture the current selection before mutations
-                  let preservedRange = selection.getRangeAt(0).cloneRange();
-
                   const currentSize = parseInt(fontSize) || 16;
                   const newSize = Math.min(72, currentSize + 1);
                   setFontSize(`${newSize}px`);
 
                   // Apply inline style for precise control
                   document.execCommand("fontSize", false, "7");
+
+                  // Capture selection AFTER execCommand but BEFORE manual replacement
+                  // The selection is now on the text nodes inside the <font> tags
+                  let preservedRange: Range | null = null;
+                  const selAfterExec = window.getSelection();
+                  if (selAfterExec && selAfterExec.rangeCount > 0) {
+                    preservedRange = selAfterExec.getRangeAt(0).cloneRange();
+                  }
+
                   const fontElements =
                     editorRef.current?.querySelectorAll('font[size="7"]');
                   fontElements?.forEach((el) => {
                     const span = document.createElement("span");
                     span.style.fontSize = `${newSize}px`;
+                    // Moving children preserves the Range if it points to the children
                     while (el.firstChild) {
                       span.appendChild(el.firstChild);
                     }
                     el.parentNode?.replaceChild(span, el);
                   });
 
-                  // Refresh preserved range after DOM changes
-                  const updatedSelection = window.getSelection();
-                  if (updatedSelection && updatedSelection.rangeCount > 0) {
-                    preservedRange = updatedSelection
-                      .getRangeAt(0)
-                      .cloneRange();
-                  }
-
-                  // Restore focus to editor and selection once React finishes re-rendering
+                  // Restore focus and selection
                   editorRef.current?.focus();
-                  requestAnimationFrame(() => {
+                  if (preservedRange) {
                     const newSelection = window.getSelection();
                     if (newSelection) {
                       newSelection.removeAllRanges();
                       newSelection.addRange(preservedRange);
                     }
-                  });
+                  }
                 }}
                 className="px-1.5 py-1 rounded border border-[#e0c392] bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50] transition-colors text-xs font-bold"
                 title="Increase Font Size"
