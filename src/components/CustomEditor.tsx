@@ -3065,6 +3065,66 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                 <option value="Courier Prime, monospace">Courier Prime</option>
               </select>
 
+              {/* Font Size Controls */}
+              <button
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  const currentSize = parseInt(fontSize) || 16;
+                  const newSize = Math.max(8, currentSize - 1);
+                  setFontSize(`${newSize}px`);
+                  formatText("fontSize", "1");
+                  // Apply inline style for precise control
+                  const selection = window.getSelection();
+                  if (selection && selection.rangeCount > 0) {
+                    document.execCommand("fontSize", false, "7");
+                    const fontElements =
+                      editorRef.current?.querySelectorAll('font[size="7"]');
+                    fontElements?.forEach((el) => {
+                      const span = document.createElement("span");
+                      span.style.fontSize = `${newSize}px`;
+                      span.innerHTML = el.innerHTML;
+                      el.parentNode?.replaceChild(span, el);
+                    });
+                  }
+                }}
+                className="px-1.5 py-1 rounded border border-[#e0c392] bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50] transition-colors text-xs font-bold"
+                title="Decrease Font Size"
+              >
+                A-
+              </button>
+              <span
+                className="px-1 py-1 text-xs text-[#2c3e50] min-w-[32px] text-center"
+                title="Current Font Size"
+              >
+                {parseInt(fontSize) || 16}
+              </span>
+              <button
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  const currentSize = parseInt(fontSize) || 16;
+                  const newSize = Math.min(72, currentSize + 1);
+                  setFontSize(`${newSize}px`);
+                  formatText("fontSize", "7");
+                  // Apply inline style for precise control
+                  const selection = window.getSelection();
+                  if (selection && selection.rangeCount > 0) {
+                    document.execCommand("fontSize", false, "7");
+                    const fontElements =
+                      editorRef.current?.querySelectorAll('font[size="7"]');
+                    fontElements?.forEach((el) => {
+                      const span = document.createElement("span");
+                      span.style.fontSize = `${newSize}px`;
+                      span.innerHTML = el.innerHTML;
+                      el.parentNode?.replaceChild(span, el);
+                    });
+                  }
+                }}
+                className="px-1.5 py-1 rounded border border-[#e0c392] bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50] transition-colors text-xs font-bold"
+                title="Increase Font Size"
+              >
+                A+
+              </button>
+
               {/* Style Labels Toggle */}
               <button
                 onClick={() => setShowStyleLabels(!showStyleLabels)}

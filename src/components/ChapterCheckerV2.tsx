@@ -1060,12 +1060,22 @@ export const ChapterCheckerV2: React.FC = () => {
     };
 
     // Extract book title from HTML if present
+    // Use more flexible regex to handle inner elements and whitespace
     const bookTitleMatch = content.html.match(
-      /<p[^>]*class="[^"]*book-title[^"]*"[^>]*>([^<]+)<\/p>/i
+      /<p[^>]*class="[^"]*book-title[^"]*"[^>]*>([\s\S]*?)<\/p>/i
     );
     if (bookTitleMatch && bookTitleMatch[1]) {
-      const extractedTitle = bookTitleMatch[1].trim();
-      if (extractedTitle && extractedTitle !== "Book Title") {
+      // Strip HTML tags and clean up whitespace
+      const extractedTitle = bookTitleMatch[1]
+        .replace(/<[^>]*>/g, "")
+        .replace(/&nbsp;/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+      if (
+        extractedTitle &&
+        extractedTitle !== "Book Title" &&
+        extractedTitle.length > 0
+      ) {
         setFileName(extractedTitle);
       }
     }

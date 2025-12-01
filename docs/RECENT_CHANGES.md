@@ -1,8 +1,102 @@
 # Recent Changes & Features
 
-**Last Updated:** November 30, 2025
+**Last Updated:** December 1, 2025
 
 This document tracks recent features, improvements, and changes to the Chapter Analysis system.
+
+---
+
+## December 1, 2025 Updates
+
+### Style Labels Toggle Button
+
+**Feature:** Toggle visibility of style labels and analysis indicators
+
+**What it does:**
+
+- Adds a 🏷️ toggle button in the toolbar near the font dropdown
+- Controls visibility of all style labels (H1, H2, H3, CH, T, ST, BT, PT)
+- Also controls spacing dots, visual indicator dots, and analysis legend
+- Default state: ON (labels visible)
+
+**How to use:**
+
+1. Click 🏷️ in the toolbar to toggle
+2. Orange highlight = labels visible
+3. Gray = labels hidden
+4. Toggle persists during editing session
+
+**Style Label Abbreviations:**
+| Abbreviation | Full Style |
+|--------------|------------|
+| H1 | Heading 1 |
+| H2 | Heading 2 |
+| H3 | Heading 3 |
+| CH | Chapter Heading |
+| T | Title/Section |
+| ST | Subtitle |
+| BT | Book Title |
+| PT | Part Title |
+
+**Files changed:**
+
+- `CustomEditor.tsx`:
+  - Added `showStyleLabels` state variable
+  - Added toggle button UI
+  - All labels use conditional `display` based on state
+  - `renderIndicators`, `renderSuggestions`, `renderAnalysisLegend` respect toggle
+
+---
+
+### Font Size Increase/Decrease Buttons
+
+**Feature:** Quick font size adjustment with A-/A+ buttons
+
+**What it does:**
+
+- Adds A- and A+ buttons in the toolbar
+- Shows current font size between buttons
+- Decrease: Reduces font by 1px (minimum 8px)
+- Increase: Increases font by 1px (maximum 72px)
+- Applies to selected text
+
+**Default Font Size:** 16px (Georgia serif)
+
+**How to use:**
+
+1. Select text in the editor
+2. Click A- to decrease or A+ to increase font size
+3. Current size displayed between buttons
+
+**Files changed:**
+
+- `CustomEditor.tsx` - Added font size control buttons in toolbar
+
+---
+
+### Book Title Detection Fix
+
+**Feature:** Book-title style now properly updates Stats Panel filename
+
+**Problem solved:**
+When applying the "Book Title" style to text, the Stats Panel filename wasn't updating because the regex didn't handle:
+
+- Nested HTML elements (`<br>`, `<span>`, etc.)
+- HTML entities (`&nbsp;`)
+- Extra whitespace
+
+**Solution:**
+Updated regex to use `[\s\S]*?` for flexible content matching, then strip HTML tags and clean whitespace before extracting the title.
+
+**How it works:**
+
+1. Type or select your book's title text
+2. Apply "Book Title" style from dropdown (or Styles panel)
+3. Stats Panel filename automatically updates to match
+
+**Files changed:**
+
+- `ChapterCheckerV2.tsx` - Improved regex and text cleaning in `handleEditorContentChange`
 
 ---
 

@@ -14,6 +14,35 @@
   - Used for: Text, borders, logo, structural elements
   - RGB: `rgb(44, 62, 80)`
 
+## Typography
+
+### Default Font Settings
+
+- **Default Font Family:** Georgia, serif
+- **Default Font Size:** 16px
+- **Line Height:** 1.6 (editor content)
+
+### Font Options Available
+
+| Font Name         | Stack                      | Use Case              |
+| ----------------- | -------------------------- | --------------------- |
+| Georgia (Default) | `Georgia, serif`           | General prose, novels |
+| Times New Roman   | `Times New Roman, serif`   | Academic, formal      |
+| Palatino          | `Palatino Linotype, serif` | Literary, elegant     |
+| Garamond          | `Garamond, serif`          | Classic, books        |
+| Arial             | `Arial, sans-serif`        | Modern, clean         |
+| Helvetica         | `Helvetica, sans-serif`    | Professional          |
+| Verdana           | `Verdana, sans-serif`      | Screen readability    |
+| Courier New       | `Courier New, monospace`   | Code, scripts         |
+| Courier Prime     | `Courier Prime, monospace` | Screenplay format     |
+
+### Font Size Range
+
+- **Minimum:** 8px
+- **Maximum:** 72px
+- **Default:** 16px
+- **Adjustment:** ±1px per click (A-/A+ buttons)
+
 ## Background Colors
 
 ### Cream & Tan Backgrounds
