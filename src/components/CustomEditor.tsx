@@ -3069,23 +3069,46 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               <button
                 onMouseDown={(e) => {
                   e.preventDefault();
+                  const selection = window.getSelection();
+                  if (!selection || selection.rangeCount === 0) return;
+
+                  // Capture the current selection before mutations
+                  let preservedRange = selection.getRangeAt(0).cloneRange();
+
                   const currentSize = parseInt(fontSize) || 16;
                   const newSize = Math.max(8, currentSize - 1);
                   setFontSize(`${newSize}px`);
-                  formatText("fontSize", "1");
+
                   // Apply inline style for precise control
-                  const selection = window.getSelection();
-                  if (selection && selection.rangeCount > 0) {
-                    document.execCommand("fontSize", false, "7");
-                    const fontElements =
-                      editorRef.current?.querySelectorAll('font[size="7"]');
-                    fontElements?.forEach((el) => {
-                      const span = document.createElement("span");
-                      span.style.fontSize = `${newSize}px`;
-                      span.innerHTML = el.innerHTML;
-                      el.parentNode?.replaceChild(span, el);
-                    });
+                  document.execCommand("fontSize", false, "7");
+                  const fontElements =
+                    editorRef.current?.querySelectorAll('font[size="7"]');
+                  fontElements?.forEach((el) => {
+                    const span = document.createElement("span");
+                    span.style.fontSize = `${newSize}px`;
+                    while (el.firstChild) {
+                      span.appendChild(el.firstChild);
+                    }
+                    el.parentNode?.replaceChild(span, el);
+                  });
+
+                  // Refresh preserved range after DOM changes
+                  const updatedSelection = window.getSelection();
+                  if (updatedSelection && updatedSelection.rangeCount > 0) {
+                    preservedRange = updatedSelection
+                      .getRangeAt(0)
+                      .cloneRange();
                   }
+
+                  // Restore focus to editor and selection once React finishes re-rendering
+                  editorRef.current?.focus();
+                  requestAnimationFrame(() => {
+                    const newSelection = window.getSelection();
+                    if (newSelection) {
+                      newSelection.removeAllRanges();
+                      newSelection.addRange(preservedRange);
+                    }
+                  });
                 }}
                 className="px-1.5 py-1 rounded border border-[#e0c392] bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50] transition-colors text-xs font-bold"
                 title="Decrease Font Size"
@@ -3101,23 +3124,46 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               <button
                 onMouseDown={(e) => {
                   e.preventDefault();
+                  const selection = window.getSelection();
+                  if (!selection || selection.rangeCount === 0) return;
+
+                  // Capture the current selection before mutations
+                  let preservedRange = selection.getRangeAt(0).cloneRange();
+
                   const currentSize = parseInt(fontSize) || 16;
                   const newSize = Math.min(72, currentSize + 1);
                   setFontSize(`${newSize}px`);
-                  formatText("fontSize", "7");
+
                   // Apply inline style for precise control
-                  const selection = window.getSelection();
-                  if (selection && selection.rangeCount > 0) {
-                    document.execCommand("fontSize", false, "7");
-                    const fontElements =
-                      editorRef.current?.querySelectorAll('font[size="7"]');
-                    fontElements?.forEach((el) => {
-                      const span = document.createElement("span");
-                      span.style.fontSize = `${newSize}px`;
-                      span.innerHTML = el.innerHTML;
-                      el.parentNode?.replaceChild(span, el);
-                    });
+                  document.execCommand("fontSize", false, "7");
+                  const fontElements =
+                    editorRef.current?.querySelectorAll('font[size="7"]');
+                  fontElements?.forEach((el) => {
+                    const span = document.createElement("span");
+                    span.style.fontSize = `${newSize}px`;
+                    while (el.firstChild) {
+                      span.appendChild(el.firstChild);
+                    }
+                    el.parentNode?.replaceChild(span, el);
+                  });
+
+                  // Refresh preserved range after DOM changes
+                  const updatedSelection = window.getSelection();
+                  if (updatedSelection && updatedSelection.rangeCount > 0) {
+                    preservedRange = updatedSelection
+                      .getRangeAt(0)
+                      .cloneRange();
                   }
+
+                  // Restore focus to editor and selection once React finishes re-rendering
+                  editorRef.current?.focus();
+                  requestAnimationFrame(() => {
+                    const newSelection = window.getSelection();
+                    if (newSelection) {
+                      newSelection.removeAllRanges();
+                      newSelection.addRange(preservedRange);
+                    }
+                  });
                 }}
                 className="px-1.5 py-1 rounded border border-[#e0c392] bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50] transition-colors text-xs font-bold"
                 title="Increase Font Size"

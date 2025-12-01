@@ -10,6 +10,7 @@ import React, {
   useEffect,
   lazy,
   Suspense,
+  useCallback,
 } from "react";
 import { DocumentUploader, UploadedDocumentPayload } from "./DocumentUploader";
 import { DocumentEditor } from "./DocumentEditor";
@@ -472,6 +473,7 @@ export const ChapterCheckerV2: React.FC = () => {
     imageCount: number;
     editorHtml?: string;
   } | null>(null); // Single source of truth - extracted at upload
+  const [documentInstanceKey, setDocumentInstanceKey] = useState(0);
   const [fileName, setFileName] = useState("");
   const [fileType, setFileType] = useState("");
   const [isTemplateMode, setIsTemplateMode] = useState(false);
@@ -502,6 +504,7 @@ export const ChapterCheckerV2: React.FC = () => {
   const [progress, setProgress] = useState("");
   const [autoAnalysisEnabled, setAutoAnalysisEnabled] = useState(false);
   const autoAnalysisTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const lastExtractedTitleRef = useRef<string>("");
 
   // UI state - viewMode initialized based on cached access level (tier 3 = writer mode)
   const [viewMode, setViewMode] = useState<"analysis" | "writer">(() => {
@@ -547,6 +550,9 @@ export const ChapterCheckerV2: React.FC = () => {
 
   // Character management (Tier 3)
   const [characters, setCharacters] = useState<Character[]>([]);
+  const bumpDocumentInstanceKey = useCallback(() => {
+    setDocumentInstanceKey((prev) => prev + 1);
+  }, []);
   const [characterMappings, setCharacterMappings] = useState<
     CharacterMapping[]
   >([]);
@@ -989,6 +995,7 @@ export const ChapterCheckerV2: React.FC = () => {
       imageCount,
       editorHtml: hasHtmlContent ? content : undefined,
     });
+    bumpDocumentInstanceKey();
 
     if (isTemplateMode) {
       setIsTemplateMode(false);
@@ -1074,8 +1081,11 @@ export const ChapterCheckerV2: React.FC = () => {
       if (
         extractedTitle &&
         extractedTitle !== "Book Title" &&
-        extractedTitle.length > 0
+        extractedTitle.length > 0 &&
+        extractedTitle !== lastExtractedTitleRef.current
       ) {
+        // Only update if the title actually changed to prevent UI jumps
+        lastExtractedTitleRef.current = extractedTitle;
         setFileName(extractedTitle);
       }
     }
@@ -1139,6 +1149,7 @@ export const ChapterCheckerV2: React.FC = () => {
       imageCount: 0,
       editorHtml,
     });
+    bumpDocumentInstanceKey();
     setChapterText(plainText);
 
     if (saved.isTemplateMode) {
@@ -2265,6 +2276,7 @@ export const ChapterCheckerV2: React.FC = () => {
                         setGeneralConcepts([]);
                         setSelectedDomain("none");
                         setCustomDomainName("");
+                        bumpDocumentInstanceKey();
                       }
                     }}
                     disabled={isAnalyzing}
@@ -3042,7 +3054,7 @@ export const ChapterCheckerV2: React.FC = () => {
 
                   <div style={{ flex: 1, minHeight: 0, position: "relative" }}>
                     <DocumentEditor
-                      key={`${fileName}-${layoutVersion}`} // Force remount when file changes or layout changes (tier/mode switch)
+                      key={`${documentInstanceKey}-${layoutVersion}`} // Force remount when switching documents or layout modes
                       initialText={
                         chapterData.originalPlainText ?? chapterData.plainText
                       }
@@ -3200,6 +3212,7 @@ export const ChapterCheckerV2: React.FC = () => {
                         imageCount: 0,
                         editorHtml: "",
                       });
+                      bumpDocumentInstanceKey();
                       setViewMode("writer");
                     }}
                     style={{
