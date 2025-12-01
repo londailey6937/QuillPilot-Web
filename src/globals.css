@@ -12,6 +12,16 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Hide scrollbar utility */
+.hide-scrollbar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari and Opera */
+}
+
 /* Prose content styling for HTML documents with images */
 .prose-content {
   max-width: 100%;

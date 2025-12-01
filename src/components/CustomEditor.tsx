@@ -7,7 +7,23 @@ import {
 } from "@/utils/spacingInsights";
 import { SensoryDetailAnalyzer } from "@/utils/sensoryDetailAnalyzer";
 import { Character, CharacterMapping } from "../types";
-import { AdvancedToolsPanel } from "./AdvancedToolsPanel";
+import { AIWritingAssistant } from "./AIWritingAssistant";
+import { DialogueEnhancer } from "./DialogueEnhancer";
+import { ReadabilityAnalyzer } from "./ReadabilityAnalyzer";
+import { ClicheDetector } from "./ClicheDetector";
+import { BeatSheetGenerator } from "./BeatSheetGenerator";
+import { POVChecker } from "./POVChecker";
+import { EmotionTracker } from "./EmotionTracker";
+import { MotifTracker } from "./MotifTracker";
+import { PoetryMeterAnalyzer } from "./PoetryMeterAnalyzer";
+import { NonFictionOutlineGenerator } from "./NonFictionOutlineGenerator";
+import { AcademicCitationManager } from "./AcademicCitationManager";
+import { CharacterNameGenerator } from "./CharacterNameGenerator";
+import { WorldBuildingNotebook } from "./WorldBuildingNotebook";
+import { ResearchNotesPanel } from "./ResearchNotesPanel";
+import { ImageMoodBoard } from "./ImageMoodBoard";
+import { VersionHistory } from "./VersionHistory";
+import { CommentAnnotation } from "./CommentAnnotation";
 
 interface CustomEditorProps {
   content: string;
@@ -243,6 +259,28 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
   const [crossReferences, setCrossReferences] = useState<CrossReference[]>([]);
   const [showBookmarkModal, setShowBookmarkModal] = useState(false);
+
+  // Advanced Tools state
+  type ActiveTool =
+    | "ai-assistant"
+    | "dialogue"
+    | "readability"
+    | "cliche"
+    | "beats"
+    | "pov"
+    | "emotion"
+    | "motif"
+    | "poetry-meter"
+    | "nonfiction-outline"
+    | "citation-manager"
+    | "name-generator"
+    | "world-building"
+    | "research-notes"
+    | "mood-board"
+    | "version-history"
+    | "comments"
+    | null;
+  const [activeTool, setActiveTool] = useState<ActiveTool>(null);
   const [showCrossRefModal, setShowCrossRefModal] = useState(false);
   const [showBookmarksPanel, setShowBookmarksPanel] = useState(false);
   const [newBookmarkName, setNewBookmarkName] = useState("");
@@ -4260,11 +4298,12 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
         {showThumbnailRail && (
           <aside
             ref={pageRailRef}
-            className="page-thumbnail-rail"
+            className="page-thumbnail-rail hide-scrollbar"
             style={{
               position: "absolute",
               left: "8px",
               top: "8px",
+              bottom: "8px",
               width: "220px",
               zIndex: 10,
               borderRadius: "18px",
@@ -4273,15 +4312,17 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                 "linear-gradient(180deg, rgba(254,245,231,0.98), rgba(247,230,208,0.92))",
               boxShadow: "0 16px 32px rgba(44, 62, 80, 0.12)",
               padding: "16px 12px",
+              paddingBottom: "16px",
               overflowY: "auto",
-              maxHeight: "calc(100vh - 200px)",
             }}
           >
             <div className="flex items-center justify-between mb-3">
               <div className="text-[11px] font-semibold uppercase tracking-wide text-[#92400e]">
                 Page Rail
               </div>
-              <span className="text-[11px] text-[#6b7280]">{pageCount}</span>
+              <span className="text-[11px] text-[#6b7280]">
+                {pageCount} {pageCount === 1 ? "Page" : "Pages"}
+              </span>
             </div>
             <div className="flex flex-col gap-2">
               {Array.from({ length: pageCount }, (_, index) => {
@@ -4351,6 +4392,630 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           </aside>
         )}
 
+        {/* Advanced Tools Rail - Right Side */}
+        {showThumbnailRail && (
+          <aside
+            className="advanced-tools-rail hide-scrollbar"
+            style={{
+              position: "absolute",
+              right: "8px",
+              top: "8px",
+              bottom: "8px",
+              width: "220px",
+              zIndex: 10,
+              borderRadius: "18px",
+              border: "1px solid #e0c392",
+              background:
+                "linear-gradient(180deg, rgba(254,245,231,0.98), rgba(247,230,208,0.92))",
+              boxShadow: "0 16px 32px rgba(44, 62, 80, 0.12)",
+              padding: "16px 12px",
+              paddingBottom: "16px",
+              overflowY: "auto",
+            }}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <div className="text-[11px] font-semibold uppercase tracking-wide text-[#92400e]">
+                Advanced Tools
+              </div>
+              <span className="text-[11px] text-[#6b7280]">17 Tools</span>
+            </div>
+            <div className="text-[9px] font-semibold uppercase tracking-wide text-[#92400e] mb-2 mt-1">
+              Analysis Tools
+            </div>
+            <div className="flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={() => setActiveTool("ai-assistant")}
+                className="text-left focus-visible:ring-2 focus-visible:ring-[#ef8432]"
+                style={{
+                  border:
+                    activeTool === "ai-assistant"
+                      ? "2px solid #ef8432"
+                      : "1px solid #f5d1ab",
+                  borderRadius: "12px",
+                  padding: "10px",
+                  backgroundColor:
+                    activeTool === "ai-assistant" ? "#fff" : "#fefdf9",
+                  boxShadow:
+                    activeTool === "ai-assistant"
+                      ? "0 10px 24px rgba(239, 132, 50, 0.25)"
+                      : "0 6px 14px rgba(44, 62, 80, 0.08)",
+                  transition: "all 0.2s ease",
+                  cursor: "pointer",
+                }}
+                onMouseEnter={(e) => {
+                  if (activeTool !== "ai-assistant") {
+                    e.currentTarget.style.boxShadow =
+                      "0 10px 20px rgba(44, 62, 80, 0.15)";
+                    e.currentTarget.style.transform = "translateY(-1px)";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (activeTool !== "ai-assistant") {
+                    e.currentTarget.style.boxShadow =
+                      "0 6px 14px rgba(44, 62, 80, 0.08)";
+                    e.currentTarget.style.transform = "translateY(0)";
+                  }
+                }}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-sm">✨</span>
+                  <span className="text-xs font-semibold text-[#2c3e50]">
+                    AI Assistant
+                  </span>
+                </div>
+                <div className="text-[10px] text-[#6b7280] leading-tight">
+                  Get suggestions and completions
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTool("dialogue")}
+                className="text-left focus-visible:ring-2 focus-visible:ring-[#ef8432]"
+                style={{
+                  border:
+                    activeTool === "dialogue"
+                      ? "2px solid #ef8432"
+                      : "1px solid #f5d1ab",
+                  borderRadius: "12px",
+                  padding: "10px",
+                  backgroundColor:
+                    activeTool === "dialogue" ? "#fff" : "#fefdf9",
+                  boxShadow:
+                    activeTool === "dialogue"
+                      ? "0 10px 24px rgba(239, 132, 50, 0.25)"
+                      : "0 6px 14px rgba(44, 62, 80, 0.08)",
+                  transition: "all 0.2s ease",
+                  cursor: "pointer",
+                }}
+                onMouseEnter={(e) => {
+                  if (activeTool !== "dialogue") {
+                    e.currentTarget.style.boxShadow =
+                      "0 10px 20px rgba(44, 62, 80, 0.15)";
+                    e.currentTarget.style.transform = "translateY(-1px)";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (activeTool !== "dialogue") {
+                    e.currentTarget.style.boxShadow =
+                      "0 6px 14px rgba(44, 62, 80, 0.08)";
+                    e.currentTarget.style.transform = "translateY(0)";
+                  }
+                }}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-sm">💬</span>
+                  <span className="text-xs font-semibold text-[#2c3e50]">
+                    Dialogue
+                  </span>
+                </div>
+                <div className="text-[10px] text-[#6b7280] leading-tight">
+                  Analyze dialogue flow
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTool("readability")}
+                className="text-left focus-visible:ring-2 focus-visible:ring-[#ef8432]"
+                style={{
+                  border:
+                    activeTool === "readability"
+                      ? "2px solid #ef8432"
+                      : "1px solid #f5d1ab",
+                  borderRadius: "12px",
+                  padding: "10px",
+                  backgroundColor:
+                    activeTool === "readability" ? "#fff" : "#fefdf9",
+                  boxShadow:
+                    activeTool === "readability"
+                      ? "0 10px 24px rgba(239, 132, 50, 0.25)"
+                      : "0 6px 14px rgba(44, 62, 80, 0.08)",
+                  transition: "all 0.2s ease",
+                  cursor: "pointer",
+                }}
+                onMouseEnter={(e) => {
+                  if (activeTool !== "readability") {
+                    e.currentTarget.style.boxShadow =
+                      "0 10px 20px rgba(44, 62, 80, 0.15)";
+                    e.currentTarget.style.transform = "translateY(-1px)";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (activeTool !== "readability") {
+                    e.currentTarget.style.boxShadow =
+                      "0 6px 14px rgba(44, 62, 80, 0.08)";
+                    e.currentTarget.style.transform = "translateY(0)";
+                  }
+                }}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-sm">📊</span>
+                  <span className="text-xs font-semibold text-[#2c3e50]">
+                    Readability
+                  </span>
+                </div>
+                <div className="text-[10px] text-[#6b7280] leading-tight">
+                  Check reading level
+                </div>
+              </button>
+              {/* Cliché Detector */}
+              <button
+                type="button"
+                onClick={() => setActiveTool("cliche")}
+                className="text-left focus-visible:ring-2 focus-visible:ring-[#ef8432]"
+                style={{
+                  border:
+                    activeTool === "cliche"
+                      ? "2px solid #ef8432"
+                      : "1px solid #f5d1ab",
+                  borderRadius: "12px",
+                  padding: "10px",
+                  backgroundColor: activeTool === "cliche" ? "#fff" : "#fefdf9",
+                  boxShadow:
+                    activeTool === "cliche"
+                      ? "0 10px 24px rgba(239, 132, 50, 0.25)"
+                      : "0 6px 14px rgba(44, 62, 80, 0.08)",
+                  transition: "all 0.2s ease",
+                  cursor: "pointer",
+                }}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-sm">🚫</span>
+                  <span className="text-xs font-semibold text-[#2c3e50]">
+                    Cliché Detector
+                  </span>
+                </div>
+                <div className="text-[10px] text-[#6b7280] leading-tight">
+                  Find overused phrases
+                </div>
+              </button>
+              {/* Beat Sheet */}
+              <button
+                type="button"
+                onClick={() => setActiveTool("beats")}
+                className="text-left focus-visible:ring-2 focus-visible:ring-[#ef8432]"
+                style={{
+                  border:
+                    activeTool === "beats"
+                      ? "2px solid #ef8432"
+                      : "1px solid #f5d1ab",
+                  borderRadius: "12px",
+                  padding: "10px",
+                  backgroundColor: activeTool === "beats" ? "#fff" : "#fefdf9",
+                  boxShadow:
+                    activeTool === "beats"
+                      ? "0 10px 24px rgba(239, 132, 50, 0.25)"
+                      : "0 6px 14px rgba(44, 62, 80, 0.08)",
+                  transition: "all 0.2s ease",
+                  cursor: "pointer",
+                }}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-sm">📖</span>
+                  <span className="text-xs font-semibold text-[#2c3e50]">
+                    Beat Sheet
+                  </span>
+                </div>
+                <div className="text-[10px] text-[#6b7280] leading-tight">
+                  Story structure analysis
+                </div>
+              </button>
+              {/* POV Checker */}
+              <button
+                type="button"
+                onClick={() => setActiveTool("pov")}
+                className="text-left focus-visible:ring-2 focus-visible:ring-[#ef8432]"
+                style={{
+                  border:
+                    activeTool === "pov"
+                      ? "2px solid #ef8432"
+                      : "1px solid #f5d1ab",
+                  borderRadius: "12px",
+                  padding: "10px",
+                  backgroundColor: activeTool === "pov" ? "#fff" : "#fefdf9",
+                  boxShadow:
+                    activeTool === "pov"
+                      ? "0 10px 24px rgba(239, 132, 50, 0.25)"
+                      : "0 6px 14px rgba(44, 62, 80, 0.08)",
+                  transition: "all 0.2s ease",
+                  cursor: "pointer",
+                }}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-sm">👁️</span>
+                  <span className="text-xs font-semibold text-[#2c3e50]">
+                    POV Checker
+                  </span>
+                </div>
+                <div className="text-[10px] text-[#6b7280] leading-tight">
+                  Detect perspective shifts
+                </div>
+              </button>
+              {/* Emotion Tracker */}
+              <button
+                type="button"
+                onClick={() => setActiveTool("emotion")}
+                className="text-left focus-visible:ring-2 focus-visible:ring-[#ef8432]"
+                style={{
+                  border:
+                    activeTool === "emotion"
+                      ? "2px solid #ef8432"
+                      : "1px solid #f5d1ab",
+                  borderRadius: "12px",
+                  padding: "10px",
+                  backgroundColor:
+                    activeTool === "emotion" ? "#fff" : "#fefdf9",
+                  boxShadow:
+                    activeTool === "emotion"
+                      ? "0 10px 24px rgba(239, 132, 50, 0.25)"
+                      : "0 6px 14px rgba(44, 62, 80, 0.08)",
+                  transition: "all 0.2s ease",
+                  cursor: "pointer",
+                }}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-sm">💖</span>
+                  <span className="text-xs font-semibold text-[#2c3e50]">
+                    Emotion Tracker
+                  </span>
+                </div>
+                <div className="text-[10px] text-[#6b7280] leading-tight">
+                  Map emotional arcs
+                </div>
+              </button>
+              {/* Motif Tracker */}
+              <button
+                type="button"
+                onClick={() => setActiveTool("motif")}
+                className="text-left focus-visible:ring-2 focus-visible:ring-[#ef8432]"
+                style={{
+                  border:
+                    activeTool === "motif"
+                      ? "2px solid #ef8432"
+                      : "1px solid #f5d1ab",
+                  borderRadius: "12px",
+                  padding: "10px",
+                  backgroundColor: activeTool === "motif" ? "#fff" : "#fefdf9",
+                  boxShadow:
+                    activeTool === "motif"
+                      ? "0 10px 24px rgba(239, 132, 50, 0.25)"
+                      : "0 6px 14px rgba(44, 62, 80, 0.08)",
+                  transition: "all 0.2s ease",
+                  cursor: "pointer",
+                }}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-sm">🔮</span>
+                  <span className="text-xs font-semibold text-[#2c3e50]">
+                    Motif Tracker
+                  </span>
+                </div>
+                <div className="text-[10px] text-[#6b7280] leading-tight">
+                  Find recurring themes
+                </div>
+              </button>
+            </div>
+            <div className="text-[9px] font-semibold uppercase tracking-wide text-[#92400e] mb-2 mt-3">
+              Genre Tools
+            </div>
+            <div className="flex flex-col gap-2">
+              {/* Poetry Meter */}
+              <button
+                type="button"
+                onClick={() => setActiveTool("poetry-meter")}
+                className="text-left focus-visible:ring-2 focus-visible:ring-[#ef8432]"
+                style={{
+                  border:
+                    activeTool === "poetry-meter"
+                      ? "2px solid #ef8432"
+                      : "1px solid #f5d1ab",
+                  borderRadius: "12px",
+                  padding: "10px",
+                  backgroundColor:
+                    activeTool === "poetry-meter" ? "#fff" : "#fefdf9",
+                  boxShadow:
+                    activeTool === "poetry-meter"
+                      ? "0 10px 24px rgba(239, 132, 50, 0.25)"
+                      : "0 6px 14px rgba(44, 62, 80, 0.08)",
+                  transition: "all 0.2s ease",
+                  cursor: "pointer",
+                }}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-sm">📖</span>
+                  <span className="text-xs font-semibold text-[#2c3e50]">
+                    Poetry Meter
+                  </span>
+                </div>
+                <div className="text-[10px] text-[#6b7280] leading-tight">
+                  Scan rhythm and rhyme schemes
+                </div>
+              </button>
+              {/* Non-Fiction Outline */}
+              <button
+                type="button"
+                onClick={() => setActiveTool("nonfiction-outline")}
+                className="text-left focus-visible:ring-2 focus-visible:ring-[#ef8432]"
+                style={{
+                  border:
+                    activeTool === "nonfiction-outline"
+                      ? "2px solid #ef8432"
+                      : "1px solid #f5d1ab",
+                  borderRadius: "12px",
+                  padding: "10px",
+                  backgroundColor:
+                    activeTool === "nonfiction-outline" ? "#fff" : "#fefdf9",
+                  boxShadow:
+                    activeTool === "nonfiction-outline"
+                      ? "0 10px 24px rgba(239, 132, 50, 0.25)"
+                      : "0 6px 14px rgba(44, 62, 80, 0.08)",
+                  transition: "all 0.2s ease",
+                  cursor: "pointer",
+                }}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-sm">📝</span>
+                  <span className="text-xs font-semibold text-[#2c3e50]">
+                    Non-Fiction Outline
+                  </span>
+                </div>
+                <div className="text-[10px] text-[#6b7280] leading-tight">
+                  Structure arguments and evidence
+                </div>
+              </button>
+              {/* Citation Manager */}
+              <button
+                type="button"
+                onClick={() => setActiveTool("citation-manager")}
+                className="text-left focus-visible:ring-2 focus-visible:ring-[#ef8432]"
+                style={{
+                  border:
+                    activeTool === "citation-manager"
+                      ? "2px solid #ef8432"
+                      : "1px solid #f5d1ab",
+                  borderRadius: "12px",
+                  padding: "10px",
+                  backgroundColor:
+                    activeTool === "citation-manager" ? "#fff" : "#fefdf9",
+                  boxShadow:
+                    activeTool === "citation-manager"
+                      ? "0 10px 24px rgba(239, 132, 50, 0.25)"
+                      : "0 6px 14px rgba(44, 62, 80, 0.08)",
+                  transition: "all 0.2s ease",
+                  cursor: "pointer",
+                }}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-sm">📚</span>
+                  <span className="text-xs font-semibold text-[#2c3e50]">
+                    Citation Manager
+                  </span>
+                </div>
+                <div className="text-[10px] text-[#6b7280] leading-tight">
+                  Format references (APA/MLA/Chicago)
+                </div>
+              </button>
+            </div>
+            <div className="text-[9px] font-semibold uppercase tracking-wide text-[#92400e] mb-2 mt-3">
+              Content Tools
+            </div>
+            <div className="flex flex-col gap-2">
+              {/* Name Generator */}
+              <button
+                type="button"
+                onClick={() => setActiveTool("name-generator")}
+                className="text-left focus-visible:ring-2 focus-visible:ring-[#ef8432]"
+                style={{
+                  border:
+                    activeTool === "name-generator"
+                      ? "2px solid #ef8432"
+                      : "1px solid #f5d1ab",
+                  borderRadius: "12px",
+                  padding: "10px",
+                  backgroundColor:
+                    activeTool === "name-generator" ? "#fff" : "#fefdf9",
+                  boxShadow:
+                    activeTool === "name-generator"
+                      ? "0 10px 24px rgba(239, 132, 50, 0.25)"
+                      : "0 6px 14px rgba(44, 62, 80, 0.08)",
+                  transition: "all 0.2s ease",
+                  cursor: "pointer",
+                }}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-sm">👤</span>
+                  <span className="text-xs font-semibold text-[#2c3e50]">
+                    Name Generator
+                  </span>
+                </div>
+                <div className="text-[10px] text-[#6b7280] leading-tight">
+                  Generate names by genre & culture
+                </div>
+              </button>
+              {/* World-Building */}
+              <button
+                type="button"
+                onClick={() => setActiveTool("world-building")}
+                className="text-left focus-visible:ring-2 focus-visible:ring-[#ef8432]"
+                style={{
+                  border:
+                    activeTool === "world-building"
+                      ? "2px solid #ef8432"
+                      : "1px solid #f5d1ab",
+                  borderRadius: "12px",
+                  padding: "10px",
+                  backgroundColor:
+                    activeTool === "world-building" ? "#fff" : "#fefdf9",
+                  boxShadow:
+                    activeTool === "world-building"
+                      ? "0 10px 24px rgba(239, 132, 50, 0.25)"
+                      : "0 6px 14px rgba(44, 62, 80, 0.08)",
+                  transition: "all 0.2s ease",
+                  cursor: "pointer",
+                }}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-sm">🗺️</span>
+                  <span className="text-xs font-semibold text-[#2c3e50]">
+                    World-Building
+                  </span>
+                </div>
+                <div className="text-[10px] text-[#6b7280] leading-tight">
+                  Integrated wiki for characters & places
+                </div>
+              </button>
+              {/* Writer's Notes */}
+              <button
+                type="button"
+                onClick={() => setActiveTool("research-notes")}
+                className="text-left focus-visible:ring-2 focus-visible:ring-[#ef8432]"
+                style={{
+                  border:
+                    activeTool === "research-notes"
+                      ? "2px solid #ef8432"
+                      : "1px solid #f5d1ab",
+                  borderRadius: "12px",
+                  padding: "10px",
+                  backgroundColor:
+                    activeTool === "research-notes" ? "#fff" : "#fefdf9",
+                  boxShadow:
+                    activeTool === "research-notes"
+                      ? "0 10px 24px rgba(239, 132, 50, 0.25)"
+                      : "0 6px 14px rgba(44, 62, 80, 0.08)",
+                  transition: "all 0.2s ease",
+                  cursor: "pointer",
+                }}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-sm">📝</span>
+                  <span className="text-xs font-semibold text-[#2c3e50]">
+                    Writer's Notes
+                  </span>
+                </div>
+                <div className="text-[10px] text-[#6b7280] leading-tight">
+                  Quick notes without leaving editor
+                </div>
+              </button>
+              {/* Mood Board */}
+              <button
+                type="button"
+                onClick={() => setActiveTool("mood-board")}
+                className="text-left focus-visible:ring-2 focus-visible:ring-[#ef8432]"
+                style={{
+                  border:
+                    activeTool === "mood-board"
+                      ? "2px solid #ef8432"
+                      : "1px solid #f5d1ab",
+                  borderRadius: "12px",
+                  padding: "10px",
+                  backgroundColor:
+                    activeTool === "mood-board" ? "#fff" : "#fefdf9",
+                  boxShadow:
+                    activeTool === "mood-board"
+                      ? "0 10px 24px rgba(239, 132, 50, 0.25)"
+                      : "0 6px 14px rgba(44, 62, 80, 0.08)",
+                  transition: "all 0.2s ease",
+                  cursor: "pointer",
+                }}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-sm">🖼️</span>
+                  <span className="text-xs font-semibold text-[#2c3e50]">
+                    Mood Board
+                  </span>
+                </div>
+                <div className="text-[10px] text-[#6b7280] leading-tight">
+                  Upload reference images for scenes
+                </div>
+              </button>
+              {/* Version History */}
+              <button
+                type="button"
+                onClick={() => setActiveTool("version-history")}
+                className="text-left focus-visible:ring-2 focus-visible:ring-[#ef8432]"
+                style={{
+                  border:
+                    activeTool === "version-history"
+                      ? "2px solid #ef8432"
+                      : "1px solid #f5d1ab",
+                  borderRadius: "12px",
+                  padding: "10px",
+                  backgroundColor:
+                    activeTool === "version-history" ? "#fff" : "#fefdf9",
+                  boxShadow:
+                    activeTool === "version-history"
+                      ? "0 10px 24px rgba(239, 132, 50, 0.25)"
+                      : "0 6px 14px rgba(44, 62, 80, 0.08)",
+                  transition: "all 0.2s ease",
+                  cursor: "pointer",
+                }}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-sm">📜</span>
+                  <span className="text-xs font-semibold text-[#2c3e50]">
+                    Version History
+                  </span>
+                </div>
+                <div className="text-[10px] text-[#6b7280] leading-tight">
+                  Save snapshots, compare drafts
+                </div>
+              </button>
+              {/* Comments */}
+              <button
+                type="button"
+                onClick={() => setActiveTool("comments")}
+                className="text-left focus-visible:ring-2 focus-visible:ring-[#ef8432]"
+                style={{
+                  border:
+                    activeTool === "comments"
+                      ? "2px solid #ef8432"
+                      : "1px solid #f5d1ab",
+                  borderRadius: "12px",
+                  padding: "10px",
+                  backgroundColor:
+                    activeTool === "comments" ? "#fff" : "#fefdf9",
+                  boxShadow:
+                    activeTool === "comments"
+                      ? "0 10px 24px rgba(239, 132, 50, 0.25)"
+                      : "0 6px 14px rgba(44, 62, 80, 0.08)",
+                  transition: "all 0.2s ease",
+                  cursor: "pointer",
+                }}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-sm">💬</span>
+                  <span className="text-xs font-semibold text-[#2c3e50]">
+                    Comments
+                  </span>
+                </div>
+                <div className="text-[10px] text-[#6b7280] leading-tight">
+                  Leave notes for yourself or beta readers
+                </div>
+              </button>
+            </div>
+          </aside>
+        )}
+
         {/* Main editor area - centers the ruler/page in full viewport */}
         <div
           ref={wrapperRef}
@@ -4369,6 +5034,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           {/* Scrollable page container - contains both ruler and page */}
           <div
             ref={scrollShellRef}
+            className="hide-scrollbar"
             style={{
               flex: 1,
               width: "100%",
@@ -5279,80 +5945,158 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
         </button>
       )}
 
-      {/* Advanced Tools Panel */}
-      {viewMode === "writer" && !isFreeMode && (
-        <AdvancedToolsPanel
-          text={editorRef.current?.innerText || ""}
-          selectedText={window.getSelection()?.toString() || ""}
-          onInsertText={(text) => {
-            // Replace the entire editor content's selected portion or insert at end
-            if (editorRef.current) {
-              // Try to get current selection
-              const selection = window.getSelection();
-              if (
-                selection &&
-                selection.rangeCount > 0 &&
-                !selection.isCollapsed
-              ) {
-                const range = selection.getRangeAt(0);
-                // Check if selection is within our editor
-                if (editorRef.current.contains(range.commonAncestorContainer)) {
-                  range.deleteContents();
-                  range.insertNode(document.createTextNode(text));
-                  // Collapse selection to end of inserted text
-                  selection.collapseToEnd();
-                  handleInput();
-                  return;
-                }
-              }
-              // Fallback: append to end of editor
-              const textNode = document.createTextNode(text);
-              editorRef.current.appendChild(document.createElement("br"));
-              editorRef.current.appendChild(textNode);
-              handleInput();
-            }
+      {/* Backdrop for closing tools - click outside to close */}
+      {viewMode === "writer" && !isFreeMode && activeTool && (
+        <div
+          onClick={() => setActiveTool(null)}
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 49,
           }}
-          onReplaceText={(oldText, newText) => {
-            if (editorRef.current && oldText) {
-              // Escape special regex characters in the search text
-              const escapedOldText = oldText.replace(
-                /[.*+?^${}()|[\]\\]/g,
-                "\\$&"
-              );
-              const html = editorRef.current.innerHTML;
-              // Try to replace in HTML first
-              const newHtml = html.replace(
-                new RegExp(escapedOldText, "gi"),
-                newText
-              );
-              if (newHtml !== html) {
-                editorRef.current.innerHTML = newHtml;
+        />
+      )}
+
+      {/* Advanced Tool Components */}
+      {viewMode === "writer" &&
+        !isFreeMode &&
+        activeTool === "ai-assistant" && (
+          <AIWritingAssistant
+            selectedText={window.getSelection()?.toString() || ""}
+            onInsertText={(text) => {
+              if (editorRef.current) {
+                const selection = window.getSelection();
+                if (
+                  selection &&
+                  selection.rangeCount > 0 &&
+                  !selection.isCollapsed
+                ) {
+                  const range = selection.getRangeAt(0);
+                  if (
+                    editorRef.current.contains(range.commonAncestorContainer)
+                  ) {
+                    range.deleteContents();
+                    range.insertNode(document.createTextNode(text));
+                    selection.collapseToEnd();
+                    handleInput();
+                    return;
+                  }
+                }
+                const textNode = document.createTextNode(text);
+                editorRef.current.appendChild(document.createElement("br"));
+                editorRef.current.appendChild(textNode);
                 handleInput();
-              } else {
-                // Fallback: try plain text replacement
-                const plainText = editorRef.current.innerText;
-                if (plainText.includes(oldText)) {
-                  editorRef.current.innerText = plainText.replace(
-                    oldText,
-                    newText
-                  );
-                  handleInput();
-                }
               }
-            }
-          }}
-          onNavigate={(position) => {
-            // Scroll to specific word position
-            if (editorRef.current) {
-              const words = editorRef.current.innerText.split(/\s+/);
-              let charCount = 0;
-              for (let i = 0; i < Math.min(position, words.length); i++) {
-                charCount += words[i].length + 1;
+            }}
+            onClose={() => setActiveTool(null)}
+          />
+        )}
+      {viewMode === "writer" && !isFreeMode && activeTool === "dialogue" && (
+        <DialogueEnhancer
+          text={editorRef.current?.innerText || ""}
+          onClose={() => setActiveTool(null)}
+        />
+      )}
+      {viewMode === "writer" && !isFreeMode && activeTool === "readability" && (
+        <ReadabilityAnalyzer
+          text={editorRef.current?.innerText || ""}
+          onClose={() => setActiveTool(null)}
+        />
+      )}
+      {viewMode === "writer" && !isFreeMode && activeTool === "cliche" && (
+        <ClicheDetector
+          text={editorRef.current?.innerText || ""}
+          onClose={() => setActiveTool(null)}
+        />
+      )}
+      {viewMode === "writer" && !isFreeMode && activeTool === "beats" && (
+        <BeatSheetGenerator
+          text={editorRef.current?.innerText || ""}
+          onClose={() => setActiveTool(null)}
+        />
+      )}
+      {viewMode === "writer" && !isFreeMode && activeTool === "pov" && (
+        <POVChecker
+          text={editorRef.current?.innerText || ""}
+          onClose={() => setActiveTool(null)}
+        />
+      )}
+      {viewMode === "writer" && !isFreeMode && activeTool === "emotion" && (
+        <EmotionTracker
+          text={editorRef.current?.innerText || ""}
+          onClose={() => setActiveTool(null)}
+        />
+      )}
+      {viewMode === "writer" && !isFreeMode && activeTool === "motif" && (
+        <MotifTracker
+          text={editorRef.current?.innerText || ""}
+          onClose={() => setActiveTool(null)}
+        />
+      )}
+      {viewMode === "writer" &&
+        !isFreeMode &&
+        activeTool === "poetry-meter" && (
+          <PoetryMeterAnalyzer
+            text={editorRef.current?.innerText || ""}
+            onClose={() => setActiveTool(null)}
+          />
+        )}
+      {viewMode === "writer" &&
+        !isFreeMode &&
+        activeTool === "nonfiction-outline" && (
+          <NonFictionOutlineGenerator
+            text={editorRef.current?.innerText || ""}
+            onClose={() => setActiveTool(null)}
+          />
+        )}
+      {viewMode === "writer" &&
+        !isFreeMode &&
+        activeTool === "citation-manager" && (
+          <AcademicCitationManager
+            text={editorRef.current?.innerText || ""}
+            onClose={() => setActiveTool(null)}
+          />
+        )}
+      {viewMode === "writer" &&
+        !isFreeMode &&
+        activeTool === "name-generator" && (
+          <CharacterNameGenerator onClose={() => setActiveTool(null)} />
+        )}
+      {viewMode === "writer" &&
+        !isFreeMode &&
+        activeTool === "world-building" && (
+          <WorldBuildingNotebook onClose={() => setActiveTool(null)} />
+        )}
+      {viewMode === "writer" &&
+        !isFreeMode &&
+        activeTool === "research-notes" && (
+          <ResearchNotesPanel onClose={() => setActiveTool(null)} />
+        )}
+      {viewMode === "writer" && !isFreeMode && activeTool === "mood-board" && (
+        <ImageMoodBoard onClose={() => setActiveTool(null)} />
+      )}
+      {viewMode === "writer" &&
+        !isFreeMode &&
+        activeTool === "version-history" && (
+          <VersionHistory
+            currentContent={editorRef.current?.innerText || ""}
+            onRestore={(text) => {
+              if (editorRef.current) {
+                editorRef.current.innerText = text;
+                handleInput();
               }
-              // This is a simplified navigation - could be enhanced
-              editorRef.current.scrollIntoView({ behavior: "smooth" });
-            }
-          }}
+            }}
+            onClose={() => setActiveTool(null)}
+          />
+        )}
+      {viewMode === "writer" && !isFreeMode && activeTool === "comments" && (
+        <CommentAnnotation
+          documentContent={editorRef.current?.innerText || ""}
+          selectedText={window.getSelection()?.toString() || ""}
+          onClose={() => setActiveTool(null)}
         />
       )}
     </div>
