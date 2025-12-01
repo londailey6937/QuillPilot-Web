@@ -3069,6 +3069,8 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               <button
                 onMouseDown={(e) => {
                   e.preventDefault();
+                  e.stopPropagation();
+
                   const selection = window.getSelection();
                   if (!selection || selection.rangeCount === 0) return;
 
@@ -3079,35 +3081,54 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                   // Apply inline style for precise control
                   document.execCommand("fontSize", false, "7");
 
-                  // Capture selection AFTER execCommand but BEFORE manual replacement
-                  // The selection is now on the text nodes inside the <font> tags
-                  let preservedRange: Range | null = null;
-                  const selAfterExec = window.getSelection();
-                  if (selAfterExec && selAfterExec.rangeCount > 0) {
-                    preservedRange = selAfterExec.getRangeAt(0).cloneRange();
-                  }
-
+                  // Replace font elements with spans and track them
                   const fontElements =
                     editorRef.current?.querySelectorAll('font[size="7"]');
+                  const newSpans: HTMLSpanElement[] = [];
+
                   fontElements?.forEach((el) => {
                     const span = document.createElement("span");
                     span.style.fontSize = `${newSize}px`;
-                    // Moving children preserves the Range if it points to the children
                     while (el.firstChild) {
                       span.appendChild(el.firstChild);
                     }
                     el.parentNode?.replaceChild(span, el);
+                    newSpans.push(span);
                   });
 
-                  // Restore focus and selection
-                  editorRef.current?.focus();
-                  if (preservedRange) {
-                    const newSelection = window.getSelection();
-                    if (newSelection) {
-                      newSelection.removeAllRanges();
-                      newSelection.addRange(preservedRange);
+                  // Restore focus and selection immediately
+                  requestAnimationFrame(() => {
+                    editorRef.current?.focus();
+
+                    // Re-select all the content in the new spans
+                    if (newSpans.length > 0) {
+                      try {
+                        const newSelection = window.getSelection();
+                        if (newSelection) {
+                          const newRange = document.createRange();
+                          const firstSpan = newSpans[0];
+                          const lastSpan = newSpans[newSpans.length - 1];
+
+                          // Select from the start of the first span to the end of the last
+                          newRange.setStart(
+                            firstSpan.firstChild || firstSpan,
+                            0
+                          );
+                          const lastNode = lastSpan.lastChild || lastSpan;
+                          const endOffset =
+                            lastNode.nodeType === Node.TEXT_NODE
+                              ? (lastNode as Text).length
+                              : lastSpan.childNodes.length;
+                          newRange.setEnd(lastNode, endOffset);
+
+                          newSelection.removeAllRanges();
+                          newSelection.addRange(newRange);
+                        }
+                      } catch (err) {
+                        console.warn("Could not restore selection", err);
+                      }
                     }
-                  }
+                  });
                 }}
                 className="px-1.5 py-1 rounded border border-[#e0c392] bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50] transition-colors text-xs font-bold"
                 title="Decrease Font Size"
@@ -3123,6 +3144,8 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               <button
                 onMouseDown={(e) => {
                   e.preventDefault();
+                  e.stopPropagation();
+
                   const selection = window.getSelection();
                   if (!selection || selection.rangeCount === 0) return;
 
@@ -3133,35 +3156,54 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                   // Apply inline style for precise control
                   document.execCommand("fontSize", false, "7");
 
-                  // Capture selection AFTER execCommand but BEFORE manual replacement
-                  // The selection is now on the text nodes inside the <font> tags
-                  let preservedRange: Range | null = null;
-                  const selAfterExec = window.getSelection();
-                  if (selAfterExec && selAfterExec.rangeCount > 0) {
-                    preservedRange = selAfterExec.getRangeAt(0).cloneRange();
-                  }
-
+                  // Replace font elements with spans and track them
                   const fontElements =
                     editorRef.current?.querySelectorAll('font[size="7"]');
+                  const newSpans: HTMLSpanElement[] = [];
+
                   fontElements?.forEach((el) => {
                     const span = document.createElement("span");
                     span.style.fontSize = `${newSize}px`;
-                    // Moving children preserves the Range if it points to the children
                     while (el.firstChild) {
                       span.appendChild(el.firstChild);
                     }
                     el.parentNode?.replaceChild(span, el);
+                    newSpans.push(span);
                   });
 
-                  // Restore focus and selection
-                  editorRef.current?.focus();
-                  if (preservedRange) {
-                    const newSelection = window.getSelection();
-                    if (newSelection) {
-                      newSelection.removeAllRanges();
-                      newSelection.addRange(preservedRange);
+                  // Restore focus and selection immediately
+                  requestAnimationFrame(() => {
+                    editorRef.current?.focus();
+
+                    // Re-select all the content in the new spans
+                    if (newSpans.length > 0) {
+                      try {
+                        const newSelection = window.getSelection();
+                        if (newSelection) {
+                          const newRange = document.createRange();
+                          const firstSpan = newSpans[0];
+                          const lastSpan = newSpans[newSpans.length - 1];
+
+                          // Select from the start of the first span to the end of the last
+                          newRange.setStart(
+                            firstSpan.firstChild || firstSpan,
+                            0
+                          );
+                          const lastNode = lastSpan.lastChild || lastSpan;
+                          const endOffset =
+                            lastNode.nodeType === Node.TEXT_NODE
+                              ? (lastNode as Text).length
+                              : lastSpan.childNodes.length;
+                          newRange.setEnd(lastNode, endOffset);
+
+                          newSelection.removeAllRanges();
+                          newSelection.addRange(newRange);
+                        }
+                      } catch (err) {
+                        console.warn("Could not restore selection", err);
+                      }
                     }
-                  }
+                  });
                 }}
                 className="px-1.5 py-1 rounded border border-[#e0c392] bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50] transition-colors text-xs font-bold"
                 title="Increase Font Size"
