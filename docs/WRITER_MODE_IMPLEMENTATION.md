@@ -78,7 +78,7 @@ Successfully cloned the battle-tested rich text editor from Chapter-Analysis to 
 - ✅ Headings (H1, H2, H3)
 - ✅ Bullet and numbered lists
 - ✅ Text alignment (left, center, right, justify)
-- ✅ Hyperlinks
+- ✅ Bookmarks & Cross-References (link related scenes)
 - ✅ Find and Replace
 - ✅ Undo/Redo (full history)
 - ✅ Focus Mode (distraction-free)

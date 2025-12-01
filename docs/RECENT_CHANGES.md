@@ -1,8 +1,147 @@
 # Recent Changes & Features
 
-**Last Updated:** November 29, 2025
+**Last Updated:** November 30, 2025
 
 This document tracks recent features, improvements, and changes to the Chapter Analysis system.
+
+---
+
+## November 30, 2025 Updates
+
+### Bookmarks & Cross-References System
+
+**Feature:** Mark important passages and link related scenes for creative writing
+
+**What it does:**
+
+- **Bookmarks (🔖):** Mark important passages to return to later
+- **Cross-References (🔗):** Link related scenes, foreshadowing, and callbacks
+- **Navigation Panel (📋):** View all bookmarks and references, click to jump
+
+**How to use:**
+
+1. **Create a Bookmark:**
+
+   - Select text in the editor
+   - Click 🔖 in the toolbar
+   - Name the bookmark (e.g., "Chekhov's gun intro")
+   - Choose a color for organization
+   - Click "Add Bookmark"
+
+2. **Create a Cross-Reference:**
+
+   - Select different text elsewhere
+   - Click 🔗 in the toolbar
+   - Name the connection (e.g., "Foreshadows ending")
+   - Select which bookmark this links to
+   - Add optional notes
+   - Click "Add Reference"
+
+3. **Navigate:**
+   - Click 📋 to open the panel
+   - Click any bookmark or reference to jump to that passage
+   - Hover items to reveal delete button (✕)
+
+**Files changed:**
+
+- `CustomEditor.tsx`:
+  - Added `Bookmark` and `CrossReference` interfaces
+  - Added state variables for bookmark/cross-reference management
+  - Added `addBookmark`, `deleteBookmark`, `addCrossReference`, `deleteCrossReference`, `jumpToBookmark` functions
+  - Replaced old link button (🔗 for URLs) with bookmark/cross-reference buttons
+  - Added Bookmark Modal, Cross-Reference Modal, and Bookmarks Panel UI
+
+---
+
+### Analysis Legend Labels Updated
+
+**Feature:** Added "?" suffix to Passive and Senses indicators
+
+**What changed:**
+
+- "Passive" → "Passive?"
+- "Senses" → "Senses?"
+
+**Why:** These indicators are suggestions for review, not definitive issues. The question mark clarifies that writers should evaluate whether the flagged text actually needs revision.
+
+**Files changed:**
+
+- `CustomEditor.tsx` - Updated `renderAnalysisLegend()` function
+
+---
+
+### Analysis Legend Centering
+
+**Feature:** Legend now centered directly above the ruler
+
+**What changed:**
+
+- Legend moved from toolbar row to the page content area
+- Legend now renders above the ruler, centered within the page width
+- Toolbar layout remains spread to edges (unchanged)
+
+**Files changed:**
+
+- `CustomEditor.tsx` - Moved legend rendering to pages-stack-shell container
+
+---
+
+### Passive Voice Detection Improvements
+
+**Feature:** Reduced false positives for state descriptions
+
+**Problem solved:**
+Phrases like "were clearly divided" were flagged as passive voice when they're actually adjective-based descriptions of state.
+
+**Solution:**
+Added `ADJECTIVE_PARTICIPLES` set containing ~100 words that commonly describe states rather than passive actions:
+
+- "divided", "tired", "excited", "worried", "confused", etc.
+
+**Detection logic:**
+
+1. If the word after "was/were/been" is in ADJECTIVE_PARTICIPLES
+2. Check if "by [agent]" follows (true passive indicator)
+3. Skip if no agent found (it's a state description)
+
+**Examples:**
+
+- "The group was divided" → Skipped (state)
+- "The pizza was divided by the server" → Flagged (true passive)
+- "She was tired" → Skipped (state)
+- "The document was written by the team" → Flagged (true passive)
+
+**Files changed:**
+
+- `spacingInsights.ts`:
+  - Added `ADJECTIVE_PARTICIPLES` Set
+  - Added `TRUE_PASSIVE_INDICATORS` regex patterns
+  - Updated `detectPassiveVoice()` function
+
+---
+
+### Character Detection Improvements
+
+**Feature:** Expanded word exclusion list to prevent false character detection
+
+**Problem solved:**
+Common words like "his", "but", "her", "the", "and" were being detected as character names.
+
+**Solution:**
+Expanded `commonWords` Set from ~60 words to ~500+ words including:
+
+- Pronouns (his, her, its, their, etc.)
+- Articles (the, a, an)
+- Conjunctions (and, but, or, yet)
+- Prepositions (in, on, at, by, for)
+- Common verbs (was, were, said, went, came)
+- Adverbs (very, just, only, even, still)
+- Common nouns (time, way, day, year, man, woman)
+- Days, months, and more
+
+**Files changed:**
+
+- `characterAnalyzer.ts` - Expanded `commonWords` Set in `extractCharacterNames()`
 
 ---
 

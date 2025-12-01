@@ -223,6 +223,34 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   const [showLinkModal, setShowLinkModal] = useState(false);
   const [linkUrl, setLinkUrl] = useState("");
   const [showFindReplace, setShowFindReplace] = useState(false);
+
+  // Bookmarks and Cross-References
+  interface Bookmark {
+    id: string;
+    name: string;
+    selectedText: string;
+    color: string;
+    timestamp: number;
+  }
+  interface CrossReference {
+    id: string;
+    name: string;
+    sourceText: string;
+    targetBookmarkId: string;
+    note: string;
+    timestamp: number;
+  }
+  const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
+  const [crossReferences, setCrossReferences] = useState<CrossReference[]>([]);
+  const [showBookmarkModal, setShowBookmarkModal] = useState(false);
+  const [showCrossRefModal, setShowCrossRefModal] = useState(false);
+  const [showBookmarksPanel, setShowBookmarksPanel] = useState(false);
+  const [newBookmarkName, setNewBookmarkName] = useState("");
+  const [newBookmarkColor, setNewBookmarkColor] = useState("#fbbf24");
+  const [newCrossRefName, setNewCrossRefName] = useState("");
+  const [newCrossRefTarget, setNewCrossRefTarget] = useState("");
+  const [newCrossRefNote, setNewCrossRefNote] = useState("");
+  const [selectedTextForBookmark, setSelectedTextForBookmark] = useState("");
   const [findText, setFindText] = useState("");
   const [replaceText, setReplaceText] = useState("");
   const [showStats, setShowStats] = useState(false);
@@ -1397,6 +1425,166 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     formatText("unlink");
   }, [formatText]);
 
+  // Add Bookmark
+  const addBookmark = useCallback(() => {
+    if (!newBookmarkName.trim() || !selectedTextForBookmark) return;
+
+    const newBookmark: Bookmark = {
+      id: `bm-${Date.now()}`,
+      name: newBookmarkName.trim(),
+      selectedText: selectedTextForBookmark,
+      color: newBookmarkColor,
+      timestamp: Date.now(),
+    };
+
+    setBookmarks((prev) => [...prev, newBookmark]);
+    setShowBookmarkModal(false);
+    setNewBookmarkName("");
+    setSelectedTextForBookmark("");
+  }, [newBookmarkName, selectedTextForBookmark, newBookmarkColor]);
+
+  // Delete Bookmark
+  const deleteBookmark = useCallback((id: string) => {
+    setBookmarks((prev) => prev.filter((b) => b.id !== id));
+    // Also remove any cross-references pointing to this bookmark
+    setCrossReferences((prev) =>
+      prev.filter((cr) => cr.targetBookmarkId !== id)
+    );
+  }, []);
+
+  // Add Cross-Reference
+  const addCrossReference = useCallback(() => {
+    if (
+      !newCrossRefName.trim() ||
+      !selectedTextForBookmark ||
+      !newCrossRefTarget
+    )
+      return;
+
+    const newCrossRef: CrossReference = {
+      id: `cr-${Date.now()}`,
+      name: newCrossRefName.trim(),
+      sourceText: selectedTextForBookmark,
+      targetBookmarkId: newCrossRefTarget,
+      note: newCrossRefNote.trim(),
+      timestamp: Date.now(),
+    };
+
+    setCrossReferences((prev) => [...prev, newCrossRef]);
+    setShowCrossRefModal(false);
+    setNewCrossRefName("");
+    setNewCrossRefTarget("");
+    setNewCrossRefNote("");
+    setSelectedTextForBookmark("");
+  }, [
+    newCrossRefName,
+    selectedTextForBookmark,
+    newCrossRefTarget,
+    newCrossRefNote,
+  ]);
+
+  // Delete Cross-Reference
+  const deleteCrossReference = useCallback((id: string) => {
+    setCrossReferences((prev) => prev.filter((cr) => cr.id !== id));
+  }, []);
+
+  // Jump to bookmark text in editor
+  const jumpToBookmark = useCallback((bookmark: Bookmark) => {
+    if (!editorRef.current) return;
+
+    const searchText = bookmark.selectedText;
+    const editorContent = editorRef.current.innerHTML;
+    const textContent = editorRef.current.textContent || "";
+    const index = textContent.indexOf(searchText);
+
+    if (index === -1) return;
+
+    // Find and select the text
+    const selection = window.getSelection();
+    if (!selection) return;
+
+    const walker = document.createTreeWalker(
+      editorRef.current,
+      NodeFilter.SHOW_TEXT,
+      null
+    );
+
+    let currentPos = 0;
+    let node: Text | null = null;
+
+    while ((node = walker.nextNode() as Text)) {
+      const nodeLength = node.textContent?.length || 0;
+      if (currentPos + nodeLength > index) {
+        const range = document.createRange();
+        const startOffset = index - currentPos;
+        range.setStart(node, startOffset);
+
+        // Find end of selection
+        let endNode = node;
+        let endOffset = startOffset + searchText.length;
+        let remaining = searchText.length;
+
+        if (startOffset + remaining <= nodeLength) {
+          endOffset = startOffset + remaining;
+        } else {
+          remaining -= nodeLength - startOffset;
+          while ((endNode = walker.nextNode() as Text) && remaining > 0) {
+            const endNodeLength = endNode.textContent?.length || 0;
+            if (remaining <= endNodeLength) {
+              endOffset = remaining;
+              break;
+            }
+            remaining -= endNodeLength;
+          }
+        }
+
+        if (endNode) {
+          range.setEnd(endNode, endOffset);
+          selection.removeAllRanges();
+          selection.addRange(range);
+
+          // Scroll into view
+          const rect = range.getBoundingClientRect();
+          const editorRect = editorRef.current.getBoundingClientRect();
+          if (rect.top < editorRect.top || rect.bottom > editorRect.bottom) {
+            node.parentElement?.scrollIntoView({
+              behavior: "smooth",
+              block: "center",
+            });
+          }
+        }
+        break;
+      }
+      currentPos += nodeLength;
+    }
+
+    setShowBookmarksPanel(false);
+  }, []);
+
+  // Open bookmark modal with current selection
+  const openBookmarkModal = useCallback(() => {
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) {
+      setSelectedTextForBookmark("");
+    } else {
+      const text = selection.toString().trim();
+      setSelectedTextForBookmark(text.substring(0, 200)); // Limit to 200 chars
+    }
+    setShowBookmarkModal(true);
+  }, []);
+
+  // Open cross-reference modal with current selection
+  const openCrossRefModal = useCallback(() => {
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) {
+      setSelectedTextForBookmark("");
+    } else {
+      const text = selection.toString().trim();
+      setSelectedTextForBookmark(text.substring(0, 200));
+    }
+    setShowCrossRefModal(true);
+  }, []);
+
   // Format Painter - Copy formatting from selection
   const copyFormat = useCallback(() => {
     const selection = window.getSelection();
@@ -2368,7 +2556,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                   backgroundColor: "#8b5cf6",
                 }}
               />
-              <span>Passive</span>
+              <span>Passive?</span>
             </div>
           </>
         )}
@@ -2382,7 +2570,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                 backgroundColor: "#eab308",
               }}
             />
-            <span>Senses</span>
+            <span>Senses?</span>
           </div>
         )}
       </div>
@@ -2636,9 +2824,6 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
             </div>
           </div>
 
-          {/* Analysis Legend - positioned between toolbars */}
-          {renderAnalysisLegend()}
-
           {/* Right Toolbar Half */}
           <div
             className="writer-toolbar-shell"
@@ -2685,13 +2870,41 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
 
               <div style={toolbarDividerStyle} aria-hidden="true" />
 
-              {/* Insert options */}
+              {/* Bookmarks & Cross-References */}
               <button
-                onClick={() => setShowLinkModal(true)}
-                className="px-2 py-1 rounded hover:bg-gray-200 text-gray-700 transition-colors text-xs"
-                title="Link"
+                onClick={openBookmarkModal}
+                className={`px-2 py-1 rounded transition-colors text-xs ${
+                  bookmarks.length > 0
+                    ? "bg-amber-50 text-amber-700 hover:bg-amber-100"
+                    : "hover:bg-gray-200 text-gray-700"
+                }`}
+                title="Add Bookmark"
+              >
+                🔖
+              </button>
+              <button
+                onClick={openCrossRefModal}
+                className={`px-2 py-1 rounded transition-colors text-xs ${
+                  crossReferences.length > 0
+                    ? "bg-purple-50 text-purple-700 hover:bg-purple-100"
+                    : "hover:bg-gray-200 text-gray-700"
+                }`}
+                title="Add Cross-Reference"
               >
                 🔗
+              </button>
+              <button
+                onClick={() => setShowBookmarksPanel(!showBookmarksPanel)}
+                className={`px-2 py-1 rounded transition-colors text-xs ${
+                  showBookmarksPanel
+                    ? "bg-blue-100 text-blue-700"
+                    : "hover:bg-gray-200 text-gray-700"
+                }`}
+                title={`View Bookmarks & References (${
+                  bookmarks.length + crossReferences.length
+                })`}
+              >
+                📋
               </button>
               <label
                 className="px-2 py-1 rounded hover:bg-gray-200 text-gray-700 transition-colors cursor-pointer text-xs"
@@ -2970,36 +3183,370 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
         </div>
       )}
 
-      {/* Link Modal */}
-      {showLinkModal && (
-        <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-30">
-          <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold mb-4">Insert Link</h3>
+      {/* Bookmark Modal */}
+      {showBookmarkModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100]">
+          <div
+            className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full mx-4"
+            style={{ border: "2px solid #fbbf24" }}
+          >
+            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <span>🔖</span> Add Bookmark
+            </h3>
+            {selectedTextForBookmark ? (
+              <div className="mb-4 p-3 bg-amber-50 rounded border border-amber-200">
+                <div className="text-xs text-amber-700 mb-1">
+                  Selected text:
+                </div>
+                <div className="text-sm text-gray-700 italic">
+                  "{selectedTextForBookmark.substring(0, 100)}
+                  {selectedTextForBookmark.length > 100 ? "..." : ""}"
+                </div>
+              </div>
+            ) : (
+              <div className="mb-4 p-3 bg-gray-50 rounded border border-gray-200 text-sm text-gray-500 italic">
+                No text selected. Select text in the editor first to bookmark a
+                specific passage.
+              </div>
+            )}
             <input
-              type="url"
-              value={linkUrl}
-              onChange={(e) => setLinkUrl(e.target.value)}
-              placeholder="https://example.com"
-              className="w-full px-3 py-2 border rounded mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              type="text"
+              value={newBookmarkName}
+              onChange={(e) => setNewBookmarkName(e.target.value)}
+              placeholder="Bookmark name (e.g., 'Important plot point')"
+              className="w-full px-3 py-2 border rounded mb-3 focus:outline-none focus:ring-2 focus:ring-amber-500"
               autoFocus
               onKeyDown={(e) => {
-                if (e.key === "Enter") insertLink();
-                if (e.key === "Escape") setShowLinkModal(false);
+                if (
+                  e.key === "Enter" &&
+                  newBookmarkName.trim() &&
+                  selectedTextForBookmark
+                )
+                  addBookmark();
+                if (e.key === "Escape") setShowBookmarkModal(false);
               }}
             />
+            <div className="flex items-center gap-3 mb-4">
+              <label className="text-sm text-gray-600">Color:</label>
+              <div className="flex gap-2">
+                {[
+                  "#fbbf24",
+                  "#ef4444",
+                  "#22c55e",
+                  "#3b82f6",
+                  "#a855f7",
+                  "#ec4899",
+                ].map((color) => (
+                  <button
+                    key={color}
+                    onClick={() => setNewBookmarkColor(color)}
+                    className={`w-6 h-6 rounded-full border-2 transition-transform ${
+                      newBookmarkColor === color
+                        ? "scale-125 border-gray-800"
+                        : "border-gray-300"
+                    }`}
+                    style={{ backgroundColor: color }}
+                  />
+                ))}
+              </div>
+            </div>
             <div className="flex gap-2 justify-end">
               <button
-                onClick={() => setShowLinkModal(false)}
+                onClick={() => {
+                  setShowBookmarkModal(false);
+                  setNewBookmarkName("");
+                  setSelectedTextForBookmark("");
+                }}
                 className="px-4 py-2 rounded hover:bg-gray-100 transition-colors"
               >
                 Cancel
               </button>
               <button
-                onClick={insertLink}
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                onClick={addBookmark}
+                disabled={!newBookmarkName.trim() || !selectedTextForBookmark}
+                className="px-4 py-2 bg-amber-500 text-white rounded hover:bg-amber-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Insert
+                Add Bookmark
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cross-Reference Modal */}
+      {showCrossRefModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100]">
+          <div
+            className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full mx-4"
+            style={{ border: "2px solid #a855f7" }}
+          >
+            <h3 className="text-lg font-semibold mb-1 flex items-center gap-2">
+              <span>🔗</span> Add Cross-Reference
+            </h3>
+            <p className="text-xs text-gray-500 mb-4">
+              Link this passage to a bookmarked scene (foreshadowing, callbacks,
+              related elements)
+            </p>
+            {selectedTextForBookmark ? (
+              <div className="mb-4 p-3 bg-purple-50 rounded border border-purple-200">
+                <div className="text-xs text-purple-700 mb-1">Source text:</div>
+                <div className="text-sm text-gray-700 italic">
+                  "{selectedTextForBookmark.substring(0, 100)}
+                  {selectedTextForBookmark.length > 100 ? "..." : ""}"
+                </div>
+              </div>
+            ) : (
+              <div className="mb-4 p-3 bg-gray-50 rounded border border-gray-200 text-sm text-gray-500 italic">
+                No text selected. Select text to mark as a reference point.
+              </div>
+            )}
+            <input
+              type="text"
+              value={newCrossRefName}
+              onChange={(e) => setNewCrossRefName(e.target.value)}
+              placeholder="Reference name (e.g., 'Foreshadows ending')"
+              className="w-full px-3 py-2 border rounded mb-3 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              autoFocus
+            />
+            {bookmarks.length > 0 ? (
+              <div className="mb-3">
+                <label className="block text-sm text-gray-600 mb-1">
+                  Links to bookmark:
+                </label>
+                <select
+                  value={newCrossRefTarget}
+                  onChange={(e) => setNewCrossRefTarget(e.target.value)}
+                  className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
+                >
+                  <option value="">Select a bookmark...</option>
+                  {bookmarks.map((bm) => (
+                    <option key={bm.id} value={bm.id}>
+                      🔖 {bm.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : (
+              <div className="mb-3 p-3 bg-yellow-50 rounded border border-yellow-200">
+                <div className="text-sm text-yellow-700 mb-2">
+                  ⚠️ No bookmarks yet. Create bookmarks first to link passages
+                  together.
+                </div>
+                <button
+                  onClick={() => {
+                    setShowCrossRefModal(false);
+                    setShowBookmarkModal(true);
+                  }}
+                  className="text-xs px-3 py-1.5 bg-amber-500 text-white rounded hover:bg-amber-600 transition-colors"
+                >
+                  🔖 Create a Bookmark First
+                </button>
+              </div>
+            )}
+            <textarea
+              value={newCrossRefNote}
+              onChange={(e) => setNewCrossRefNote(e.target.value)}
+              placeholder="Notes (optional) - e.g., 'This scene connects to...'"
+              className="w-full px-3 py-2 border rounded mb-4 focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
+              rows={2}
+            />
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => {
+                  setShowCrossRefModal(false);
+                  setNewCrossRefName("");
+                  setNewCrossRefTarget("");
+                  setNewCrossRefNote("");
+                  setSelectedTextForBookmark("");
+                }}
+                className="px-4 py-2 rounded hover:bg-gray-100 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={addCrossReference}
+                disabled={
+                  !newCrossRefName.trim() ||
+                  !selectedTextForBookmark ||
+                  !newCrossRefTarget
+                }
+                className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                title={
+                  !selectedTextForBookmark
+                    ? "Select text in editor first"
+                    : !newCrossRefName.trim()
+                    ? "Enter a reference name"
+                    : !newCrossRefTarget
+                    ? "Select a bookmark to link to"
+                    : "Create cross-reference"
+                }
+              >
+                Add Reference
+              </button>
+            </div>
+            {/* Help text showing what's needed */}
+            {(!selectedTextForBookmark ||
+              !newCrossRefName.trim() ||
+              !newCrossRefTarget) && (
+              <div className="mt-3 pt-3 border-t text-xs text-gray-500">
+                <strong>To add a reference:</strong>
+                <ul className="mt-1 ml-4 list-disc space-y-0.5">
+                  {!selectedTextForBookmark && (
+                    <li className="text-red-500">Select text in the editor</li>
+                  )}
+                  {!newCrossRefName.trim() && (
+                    <li className="text-red-500">
+                      Enter a reference name above
+                    </li>
+                  )}
+                  {bookmarks.length === 0 && (
+                    <li className="text-red-500">
+                      Create a bookmark first (🔖 button)
+                    </li>
+                  )}
+                  {bookmarks.length > 0 && !newCrossRefTarget && (
+                    <li className="text-red-500">
+                      Select a bookmark to link to
+                    </li>
+                  )}
+                </ul>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Bookmarks & Cross-References Panel */}
+      {showBookmarksPanel && (
+        <div
+          className="fixed right-4 top-20 bg-white rounded-lg shadow-2xl z-[90] overflow-hidden"
+          style={{
+            width: "320px",
+            maxHeight: "70vh",
+            border: "2px solid #e0c392",
+          }}
+        >
+          <div className="p-3 bg-gradient-to-r from-[#fef5e7] to-[#fff7ed] border-b flex items-center justify-between">
+            <h3 className="font-semibold text-[#2c3e50]">
+              📋 Bookmarks & References
+            </h3>
+            <button
+              onClick={() => setShowBookmarksPanel(false)}
+              className="text-gray-500 hover:text-gray-700 text-lg"
+            >
+              ×
+            </button>
+          </div>
+          <div
+            className="overflow-y-auto"
+            style={{ maxHeight: "calc(70vh - 50px)" }}
+          >
+            {/* Bookmarks Section */}
+            <div className="p-3 border-b">
+              <div className="flex items-center gap-2 mb-2">
+                <span>🔖</span>
+                <span className="font-medium text-sm text-gray-700">
+                  Bookmarks ({bookmarks.length})
+                </span>
+              </div>
+              {bookmarks.length === 0 ? (
+                <div className="text-xs text-gray-500 italic py-2">
+                  No bookmarks yet. Select text and click 🔖 to add one.
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {bookmarks.map((bookmark) => (
+                    <div
+                      key={bookmark.id}
+                      className="p-2 rounded border hover:bg-gray-50 cursor-pointer group"
+                      style={{ borderLeft: `4px solid ${bookmark.color}` }}
+                      onClick={() => jumpToBookmark(bookmark)}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium text-sm">
+                          {bookmark.name}
+                        </span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteBookmark(bookmark.id);
+                          }}
+                          className="text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity text-xs"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1 truncate italic">
+                        "{bookmark.selectedText.substring(0, 60)}
+                        {bookmark.selectedText.length > 60 ? "..." : ""}"
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Cross-References Section */}
+            <div className="p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <span>🔗</span>
+                <span className="font-medium text-sm text-gray-700">
+                  Cross-References ({crossReferences.length})
+                </span>
+              </div>
+              {crossReferences.length === 0 ? (
+                <div className="text-xs text-gray-500 italic py-2">
+                  No cross-references yet. Link related scenes or foreshadowing
+                  elements.
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {crossReferences.map((crossRef) => {
+                    const targetBookmark = bookmarks.find(
+                      (b) => b.id === crossRef.targetBookmarkId
+                    );
+                    return (
+                      <div
+                        key={crossRef.id}
+                        className="p-2 rounded border border-purple-200 bg-purple-50 group"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium text-sm text-purple-800">
+                            {crossRef.name}
+                          </span>
+                          <button
+                            onClick={() => deleteCrossReference(crossRef.id)}
+                            className="text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity text-xs"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                        <div className="text-xs text-gray-600 mt-1 italic">
+                          "{crossRef.sourceText.substring(0, 40)}
+                          {crossRef.sourceText.length > 40 ? "..." : ""}"
+                        </div>
+                        {targetBookmark && (
+                          <div
+                            className="text-xs mt-2 flex items-center gap-1 text-amber-700 cursor-pointer hover:underline"
+                            onClick={() => jumpToBookmark(targetBookmark)}
+                          >
+                            <span>→</span>
+                            <span style={{ color: targetBookmark.color }}>
+                              🔖
+                            </span>
+                            <span>{targetBookmark.name}</span>
+                          </div>
+                        )}
+                        {crossRef.note && (
+                          <div className="text-xs text-gray-500 mt-1 bg-white rounded px-2 py-1">
+                            {crossRef.note}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -3839,6 +4386,20 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                 paddingBottom: "16px",
               }}
             >
+              {/* Analysis Legend - centered above the ruler */}
+              {(showSpacingIndicators || showVisualSuggestions) &&
+                !focusMode && (
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "center",
+                      width: "100%",
+                      paddingBottom: "8px",
+                    }}
+                  >
+                    {renderAnalysisLegend()}
+                  </div>
+                )}
               {/* Ruler - inside the same container as the page */}
               {showRuler && (
                 <div
@@ -4031,7 +4592,8 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                           xmlns="http://www.w3.org/2000/svg"
                           style={{ display: "block" }}
                         >
-                          <path d="M6 0L12 6H8V12H4V6H0L6 0Z" fill="#2c3e50" />
+                          {/* Down-pointing triangle (like Word's first-line indent marker) */}
+                          <path d="M6 12L0 6H4V0H8V6H12L6 12Z" fill="#2c3e50" />
                         </svg>
                       </div>
                     </div>

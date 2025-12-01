@@ -108,12 +108,61 @@ The TOC option in the block format dropdown has two behaviors:
 
 ### Insert Tools
 
-| Button   | Inserts                |
-| -------- | ---------------------- |
-| 🔗 Link  | Hyperlink (Cmd/Ctrl+K) |
-| 📷 Image | Upload or paste image  |
-| ―        | Horizontal rule        |
-| 📊 Table | Data table             |
+| Button | Inserts                               |
+| ------ | ------------------------------------- |
+| 🔖     | Bookmark (mark important passages)    |
+| 🔗     | Cross-Reference (link related scenes) |
+| 📋     | View Bookmarks & References panel     |
+| 📷     | Upload or paste image                 |
+| ―      | Horizontal rule                       |
+| 📊     | Data table                            |
+
+### Bookmarks & Cross-References ⭐ NEW
+
+A powerful system for creative writers to mark important passages and link related scenes.
+
+**Bookmarks (🔖):**
+
+- Mark important passages to return to later
+- Color-code by category (plot points, character moments, etc.)
+- Click in the panel to jump to any bookmark
+
+**Cross-References (🔗):**
+
+- Link related scenes (foreshadowing, callbacks, parallel moments)
+- Connect new passages to existing bookmarks
+- Add notes explaining the connection
+- Navigate between linked scenes instantly
+
+**How to Use:**
+
+1. **Create a Bookmark:**
+
+   - Select text in your editor (e.g., "He pocketed the old key")
+   - Click 🔖 in the toolbar
+   - Name it (e.g., "Chekhov's key - Chapter 3")
+   - Choose a color for organization
+   - Click "Add Bookmark"
+
+2. **Create a Cross-Reference:**
+
+   - Later, select related text (e.g., "The key! He'd almost forgotten...")
+   - Click 🔗 in the toolbar
+   - Name the connection (e.g., "Key payoff")
+   - Select which bookmark this links to
+   - Add notes ("Payoff from Ch.3 setup")
+   - Click "Add Reference"
+
+3. **Navigate:**
+   - Click 📋 to open the Bookmarks & References panel
+   - Click any bookmark or reference to jump to that passage
+   - Hover to reveal delete button (✕)
+
+**💡 Tips:**
+
+- Use bookmarks for: character introductions, plot setups, key information
+- Use cross-references for: foreshadowing payoffs, parallel scenes, thematic echoes
+- Color-code bookmarks: gold for plot, blue for character, purple for theme
 
 ### View Options
 
@@ -660,7 +709,7 @@ This helps track character appearances and ensures consistency.
 | Cmd/Ctrl+B       | Bold           |
 | Cmd/Ctrl+I       | Italic         |
 | Cmd/Ctrl+U       | Underline      |
-| Cmd/Ctrl+K       | Insert link    |
+| Cmd/Ctrl+K       | Add Bookmark   |
 | Cmd/Ctrl+Z       | Undo           |
 | Cmd/Ctrl+Shift+Z | Redo           |
 | Cmd/Ctrl+F       | Find & Replace |

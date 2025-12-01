@@ -1339,7 +1339,8 @@ You can now **Report False Positives** directly from the concept list. Look for 
 - Headings (H1, H2, H3) and paragraph styles
 - Bulleted and numbered lists
 - Text alignment (left, center, right, justify)
-- Insert links (Cmd/Ctrl+K) and tables
+- Bookmarks (Cmd/Ctrl+K) and cross-references
+- Insert tables
 - Upload or paste images directly
 - Clear formatting option
 - Undo (Cmd/Ctrl+Z) / Redo (Cmd/Ctrl+Shift+Z or Ctrl+Y)
@@ -1396,7 +1397,7 @@ You can now **Report False Positives** directly from the concept list. Look for 
 - **Cmd/Ctrl+B** - Bold
 - **Cmd/Ctrl+I** - Italic
 - **Cmd/Ctrl+U** - Underline
-- **Cmd/Ctrl+K** - Insert link
+- **Cmd/Ctrl+K** - Add bookmark
 - **Cmd/Ctrl+F** - Find & replace
 - **Cmd/Ctrl+Z** - Undo
 - **Cmd/Ctrl+Shift+Z** (Mac) or **Ctrl+Y** (Windows) - Redo
