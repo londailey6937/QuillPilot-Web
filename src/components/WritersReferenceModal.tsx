@@ -64,53 +64,178 @@ export function WritersReferenceModal({
           <div className="writers-ref-content">
             <h2>Writer Mode Overview</h2>
             <p>
-              Writer Mode transforms QuillPilot from an analysis tool into a
-              full-featured writing environment with real-time feedback.
+              Writer Mode is a distraction-free writing environment built
+              directly into QuillPilot. It combines professional text editing
+              with real-time manuscript analysis, giving you instant feedback as
+              you write.
             </p>
 
-            <h3>What You Get in Writer Mode</h3>
-            <ul>
+            <div className="tip-box">
+              <strong>💡 Access Writer Mode:</strong> Click the ✍️ Writer tab
+              after uploading a document. Available to Professional tier users.
+            </div>
+
+            <h3>Core Features</h3>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: "1rem",
+                marginBottom: "1.5rem",
+              }}
+            >
+              <div
+                style={{
+                  padding: "1rem",
+                  background: "#fef5e7",
+                  borderRadius: "8px",
+                  border: "1px solid #e0c392",
+                }}
+              >
+                <strong style={{ color: "#ef8432", fontSize: "1.1rem" }}>
+                  ✍️ Rich Text Editing
+                </strong>
+                <ul
+                  style={{
+                    marginTop: "0.5rem",
+                    fontSize: "0.9rem",
+                    lineHeight: "1.6",
+                  }}
+                >
+                  <li>Bold, italic, underline formatting</li>
+                  <li>Headers, lists, and blockquotes</li>
+                  <li>Alignment and indentation controls</li>
+                  <li>Find & replace functionality</li>
+                </ul>
+              </div>
+
+              <div
+                style={{
+                  padding: "1rem",
+                  background: "#fef5e7",
+                  borderRadius: "8px",
+                  border: "1px solid #e0c392",
+                }}
+              >
+                <strong style={{ color: "#ef8432", fontSize: "1.1rem" }}>
+                  📊 Real-Time Analysis
+                </strong>
+                <ul
+                  style={{
+                    marginTop: "0.5rem",
+                    fontSize: "0.9rem",
+                    lineHeight: "1.6",
+                  }}
+                >
+                  <li>Inline pacing indicators (🐌 slow, ⚡ fast)</li>
+                  <li>Sensory detail callouts (👁️ 👂 👃)</li>
+                  <li>Live word count & reading time</li>
+                  <li>Reading level (Flesch-Kincaid)</li>
+                </ul>
+              </div>
+            </div>
+
+            <h3>17 Advanced Writing Tools</h3>
+            <p style={{ marginBottom: "1rem" }}>
+              Access powerful analysis and productivity tools from the Advanced
+              Tools Rail on the right:
+            </p>
+
+            <div
+              style={{
+                background: "#fef5e7",
+                padding: "1rem",
+                borderRadius: "8px",
+                border: "1px solid #e0c392",
+                marginBottom: "1.5rem",
+              }}
+            >
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr 1fr",
+                  gap: "0.75rem",
+                  fontSize: "0.85rem",
+                  color: "#000",
+                }}
+              >
+                <div>
+                  <strong>Analysis Tools:</strong>
+                </div>
+                <div>
+                  <strong>Genre Tools:</strong>
+                </div>
+                <div>
+                  <strong>Content Tools:</strong>
+                </div>
+
+                <div style={{ lineHeight: "1.8" }}>
+                  • AI Writing Assistant
+                  <br />
+                  • Dialogue Enhancer
+                  <br />
+                  • Readability Metrics
+                  <br />
+                  • Cliché Detector
+                  <br />
+                  • Beat Sheet
+                  <br />
+                  • POV Checker
+                  <br />
+                  • Emotion Tracker
+                  <br />• Motif Tracker
+                </div>
+
+                <div style={{ lineHeight: "1.8" }}>
+                  • Poetry Meter
+                  <br />
+                  • Nonfiction Outline
+                  <br />• Citation Manager
+                </div>
+
+                <div style={{ lineHeight: "1.8" }}>
+                  • Name Generator
+                  <br />
+                  • World-Building
+                  <br />
+                  • Research Notes
+                  <br />
+                  • Mood Board
+                  <br />
+                  • Version History
+                  <br />• Comments
+                </div>
+              </div>
+            </div>
+
+            <h3>Productivity Features</h3>
+            <ul style={{ marginBottom: "1.5rem" }}>
               <li>
-                <strong>Rich text editor</strong> with professional formatting
-                tools
+                <strong>Focus Mode</strong> - Hide page thumbnails and analysis
+                panels for distraction-free writing
               </li>
               <li>
-                <strong>Live analysis indicators</strong> showing pacing and
-                sensory detail issues
+                <strong>Typewriter Mode</strong> - Keep cursor centered on
+                screen while you write
               </li>
               <li>
-                <strong>Real-time statistics</strong> (word count, reading time,
-                reading level)
+                <strong>Auto-Save</strong> - Your work is automatically saved as
+                you type
               </li>
               <li>
-                <strong>Auto-save</strong> protection against lost work
+                <strong>Version History</strong> - Save snapshots and compare
+                drafts
               </li>
               <li>
-                <strong>Advanced Tools Panel</strong> for deep manuscript
-                analysis
+                <strong>Comments & Annotations</strong> - Leave notes for
+                yourself or collaborators
               </li>
             </ul>
 
             <div className="tip-box">
-              <strong>💡 Tip:</strong> Access Writer Mode by clicking the ✍️
-              Writer tab after uploading a document. Writer Mode is available to
-              Professional tier users.
-            </div>
-
-            <h3>Writer Mode Layout</h3>
-            <div className="code-block">
-              <pre>{`┌─────────────────────────────────────────────────────────────┐
-│  [Toolbar: Formatting | Alignment | Insert | View]          │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│                    Your Document                            │
-│                                                             │
-│  [Inline spacing indicators]                                │
-│  [Sensory detail callouts]                                  │
-│                                                             │
-├─────────────────────────────────────────────────────────────┤
-│  Word Count: 3,247  |  Reading Time: 13 min  |  Grade: 8.2  │
-└─────────────────────────────────────────────────────────────┘`}</pre>
+              <strong>🚀 Pro Tip:</strong> Use Cmd/Ctrl+K to open the command
+              palette and quickly access any tool without clicking. Press
+              Cmd/Ctrl+/ to see all keyboard shortcuts.
             </div>
 
             <div
@@ -122,7 +247,7 @@ export function WritersReferenceModal({
                 border: "1px solid #e0c392",
               }}
             >
-              <strong style={{ color: "#2c3e50" }}>🚀 Quick Links:</strong>
+              <strong style={{ color: "#2c3e50" }}>📖 Learn More:</strong>
               <div
                 style={{
                   marginTop: "0.5rem",
@@ -138,12 +263,13 @@ export function WritersReferenceModal({
                     color: "white",
                     border: "none",
                     borderRadius: "4px",
-                    padding: "4px 12px",
-                    fontSize: "0.8rem",
+                    padding: "6px 14px",
+                    fontSize: "0.85rem",
                     cursor: "pointer",
+                    fontWeight: "500",
                   }}
                 >
-                  Editor Toolbar
+                  Editor Toolbar →
                 </button>
                 <button
                   onClick={() => setActiveSection("advancedTools")}
@@ -152,12 +278,13 @@ export function WritersReferenceModal({
                     color: "white",
                     border: "none",
                     borderRadius: "4px",
-                    padding: "4px 12px",
-                    fontSize: "0.8rem",
+                    padding: "6px 14px",
+                    fontSize: "0.85rem",
                     cursor: "pointer",
+                    fontWeight: "500",
                   }}
                 >
-                  Advanced Tools
+                  Advanced Tools →
                 </button>
                 <button
                   onClick={() => setActiveSection("productivity")}
@@ -166,12 +293,13 @@ export function WritersReferenceModal({
                     color: "white",
                     border: "none",
                     borderRadius: "4px",
-                    padding: "4px 12px",
-                    fontSize: "0.8rem",
+                    padding: "6px 14px",
+                    fontSize: "0.85rem",
                     cursor: "pointer",
+                    fontWeight: "500",
                   }}
                 >
-                  Productivity Features
+                  Productivity →
                 </button>
                 <button
                   onClick={() => setActiveSection("shortcuts")}
@@ -180,12 +308,13 @@ export function WritersReferenceModal({
                     color: "white",
                     border: "none",
                     borderRadius: "4px",
-                    padding: "4px 12px",
-                    fontSize: "0.8rem",
+                    padding: "6px 14px",
+                    fontSize: "0.85rem",
                     cursor: "pointer",
+                    fontWeight: "500",
                   }}
                 >
-                  Keyboard Shortcuts
+                  Shortcuts →
                 </button>
               </div>
             </div>

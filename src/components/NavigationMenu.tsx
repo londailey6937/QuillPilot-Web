@@ -99,7 +99,7 @@ export function NavigationMenu({
                   color: "#2c3e50",
                 }}
               >
-                Fiction & Screenplay Analysis
+                AI-Powered Writing and Analysis
               </p>
               <p
                 style={{
@@ -110,8 +110,8 @@ export function NavigationMenu({
                   lineHeight: "1.3",
                 }}
               >
-                Craft Analysis • Story Structure • Character Development •
-                Screenplay Formatting
+                17 Writing Tools • Story Analysis • Genre Intelligence • Writer
+                Productivity
               </p>
             </div>
           </div>
@@ -718,7 +718,7 @@ export function NavigationMenu({
             desc="Learn about Quill Pilot"
             onClick={() => {
               alert(
-                "About Quill Pilot:\n\nQuill Pilot is a fiction and screenplay analysis tool that helps writers craft compelling stories. Using pattern recognition and craft analysis, it evaluates 12 key fiction elements including character development, plot structure, dialogue, pacing, and more.\n\n✨ Key Features:\n• 12 Fiction Elements Analysis\n• Genre-Specific Intelligence\n• Craft Quality Scoring\n• Writer Mode with productivity tools\n• Screenplay formatting support\n\nPerfect for novelists, screenwriters, and anyone crafting fiction."
+                "About Quill Pilot:\n\nQuill Pilot is an AI-powered writing and analysis tool for fiction, nonfiction, poetry, and screenplays. Using pattern recognition and craft analysis, it evaluates 12 key fiction elements including character development, plot structure, dialogue, pacing, and more.\n\n✨ Key Features:\n• 12 Fiction Elements Analysis\n• 17 Writing & Analysis Tools\n• Genre-Specific Intelligence (Romance, Thriller, Fantasy, Poetry, etc.)\n• Craft Quality Scoring\n• Writer Mode with productivity tools\n• AI Writing Assistant\n• World-Building & Research Tools\n\nPerfect for novelists, poets, screenwriters, nonfiction writers, and storytellers of all kinds."
               );
             }}
           />
@@ -767,7 +767,7 @@ export function NavigationMenu({
             desc="Guides and documentation"
             onClick={() => {
               alert(
-                "Resources:\n\n📖 Built-in Guides:\n• Quick Start Guide - Get started in minutes\n• Reference Library - Complete feature docs\n• Writer's Reference - Pro tier writing tools\n\n🎭 Genre Support:\n• Romance, Thriller, Mystery\n• Fantasy, Sci-Fi, Horror\n• Literary Fiction\n• Western, Historical\n• Screenplay formatting\n• Poetry analysis\n\n✨ Analysis Features:\n• 12 Fiction Elements\n• Craft Quality Scoring\n• Character & Plot tracking\n• Pacing & Dialogue analysis"
+                "Resources:\n\n📖 Built-in Guides:\n• Quick Start Guide - Get started in minutes\n• Reference Library - Complete feature docs\n• Writer's Reference - Pro tier writing tools\n\n🎭 Genre Support:\n• Romance, Thriller, Mystery\n• Fantasy, Sci-Fi, Horror\n• Literary Fiction\n• Western, Historical\n• Screenplay formatting\n• Poetry analysis\n• Nonfiction & Academic writing\n\n✨ Analysis Features:\n• 12 Fiction Elements\n• Craft Quality Scoring\n• Character & Plot tracking\n• Pacing & Dialogue analysis\n• POV & Emotion tracking\n• Beat Sheet & Story Structure\n\n🛠️ Writing Tools:\n• AI Writing Assistant\n• Dialogue Enhancer\n• Readability Metrics\n• Cliché Detector\n• Character Name Generator\n• World-Building Notebook\n• Research Notes & Mood Boards"
               );
             }}
           />

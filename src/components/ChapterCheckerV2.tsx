@@ -1925,7 +1925,7 @@ export const ChapterCheckerV2: React.FC = () => {
                       color: "#2c3e50",
                     }}
                   >
-                    AI-Powered Creative Writing Analysis
+                    AI-Powered Writing and Analysis
                   </p>
                   <p
                     style={{
@@ -1935,7 +1935,7 @@ export const ChapterCheckerV2: React.FC = () => {
                       color: "#2c3e50",
                     }}
                   >
-                    For Fiction • Novels • Short Stories • Creative Nonfiction •
+                    For Fiction • Nonfiction • Novels • Short Stories • Poetry •
                     Screenplays
                   </p>
                 </div>

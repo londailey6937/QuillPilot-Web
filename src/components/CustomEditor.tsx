@@ -4295,7 +4295,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
         }}
       >
         {/* Page Rail - absolutely positioned to not affect centering */}
-        {showThumbnailRail && (
+        {showThumbnailRail && !focusMode && (
           <aside
             ref={pageRailRef}
             className="page-thumbnail-rail hide-scrollbar"
@@ -4393,7 +4393,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
         )}
 
         {/* Advanced Tools Rail - Right Side */}
-        {showThumbnailRail && (
+        {showThumbnailRail && !focusMode && (
           <aside
             className="advanced-tools-rail hide-scrollbar"
             style={{

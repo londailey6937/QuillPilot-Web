@@ -1,7 +1,7 @@
 {
   "name": "quillpilot",
   "version": "1.0.2",
-  "description": "AI-Powered Creative Writing Analysis Tool",
+  "description": "AI-Powered Writing and Analysis Tool",
   "type": "module",
   "engines": {
     "node": ">=20.0.0"
