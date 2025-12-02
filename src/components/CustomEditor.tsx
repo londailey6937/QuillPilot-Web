@@ -64,6 +64,8 @@ interface CustomEditorProps {
     footerAlign: "left" | "center" | "right" | "justify";
     facingPages: boolean;
   }) => void;
+  // Document tools to render between toolbars
+  documentTools?: React.ReactNode;
 }
 
 const INCH_IN_PX = 96;
@@ -207,6 +209,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   onLayoutChange,
   onOpenHelp,
   onHeaderFooterChange,
+  documentTools,
 }) => {
   const editorRef = useRef<HTMLDivElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -3434,6 +3437,23 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               </button>
             </div>
           </div>
+
+          {/* Document Tools - Between Toolbars */}
+          {documentTools && (
+            <div
+              style={{
+                display: "flex",
+                gap: "4px",
+                alignItems: "center",
+                alignSelf: "center",
+                flexWrap: "wrap",
+                justifyContent: "center",
+                padding: "4px 8px",
+              }}
+            >
+              {documentTools}
+            </div>
+          )}
 
           {/* Right Toolbar Half */}
           <div

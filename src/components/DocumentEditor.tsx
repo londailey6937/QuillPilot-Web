@@ -53,6 +53,8 @@ interface DocumentEditorProps {
   onOpenHelp?: (section: string) => void;
   // Header/Footer settings for export
   onHeaderFooterChange?: (settings: HeaderFooterSettings) => void;
+  // Document tools to render between toolbars
+  documentTools?: React.ReactNode;
 }
 
 export const DocumentEditor: React.FC<DocumentEditorProps> = ({
@@ -85,6 +87,7 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
   onEditorLayoutChange,
   onOpenHelp,
   onHeaderFooterChange,
+  documentTools,
 }) => {
   // Determine initial content: prefer HTML if available, otherwise text
   const startContent = htmlContent || initialText;
@@ -126,6 +129,7 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
         onLayoutChange={onEditorLayoutChange}
         onOpenHelp={onOpenHelp}
         onHeaderFooterChange={onHeaderFooterChange}
+        documentTools={documentTools}
         style={{ flex: 1, minHeight: 0 }}
       />
     </div>

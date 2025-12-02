@@ -894,20 +894,17 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
           style={{
             display: "inline-flex",
             alignItems: "center",
-            gap: "8px",
-            padding: "12px 24px",
-            backgroundColor: "#f7e6d0",
-            color: disabled || isProcessing ? "#9ca3af" : "#c16659",
-            border:
-              disabled || isProcessing
-                ? "1.5px solid #d1d5db"
-                : "1.5px solid #c16659",
-            borderRadius: "20px",
+            gap: "3px",
+            padding: "4px 10px",
+            backgroundColor: disabled || isProcessing ? "#e2e8f0" : "#fef5e7",
+            color: disabled || isProcessing ? "#9ca3af" : "#2c3e50",
+            border: "1.5px solid #e0c392",
+            borderRadius: "8px",
             cursor: disabled || isProcessing ? "not-allowed" : "pointer",
             fontWeight: "600",
-            fontSize: "14px",
+            fontSize: "11px",
             transition: "all 0.2s",
-            opacity: disabled ? 0.6 : 1,
+            whiteSpace: "nowrap",
           }}
           onMouseEnter={(e) => {
             if (!disabled && !isProcessing) {
@@ -926,7 +923,7 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
               Processing...
             </>
           ) : (
-            <>📄 Upload Document</>
+            <>📄 Upload</>
           )}
         </label>
 

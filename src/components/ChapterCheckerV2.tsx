@@ -2264,586 +2264,94 @@ export const ChapterCheckerV2: React.FC = () => {
                   </div>
                 )}
               </div>
-            </div>
 
-            {/* Bottom row: Action buttons, User Menu, Mode toggles */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "0.75rem",
-                flexWrap: "wrap",
-              }}
-            >
-              {/* Document Actions - Always visible */}
+              {/* Right: Navigation Controls */}
               <div
                 style={{
+                  position: "absolute",
+                  right: 0,
                   display: "flex",
-                  gap: "6px",
                   alignItems: "center",
+                  gap: "0.75rem",
                   flexWrap: "wrap",
                 }}
               >
-                <DocumentUploader
-                  onDocumentLoad={handleDocumentLoad}
-                  disabled={isAnalyzing}
-                  accessLevel={accessLevel}
-                />
+                {/* Dark Mode Toggle */}
+                <DarkModeToggle className="text-sm" />
 
-                {viewMode === "writer" && chapterData && (
-                  <button
-                    onClick={() => {
-                      const confirm = window.confirm(
-                        "🗑️ Clear Document\n\nThis will clear your current document and start fresh. Continue?"
-                      );
-                      if (confirm) {
-                        setChapterData(null);
-                        setAnalysis(null);
-                        setFileName("");
-                        setError("");
-                        setGeneralConcepts([]);
-                        setSelectedDomain("none");
-                        setCustomDomainName("");
-                        bumpDocumentInstanceKey();
-                      }
-                    }}
-                    disabled={isAnalyzing}
+                {/* Mode Toggle Buttons - Show when document is loaded */}
+                {chapterData && accessLevel === "professional" && (
+                  <div
                     style={{
-                      padding: "6px 12px",
-                      backgroundColor: !isAnalyzing ? "#fef5e7" : "#e2e8f0",
-                      color: !isAnalyzing ? "#2c3e50" : "#9ca3af",
-                      border: "1.5px solid #e0c392",
-                      borderRadius: "12px",
-                      cursor: !isAnalyzing ? "pointer" : "not-allowed",
-                      fontSize: "12px",
-                      fontWeight: "600",
-                      transition: "all 0.2s",
-                      whiteSpace: "nowrap",
                       display: "flex",
+                      gap: "8px",
                       alignItems: "center",
-                      gap: "4px",
                     }}
-                    onMouseEnter={(e) => {
-                      if (!isAnalyzing) {
-                        e.currentTarget.style.backgroundColor = "#f7e6d0";
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!isAnalyzing) {
-                        e.currentTarget.style.backgroundColor = "#fef5e7";
-                      }
-                    }}
-                    title="Clear document and start fresh"
                   >
-                    🗑️
-                  </button>
-                )}
-
-                {chapterData && !isAnalyzing && (
-                  <>
-                    <button
-                      onClick={handleExportDocx}
-                      style={{
-                        padding: "6px 12px",
-                        backgroundColor: "#fef5e7",
-                        color: "#2c3e50",
-                        border: "1.5px solid #e0c392",
-                        borderRadius: "12px",
-                        cursor: "pointer",
-                        fontSize: "12px",
-                        fontWeight: "600",
-                        transition: "all 0.2s",
-                        whiteSpace: "nowrap",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "4px",
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = "#f7e6d0";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = "#fef5e7";
-                      }}
-                      title="Export DOCX (Microsoft Word)"
-                    >
-                      {/* MS Word icon */}
-                      <svg
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <rect
-                          x="2"
-                          y="3"
-                          width="20"
-                          height="18"
-                          rx="2"
-                          fill="#2B579A"
-                        />
-                        <text
-                          x="12"
-                          y="16"
-                          textAnchor="middle"
-                          fill="white"
-                          fontSize="11"
-                          fontWeight="bold"
-                          fontFamily="Arial, sans-serif"
-                        >
-                          W
-                        </text>
-                      </svg>
-                    </button>
-
-                    <button
-                      onClick={handleExportPdf}
-                      style={{
-                        padding: "6px 12px",
-                        backgroundColor: "#fef5e7",
-                        color: "#2c3e50",
-                        border: "1.5px solid #e0c392",
-                        borderRadius: "12px",
-                        cursor: "pointer",
-                        fontSize: "12px",
-                        fontWeight: "600",
-                        transition: "all 0.2s",
-                        whiteSpace: "nowrap",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = "#f7e6d0";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = "#fef5e7";
-                      }}
-                      title="Export PDF (Manuscript Format)"
-                    >
-                      {/* Adobe Acrobat PDF icon */}
-                      <svg
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <rect
-                          x="3"
-                          y="2"
-                          width="18"
-                          height="20"
-                          rx="2"
-                          fill="#B30B00"
-                        />
-                        <path
-                          d="M7 7h10M7 10h10M7 13h6"
-                          stroke="white"
-                          strokeWidth="1.5"
-                          strokeLinecap="round"
-                        />
-                        <text
-                          x="12"
-                          y="19"
-                          textAnchor="middle"
-                          fill="white"
-                          fontSize="5"
-                          fontWeight="bold"
-                          fontFamily="Arial"
-                        >
-                          PDF
-                        </text>
-                      </svg>
-                    </button>
-
-                    <button
-                      onClick={handleExportHtml}
-                      style={{
-                        padding: "6px 12px",
-                        backgroundColor: "#fef5e7",
-                        color: "#2c3e50",
-                        border: "1.5px solid #e0c392",
-                        borderRadius: "12px",
-                        cursor: "pointer",
-                        fontSize: "12px",
-                        fontWeight: "600",
-                        transition: "all 0.2s",
-                        whiteSpace: "nowrap",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = "#f7e6d0";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = "#fef5e7";
-                      }}
-                      title="Export HTML (Open in Browser)"
-                    >
-                      {/* Chrome icon */}
-                      <svg
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <circle
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="#2c3e50"
-                          strokeWidth="2"
-                          fill="none"
-                        />
-                        <circle cx="12" cy="12" r="4" fill="#ef8432" />
-                        <path
-                          d="M12 2C6.48 2 2 6.48 2 12h7.5"
-                          stroke="#4285f4"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                        />
-                        <path
-                          d="M12 2c5.52 0 10 4.48 10 10h-7.5"
-                          stroke="#ea4335"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                        />
-                        <path
-                          d="M22 12c0 5.52-4.48 10-10 10"
-                          stroke="#fbbc05"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                        />
-                        <path
-                          d="M2 12c0 5.52 4.48 10 10 10"
-                          stroke="#34a853"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                        />
-                      </svg>
-                    </button>
-
-                    <button
-                      onClick={handlePrint}
-                      style={{
-                        padding: "6px 12px",
-                        backgroundColor: "#fef5e7",
-                        color: "#2c3e50",
-                        border: "1.5px solid #e0c392",
-                        borderRadius: "12px",
-                        cursor: "pointer",
-                        fontSize: "12px",
-                        fontWeight: "600",
-                        transition: "all 0.2s",
-                        whiteSpace: "nowrap",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = "#f7e6d0";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = "#fef5e7";
-                      }}
-                      title="Print Document"
-                    >
-                      {/* Print icon */}
-                      <svg
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <rect
-                          x="6"
-                          y="2"
-                          width="12"
-                          height="6"
-                          rx="1"
-                          stroke="#2c3e50"
-                          strokeWidth="1.5"
-                          fill="none"
-                        />
-                        <rect
-                          x="4"
-                          y="8"
-                          width="16"
-                          height="8"
-                          rx="2"
-                          stroke="#2c3e50"
-                          strokeWidth="1.5"
-                          fill="#f7e6d0"
-                        />
-                        <rect
-                          x="7"
-                          y="14"
-                          width="10"
-                          height="8"
-                          rx="1"
-                          stroke="#2c3e50"
-                          strokeWidth="1.5"
-                          fill="white"
-                        />
-                        <circle cx="7" cy="11" r="1" fill="#ef8432" />
-                        <line
-                          x1="9"
-                          y1="17"
-                          x2="15"
-                          y2="17"
-                          stroke="#2c3e50"
-                          strokeWidth="1"
-                          strokeLinecap="round"
-                        />
-                        <line
-                          x1="9"
-                          y1="19"
-                          x2="15"
-                          y2="19"
-                          stroke="#2c3e50"
-                          strokeWidth="1"
-                          strokeLinecap="round"
-                        />
-                      </svg>
-                    </button>
-
-                    {/* Save Chapter Button - Distinct from Auto-save */}
-                    {chapterText && (
-                      <button
-                        onClick={() => setIsChapterLibraryOpen(true)}
-                        style={{
-                          padding: "6px 12px",
-                          backgroundColor: "#fef5e7",
-                          color: "#2c3e50",
-                          border: "1.5px solid #e0c392",
-                          borderRadius: "12px",
-                          cursor: "pointer",
-                          fontSize: "12px",
-                          fontWeight: "700",
-                          transition: "all 0.2s",
-                          whiteSpace: "nowrap",
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = "#f7e6d0";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = "#fef5e7";
-                        }}
-                        title="Save Chapter (Cmd+S)"
-                      >
-                        💾 Save
-                      </button>
-                    )}
-
-                    {viewMode === "writer" &&
-                      accessLevel === "professional" && (
-                        <button
-                          onClick={() => setShowTemplateSelector(true)}
-                          style={{
-                            padding: "6px 12px",
-                            backgroundColor: "#fef5e7",
-                            color: "#2c3e50",
-                            border: "1.5px solid #e0c392",
-                            borderRadius: "12px",
-                            cursor: "pointer",
-                            fontSize: "12px",
-                            fontWeight: "600",
-                            transition: "all 0.2s",
-                            whiteSpace: "nowrap",
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor = "#f7e6d0";
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = "#fef5e7";
-                          }}
-                          title="Generate AI Template"
-                        >
-                          ✨ AI
-                        </button>
-                      )}
-
-                    {/* Auto-save Status Button */}
                     <button
                       onClick={() => {
-                        try {
-                          const autosaved = localStorage.getItem(
-                            "quillpilot_autosave"
-                          );
-                          if (autosaved) {
-                            const saved = JSON.parse(autosaved);
-                            const savedTime = new Date(
-                              saved.timestamp
-                            ).toLocaleString();
-                            const clear = window.confirm(
-                              `💾 Auto-save Status\n\nLast saved: ${savedTime}\nFile: ${saved.fileName}\n\nClick OK to clear auto-saved data, or Cancel to keep it.`
-                            );
-                            if (clear) {
-                              localStorage.removeItem("quillpilot_autosave");
-                              alert("🗑️ Auto-saved data cleared!");
-                            }
-                          } else {
-                            alert(
-                              "ℹ️ No auto-saved data found.\n\nYour work is automatically saved as you edit in Writer Mode."
-                            );
-                          }
-                        } catch (error) {
-                          alert("⚠️ Error checking auto-save status");
-                        }
+                        setViewMode("analysis");
+                        setHighlightPosition(null);
                       }}
                       style={{
-                        padding: "6px 12px",
-                        backgroundColor: "#fef5e7",
-                        color: "#2c3e50",
-                        border: "1.5px solid #e0c392",
-                        borderRadius: "12px",
+                        padding: "8px 16px",
+                        backgroundColor:
+                          viewMode === "analysis" ? "#ef8432" : "#fef5e7",
+                        color: viewMode === "analysis" ? "white" : "#2c3e50",
+                        border:
+                          viewMode === "analysis"
+                            ? "2px solid #ef8432"
+                            : "2px solid #e0c392",
+                        borderRadius: "20px",
                         cursor: "pointer",
-                        fontSize: "12px",
-                        fontWeight: "600",
+                        fontSize: "13px",
+                        fontWeight: viewMode === "analysis" ? "700" : "600",
                         transition: "all 0.2s",
                         whiteSpace: "nowrap",
                       }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = "#f7e6d0";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = "#fef5e7";
-                      }}
-                      title="View or clear auto-saved data"
                     >
-                      💾
+                      📊 Analysis
+                      {viewMode === "analysis" && " ✓"}
                     </button>
-                  </>
-                )}
-              </div>
-
-              {/* Dark Mode Toggle */}
-              <DarkModeToggle className="text-sm" />
-
-              {/* Mode Toggle Buttons - Show when document is loaded */}
-              {chapterData && accessLevel === "professional" && (
-                <div
-                  style={{
-                    display: "flex",
-                    gap: "8px",
-                    alignItems: "center",
-                  }}
-                >
-                  <button
-                    onClick={() => {
-                      setViewMode("analysis");
-                      setHighlightPosition(null);
-                    }}
-                    style={{
-                      padding: "8px 16px",
-                      backgroundColor:
-                        viewMode === "analysis" ? "#ef8432" : "#fef5e7",
-                      color: viewMode === "analysis" ? "white" : "#2c3e50",
-                      border:
-                        viewMode === "analysis"
-                          ? "2px solid #ef8432"
-                          : "2px solid #e0c392",
-                      borderRadius: "20px",
-                      cursor: "pointer",
-                      fontSize: "13px",
-                      fontWeight: viewMode === "analysis" ? "700" : "600",
-                      transition: "all 0.2s",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    📊 Analysis
-                    {viewMode === "analysis" && " ✓"}
-                  </button>
-                  <button
-                    onClick={() => {
-                      // Check if user has writer mode access based on subscription
-                      const features = ACCESS_TIERS[accessLevel];
-                      if (!features.writerMode) {
-                        alert(
-                          "🔒 Writer Mode requires a Professional subscription.\n\n" +
-                            "Upgrade to access the full writing environment with advanced tools."
-                        );
-                        return;
-                      }
-                      setViewMode("writer");
-                    }}
-                    style={{
-                      padding: "8px 16px",
-                      backgroundColor:
-                        viewMode === "writer" ? "#ef8432" : "#fef5e7",
-                      color: viewMode === "writer" ? "white" : "#2c3e50",
-                      border:
-                        viewMode === "writer"
-                          ? "2px solid #ef8432"
-                          : "2px solid #e0c392",
-                      borderRadius: "20px",
-                      cursor: "pointer",
-                      fontSize: "13px",
-                      fontWeight: viewMode === "writer" ? "700" : "600",
-                      transition: "all 0.2s",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    ✍️ Writer
-                    {viewMode === "writer" && " ✓"}
-                  </button>
-                </div>
-              )}
-
-              {/* Save Button (only show if analysis exists and user has access) */}
-              {analysis && accessLevel !== "free" && (
-                <>
-                  <button
-                    onClick={handleSaveAnalysis}
-                    disabled={isSaving}
-                    style={{
-                      padding: "8px 16px",
-                      backgroundColor: isSaving ? "#e2e8f0" : "#ffffff",
-                      color: isSaving ? "#64748b" : "#2c3e50",
-                      border: isSaving ? "none" : "2px solid #ef8432",
-                      borderRadius: "20px",
-                      cursor: isSaving ? "not-allowed" : "pointer",
-                      fontSize: "14px",
-                      fontWeight: "600",
-                      whiteSpace: "nowrap",
-                      transition: "background-color 0.2s",
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!isSaving)
-                        e.currentTarget.style.backgroundColor = "#f7e6d0";
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!isSaving)
-                        e.currentTarget.style.backgroundColor = "#ffffff";
-                    }}
-                  >
-                    {isSaving ? "Saving..." : "💾 Save Analysis"}
-                  </button>
-                  {saveMessage && (
-                    <span
+                    <button
+                      onClick={() => {
+                        // Check if user has writer mode access based on subscription
+                        const features = ACCESS_TIERS[accessLevel];
+                        if (!features.writerMode) {
+                          alert(
+                            "🔒 Writer Mode requires a Professional subscription.\n\n" +
+                              "Upgrade to access the full writing environment with advanced tools."
+                          );
+                          return;
+                        }
+                        setViewMode("writer");
+                      }}
                       style={{
-                        fontSize: "12px",
-                        color: saveMessage.includes("✅")
-                          ? "#10b981"
-                          : "#ef4444",
-                        fontWeight: "600",
+                        padding: "8px 16px",
+                        backgroundColor:
+                          viewMode === "writer" ? "#ef8432" : "#fef5e7",
+                        color: viewMode === "writer" ? "white" : "#2c3e50",
+                        border:
+                          viewMode === "writer"
+                            ? "2px solid #ef8432"
+                            : "2px solid #e0c392",
+                        borderRadius: "20px",
+                        cursor: "pointer",
+                        fontSize: "13px",
+                        fontWeight: viewMode === "writer" ? "700" : "600",
+                        transition: "all 0.2s",
+                        whiteSpace: "nowrap",
                       }}
                     >
-                      {saveMessage}
-                    </span>
-                  )}
-                </>
-              )}
+                      ✍️ Writer
+                      {viewMode === "writer" && " ✓"}
+                    </button>
+                  </div>
+                )}
 
-              {/* Access Level Selector - hidden for all tiers */}
-
-              {/* User Menu / Auth - Far Right */}
-              <UserMenu onAuthRequired={() => setIsAuthModalOpen(true)} />
+                {/* User Menu / Auth - Far Right */}
+                <UserMenu onAuthRequired={() => setIsAuthModalOpen(true)} />
+              </div>
             </div>
           </div>
         </header>
@@ -3212,6 +2720,507 @@ export const ChapterCheckerV2: React.FC = () => {
                       onExitTemplateMode={() => setIsTemplateMode(false)}
                       onHeaderFooterChange={setHeaderFooterSettings}
                       onOpenHelp={openHelpSection}
+                      documentTools={
+                        <>
+                          <DocumentUploader
+                            onDocumentLoad={handleDocumentLoad}
+                            disabled={isAnalyzing}
+                            accessLevel={accessLevel}
+                          />
+
+                          {viewMode === "writer" && (
+                            <button
+                              onClick={() => {
+                                const confirm = window.confirm(
+                                  "🗑️ Clear Document\n\nThis will clear your current document and start fresh. Continue?"
+                                );
+                                if (confirm) {
+                                  setChapterData(null);
+                                  setAnalysis(null);
+                                  setFileName("");
+                                  setError("");
+                                  setGeneralConcepts([]);
+                                  setSelectedDomain("none");
+                                  setCustomDomainName("");
+                                  bumpDocumentInstanceKey();
+                                }
+                              }}
+                              disabled={isAnalyzing}
+                              style={{
+                                padding: "4px 10px",
+                                backgroundColor: !isAnalyzing
+                                  ? "#fef5e7"
+                                  : "#e2e8f0",
+                                color: !isAnalyzing ? "#2c3e50" : "#9ca3af",
+                                border: "1.5px solid #e0c392",
+                                borderRadius: "8px",
+                                cursor: !isAnalyzing
+                                  ? "pointer"
+                                  : "not-allowed",
+                                fontSize: "11px",
+                                fontWeight: "600",
+                                transition: "all 0.2s",
+                                whiteSpace: "nowrap",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "3px",
+                              }}
+                              onMouseEnter={(e) => {
+                                if (!isAnalyzing) {
+                                  e.currentTarget.style.backgroundColor =
+                                    "#f7e6d0";
+                                }
+                              }}
+                              onMouseLeave={(e) => {
+                                if (!isAnalyzing) {
+                                  e.currentTarget.style.backgroundColor =
+                                    "#fef5e7";
+                                }
+                              }}
+                              title="Clear document and start fresh"
+                            >
+                              🗑️
+                            </button>
+                          )}
+
+                          {!isAnalyzing && (
+                            <>
+                              <button
+                                onClick={handleExportDocx}
+                                style={{
+                                  padding: "4px 10px",
+                                  backgroundColor: "#fef5e7",
+                                  color: "#2c3e50",
+                                  border: "1.5px solid #e0c392",
+                                  borderRadius: "8px",
+                                  cursor: "pointer",
+                                  fontSize: "11px",
+                                  fontWeight: "600",
+                                  transition: "all 0.2s",
+                                  whiteSpace: "nowrap",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.backgroundColor =
+                                    "#f7e6d0";
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.backgroundColor =
+                                    "#fef5e7";
+                                }}
+                                title="Export DOCX (Microsoft Word)"
+                              >
+                                <svg
+                                  width="16"
+                                  height="16"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                >
+                                  <rect
+                                    x="2"
+                                    y="3"
+                                    width="20"
+                                    height="18"
+                                    rx="2"
+                                    fill="#2B579A"
+                                  />
+                                  <text
+                                    x="12"
+                                    y="16"
+                                    textAnchor="middle"
+                                    fill="white"
+                                    fontSize="11"
+                                    fontWeight="bold"
+                                    fontFamily="Arial, sans-serif"
+                                  >
+                                    W
+                                  </text>
+                                </svg>
+                              </button>
+                              <button
+                                onClick={handleExportPdf}
+                                style={{
+                                  padding: "4px 10px",
+                                  backgroundColor: "#fef5e7",
+                                  color: "#2c3e50",
+                                  border: "1.5px solid #e0c392",
+                                  borderRadius: "8px",
+                                  cursor: "pointer",
+                                  fontSize: "11px",
+                                  fontWeight: "600",
+                                  transition: "all 0.2s",
+                                  whiteSpace: "nowrap",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.backgroundColor =
+                                    "#f7e6d0";
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.backgroundColor =
+                                    "#fef5e7";
+                                }}
+                                title="Export PDF (Manuscript Format)"
+                              >
+                                <svg
+                                  width="16"
+                                  height="16"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                >
+                                  <rect
+                                    x="3"
+                                    y="2"
+                                    width="18"
+                                    height="20"
+                                    rx="2"
+                                    fill="#B30B00"
+                                  />
+                                  <path
+                                    d="M7 7h10M7 10h10M7 13h6"
+                                    stroke="white"
+                                    strokeWidth="1.5"
+                                    strokeLinecap="round"
+                                  />
+                                  <text
+                                    x="12"
+                                    y="19"
+                                    textAnchor="middle"
+                                    fill="white"
+                                    fontSize="5"
+                                    fontWeight="bold"
+                                    fontFamily="Arial"
+                                  >
+                                    PDF
+                                  </text>
+                                </svg>
+                              </button>
+                              <button
+                                onClick={handleExportHtml}
+                                style={{
+                                  padding: "4px 10px",
+                                  backgroundColor: "#fef5e7",
+                                  color: "#2c3e50",
+                                  border: "1.5px solid #e0c392",
+                                  borderRadius: "8px",
+                                  cursor: "pointer",
+                                  fontSize: "11px",
+                                  fontWeight: "600",
+                                  transition: "all 0.2s",
+                                  whiteSpace: "nowrap",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.backgroundColor =
+                                    "#f7e6d0";
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.backgroundColor =
+                                    "#fef5e7";
+                                }}
+                                title="Export HTML (Open in Browser)"
+                              >
+                                <svg
+                                  width="16"
+                                  height="16"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                >
+                                  <circle
+                                    cx="12"
+                                    cy="12"
+                                    r="10"
+                                    stroke="#2c3e50"
+                                    strokeWidth="2"
+                                    fill="none"
+                                  />
+                                  <circle
+                                    cx="12"
+                                    cy="12"
+                                    r="4"
+                                    fill="#ef8432"
+                                  />
+                                  <path
+                                    d="M12 2C6.48 2 2 6.48 2 12h7.5"
+                                    stroke="#4285f4"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                  />
+                                  <path
+                                    d="M12 2c5.52 0 10 4.48 10 10h-7.5"
+                                    stroke="#ea4335"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                  />
+                                  <path
+                                    d="M22 12c0 5.52-4.48 10-10 10"
+                                    stroke="#fbbc05"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                  />
+                                  <path
+                                    d="M2 12c0 5.52 4.48 10 10 10"
+                                    stroke="#34a853"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                  />
+                                </svg>
+                              </button>
+                              <button
+                                onClick={handlePrint}
+                                style={{
+                                  padding: "4px 10px",
+                                  backgroundColor: "#fef5e7",
+                                  color: "#2c3e50",
+                                  border: "1.5px solid #e0c392",
+                                  borderRadius: "8px",
+                                  cursor: "pointer",
+                                  fontSize: "11px",
+                                  fontWeight: "600",
+                                  transition: "all 0.2s",
+                                  whiteSpace: "nowrap",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.backgroundColor =
+                                    "#f7e6d0";
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.backgroundColor =
+                                    "#fef5e7";
+                                }}
+                                title="Print Document"
+                              >
+                                <svg
+                                  width="16"
+                                  height="16"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                >
+                                  <rect
+                                    x="6"
+                                    y="2"
+                                    width="12"
+                                    height="6"
+                                    rx="1"
+                                    stroke="#2c3e50"
+                                    strokeWidth="1.5"
+                                    fill="none"
+                                  />
+                                  <rect
+                                    x="4"
+                                    y="8"
+                                    width="16"
+                                    height="8"
+                                    rx="2"
+                                    stroke="#2c3e50"
+                                    strokeWidth="1.5"
+                                    fill="#f7e6d0"
+                                  />
+                                  <rect
+                                    x="7"
+                                    y="14"
+                                    width="10"
+                                    height="8"
+                                    rx="1"
+                                    stroke="#2c3e50"
+                                    strokeWidth="1.5"
+                                    fill="white"
+                                  />
+                                  <circle cx="7" cy="11" r="1" fill="#ef8432" />
+                                  <line
+                                    x1="9"
+                                    y1="17"
+                                    x2="15"
+                                    y2="17"
+                                    stroke="#2c3e50"
+                                    strokeWidth="1"
+                                    strokeLinecap="round"
+                                  />
+                                  <line
+                                    x1="9"
+                                    y1="19"
+                                    x2="15"
+                                    y2="19"
+                                    stroke="#2c3e50"
+                                    strokeWidth="1"
+                                    strokeLinecap="round"
+                                  />
+                                </svg>
+                              </button>
+                              {viewMode === "writer" &&
+                                accessLevel === "professional" && (
+                                  <button
+                                    onClick={() =>
+                                      setShowTemplateSelector(true)
+                                    }
+                                    style={{
+                                      padding: "4px 10px",
+                                      backgroundColor: "#fef5e7",
+                                      color: "#2c3e50",
+                                      border: "1.5px solid #e0c392",
+                                      borderRadius: "8px",
+                                      cursor: "pointer",
+                                      fontSize: "11px",
+                                      fontWeight: "600",
+                                      transition: "all 0.2s",
+                                      whiteSpace: "nowrap",
+                                      display: "flex",
+                                      alignItems: "center",
+                                      justifyContent: "center",
+                                    }}
+                                    onMouseEnter={(e) => {
+                                      e.currentTarget.style.backgroundColor =
+                                        "#f7e6d0";
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      e.currentTarget.style.backgroundColor =
+                                        "#fef5e7";
+                                    }}
+                                    title="Generate AI Template"
+                                  >
+                                    ✨
+                                  </button>
+                                )}
+
+                              {chapterData && (
+                                <button
+                                  onClick={() => setIsChapterLibraryOpen(true)}
+                                  style={{
+                                    padding: "4px 10px",
+                                    backgroundColor: "#fef5e7",
+                                    color: "#2c3e50",
+                                    border: "1.5px solid #e0c392",
+                                    borderRadius: "8px",
+                                    cursor: "pointer",
+                                    fontSize: "11px",
+                                    fontWeight: "600",
+                                    transition: "all 0.2s",
+                                    whiteSpace: "nowrap",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.backgroundColor =
+                                      "#f7e6d0";
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.backgroundColor =
+                                      "#fef5e7";
+                                  }}
+                                  title="Save Chapter (Cmd+S)"
+                                >
+                                  💾
+                                </button>
+                              )}
+
+                              {viewMode === "writer" && (
+                                <button
+                                  onClick={() => {
+                                    try {
+                                      const saveData = {
+                                        content: {
+                                          plainText:
+                                            chapterData?.plainText || "",
+                                          editorHtml:
+                                            chapterData?.editorHtml || "",
+                                        },
+                                        fileName: fileName || "untitled",
+                                        timestamp: new Date().toISOString(),
+                                        analysis: analysis,
+                                        isTemplateMode: isTemplateMode,
+                                      };
+                                      localStorage.setItem(
+                                        "quillpilot_autosave",
+                                        JSON.stringify(saveData)
+                                      );
+                                      const time =
+                                        new Date().toLocaleTimeString();
+                                      alert(
+                                        `✅ Changes saved locally at ${time}!\n\nYour work will persist across browser sessions.`
+                                      );
+                                    } catch (error) {
+                                      alert(
+                                        "❌ Failed to save. Storage may be full."
+                                      );
+                                    }
+                                  }}
+                                  onContextMenu={(e) => {
+                                    e.preventDefault();
+                                    try {
+                                      const autosaved = localStorage.getItem(
+                                        "quillpilot_autosave"
+                                      );
+                                      if (autosaved) {
+                                        const saved = JSON.parse(autosaved);
+                                        const savedTime = new Date(
+                                          saved.timestamp
+                                        ).toLocaleString();
+                                        const clear = window.confirm(
+                                          `💾 Auto-save Status\n\nLast saved: ${savedTime}\nFile: ${saved.fileName}\n\nClick OK to clear auto-saved data, or Cancel to keep it.`
+                                        );
+                                        if (clear) {
+                                          localStorage.removeItem(
+                                            "quillpilot_autosave"
+                                          );
+                                          alert("🗑️ Auto-saved data cleared!");
+                                        }
+                                      } else {
+                                        alert(
+                                          "ℹ️ No auto-saved data found.\n\nYour work is automatically saved as you edit in Writer Mode."
+                                        );
+                                      }
+                                    } catch (error) {
+                                      alert(
+                                        "⚠️ Error checking auto-save status"
+                                      );
+                                    }
+                                  }}
+                                  style={{
+                                    padding: "4px 10px",
+                                    backgroundColor: "#fef5e7",
+                                    color: "#2c3e50",
+                                    border: "1.5px solid #e0c392",
+                                    borderRadius: "8px",
+                                    cursor: "pointer",
+                                    fontSize: "11px",
+                                    fontWeight: "600",
+                                    transition: "all 0.2s",
+                                    whiteSpace: "nowrap",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.backgroundColor =
+                                      "#f7e6d0";
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.backgroundColor =
+                                      "#fef5e7";
+                                  }}
+                                  title="Click: Save work locally | Right-click: View/clear auto-save status"
+                                >
+                                  💾
+                                </button>
+                              )}
+                            </>
+                          )}
+                        </>
+                      }
                     />
                   </div>
                 </div>
