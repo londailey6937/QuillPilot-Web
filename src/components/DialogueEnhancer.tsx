@@ -27,12 +27,14 @@ interface DialogueEnhancerProps {
   text: string;
   characterName?: string;
   onClose: () => void;
+  onOpenHelp?: () => void;
 }
 
 export const DialogueEnhancer: React.FC<DialogueEnhancerProps> = ({
   text,
   characterName,
   onClose,
+  onOpenHelp,
 }) => {
   const [analysis, setAnalysis] = useState<DialogueAnalysis | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(true);
@@ -214,8 +216,22 @@ export const DialogueEnhancer: React.FC<DialogueEnhancerProps> = ({
         zIndex: 1000,
       }}
     >
-      <div className="mb-4">
+      <div className="mb-4 flex justify-between items-center">
         <h2 className="text-2xl font-bold text-black">💬 Dialogue Enhancer</h2>
+        <button
+          onClick={onOpenHelp}
+          style={{
+            background: "none",
+            border: "none",
+            fontSize: "24px",
+            cursor: "pointer",
+            color: palette.mutedText,
+            marginLeft: "16px",
+          }}
+          title="Help"
+        >
+          ?
+        </button>
       </div>
 
       {characterName && (

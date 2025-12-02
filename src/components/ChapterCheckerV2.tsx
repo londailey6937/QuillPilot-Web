@@ -523,6 +523,9 @@ export const ChapterCheckerV2: React.FC = () => {
     useState(false);
   const [isWritersReferenceModalOpen, setIsWritersReferenceModalOpen] =
     useState(false);
+  const [writersReferenceSection, setWritersReferenceSection] = useState<
+    string | undefined
+  >(undefined);
   const [isQuickStartModalOpen, setIsQuickStartModalOpen] = useState(false);
   const [isChapterLibraryOpen, setIsChapterLibraryOpen] = useState(false);
 
@@ -1186,6 +1189,12 @@ export const ChapterCheckerV2: React.FC = () => {
       );
     }
     setPendingAutosave(null);
+  };
+
+  // Helper function to open Writers Reference to a specific section
+  const openHelpSection = (section: string) => {
+    setWritersReferenceSection(section);
+    setIsWritersReferenceModalOpen(true);
   };
 
   // Character management handlers (Tier 3)
@@ -2831,50 +2840,7 @@ export const ChapterCheckerV2: React.FC = () => {
                 </>
               )}
 
-              {/* Access Level Selector (for demo purposes) */}
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.5rem",
-                  flex: "0 0 auto",
-                  justifyContent: "flex-end",
-                  maxWidth: "400px",
-                  padding: "8px 12px",
-                  border: "2px solid #ef8432",
-                  borderRadius: "20px",
-                  backgroundColor: "#f7e6d0",
-                }}
-              >
-                <span
-                  style={{
-                    fontSize: "0.875rem",
-                    opacity: 0.9,
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  Access Tier:
-                </span>
-                {/* Tier Badge - shows current access level */}
-                <span
-                  style={{
-                    fontSize: "0.875rem",
-                    fontWeight: "600",
-                    color: "#2c3e50",
-                    padding: "6px 12px",
-                    backgroundColor: "#fef5e7",
-                    border: "1.5px solid #2c3e50",
-                    borderRadius: "16px",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {accessLevel === "free"
-                    ? "Tier 1 (Limited Analysis)"
-                    : accessLevel === "premium"
-                    ? "Tier 2 (Full Analysis)"
-                    : "Tier 3 (Pro Writer)"}
-                </span>
-              </div>
+              {/* Access Level Selector - hidden for all tiers */}
 
               {/* User Menu / Auth - Far Right */}
               <UserMenu onAuthRequired={() => setIsAuthModalOpen(true)} />
@@ -2991,7 +2957,11 @@ export const ChapterCheckerV2: React.FC = () => {
         {isWritersReferenceModalOpen && (
           <WritersReferenceModal
             isOpen={isWritersReferenceModalOpen}
-            onClose={() => setIsWritersReferenceModalOpen(false)}
+            onClose={() => {
+              setIsWritersReferenceModalOpen(false);
+              setWritersReferenceSection(undefined);
+            }}
+            initialSection={writersReferenceSection}
           />
         )}
       </Suspense>
@@ -3241,6 +3211,7 @@ export const ChapterCheckerV2: React.FC = () => {
                       isTemplateMode={isTemplateMode}
                       onExitTemplateMode={() => setIsTemplateMode(false)}
                       onHeaderFooterChange={setHeaderFooterSettings}
+                      onOpenHelp={openHelpSection}
                     />
                   </div>
                 </div>

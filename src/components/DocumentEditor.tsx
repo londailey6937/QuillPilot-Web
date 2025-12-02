@@ -49,6 +49,8 @@ interface DocumentEditorProps {
   onOpenCharacterManager?: () => void;
   isProfessionalTier?: boolean;
   onEditorLayoutChange?: (layout: { width: number; left: number }) => void;
+  // Help callback for opening tool-specific help
+  onOpenHelp?: (section: string) => void;
   // Header/Footer settings for export
   onHeaderFooterChange?: (settings: HeaderFooterSettings) => void;
 }
@@ -81,6 +83,7 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
   onOpenCharacterManager,
   isProfessionalTier = false,
   onEditorLayoutChange,
+  onOpenHelp,
   onHeaderFooterChange,
 }) => {
   // Determine initial content: prefer HTML if available, otherwise text
@@ -121,6 +124,7 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
         onOpenCharacterManager={onOpenCharacterManager}
         isProfessionalTier={isProfessionalTier}
         onLayoutChange={onEditorLayoutChange}
+        onOpenHelp={onOpenHelp}
         onHeaderFooterChange={onHeaderFooterChange}
         style={{ flex: 1, minHeight: 0 }}
       />

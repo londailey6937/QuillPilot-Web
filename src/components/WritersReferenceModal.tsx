@@ -1,9 +1,10 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { AnimatedLogo } from "./AnimatedLogo";
 
 interface WritersReferenceModalProps {
   isOpen: boolean;
   onClose: () => void;
+  initialSection?: string;
 }
 
 /**
@@ -15,9 +16,19 @@ interface WritersReferenceModalProps {
 export function WritersReferenceModal({
   isOpen,
   onClose,
+  initialSection,
 }: WritersReferenceModalProps): JSX.Element | null {
-  const [activeSection, setActiveSection] = useState<string>("overview");
+  const [activeSection, setActiveSection] = useState<string>(
+    initialSection || "overview"
+  );
   const [searchQuery, setSearchQuery] = useState<string>("");
+
+  // Update active section when initialSection prop changes
+  useEffect(() => {
+    if (initialSection) {
+      setActiveSection(initialSection);
+    }
+  }, [initialSection]);
 
   const sections = {
     overview: "Writer Mode Overview",
@@ -134,6 +145,151 @@ export function WritersReferenceModal({
                   <li>Reading level (Flesch-Kincaid)</li>
                 </ul>
               </div>
+            </div>
+
+            <h3>Understanding Visual Indicators</h3>
+            <p style={{ marginBottom: "1rem" }}>
+              When Style Labels are enabled, QuillPilot displays an{" "}
+              <strong>Analysis Legend</strong> above the ruler showing what each
+              color indicator means. Hover over any legend item for detailed,
+              actionable advice.
+            </p>
+
+            <div
+              style={{
+                background: "#fef5e7",
+                padding: "1.25rem",
+                borderRadius: "8px",
+                border: "1px solid #e0c392",
+                marginBottom: "1.5rem",
+              }}
+            >
+              <h4 style={{ margin: "0 0 1rem 0", color: "#2c3e50" }}>
+                Legend Indicators
+              </h4>
+
+              {/* Long Paragraphs */}
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: "0.75rem",
+                  marginBottom: "1rem",
+                  paddingBottom: "1rem",
+                  borderBottom: "1px solid #e0c392",
+                }}
+              >
+                <div
+                  style={{
+                    width: "12px",
+                    height: "12px",
+                    backgroundColor: "#f97316",
+                    borderRadius: "2px",
+                    marginTop: "4px",
+                    flexShrink: 0,
+                  }}
+                />
+                <div>
+                  <strong style={{ color: "#f97316" }}>Long ¶</strong>
+                  <span style={{ color: "#6b7280", marginLeft: "0.5rem" }}>
+                    — Long Paragraphs
+                  </span>
+                  <p
+                    style={{
+                      margin: "0.5rem 0 0 0",
+                      fontSize: "0.875rem",
+                      lineHeight: "1.6",
+                    }}
+                  >
+                    Dense text blocks that may tire readers. Break up for better
+                    readability—aim for 3-5 sentences per paragraph.
+                  </p>
+                </div>
+              </div>
+
+              {/* Passive Voice */}
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: "0.75rem",
+                  marginBottom: "1rem",
+                  paddingBottom: "1rem",
+                  borderBottom: "1px solid #e0c392",
+                }}
+              >
+                <div
+                  style={{
+                    width: "12px",
+                    height: "12px",
+                    backgroundColor: "#8b5cf6",
+                    borderRadius: "2px",
+                    marginTop: "4px",
+                    flexShrink: 0,
+                  }}
+                />
+                <div>
+                  <strong style={{ color: "#8b5cf6" }}>Passive?</strong>
+                  <span style={{ color: "#6b7280", marginLeft: "0.5rem" }}>
+                    — Passive Voice
+                  </span>
+                  <p
+                    style={{
+                      margin: "0.5rem 0 0 0",
+                      fontSize: "0.875rem",
+                      lineHeight: "1.6",
+                    }}
+                  >
+                    Sentences using passive construction. Convert to active
+                    voice for urgency and clarity. Example: "The door was opened
+                    by Sarah" → "Sarah opened the door."
+                  </p>
+                </div>
+              </div>
+
+              {/* Sensory Details */}
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: "0.75rem",
+                }}
+              >
+                <div
+                  style={{
+                    width: "12px",
+                    height: "12px",
+                    backgroundColor: "#eab308",
+                    borderRadius: "2px",
+                    marginTop: "4px",
+                    flexShrink: 0,
+                  }}
+                />
+                <div>
+                  <strong style={{ color: "#eab308" }}>Senses?</strong>
+                  <span style={{ color: "#6b7280", marginLeft: "0.5rem" }}>
+                    — Missing Sensory Details
+                  </span>
+                  <p
+                    style={{
+                      margin: "0.5rem 0 0 0",
+                      fontSize: "0.875rem",
+                      lineHeight: "1.6",
+                    }}
+                  >
+                    Passages lacking sensory information. Add what characters
+                    see, hear, smell, taste, or feel. Example: "She was upset" →
+                    "Her hands trembled as tears blurred the page."
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="tip-box">
+              <strong>💡 Pro Tip:</strong> These indicators appear in your
+              document as you type. Use them during revision to quickly spot
+              areas that need attention. The legend provides quick reminders
+              without interrupting your flow.
             </div>
 
             <h3>17 Advanced Writing Tools</h3>
@@ -1982,29 +2138,6 @@ export function WritersReferenceModal({
               </div>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            style={{
-              background: "none",
-              border: "none",
-              fontSize: "1.5rem",
-              cursor: "pointer",
-              color: "#6b7280",
-              padding: "0.5rem",
-              borderRadius: "8px",
-              transition: "all 0.2s",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = "#fee2e2";
-              e.currentTarget.style.color = "#ef4444";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = "transparent";
-              e.currentTarget.style.color = "#6b7280";
-            }}
-          >
-            ✕
-          </button>
         </div>
 
         {/* Content Area */}

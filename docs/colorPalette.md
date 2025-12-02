@@ -50,7 +50,12 @@
 - **#fef5e7** - Main card background (soft cream)
 
   - RGB: `rgb(254, 245, 231)`
-  - Used for: Primary cards, dropdowns, main content areas
+  - Used for: Primary cards, dropdowns, main content areas, analysis legend gradient endpoint
+
+- **#fffaf3** - Lightest cream
+
+  - RGB: `rgb(255, 250, 243)`
+  - Used for: Analysis legend gradient start point, subtle highlights
 
 - **#f7e6d0** - Hover/selected state (light tan)
 
@@ -78,7 +83,13 @@
   - Used for: Upgrade prompts, featured sections
 
 - **#fef5e7 to #fff7ed** - Subtle cream gradient
+
   - Used for: Quick Start Guide, Reference Library shells
+
+- **#fffaf3 to #fef5e7** - Analysis legend gradient
+  - Gradient direction: 135deg
+  - Used for: Editor analysis legend background
+  - Paired with: #e0c392 border, rgba(239, 132, 50, 0.12) shadow
 
 ## Border Colors
 
@@ -130,6 +141,9 @@
   - RGB: `rgb(107, 114, 128)`
 - **#64748b** - Slate gray (disabled states)
   - RGB: `rgb(100, 116, 139)`
+- **#78716c** - Stone gray (legend text)
+  - RGB: `rgb(120, 113, 108)`
+  - Used for: Analysis legend labels, muted UI text
 
 ## Status Colors
 
@@ -142,8 +156,13 @@
 ### Warning
 
 - **#f59e0b** - Amber warning
+
   - RGB: `rgb(245, 158, 11)`
   - Used for: Warning messages, moderate issues
+
+- **#eab308** - Yellow warning/indicator
+  - RGB: `rgb(234, 179, 8)`
+  - Used for: Sensory detail suggestions, missing elements indicator
 
 ### Error/Critical
 
@@ -159,8 +178,13 @@
 ### Info/Accent
 
 - **#f97316** - Bright orange
+
   - RGB: `rgb(249, 115, 22)`
-  - Used for: Call-to-action buttons, emphasis
+  - Used for: Call-to-action buttons, emphasis, long paragraph indicators
+
+- **#8b5cf6** - Purple indicator
+  - RGB: `rgb(139, 92, 246)`
+  - Used for: Passive voice indicators, stylistic suggestions
 
 ## Neutral Grays
 

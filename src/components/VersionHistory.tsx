@@ -14,6 +14,7 @@ interface VersionHistoryProps {
   currentContent: string;
   onRestore: (content: string) => void;
   onClose: () => void;
+  onOpenHelp?: () => void;
   fileName?: string;
 }
 
@@ -21,6 +22,7 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
   currentContent,
   onRestore,
   onClose,
+  onOpenHelp,
   fileName = "document",
 }) => {
   const [versions, setVersions] = useState<Version[]>([]);
@@ -235,7 +237,7 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
           📜 Version History
         </h2>
         <button
-          onClick={onClose}
+          onClick={onOpenHelp}
           style={{
             background: "none",
             border: "none",
@@ -243,8 +245,9 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
             cursor: "pointer",
             color: palette.mutedText,
           }}
+          title="Help"
         >
-          ×
+          ?
         </button>
       </div>
 

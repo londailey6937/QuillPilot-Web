@@ -32,11 +32,12 @@ interface CitationManagerState {
 interface AcademicCitationManagerProps {
   text: string;
   onClose: () => void;
+  onOpenHelp?: () => void;
 }
 
 export const AcademicCitationManager: React.FC<
   AcademicCitationManagerProps
-> = ({ text, onClose }) => {
+> = ({ text, onClose, onOpenHelp }) => {
   const [state, setState] = useState<CitationManagerState>({
     citations: [],
     selectedStyle: "APA",
@@ -290,10 +291,24 @@ export const AcademicCitationManager: React.FC<
         zIndex: 1000,
       }}
     >
-      <div className="mb-4">
+      <div className="mb-4 flex justify-between items-center gap-4">
         <h2 className="text-2xl font-bold text-black">
           📚 Academic Citation Manager
         </h2>
+        <button
+          onClick={onOpenHelp}
+          style={{
+            background: "none",
+            border: "none",
+            fontSize: "20px",
+            cursor: "pointer",
+            color: palette.mutedText,
+            padding: "4px 8px",
+          }}
+          title="Help"
+        >
+          ?
+        </button>
       </div>
 
       {isProcessing ? (

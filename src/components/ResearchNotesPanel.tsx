@@ -3,6 +3,7 @@ import { creamPalette as palette } from "../styles/palette";
 
 interface ResearchNotesPanelProps {
   onClose: () => void;
+  onOpenHelp?: () => void;
 }
 
 interface Note {
@@ -17,6 +18,7 @@ interface Note {
 
 export const ResearchNotesPanel: React.FC<ResearchNotesPanelProps> = ({
   onClose,
+  onOpenHelp,
 }) => {
   const [notes, setNotes] = useState<Note[]>([
     {
@@ -141,11 +143,27 @@ export const ResearchNotesPanel: React.FC<ResearchNotesPanelProps> = ({
         zIndex: 1000,
       }}
     >
-      <div className="mb-4">
-        <h2 className="text-2xl font-bold text-black">📝 Writer's Notes</h2>
-        <p className="text-sm" style={{ color: palette.mutedText }}>
-          Characters, world building, research & ideas - all in one place
-        </p>
+      <div className="mb-4 flex justify-between items-start gap-4">
+        <div>
+          <h2 className="text-2xl font-bold text-black">📝 Writer's Notes</h2>
+          <p className="text-sm" style={{ color: palette.mutedText }}>
+            Characters, world building, research & ideas - all in one place
+          </p>
+        </div>
+        <button
+          onClick={onOpenHelp}
+          style={{
+            background: "none",
+            border: "none",
+            fontSize: "20px",
+            cursor: "pointer",
+            color: palette.mutedText,
+            padding: "4px 8px",
+          }}
+          title="Help"
+        >
+          ?
+        </button>
       </div>
 
       <div className="space-y-4">

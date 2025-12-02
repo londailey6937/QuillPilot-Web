@@ -25,11 +25,12 @@ interface OutlineStructure {
 interface NonFictionOutlineGeneratorProps {
   text: string;
   onClose: () => void;
+  onOpenHelp?: () => void;
 }
 
 export const NonFictionOutlineGenerator: React.FC<
   NonFictionOutlineGeneratorProps
-> = ({ text, onClose }) => {
+> = ({ text, onClose, onOpenHelp }) => {
   const [outline, setOutline] = useState<OutlineStructure | null>(null);
   const [isGenerating, setIsGenerating] = useState(true);
   const [selectedView, setSelectedView] = useState<"outline" | "evidence">(
@@ -265,10 +266,24 @@ export const NonFictionOutlineGenerator: React.FC<
         zIndex: 1000,
       }}
     >
-      <div className="mb-4">
+      <div className="mb-4 flex justify-between items-center gap-4">
         <h2 className="text-2xl font-bold text-black">
           📝 Non-Fiction Outline Generator
         </h2>
+        <button
+          onClick={onOpenHelp}
+          style={{
+            background: "none",
+            border: "none",
+            fontSize: "20px",
+            cursor: "pointer",
+            color: palette.mutedText,
+            padding: "4px 8px",
+          }}
+          title="Help"
+        >
+          ?
+        </button>
       </div>
 
       {isGenerating ? (

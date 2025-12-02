@@ -23,6 +23,7 @@ interface CommentAnnotationProps {
   documentContent: string;
   selectedText: string;
   onClose: () => void;
+  onOpenHelp?: () => void;
   onHighlight?: (text: string, color: string) => void;
   fileName?: string;
 }
@@ -39,6 +40,7 @@ export const CommentAnnotation: React.FC<CommentAnnotationProps> = ({
   documentContent,
   selectedText,
   onClose,
+  onOpenHelp,
   onHighlight,
   fileName = "document",
 }) => {
@@ -207,7 +209,7 @@ export const CommentAnnotation: React.FC<CommentAnnotationProps> = ({
           💬 Comments & Annotations
         </h2>
         <button
-          onClick={onClose}
+          onClick={onOpenHelp}
           style={{
             background: "none",
             border: "none",
@@ -215,8 +217,9 @@ export const CommentAnnotation: React.FC<CommentAnnotationProps> = ({
             cursor: "pointer",
             color: palette.mutedText,
           }}
+          title="Help"
         >
-          ×
+          ?
         </button>
       </div>
 

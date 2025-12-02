@@ -34,11 +34,13 @@ interface PoetryAnalysis {
 interface PoetryMeterAnalyzerProps {
   text: string;
   onClose: () => void;
+  onOpenHelp?: () => void;
 }
 
 export const PoetryMeterAnalyzer: React.FC<PoetryMeterAnalyzerProps> = ({
   text,
   onClose,
+  onOpenHelp,
 }) => {
   const [analysis, setAnalysis] = useState<PoetryAnalysis | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(true);
@@ -265,10 +267,24 @@ export const PoetryMeterAnalyzer: React.FC<PoetryMeterAnalyzerProps> = ({
         zIndex: 1000,
       }}
     >
-      <div className="mb-4">
+      <div className="mb-4 flex justify-between items-center gap-4">
         <h2 className="text-2xl font-bold text-black">
           📖 Poetry Meter Analyzer
         </h2>
+        <button
+          onClick={onOpenHelp}
+          style={{
+            background: "none",
+            border: "none",
+            fontSize: "20px",
+            cursor: "pointer",
+            color: palette.mutedText,
+            padding: "4px 8px",
+          }}
+          title="Help"
+        >
+          ?
+        </button>
       </div>
 
       {isAnalyzing ? (

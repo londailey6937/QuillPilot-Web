@@ -27,12 +27,14 @@ interface EmotionAnalysis {
 interface EmotionTrackerProps {
   text: string;
   onClose: () => void;
+  onOpenHelp?: () => void;
   onNavigate?: (position: number) => void;
 }
 
 export const EmotionTracker: React.FC<EmotionTrackerProps> = ({
   text,
   onClose,
+  onOpenHelp,
   onNavigate,
 }) => {
   const [analysis, setAnalysis] = useState<EmotionAnalysis | null>(null);
@@ -354,8 +356,21 @@ export const EmotionTracker: React.FC<EmotionTrackerProps> = ({
         zIndex: 1000,
       }}
     >
-      <div className="mb-4">
+      <div className="mb-4 flex justify-between items-center">
         <h2 className="text-2xl font-bold text-black">💖 Emotion Tracker</h2>
+        <button
+          onClick={onOpenHelp}
+          style={{
+            background: "none",
+            border: "none",
+            fontSize: "24px",
+            cursor: "pointer",
+            color: palette.mutedText,
+          }}
+          title="Help"
+        >
+          ?
+        </button>
       </div>
 
       {isAnalyzing ? (

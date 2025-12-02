@@ -12,12 +12,14 @@ interface ClicheDetection {
 interface ClicheDetectorProps {
   text: string;
   onClose: () => void;
+  onOpenHelp?: () => void;
   onReplace?: (oldPhrase: string, newPhrase: string) => void;
 }
 
 export const ClicheDetector: React.FC<ClicheDetectorProps> = ({
   text,
   onClose,
+  onOpenHelp,
   onReplace,
 }) => {
   const [detections, setDetections] = useState<ClicheDetection[]>([]);
@@ -406,8 +408,21 @@ export const ClicheDetector: React.FC<ClicheDetectorProps> = ({
         zIndex: 1000,
       }}
     >
-      <div className="mb-4">
+      <div className="mb-4 flex justify-between items-center">
         <h2 className="text-2xl font-bold text-black">🚫 Cliché Detector</h2>
+        <button
+          onClick={onOpenHelp}
+          style={{
+            background: "none",
+            border: "none",
+            fontSize: "24px",
+            cursor: "pointer",
+            color: palette.mutedText,
+          }}
+          title="Help"
+        >
+          ?
+        </button>
       </div>
 
       {isAnalyzing ? (

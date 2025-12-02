@@ -20,11 +20,13 @@ interface ReadabilityMetrics {
 interface ReadabilityAnalyzerProps {
   text: string;
   onClose: () => void;
+  onOpenHelp?: () => void;
 }
 
 export const ReadabilityAnalyzer: React.FC<ReadabilityAnalyzerProps> = ({
   text,
   onClose,
+  onOpenHelp,
 }) => {
   const countSyllables = (word: string): number => {
     word = word.toLowerCase().trim();
@@ -151,10 +153,23 @@ export const ReadabilityAnalyzer: React.FC<ReadabilityAnalyzerProps> = ({
         zIndex: 1000,
       }}
     >
-      <div className="mb-4">
+      <div className="mb-4 flex justify-between items-center">
         <h2 className="text-2xl font-bold text-black">
           📊 Readability Metrics
         </h2>
+        <button
+          onClick={onOpenHelp}
+          style={{
+            background: "none",
+            border: "none",
+            fontSize: "24px",
+            cursor: "pointer",
+            color: palette.mutedText,
+          }}
+          title="Help"
+        >
+          ?
+        </button>
       </div>
 
       <div className="grid grid-cols-2 gap-4 mb-6">

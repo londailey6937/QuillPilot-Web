@@ -3,6 +3,7 @@ import { creamPalette as palette } from "../styles/palette";
 
 interface ImageMoodBoardProps {
   onClose: () => void;
+  onOpenHelp?: () => void;
 }
 
 interface MoodImage {
@@ -15,7 +16,10 @@ interface MoodImage {
   created: Date;
 }
 
-export const ImageMoodBoard: React.FC<ImageMoodBoardProps> = ({ onClose }) => {
+export const ImageMoodBoard: React.FC<ImageMoodBoardProps> = ({
+  onClose,
+  onOpenHelp,
+}) => {
   const [images, setImages] = useState<MoodImage[]>([
     {
       id: "1",
@@ -123,11 +127,27 @@ export const ImageMoodBoard: React.FC<ImageMoodBoardProps> = ({ onClose }) => {
         zIndex: 1000,
       }}
     >
-      <div className="mb-4">
-        <h2 className="text-2xl font-bold text-black">🖼️ Image Mood Board</h2>
-        <p className="text-sm" style={{ color: palette.mutedText }}>
-          Visual references for scenes and characters
-        </p>
+      <div className="mb-4 flex justify-between items-start gap-4">
+        <div>
+          <h2 className="text-2xl font-bold text-black">🖼️ Image Mood Board</h2>
+          <p className="text-sm" style={{ color: palette.mutedText }}>
+            Visual references for scenes and characters
+          </p>
+        </div>
+        <button
+          onClick={onOpenHelp}
+          style={{
+            background: "none",
+            border: "none",
+            fontSize: "20px",
+            cursor: "pointer",
+            color: palette.mutedText,
+            padding: "4px 8px",
+          }}
+          title="Help"
+        >
+          ?
+        </button>
       </div>
 
       <div className="space-y-4">

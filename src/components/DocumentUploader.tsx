@@ -930,8 +930,8 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
           )}
         </label>
 
-        {/* Sample Story Button - Hidden when screenplay is loaded */}
-        {!hasScreenplay && (
+        {/* Sample Story Button - Hidden when screenplay is loaded or for paid tiers */}
+        {!hasScreenplay && accessLevel === "free" && (
           <button
             onClick={loadSampleStory}
             disabled={disabled || isProcessing}

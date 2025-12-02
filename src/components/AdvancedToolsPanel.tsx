@@ -24,6 +24,7 @@ interface AdvancedToolsPanelProps {
   onInsertText?: (text: string) => void;
   onReplaceText?: (oldText: string, newText: string) => void;
   onNavigate?: (position: number) => void;
+  onOpenHelp?: (section: string) => void;
 }
 
 type ActiveTool =
@@ -52,6 +53,7 @@ export const AdvancedToolsPanel: React.FC<AdvancedToolsPanelProps> = ({
   onInsertText,
   onReplaceText,
   onNavigate,
+  onOpenHelp,
 }) => {
   const [activeTool, setActiveTool] = useState<ActiveTool>(null);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
@@ -378,16 +380,39 @@ export const AdvancedToolsPanel: React.FC<AdvancedToolsPanelProps> = ({
               borderTop: `2px solid ${palette.border}`,
             }}
           >
-            <h4
+            <div
               style={{
-                fontSize: "18px",
-                fontWeight: "bold",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
                 marginBottom: "12px",
-                color: palette.navy,
               }}
             >
-              🧭 Genre-Specific
-            </h4>
+              <h4
+                style={{
+                  fontSize: "18px",
+                  fontWeight: "bold",
+                  color: palette.navy,
+                  margin: 0,
+                }}
+              >
+                🧭 Genre-Specific
+              </h4>
+              <button
+                onClick={() => onOpenHelp?.("advancedTools")}
+                style={{
+                  background: "none",
+                  border: "none",
+                  fontSize: "20px",
+                  cursor: "pointer",
+                  color: palette.mutedText,
+                  padding: "4px 8px",
+                }}
+                title="Help"
+              >
+                ?
+              </button>
+            </div>
             <div
               style={{ display: "flex", flexDirection: "column", gap: "8px" }}
             >
@@ -454,16 +479,39 @@ export const AdvancedToolsPanel: React.FC<AdvancedToolsPanelProps> = ({
               borderTop: `2px solid ${palette.border}`,
             }}
           >
-            <h4
+            <div
               style={{
-                fontSize: "18px",
-                fontWeight: "bold",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
                 marginBottom: "12px",
-                color: palette.navy,
               }}
             >
-              🎨 Content Generation
-            </h4>
+              <h4
+                style={{
+                  fontSize: "18px",
+                  fontWeight: "bold",
+                  color: palette.navy,
+                  margin: 0,
+                }}
+              >
+                🎨 Content Generation
+              </h4>
+              <button
+                onClick={() => onOpenHelp?.("advancedTools")}
+                style={{
+                  background: "none",
+                  border: "none",
+                  fontSize: "20px",
+                  cursor: "pointer",
+                  color: palette.mutedText,
+                  padding: "4px 8px",
+                }}
+                title="Help"
+              >
+                ?
+              </button>
+            </div>
             <div
               style={{ display: "flex", flexDirection: "column", gap: "8px" }}
             >
@@ -552,21 +600,31 @@ export const AdvancedToolsPanel: React.FC<AdvancedToolsPanelProps> = ({
             closeTool();
           }}
           onClose={closeTool}
+          onOpenHelp={() => onOpenHelp?.("aiAssistant")}
         />
       )}
 
       {activeTool === "dialogue" && (
-        <DialogueEnhancer text={text} onClose={closeTool} />
+        <DialogueEnhancer
+          text={text}
+          onClose={closeTool}
+          onOpenHelp={() => onOpenHelp?.("dialogue")}
+        />
       )}
 
       {activeTool === "readability" && (
-        <ReadabilityAnalyzer text={text} onClose={closeTool} />
+        <ReadabilityAnalyzer
+          text={text}
+          onClose={closeTool}
+          onOpenHelp={() => onOpenHelp?.("readability")}
+        />
       )}
 
       {activeTool === "cliche" && (
         <ClicheDetector
           text={text}
           onClose={closeTool}
+          onOpenHelp={() => onOpenHelp?.("cliche")}
           onReplace={onReplaceText}
         />
       )}
@@ -575,24 +633,36 @@ export const AdvancedToolsPanel: React.FC<AdvancedToolsPanelProps> = ({
         <BeatSheetGenerator
           text={text}
           onClose={closeTool}
+          onOpenHelp={() => onOpenHelp?.("beatSheet")}
           onNavigate={onNavigate}
         />
       )}
 
       {activeTool === "pov" && (
-        <POVChecker text={text} onClose={closeTool} onNavigate={onNavigate} />
+        <POVChecker
+          text={text}
+          onClose={closeTool}
+          onOpenHelp={() => onOpenHelp?.("povChecker")}
+          onNavigate={onNavigate}
+        />
       )}
 
       {activeTool === "emotion" && (
         <EmotionTracker
           text={text}
           onClose={closeTool}
+          onOpenHelp={() => onOpenHelp?.("emotion")}
           onNavigate={onNavigate}
         />
       )}
 
       {activeTool === "motif" && (
-        <MotifTracker text={text} onClose={closeTool} onNavigate={onNavigate} />
+        <MotifTracker
+          text={text}
+          onClose={closeTool}
+          onOpenHelp={() => onOpenHelp?.("motif")}
+          onNavigate={onNavigate}
+        />
       )}
 
       {activeTool === "poetry-meter" && (
@@ -632,6 +702,7 @@ export const AdvancedToolsPanel: React.FC<AdvancedToolsPanelProps> = ({
             closeTool();
           }}
           onClose={closeTool}
+          onOpenHelp={() => onOpenHelp?.("versionHistory")}
         />
       )}
 
@@ -640,6 +711,7 @@ export const AdvancedToolsPanel: React.FC<AdvancedToolsPanelProps> = ({
           documentContent={text}
           selectedText={capturedSelection || selectedText}
           onClose={closeTool}
+          onOpenHelp={() => onOpenHelp?.("comments")}
         />
       )}
     </>

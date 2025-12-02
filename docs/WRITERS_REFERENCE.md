@@ -49,6 +49,32 @@ Writer Mode transforms QuillPilot from an analysis tool into a full-featured wri
 └─────────────────────────────────────────────────────────────┘
 ```
 
+### Understanding Visual Indicators
+
+When Style Labels are enabled, QuillPilot displays an **Analysis Legend** above the ruler showing what each color indicator means. Hover over any legend item for detailed, actionable advice.
+
+#### Legend Indicators
+
+**🟠 Long ¶** (Orange) — Long Paragraphs
+
+- **What it means**: Dense text blocks that may tire readers
+- **Hover tip**: "Break up dense text blocks. Aim for 3-5 sentences per paragraph for better readability. Consider splitting at natural thought transitions or adding dialogue breaks."
+- **Best for**: Breaking walls of text in fiction; improving web content readability
+
+**🟣 Passive?** (Purple) — Passive Voice
+
+- **What it means**: Sentences using passive construction
+- **Hover tip**: "Strengthen your prose by converting to active voice. Change 'was done by' to direct subject-verb-object. Active voice creates urgency and clarity. Example: 'The door was opened by Sarah' → 'Sarah opened the door.'"
+- **Best for**: Adding energy to action scenes; strengthening narrative voice
+
+**🟡 Senses?** (Yellow) — Missing Sensory Details
+
+- **What it means**: Passages lacking sensory information
+- **Hover tip**: "Engage readers by adding specific sensory information—what characters see, hear, smell, taste, or feel. Replace abstract descriptions with concrete images. Example: 'She was upset' → 'Her hands trembled as tears blurred the page.'"
+- **Best for**: Bringing scenes to life; deepening reader immersion
+
+**💡 Pro Tip**: These indicators appear in your document as you type. Use them during revision to quickly spot areas that need attention. The legend provides quick reminders without interrupting your flow.
+
 ---
 
 ## The Editor Toolbar

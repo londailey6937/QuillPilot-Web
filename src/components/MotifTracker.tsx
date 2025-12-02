@@ -24,12 +24,14 @@ interface MotifAnalysis {
 interface MotifTrackerProps {
   text: string;
   onClose: () => void;
+  onOpenHelp?: () => void;
   onNavigate?: (position: number) => void;
 }
 
 export const MotifTracker: React.FC<MotifTrackerProps> = ({
   text,
   onClose,
+  onOpenHelp,
   onNavigate,
 }) => {
   const [analysis, setAnalysis] = useState<MotifAnalysis | null>(null);
@@ -276,10 +278,23 @@ export const MotifTracker: React.FC<MotifTrackerProps> = ({
         zIndex: 1000,
       }}
     >
-      <div className="mb-4">
+      <div className="mb-4 flex justify-between items-center">
         <h2 className="text-2xl font-bold text-black">
           🔮 Motif & Symbol Tracker
         </h2>
+        <button
+          onClick={onOpenHelp}
+          style={{
+            background: "none",
+            border: "none",
+            fontSize: "24px",
+            cursor: "pointer",
+            color: palette.mutedText,
+          }}
+          title="Help"
+        >
+          ?
+        </button>
       </div>
 
       {isAnalyzing ? (

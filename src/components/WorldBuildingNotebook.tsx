@@ -3,6 +3,7 @@ import { creamPalette as palette } from "../styles/palette";
 
 interface WorldBuildingNotebookProps {
   onClose: () => void;
+  onOpenHelp?: () => void;
 }
 
 interface Entry {
@@ -16,6 +17,7 @@ interface Entry {
 
 export const WorldBuildingNotebook: React.FC<WorldBuildingNotebookProps> = ({
   onClose,
+  onOpenHelp,
 }) => {
   const [entries, setEntries] = useState<Entry[]>([
     {
@@ -100,10 +102,24 @@ export const WorldBuildingNotebook: React.FC<WorldBuildingNotebookProps> = ({
         zIndex: 1000,
       }}
     >
-      <div className="mb-4">
+      <div className="mb-4 flex justify-between items-center gap-4">
         <h2 className="text-2xl font-bold text-black">
           📚 World-Building Notebook
         </h2>
+        <button
+          onClick={onOpenHelp}
+          style={{
+            background: "none",
+            border: "none",
+            fontSize: "20px",
+            cursor: "pointer",
+            color: palette.mutedText,
+            padding: "4px 8px",
+          }}
+          title="Help"
+        >
+          ?
+        </button>
       </div>
 
       <div className="space-y-6">

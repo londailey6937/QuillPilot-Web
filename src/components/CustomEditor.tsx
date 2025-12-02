@@ -52,6 +52,8 @@ interface CustomEditorProps {
   onOpenCharacterManager?: () => void;
   isProfessionalTier?: boolean;
   onLayoutChange?: (layout: { width: number; left: number }) => void;
+  // Help callback for opening tool-specific help
+  onOpenHelp?: (section: string) => void;
   // Header/Footer settings callback for export
   onHeaderFooterChange?: (settings: {
     headerText: string;
@@ -203,6 +205,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   onOpenCharacterManager,
   isProfessionalTier = false,
   onLayoutChange,
+  onOpenHelp,
   onHeaderFooterChange,
 }) => {
   const editorRef = useRef<HTMLDivElement>(null);
@@ -2899,7 +2902,15 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
       >
         {showSpacingIndicators && (
           <>
-            <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "5px",
+                cursor: "help",
+              }}
+              title="Long Paragraphs: Break up dense text blocks. Aim for 3-5 sentences per paragraph for better readability. Consider splitting at natural thought transitions or adding dialogue breaks."
+            >
               <div
                 style={{
                   width: "8px",
@@ -2910,7 +2921,15 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               />
               <span>Long ¶</span>
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "5px",
+                cursor: "help",
+              }}
+              title="Passive Voice: Strengthen your prose by converting to active voice. Change 'was done by' to direct subject-verb-object. Active voice creates urgency and clarity. Example: 'The door was opened by Sarah' → 'Sarah opened the door.'"
+            >
               <div
                 style={{
                   width: "8px",
@@ -2924,7 +2943,15 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           </>
         )}
         {showVisualSuggestions && (
-          <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "5px",
+              cursor: "help",
+            }}
+            title="Sensory Details: Engage readers by adding specific sensory information—what characters see, hear, smell, taste, or feel. Replace abstract descriptions with concrete images. Example: 'She was upset' → 'Her hands trembled as tears blurred the page.'"
+          >
             <div
               style={{
                 width: "8px",
@@ -7275,48 +7302,56 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               }
             }}
             onClose={() => setActiveTool(null)}
+            onOpenHelp={() => onOpenHelp?.("aiAssistant")}
           />
         )}
       {viewMode === "writer" && !isFreeMode && activeTool === "dialogue" && (
         <DialogueEnhancer
           text={editorRef.current?.innerText || ""}
           onClose={() => setActiveTool(null)}
+          onOpenHelp={() => onOpenHelp?.("dialogue")}
         />
       )}
       {viewMode === "writer" && !isFreeMode && activeTool === "readability" && (
         <ReadabilityAnalyzer
           text={editorRef.current?.innerText || ""}
           onClose={() => setActiveTool(null)}
+          onOpenHelp={() => onOpenHelp?.("readability")}
         />
       )}
       {viewMode === "writer" && !isFreeMode && activeTool === "cliche" && (
         <ClicheDetector
           text={editorRef.current?.innerText || ""}
           onClose={() => setActiveTool(null)}
+          onOpenHelp={() => onOpenHelp?.("cliche")}
         />
       )}
       {viewMode === "writer" && !isFreeMode && activeTool === "beats" && (
         <BeatSheetGenerator
           text={editorRef.current?.innerText || ""}
           onClose={() => setActiveTool(null)}
+          onOpenHelp={() => onOpenHelp?.("beatSheet")}
         />
       )}
       {viewMode === "writer" && !isFreeMode && activeTool === "pov" && (
         <POVChecker
           text={editorRef.current?.innerText || ""}
           onClose={() => setActiveTool(null)}
+          onOpenHelp={() => onOpenHelp?.("povChecker")}
         />
       )}
       {viewMode === "writer" && !isFreeMode && activeTool === "emotion" && (
         <EmotionTracker
           text={editorRef.current?.innerText || ""}
           onClose={() => setActiveTool(null)}
+          onOpenHelp={() => onOpenHelp?.("emotion")}
         />
       )}
       {viewMode === "writer" && !isFreeMode && activeTool === "motif" && (
         <MotifTracker
           text={editorRef.current?.innerText || ""}
           onClose={() => setActiveTool(null)}
+          onOpenHelp={() => onOpenHelp?.("motif")}
         />
       )}
       {viewMode === "writer" &&
@@ -7325,6 +7360,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           <PoetryMeterAnalyzer
             text={editorRef.current?.innerText || ""}
             onClose={() => setActiveTool(null)}
+            onOpenHelp={() => onOpenHelp?.("advancedTools")}
           />
         )}
       {viewMode === "writer" &&
@@ -7333,6 +7369,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           <NonFictionOutlineGenerator
             text={editorRef.current?.innerText || ""}
             onClose={() => setActiveTool(null)}
+            onOpenHelp={() => onOpenHelp?.("advancedTools")}
           />
         )}
       {viewMode === "writer" &&
@@ -7341,25 +7378,38 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           <AcademicCitationManager
             text={editorRef.current?.innerText || ""}
             onClose={() => setActiveTool(null)}
+            onOpenHelp={() => onOpenHelp?.("advancedTools")}
           />
         )}
       {viewMode === "writer" &&
         !isFreeMode &&
         activeTool === "name-generator" && (
-          <CharacterNameGenerator onClose={() => setActiveTool(null)} />
+          <CharacterNameGenerator
+            onClose={() => setActiveTool(null)}
+            onOpenHelp={() => onOpenHelp?.("advancedTools")}
+          />
         )}
       {viewMode === "writer" &&
         !isFreeMode &&
         activeTool === "world-building" && (
-          <WorldBuildingNotebook onClose={() => setActiveTool(null)} />
+          <WorldBuildingNotebook
+            onClose={() => setActiveTool(null)}
+            onOpenHelp={() => onOpenHelp?.("advancedTools")}
+          />
         )}
       {viewMode === "writer" &&
         !isFreeMode &&
         activeTool === "research-notes" && (
-          <ResearchNotesPanel onClose={() => setActiveTool(null)} />
+          <ResearchNotesPanel
+            onClose={() => setActiveTool(null)}
+            onOpenHelp={() => onOpenHelp?.("advancedTools")}
+          />
         )}
       {viewMode === "writer" && !isFreeMode && activeTool === "mood-board" && (
-        <ImageMoodBoard onClose={() => setActiveTool(null)} />
+        <ImageMoodBoard
+          onClose={() => setActiveTool(null)}
+          onOpenHelp={() => onOpenHelp?.("advancedTools")}
+        />
       )}
       {viewMode === "writer" &&
         !isFreeMode &&
@@ -7373,6 +7423,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               }
             }}
             onClose={() => setActiveTool(null)}
+            onOpenHelp={() => onOpenHelp?.("versionHistory")}
           />
         )}
       {viewMode === "writer" && !isFreeMode && activeTool === "comments" && (
@@ -7380,6 +7431,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           documentContent={editorRef.current?.innerText || ""}
           selectedText={window.getSelection()?.toString() || ""}
           onClose={() => setActiveTool(null)}
+          onOpenHelp={() => onOpenHelp?.("comments")}
         />
       )}
     </div>

@@ -5,6 +5,7 @@ interface AIWritingAssistantProps {
   onInsertText: (text: string) => void;
   onReplaceText?: (oldText: string, newText: string) => void;
   onClose: () => void;
+  onOpenHelp?: () => void;
   position?: { top: number; left: number };
 }
 
@@ -15,6 +16,7 @@ export const AIWritingAssistant: React.FC<AIWritingAssistantProps> = ({
   onInsertText,
   onReplaceText,
   onClose,
+  onOpenHelp,
   position,
 }) => {
   const [mode, setMode] = useState<AssistantMode | null>(null);
@@ -341,11 +343,11 @@ export const AIWritingAssistant: React.FC<AIWritingAssistantProps> = ({
           ✨ AI Writing Assistant
         </h3>
         <button
-          onClick={onClose}
-          className="text-gray-500 hover:text-gray-700 text-xl leading-none"
-          title="Close"
+          onClick={onOpenHelp}
+          className="text-gray-500 hover:text-blue-600 text-xl leading-none"
+          title="Help"
         >
-          ×
+          ?
         </button>
       </div>
 
