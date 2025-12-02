@@ -73,6 +73,11 @@ const PAGE_WIDTH_PX = INCH_IN_PX * 8;
 const PAGE_HEIGHT_PX = INCH_IN_PX * 11; // 11 inches for US Letter
 const RULER_BACKGROUND_LEFT_OVERHANG = 0;
 const RULER_BACKGROUND_RIGHT_OVERHANG = 0;
+const POINT_TO_PX = 96 / 72;
+const TITLE_STYLE_POINT_SIZE = 20;
+const TITLE_STYLE_FONT_SIZE_PX = parseFloat(
+  (TITLE_STYLE_POINT_SIZE * POINT_TO_PX).toFixed(2)
+);
 
 interface TextNodeMap {
   node: Text;
@@ -604,7 +609,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
       fontStyle: "normal" as "normal" | "italic",
     },
     "book-title": {
-      fontSize: 32,
+      fontSize: TITLE_STYLE_FONT_SIZE_PX,
       fontWeight: "bold" as "normal" | "bold",
       fontStyle: "normal" as "normal" | "italic",
       textAlign: "center" as "left" | "center" | "right" | "justify",
@@ -613,7 +618,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
       firstLineIndent: 0,
     },
     title: {
-      fontSize: 24,
+      fontSize: 20,
       fontWeight: "bold" as "normal" | "bold",
       fontStyle: "normal" as "normal" | "italic",
       textAlign: "center" as "left" | "center" | "right" | "justify",
@@ -3052,8 +3057,8 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
         <div
           style={{
             display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
+            flexDirection: "column",
+            gap: "8px",
             padding: "6px 12px",
             position: "sticky",
             top: 0,
@@ -3062,595 +3067,616 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
             transform: "translateY(-10px)",
           }}
         >
-          {/* Left Toolbar Half */}
           <div
-            className="writer-toolbar-shell"
             style={{
-              padding: "6px 10px",
-              borderRadius: "20px",
-              background: "linear-gradient(135deg, #fffaf3 0%, #fef5e7 100%)",
-              border: "1.5px solid #e0c392",
-              boxShadow: "0 4px 12px rgba(239, 132, 50, 0.12)",
-              overflow: "hidden",
-              flexShrink: 0,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: "12px",
             }}
           >
+            {/* Left Toolbar Half */}
             <div
-              className="toolbar flex items-center gap-1"
+              className="writer-toolbar-shell"
               style={{
-                flexWrap: "nowrap",
-                alignItems: "center",
-                gap: "4px",
-                whiteSpace: "nowrap",
+                padding: "6px 10px",
+                borderRadius: "20px",
+                background: "linear-gradient(135deg, #fffaf3 0%, #fef5e7 100%)",
+                border: "1.5px solid #e0c392",
+                boxShadow: "0 4px 12px rgba(239, 132, 50, 0.12)",
+                overflow: "hidden",
+                flexShrink: 0,
               }}
             >
-              {/* Block type dropdown */}
-              <select
-                value={blockType}
-                onChange={(e) => changeBlockType(e.target.value)}
-                className="px-1.5 py-1 rounded border bg-white hover:bg-gray-50 transition-colors text-xs"
-                title="Block Type"
+              <div
+                className="toolbar flex items-center gap-1"
+                style={{
+                  flexWrap: "nowrap",
+                  alignItems: "center",
+                  gap: "4px",
+                  whiteSpace: "nowrap",
+                }}
               >
-                <optgroup label="Basic">
-                  <option value="p">Paragraph (⌘⌥0)</option>
-                  <option value="h1">Heading 1 (⌘⌥1)</option>
-                  <option value="h2">Heading 2 (⌘⌥2)</option>
-                  <option value="h3">Heading 3 (⌘⌥3)</option>
-                  <option value="h4">Heading 4 (⌘⌥4)</option>
-                  <option value="h5">Heading 5 (⌘⌥5)</option>
-                  <option value="h6">Heading 6 (⌘⌥6)</option>
-                  <option value="blockquote">Quote (⌘⇧.)</option>
-                  <option value="pre">Code Block</option>
-                  <option value="lead">Lead Paragraph</option>
-                </optgroup>
-                <optgroup label="Academic">
-                  <option value="abstract">Abstract</option>
-                  <option value="keywords">Keywords</option>
-                  <option value="bibliography">Bibliography</option>
-                  <option value="references">References</option>
-                  <option value="appendix">Appendix</option>
-                  <option value="footnote">Footnote</option>
-                  <option value="citation">Citation</option>
-                </optgroup>
-                <optgroup label="Professional">
-                  <option value="author-info">Author Info</option>
-                  <option value="date-info">Date</option>
-                  <option value="address">Address</option>
-                  <option value="salutation">Salutation</option>
-                  <option value="closing">Closing</option>
-                  <option value="signature">Signature Line</option>
-                  <option value="sidebar">Sidebar</option>
-                  <option value="callout">Callout/Alert</option>
-                </optgroup>
-                <optgroup label="Book Publishing">
-                  <option value="book-title">Title</option>
-                  <option value="title">Section Title</option>
-                  <option value="subtitle">Subtitle</option>
-                  <option value="chapter-heading">Chapter Heading</option>
-                  <option value="part-title">Part Title</option>
-                  <option value="epigraph">Epigraph</option>
-                  <option value="dedication">Dedication</option>
-                  <option value="acknowledgments">Acknowledgments</option>
-                  <option value="copyright">Copyright Notice</option>
-                  <option value="verse">Verse/Poetry</option>
-                </optgroup>
-                <optgroup label="Screenplay">
-                  <option value="scene-heading">Scene Heading</option>
-                  <option value="action">Action</option>
-                  <option value="character">Character</option>
-                  <option value="dialogue">Dialogue</option>
-                  <option value="parenthetical">Parenthetical</option>
-                  <option value="transition">Transition</option>
-                </optgroup>
-              </select>
+                {/* Block type dropdown */}
+                <select
+                  value={blockType}
+                  onChange={(e) => changeBlockType(e.target.value)}
+                  className="px-1.5 py-1 rounded border bg-white hover:bg-gray-50 transition-colors text-xs"
+                  title="Block Type"
+                >
+                  <optgroup label="Basic">
+                    <option value="p">Paragraph (⌘⌥0)</option>
+                    <option value="h1">Heading 1 (⌘⌥1)</option>
+                    <option value="h2">Heading 2 (⌘⌥2)</option>
+                    <option value="h3">Heading 3 (⌘⌥3)</option>
+                    <option value="h4">Heading 4 (⌘⌥4)</option>
+                    <option value="h5">Heading 5 (⌘⌥5)</option>
+                    <option value="h6">Heading 6 (⌘⌥6)</option>
+                    <option value="blockquote">Quote (⌘⇧.)</option>
+                    <option value="pre">Code Block</option>
+                    <option value="lead">Lead Paragraph</option>
+                  </optgroup>
+                  <optgroup label="Academic">
+                    <option value="abstract">Abstract</option>
+                    <option value="keywords">Keywords</option>
+                    <option value="bibliography">Bibliography</option>
+                    <option value="references">References</option>
+                    <option value="appendix">Appendix</option>
+                    <option value="footnote">Footnote</option>
+                    <option value="citation">Citation</option>
+                  </optgroup>
+                  <optgroup label="Professional">
+                    <option value="author-info">Author Info</option>
+                    <option value="date-info">Date</option>
+                    <option value="address">Address</option>
+                    <option value="salutation">Salutation</option>
+                    <option value="closing">Closing</option>
+                    <option value="signature">Signature Line</option>
+                    <option value="sidebar">Sidebar</option>
+                    <option value="callout">Callout/Alert</option>
+                  </optgroup>
+                  <optgroup label="Book Publishing">
+                    <option value="book-title">Title</option>
+                    <option value="title">Section Title</option>
+                    <option value="subtitle">Subtitle</option>
+                    <option value="chapter-heading">Chapter Heading</option>
+                    <option value="part-title">Part Title</option>
+                    <option value="epigraph">Epigraph</option>
+                    <option value="dedication">Dedication</option>
+                    <option value="acknowledgments">Acknowledgments</option>
+                    <option value="copyright">Copyright Notice</option>
+                    <option value="verse">Verse/Poetry</option>
+                  </optgroup>
+                  <optgroup label="Screenplay">
+                    <option value="scene-heading">Scene Heading</option>
+                    <option value="action">Action</option>
+                    <option value="character">Character</option>
+                    <option value="dialogue">Dialogue</option>
+                    <option value="parenthetical">Parenthetical</option>
+                    <option value="transition">Transition</option>
+                  </optgroup>
+                </select>
 
-              {/* Styles Panel Button */}
-              <button
-                onClick={() => setShowStylesPanel(true)}
-                className="px-1 py-1 rounded border border-[#e0c392] bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50] transition-colors text-xs"
-                title="Styles"
-              >
-                ⚙
-              </button>
+                {/* Styles Panel Button */}
+                <button
+                  onClick={() => setShowStylesPanel(true)}
+                  className="px-1 py-1 rounded border border-[#e0c392] bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50] transition-colors text-xs"
+                  title="Styles"
+                >
+                  ⚙
+                </button>
 
-              {/* Font Family dropdown */}
-              <select
-                value={fontFamily}
-                onChange={(e) => {
-                  const newFont = e.target.value;
-                  setFontFamily(newFont);
-                  if (newFont === "default") {
-                    formatText("fontName", "inherit");
-                  } else {
-                    formatText("fontName", newFont);
+                {/* Font Family dropdown */}
+                <select
+                  value={fontFamily}
+                  onChange={(e) => {
+                    const newFont = e.target.value;
+                    setFontFamily(newFont);
+                    if (newFont === "default") {
+                      formatText("fontName", "inherit");
+                    } else {
+                      formatText("fontName", newFont);
+                    }
+                  }}
+                  className="px-1.5 py-1 rounded border bg-white hover:bg-gray-50 transition-colors text-xs"
+                  title="Font Family"
+                  style={{ maxWidth: "100px" }}
+                >
+                  <option value="default">Default</option>
+                  <option value="Georgia, serif">Georgia</option>
+                  <option value="Times New Roman, serif">
+                    Times New Roman
+                  </option>
+                  <option value="Palatino Linotype, serif">Palatino</option>
+                  <option value="Garamond, serif">Garamond</option>
+                  <option value="Arial, sans-serif">Arial</option>
+                  <option value="Helvetica, sans-serif">Helvetica</option>
+                  <option value="Verdana, sans-serif">Verdana</option>
+                  <option value="Courier New, monospace">Courier New</option>
+                  <option value="Courier Prime, monospace">
+                    Courier Prime
+                  </option>
+                </select>
+
+                {/* Font Size Controls */}
+                <button
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    const selection = window.getSelection();
+                    if (!selection || selection.rangeCount === 0) return;
+
+                    const currentSize = parseInt(fontSize) || 16;
+                    const newSize = Math.max(8, currentSize - 1);
+                    setFontSize(`${newSize}px`);
+
+                    // Apply inline style for precise control
+                    document.execCommand("fontSize", false, "7");
+
+                    // Replace font elements with spans and track them
+                    const fontElements =
+                      editorRef.current?.querySelectorAll('font[size="7"]');
+                    const newSpans: HTMLSpanElement[] = [];
+
+                    fontElements?.forEach((el) => {
+                      const span = document.createElement("span");
+                      span.style.fontSize = `${newSize}px`;
+                      while (el.firstChild) {
+                        span.appendChild(el.firstChild);
+                      }
+                      el.parentNode?.replaceChild(span, el);
+                      newSpans.push(span);
+                    });
+
+                    // Restore focus and selection immediately
+                    requestAnimationFrame(() => {
+                      editorRef.current?.focus();
+
+                      // Re-select all the content in the new spans
+                      if (newSpans.length > 0) {
+                        try {
+                          const newSelection = window.getSelection();
+                          if (newSelection) {
+                            const newRange = document.createRange();
+                            const firstSpan = newSpans[0];
+                            const lastSpan = newSpans[newSpans.length - 1];
+
+                            // Select from the start of the first span to the end of the last
+                            newRange.setStart(
+                              firstSpan.firstChild || firstSpan,
+                              0
+                            );
+                            const lastNode = lastSpan.lastChild || lastSpan;
+                            const endOffset =
+                              lastNode.nodeType === Node.TEXT_NODE
+                                ? (lastNode as Text).length
+                                : lastSpan.childNodes.length;
+                            newRange.setEnd(lastNode, endOffset);
+
+                            newSelection.removeAllRanges();
+                            newSelection.addRange(newRange);
+                          }
+                        } catch (err) {
+                          console.warn("Could not restore selection", err);
+                        }
+                      }
+                    });
+                  }}
+                  className="px-1.5 py-1 rounded border border-[#e0c392] bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50] transition-colors text-xs font-bold"
+                  title="Decrease Font Size"
+                >
+                  A-
+                </button>
+                <span
+                  className="px-1 py-1 text-xs text-[#2c3e50] min-w-[32px] text-center"
+                  title="Current Font Size"
+                >
+                  {parseInt(fontSize) || 16}
+                </span>
+                <button
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    const selection = window.getSelection();
+                    if (!selection || selection.rangeCount === 0) return;
+
+                    const currentSize = parseInt(fontSize) || 16;
+                    const newSize = Math.min(72, currentSize + 1);
+                    setFontSize(`${newSize}px`);
+
+                    // Apply inline style for precise control
+                    document.execCommand("fontSize", false, "7");
+
+                    // Replace font elements with spans and track them
+                    const fontElements =
+                      editorRef.current?.querySelectorAll('font[size="7"]');
+                    const newSpans: HTMLSpanElement[] = [];
+
+                    fontElements?.forEach((el) => {
+                      const span = document.createElement("span");
+                      span.style.fontSize = `${newSize}px`;
+                      while (el.firstChild) {
+                        span.appendChild(el.firstChild);
+                      }
+                      el.parentNode?.replaceChild(span, el);
+                      newSpans.push(span);
+                    });
+
+                    // Restore focus and selection immediately
+                    requestAnimationFrame(() => {
+                      editorRef.current?.focus();
+
+                      // Re-select all the content in the new spans
+                      if (newSpans.length > 0) {
+                        try {
+                          const newSelection = window.getSelection();
+                          if (newSelection) {
+                            const newRange = document.createRange();
+                            const firstSpan = newSpans[0];
+                            const lastSpan = newSpans[newSpans.length - 1];
+
+                            // Select from the start of the first span to the end of the last
+                            newRange.setStart(
+                              firstSpan.firstChild || firstSpan,
+                              0
+                            );
+                            const lastNode = lastSpan.lastChild || lastSpan;
+                            const endOffset =
+                              lastNode.nodeType === Node.TEXT_NODE
+                                ? (lastNode as Text).length
+                                : lastSpan.childNodes.length;
+                            newRange.setEnd(lastNode, endOffset);
+
+                            newSelection.removeAllRanges();
+                            newSelection.addRange(newRange);
+                          }
+                        } catch (err) {
+                          console.warn("Could not restore selection", err);
+                        }
+                      }
+                    });
+                  }}
+                  className="px-1.5 py-1 rounded border border-[#e0c392] bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50] transition-colors text-xs font-bold"
+                  title="Increase Font Size"
+                >
+                  A+
+                </button>
+
+                {/* Style Labels Toggle */}
+                <button
+                  onClick={() => setShowStyleLabels(!showStyleLabels)}
+                  className={`px-1.5 py-1 rounded border transition-colors text-xs ${
+                    showStyleLabels
+                      ? "bg-[#f7e6d0] text-[#ef8432] border-[#ef8432]"
+                      : "bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50] border-[#e0c392]"
+                  }`}
+                  title={
+                    showStyleLabels
+                      ? "Hide Style Labels & Indicators"
+                      : "Show Style Labels & Indicators"
                   }
+                >
+                  🏷️
+                </button>
+
+                <div style={toolbarDividerStyle} aria-hidden="true" />
+
+                {/* Text formatting */}
+                <button
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    formatText("bold");
+                  }}
+                  className={`px-2 py-1 rounded font-bold transition-colors text-xs ${
+                    isBold
+                      ? "bg-[#f7e6d0] text-[#ef8432] border border-[#ef8432]"
+                      : "bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50]"
+                  }`}
+                  title="Bold"
+                >
+                  B
+                </button>
+                <button
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    formatText("italic");
+                  }}
+                  className={`px-2 py-1 rounded italic transition-colors text-xs ${
+                    isItalic
+                      ? "bg-[#f7e6d0] text-[#ef8432] border border-[#ef8432]"
+                      : "bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50]"
+                  }`}
+                  title="Italic"
+                >
+                  I
+                </button>
+                <button
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    formatText("underline");
+                  }}
+                  className={`px-2 py-1 rounded underline transition-colors text-xs ${
+                    isUnderline
+                      ? "bg-[#f7e6d0] text-[#ef8432] border border-[#ef8432]"
+                      : "bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50]"
+                  }`}
+                  title="Underline"
+                >
+                  U
+                </button>
+
+                <div style={toolbarDividerStyle} aria-hidden="true" />
+
+                {/* Text alignment */}
+                <button
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    alignText("left");
+                  }}
+                  className={`px-1.5 py-1 rounded transition-colors text-xs ${
+                    textAlign === "left"
+                      ? "bg-[#f7e6d0] text-[#ef8432] border border-[#ef8432]"
+                      : "bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50]"
+                  }`}
+                  title="Align Left"
+                >
+                  ≡
+                </button>
+                <button
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    alignText("center");
+                  }}
+                  className={`px-1.5 py-1 rounded transition-colors text-xs ${
+                    textAlign === "center"
+                      ? "bg-[#f7e6d0] text-[#ef8432] border border-[#ef8432]"
+                      : "bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50]"
+                  }`}
+                  title="Center"
+                >
+                  ≡
+                </button>
+                <button
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    alignText("right");
+                  }}
+                  className={`px-1.5 py-1 rounded transition-colors text-xs ${
+                    textAlign === "right"
+                      ? "bg-[#f7e6d0] text-[#ef8432] border border-[#ef8432]"
+                      : "bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50]"
+                  }`}
+                  title="Align Right"
+                >
+                  ≡
+                </button>
+              </div>
+            </div>
+
+            {/* Right Toolbar Half */}
+            <div
+              className="writer-toolbar-shell"
+              style={{
+                padding: "6px 10px",
+                borderRadius: "20px",
+                background: "linear-gradient(135deg, #fffaf3 0%, #fef5e7 100%)",
+                border: "1.5px solid #e0c392",
+                boxShadow: "0 4px 12px rgba(239, 132, 50, 0.12)",
+                overflow: "hidden",
+                flexShrink: 0,
+              }}
+            >
+              <div
+                className="toolbar flex items-center gap-1"
+                style={{
+                  flexWrap: "nowrap",
+                  alignItems: "center",
+                  gap: "4px",
+                  whiteSpace: "nowrap",
                 }}
-                className="px-1.5 py-1 rounded border bg-white hover:bg-gray-50 transition-colors text-xs"
-                title="Font Family"
-                style={{ maxWidth: "100px" }}
               >
-                <option value="default">Default</option>
-                <option value="Georgia, serif">Georgia</option>
-                <option value="Times New Roman, serif">Times New Roman</option>
-                <option value="Palatino Linotype, serif">Palatino</option>
-                <option value="Garamond, serif">Garamond</option>
-                <option value="Arial, sans-serif">Arial</option>
-                <option value="Helvetica, sans-serif">Helvetica</option>
-                <option value="Verdana, sans-serif">Verdana</option>
-                <option value="Courier New, monospace">Courier New</option>
-                <option value="Courier Prime, monospace">Courier Prime</option>
-              </select>
+                {/* Lists */}
+                <button
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    formatText("insertUnorderedList");
+                  }}
+                  className="px-2 py-1 rounded bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50] transition-colors text-xs"
+                  title="Bullet List"
+                >
+                  •
+                </button>
+                <button
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    formatText("insertOrderedList");
+                  }}
+                  className="px-2 py-1 rounded bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50] transition-colors text-xs"
+                  title="Numbered List"
+                >
+                  1.
+                </button>
 
-              {/* Font Size Controls */}
-              <button
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
+                <div style={toolbarDividerStyle} aria-hidden="true" />
 
-                  const selection = window.getSelection();
-                  if (!selection || selection.rangeCount === 0) return;
+                {/* Bookmarks & Cross-References */}
+                <button
+                  onClick={openBookmarkModal}
+                  className={`px-2 py-1 rounded transition-colors text-xs ${
+                    bookmarks.length > 0
+                      ? "bg-[#f7e6d0] text-[#ef8432] border border-[#ef8432]"
+                      : "bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50]"
+                  }`}
+                  title="Add Bookmark"
+                >
+                  🔖
+                </button>
+                <button
+                  onClick={openCrossRefModal}
+                  className={`px-2 py-1 rounded transition-colors text-xs ${
+                    crossReferences.length > 0
+                      ? "bg-[#f7e6d0] text-[#ef8432] border border-[#ef8432]"
+                      : "bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50]"
+                  }`}
+                  title="Add Cross-Reference"
+                >
+                  🔗
+                </button>
+                <button
+                  onClick={() => setShowBookmarksPanel(!showBookmarksPanel)}
+                  className={`px-2 py-1 rounded transition-colors text-xs ${
+                    showBookmarksPanel
+                      ? "bg-[#f7e6d0] text-[#ef8432] border border-[#ef8432]"
+                      : "bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50]"
+                  }`}
+                  title={`View Bookmarks & References (${
+                    bookmarks.length + crossReferences.length
+                  })`}
+                >
+                  📋
+                </button>
+                <label
+                  className="px-2 py-1 rounded bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50] transition-colors cursor-pointer text-xs"
+                  title="Image"
+                >
+                  📸
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
+                </label>
+                <button
+                  onClick={copyFormat}
+                  className={`px-2 py-1 rounded transition-colors text-xs ${
+                    formatPainterActive
+                      ? "bg-[#f7e6d0] text-[#ef8432] border border-[#ef8432]"
+                      : "bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50]"
+                  }`}
+                  title="Format Painter - Copy formatting from selection"
+                >
+                  🖌️
+                </button>
 
-                  const currentSize = parseInt(fontSize) || 16;
-                  const newSize = Math.max(8, currentSize - 1);
-                  setFontSize(`${newSize}px`);
+                <div style={toolbarDividerStyle} aria-hidden="true" />
 
-                  // Apply inline style for precise control
-                  document.execCommand("fontSize", false, "7");
+                {/* Utilities */}
+                <button
+                  onClick={() => setShowFindReplace(!showFindReplace)}
+                  className={`px-2 py-1 rounded transition-colors text-xs ${
+                    showFindReplace
+                      ? "bg-[#f7e6d0] text-[#ef8432] border border-[#ef8432]"
+                      : "bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50]"
+                  }`}
+                  title="Find"
+                >
+                  🔍
+                </button>
 
-                  // Replace font elements with spans and track them
-                  const fontElements =
-                    editorRef.current?.querySelectorAll('font[size="7"]');
-                  const newSpans: HTMLSpanElement[] = [];
+                <div style={toolbarDividerStyle} aria-hidden="true" />
 
-                  fontElements?.forEach((el) => {
-                    const span = document.createElement("span");
-                    span.style.fontSize = `${newSize}px`;
-                    while (el.firstChild) {
-                      span.appendChild(el.firstChild);
-                    }
-                    el.parentNode?.replaceChild(span, el);
-                    newSpans.push(span);
-                  });
+                {/* History */}
+                <button
+                  onClick={performUndo}
+                  disabled={!canUndo}
+                  className="px-2 py-1 rounded hover:bg-gray-200 text-gray-700 transition-colors text-xs disabled:opacity-30"
+                  title="Undo"
+                >
+                  ↶
+                </button>
+                <button
+                  onClick={performRedo}
+                  disabled={!canRedo}
+                  className="px-2 py-1 rounded hover:bg-gray-200 text-gray-700 transition-colors text-xs disabled:opacity-30"
+                  title="Redo"
+                >
+                  ↷
+                </button>
 
-                  // Restore focus and selection immediately
-                  requestAnimationFrame(() => {
-                    editorRef.current?.focus();
+                <div style={toolbarDividerStyle} aria-hidden="true" />
 
-                    // Re-select all the content in the new spans
-                    if (newSpans.length > 0) {
-                      try {
-                        const newSelection = window.getSelection();
-                        if (newSelection) {
-                          const newRange = document.createRange();
-                          const firstSpan = newSpans[0];
-                          const lastSpan = newSpans[newSpans.length - 1];
+                {/* View options */}
+                <button
+                  onClick={() => setFocusMode(!focusMode)}
+                  className={`px-2 py-1 rounded transition-colors text-xs toolbar-view-button ${
+                    focusMode ? "active" : ""
+                  }`}
+                  title="Focus Mode"
+                >
+                  🎯
+                </button>
+                <button
+                  onClick={() => setTypewriterMode(!typewriterMode)}
+                  className={`px-2 py-1 rounded transition-colors text-xs toolbar-view-button ${
+                    typewriterMode ? "active" : ""
+                  }`}
+                  title="Typewriter Mode"
+                >
+                  ⌨️
+                </button>
 
-                          // Select from the start of the first span to the end of the last
-                          newRange.setStart(
-                            firstSpan.firstChild || firstSpan,
-                            0
-                          );
-                          const lastNode = lastSpan.lastChild || lastSpan;
-                          const endOffset =
-                            lastNode.nodeType === Node.TEXT_NODE
-                              ? (lastNode as Text).length
-                              : lastSpan.childNodes.length;
-                          newRange.setEnd(lastNode, endOffset);
-
-                          newSelection.removeAllRanges();
-                          newSelection.addRange(newRange);
-                        }
-                      } catch (err) {
-                        console.warn("Could not restore selection", err);
-                      }
-                    }
-                  });
-                }}
-                className="px-1.5 py-1 rounded border border-[#e0c392] bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50] transition-colors text-xs font-bold"
-                title="Decrease Font Size"
-              >
-                A-
-              </button>
-              <span
-                className="px-1 py-1 text-xs text-[#2c3e50] min-w-[32px] text-center"
-                title="Current Font Size"
-              >
-                {parseInt(fontSize) || 16}
-              </span>
-              <button
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-
-                  const selection = window.getSelection();
-                  if (!selection || selection.rangeCount === 0) return;
-
-                  const currentSize = parseInt(fontSize) || 16;
-                  const newSize = Math.min(72, currentSize + 1);
-                  setFontSize(`${newSize}px`);
-
-                  // Apply inline style for precise control
-                  document.execCommand("fontSize", false, "7");
-
-                  // Replace font elements with spans and track them
-                  const fontElements =
-                    editorRef.current?.querySelectorAll('font[size="7"]');
-                  const newSpans: HTMLSpanElement[] = [];
-
-                  fontElements?.forEach((el) => {
-                    const span = document.createElement("span");
-                    span.style.fontSize = `${newSize}px`;
-                    while (el.firstChild) {
-                      span.appendChild(el.firstChild);
-                    }
-                    el.parentNode?.replaceChild(span, el);
-                    newSpans.push(span);
-                  });
-
-                  // Restore focus and selection immediately
-                  requestAnimationFrame(() => {
-                    editorRef.current?.focus();
-
-                    // Re-select all the content in the new spans
-                    if (newSpans.length > 0) {
-                      try {
-                        const newSelection = window.getSelection();
-                        if (newSelection) {
-                          const newRange = document.createRange();
-                          const firstSpan = newSpans[0];
-                          const lastSpan = newSpans[newSpans.length - 1];
-
-                          // Select from the start of the first span to the end of the last
-                          newRange.setStart(
-                            firstSpan.firstChild || firstSpan,
-                            0
-                          );
-                          const lastNode = lastSpan.lastChild || lastSpan;
-                          const endOffset =
-                            lastNode.nodeType === Node.TEXT_NODE
-                              ? (lastNode as Text).length
-                              : lastSpan.childNodes.length;
-                          newRange.setEnd(lastNode, endOffset);
-
-                          newSelection.removeAllRanges();
-                          newSelection.addRange(newRange);
-                        }
-                      } catch (err) {
-                        console.warn("Could not restore selection", err);
-                      }
-                    }
-                  });
-                }}
-                className="px-1.5 py-1 rounded border border-[#e0c392] bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50] transition-colors text-xs font-bold"
-                title="Increase Font Size"
-              >
-                A+
-              </button>
-
-              {/* Style Labels Toggle */}
-              <button
-                onClick={() => setShowStyleLabels(!showStyleLabels)}
-                className={`px-1.5 py-1 rounded border transition-colors text-xs ${
-                  showStyleLabels
-                    ? "bg-[#f7e6d0] text-[#ef8432] border-[#ef8432]"
-                    : "bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50] border-[#e0c392]"
-                }`}
-                title={
-                  showStyleLabels
-                    ? "Hide Style Labels & Indicators"
-                    : "Show Style Labels & Indicators"
-                }
-              >
-                🏷️
-              </button>
-
-              <div style={toolbarDividerStyle} aria-hidden="true" />
-
-              {/* Text formatting */}
-              <button
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  formatText("bold");
-                }}
-                className={`px-2 py-1 rounded font-bold transition-colors text-xs ${
-                  isBold
-                    ? "bg-[#f7e6d0] text-[#ef8432] border border-[#ef8432]"
-                    : "bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50]"
-                }`}
-                title="Bold"
-              >
-                B
-              </button>
-              <button
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  formatText("italic");
-                }}
-                className={`px-2 py-1 rounded italic transition-colors text-xs ${
-                  isItalic
-                    ? "bg-[#f7e6d0] text-[#ef8432] border border-[#ef8432]"
-                    : "bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50]"
-                }`}
-                title="Italic"
-              >
-                I
-              </button>
-              <button
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  formatText("underline");
-                }}
-                className={`px-2 py-1 rounded underline transition-colors text-xs ${
-                  isUnderline
-                    ? "bg-[#f7e6d0] text-[#ef8432] border border-[#ef8432]"
-                    : "bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50]"
-                }`}
-                title="Underline"
-              >
-                U
-              </button>
-
-              <div style={toolbarDividerStyle} aria-hidden="true" />
-
-              {/* Text alignment */}
-              <button
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  alignText("left");
-                }}
-                className={`px-1.5 py-1 rounded transition-colors text-xs ${
-                  textAlign === "left"
-                    ? "bg-[#f7e6d0] text-[#ef8432] border border-[#ef8432]"
-                    : "bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50]"
-                }`}
-                title="Align Left"
-              >
-                ≡
-              </button>
-              <button
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  alignText("center");
-                }}
-                className={`px-1.5 py-1 rounded transition-colors text-xs ${
-                  textAlign === "center"
-                    ? "bg-[#f7e6d0] text-[#ef8432] border border-[#ef8432]"
-                    : "bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50]"
-                }`}
-                title="Center"
-              >
-                ≡
-              </button>
-              <button
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  alignText("right");
-                }}
-                className={`px-1.5 py-1 rounded transition-colors text-xs ${
-                  textAlign === "right"
-                    ? "bg-[#f7e6d0] text-[#ef8432] border border-[#ef8432]"
-                    : "bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50]"
-                }`}
-                title="Align Right"
-              >
-                ≡
-              </button>
+                {/* Character Management (Tier 3 only) */}
+                {isProfessionalTier && onOpenCharacterManager && (
+                  <>
+                    <div style={toolbarDividerStyle} aria-hidden="true" />
+                    <div ref={characterPopoverRef}>
+                      <button
+                        ref={characterButtonRef}
+                        onClick={() => {
+                          if (
+                            !showCharacterPopover &&
+                            characterButtonRef.current
+                          ) {
+                            const rect =
+                              characterButtonRef.current.getBoundingClientRect();
+                            setPopoverPosition({
+                              top: rect.bottom + 4,
+                              right: window.innerWidth - rect.right,
+                            });
+                          }
+                          setShowCharacterPopover(!showCharacterPopover);
+                        }}
+                        className={`px-2 py-1 rounded transition-colors text-xs toolbar-view-button ${
+                          showCharacterPopover ? "active" : ""
+                        }`}
+                        title="Character Tools"
+                      >
+                        👥
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           </div>
 
-          {/* Document Tools - Between Toolbars */}
           {documentTools && (
             <div
               style={{
                 display: "flex",
-                gap: "4px",
-                alignItems: "center",
-                alignSelf: "center",
-                flexWrap: "wrap",
                 justifyContent: "center",
-                padding: "4px 8px",
               }}
             >
-              {documentTools}
+              <div
+                style={{
+                  display: "flex",
+                  gap: "4px",
+                  alignItems: "center",
+                  flexWrap: "wrap",
+                  justifyContent: "center",
+                  padding: "4px 8px",
+                  width: "100%",
+                  maxWidth: "816px",
+                  margin: "0 auto",
+                }}
+              >
+                {documentTools}
+              </div>
             </div>
           )}
-
-          {/* Right Toolbar Half */}
-          <div
-            className="writer-toolbar-shell"
-            style={{
-              padding: "6px 10px",
-              borderRadius: "20px",
-              background: "linear-gradient(135deg, #fffaf3 0%, #fef5e7 100%)",
-              border: "1.5px solid #e0c392",
-              boxShadow: "0 4px 12px rgba(239, 132, 50, 0.12)",
-              overflow: "hidden",
-              flexShrink: 0,
-            }}
-          >
-            <div
-              className="toolbar flex items-center gap-1"
-              style={{
-                flexWrap: "nowrap",
-                alignItems: "center",
-                gap: "4px",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {/* Lists */}
-              <button
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  formatText("insertUnorderedList");
-                }}
-                className="px-2 py-1 rounded bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50] transition-colors text-xs"
-                title="Bullet List"
-              >
-                •
-              </button>
-              <button
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  formatText("insertOrderedList");
-                }}
-                className="px-2 py-1 rounded bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50] transition-colors text-xs"
-                title="Numbered List"
-              >
-                1.
-              </button>
-
-              <div style={toolbarDividerStyle} aria-hidden="true" />
-
-              {/* Bookmarks & Cross-References */}
-              <button
-                onClick={openBookmarkModal}
-                className={`px-2 py-1 rounded transition-colors text-xs ${
-                  bookmarks.length > 0
-                    ? "bg-[#f7e6d0] text-[#ef8432] border border-[#ef8432]"
-                    : "bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50]"
-                }`}
-                title="Add Bookmark"
-              >
-                🔖
-              </button>
-              <button
-                onClick={openCrossRefModal}
-                className={`px-2 py-1 rounded transition-colors text-xs ${
-                  crossReferences.length > 0
-                    ? "bg-[#f7e6d0] text-[#ef8432] border border-[#ef8432]"
-                    : "bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50]"
-                }`}
-                title="Add Cross-Reference"
-              >
-                🔗
-              </button>
-              <button
-                onClick={() => setShowBookmarksPanel(!showBookmarksPanel)}
-                className={`px-2 py-1 rounded transition-colors text-xs ${
-                  showBookmarksPanel
-                    ? "bg-[#f7e6d0] text-[#ef8432] border border-[#ef8432]"
-                    : "bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50]"
-                }`}
-                title={`View Bookmarks & References (${
-                  bookmarks.length + crossReferences.length
-                })`}
-              >
-                📋
-              </button>
-              <label
-                className="px-2 py-1 rounded bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50] transition-colors cursor-pointer text-xs"
-                title="Image"
-              >
-                📸
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="hidden"
-                />
-              </label>
-              <button
-                onClick={copyFormat}
-                className={`px-2 py-1 rounded transition-colors text-xs ${
-                  formatPainterActive
-                    ? "bg-[#f7e6d0] text-[#ef8432] border border-[#ef8432]"
-                    : "bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50]"
-                }`}
-                title="Format Painter - Copy formatting from selection"
-              >
-                🖌️
-              </button>
-
-              <div style={toolbarDividerStyle} aria-hidden="true" />
-
-              {/* Utilities */}
-              <button
-                onClick={() => setShowFindReplace(!showFindReplace)}
-                className={`px-2 py-1 rounded transition-colors text-xs ${
-                  showFindReplace
-                    ? "bg-[#f7e6d0] text-[#ef8432] border border-[#ef8432]"
-                    : "bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50]"
-                }`}
-                title="Find"
-              >
-                🔍
-              </button>
-
-              <div style={toolbarDividerStyle} aria-hidden="true" />
-
-              {/* History */}
-              <button
-                onClick={performUndo}
-                disabled={!canUndo}
-                className="px-2 py-1 rounded hover:bg-gray-200 text-gray-700 transition-colors text-xs disabled:opacity-30"
-                title="Undo"
-              >
-                ↶
-              </button>
-              <button
-                onClick={performRedo}
-                disabled={!canRedo}
-                className="px-2 py-1 rounded hover:bg-gray-200 text-gray-700 transition-colors text-xs disabled:opacity-30"
-                title="Redo"
-              >
-                ↷
-              </button>
-
-              <div style={toolbarDividerStyle} aria-hidden="true" />
-
-              {/* View options */}
-              <button
-                onClick={() => setFocusMode(!focusMode)}
-                className={`px-2 py-1 rounded transition-colors text-xs toolbar-view-button ${
-                  focusMode ? "active" : ""
-                }`}
-                title="Focus Mode"
-              >
-                🎯
-              </button>
-              <button
-                onClick={() => setTypewriterMode(!typewriterMode)}
-                className={`px-2 py-1 rounded transition-colors text-xs toolbar-view-button ${
-                  typewriterMode ? "active" : ""
-                }`}
-                title="Typewriter Mode"
-              >
-                ⌨️
-              </button>
-
-              {/* Character Management (Tier 3 only) */}
-              {isProfessionalTier && onOpenCharacterManager && (
-                <>
-                  <div style={toolbarDividerStyle} aria-hidden="true" />
-                  <div ref={characterPopoverRef}>
-                    <button
-                      ref={characterButtonRef}
-                      onClick={() => {
-                        if (
-                          !showCharacterPopover &&
-                          characterButtonRef.current
-                        ) {
-                          const rect =
-                            characterButtonRef.current.getBoundingClientRect();
-                          setPopoverPosition({
-                            top: rect.bottom + 4,
-                            right: window.innerWidth - rect.right,
-                          });
-                        }
-                        setShowCharacterPopover(!showCharacterPopover);
-                      }}
-                      className={`px-2 py-1 rounded transition-colors text-xs toolbar-view-button ${
-                        showCharacterPopover ? "active" : ""
-                      }`}
-                      title="Character Tools"
-                    >
-                      👥
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
         </div>
       )}
 
@@ -5073,7 +5099,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                       fontStyle: "normal",
                     },
                     "book-title": {
-                      fontSize: 32,
+                      fontSize: TITLE_STYLE_FONT_SIZE_PX,
                       fontWeight: "bold",
                       fontStyle: "normal",
                       textAlign: "center",

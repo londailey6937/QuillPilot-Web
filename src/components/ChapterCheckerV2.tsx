@@ -3123,7 +3123,7 @@ export const ChapterCheckerV2: React.FC = () => {
                                   }}
                                   title="Save Chapter (Cmd+S)"
                                 >
-                                  💾
+                                  📁
                                 </button>
                               )}
 
