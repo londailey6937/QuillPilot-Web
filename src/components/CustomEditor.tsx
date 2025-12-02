@@ -3093,7 +3093,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                   <option value="callout">Callout/Alert</option>
                 </optgroup>
                 <optgroup label="Book Publishing">
-                  <option value="book-title">Book Title</option>
+                  <option value="book-title">Title</option>
                   <option value="title">Section Title</option>
                   <option value="subtitle">Subtitle</option>
                   <option value="chapter-heading">Chapter Heading</option>
@@ -3117,7 +3117,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               {/* Styles Panel Button */}
               <button
                 onClick={() => setShowStylesPanel(true)}
-                className="px-1.5 py-1 rounded border border-[#e0c392] bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50] transition-colors text-xs"
+                className="px-1 py-1 rounded border border-[#e0c392] bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50] transition-colors text-xs"
                 title="Styles"
               >
                 ⚙
@@ -4197,9 +4197,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                     </h3>
                     <div className="grid grid-cols-5 gap-2 text-xs">
                       <div>
-                        <label className="block text-gray-600 mb-1">
-                          Size
-                        </label>
+                        <label className="block text-gray-600 mb-1">Size</label>
                         <input
                           type="number"
                           value={documentStyles.paragraph.fontSize}
@@ -4318,132 +4316,134 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                     <h3 className="font-semibold text-[#2c3e50] mb-2 text-sm">
                       Headings
                     </h3>
-                    {["heading1", "heading2", "heading3"].map((heading, idx) => (
-                      <div key={heading} className="mb-2 last:mb-0">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-medium text-gray-600 w-8">
-                            H{idx + 1}
-                          </span>
-                          <div className="grid grid-cols-5 gap-2 flex-1 text-xs">
-                            <input
-                              type="number"
-                              value={
-                                (
-                                  documentStyles[
-                                    heading as keyof typeof documentStyles
-                                  ] as any
-                                ).fontSize
-                              }
-                              onChange={(e) =>
-                                setDocumentStyles((prev) => ({
-                                  ...prev,
-                                  [heading]: {
-                                    ...(prev as any)[heading],
-                                    fontSize: Number(e.target.value),
-                                  },
-                                }))
-                              }
-                              className="w-full px-2 py-1 border rounded focus:ring-1 focus:ring-[#ef8432]"
-                              title="Font Size"
-                              min="12"
-                              max="48"
-                            />
-                            <select
-                              value={
-                                (
-                                  documentStyles[
-                                    heading as keyof typeof documentStyles
-                                  ] as any
-                                ).fontWeight
-                              }
-                              onChange={(e) =>
-                                setDocumentStyles((prev) => ({
-                                  ...prev,
-                                  [heading]: {
-                                    ...(prev as any)[heading],
-                                    fontWeight: e.target.value,
-                                  },
-                                }))
-                              }
-                              className="w-full px-1 py-1 border rounded focus:ring-1 focus:ring-[#ef8432]"
-                            >
-                              <option value="normal">Norm</option>
-                              <option value="bold">Bold</option>
-                            </select>
-                            <input
-                              type="number"
-                              value={
-                                (
-                                  documentStyles[
-                                    heading as keyof typeof documentStyles
-                                  ] as any
-                                ).marginTop
-                              }
-                              onChange={(e) =>
-                                setDocumentStyles((prev) => ({
-                                  ...prev,
-                                  [heading]: {
-                                    ...(prev as any)[heading],
-                                    marginTop: Number(e.target.value),
-                                  },
-                                }))
-                              }
-                              className="w-full px-1 py-1 border rounded focus:ring-1 focus:ring-[#ef8432]"
-                              title="Margin Before"
-                              min="0"
-                              max="5"
-                              step="0.1"
-                            />
-                            <input
-                              type="number"
-                              value={
-                                (
-                                  documentStyles[
-                                    heading as keyof typeof documentStyles
-                                  ] as any
-                                ).marginBottom
-                              }
-                              onChange={(e) =>
-                                setDocumentStyles((prev) => ({
-                                  ...prev,
-                                  [heading]: {
-                                    ...(prev as any)[heading],
-                                    marginBottom: Number(e.target.value),
-                                  },
-                                }))
-                              }
-                              className="w-full px-1 py-1 border rounded focus:ring-1 focus:ring-[#ef8432]"
-                              title="Margin After"
-                              min="0"
-                              max="5"
-                              step="0.1"
-                            />
-                            <select
-                              value={
-                                (
-                                  documentStyles[
-                                    heading as keyof typeof documentStyles
-                                  ] as any
-                                ).textAlign || "left"
-                              }
-                              onChange={(e) =>
-                                setDocumentStyles((prev) => ({
-                                  ...prev,
-                                  [heading]: {
-                                    ...(prev as any)[heading],
-                                    textAlign: e.target.value,
-                                  },
-                                }))
-                              }
-                              className="w-full px-1 py-1 border rounded focus:ring-1 focus:ring-[#ef8432]"
-                            >
-                              <option value="left">Left</option>
-                              <option value="center">Ctr</option>
-                            </select>
+                    {["heading1", "heading2", "heading3"].map(
+                      (heading, idx) => (
+                        <div key={heading} className="mb-2 last:mb-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-medium text-gray-600 w-8">
+                              H{idx + 1}
+                            </span>
+                            <div className="grid grid-cols-5 gap-2 flex-1 text-xs">
+                              <input
+                                type="number"
+                                value={
+                                  (
+                                    documentStyles[
+                                      heading as keyof typeof documentStyles
+                                    ] as any
+                                  ).fontSize
+                                }
+                                onChange={(e) =>
+                                  setDocumentStyles((prev) => ({
+                                    ...prev,
+                                    [heading]: {
+                                      ...(prev as any)[heading],
+                                      fontSize: Number(e.target.value),
+                                    },
+                                  }))
+                                }
+                                className="w-full px-2 py-1 border rounded focus:ring-1 focus:ring-[#ef8432]"
+                                title="Font Size"
+                                min="12"
+                                max="48"
+                              />
+                              <select
+                                value={
+                                  (
+                                    documentStyles[
+                                      heading as keyof typeof documentStyles
+                                    ] as any
+                                  ).fontWeight
+                                }
+                                onChange={(e) =>
+                                  setDocumentStyles((prev) => ({
+                                    ...prev,
+                                    [heading]: {
+                                      ...(prev as any)[heading],
+                                      fontWeight: e.target.value,
+                                    },
+                                  }))
+                                }
+                                className="w-full px-1 py-1 border rounded focus:ring-1 focus:ring-[#ef8432]"
+                              >
+                                <option value="normal">Norm</option>
+                                <option value="bold">Bold</option>
+                              </select>
+                              <input
+                                type="number"
+                                value={
+                                  (
+                                    documentStyles[
+                                      heading as keyof typeof documentStyles
+                                    ] as any
+                                  ).marginTop
+                                }
+                                onChange={(e) =>
+                                  setDocumentStyles((prev) => ({
+                                    ...prev,
+                                    [heading]: {
+                                      ...(prev as any)[heading],
+                                      marginTop: Number(e.target.value),
+                                    },
+                                  }))
+                                }
+                                className="w-full px-1 py-1 border rounded focus:ring-1 focus:ring-[#ef8432]"
+                                title="Margin Before"
+                                min="0"
+                                max="5"
+                                step="0.1"
+                              />
+                              <input
+                                type="number"
+                                value={
+                                  (
+                                    documentStyles[
+                                      heading as keyof typeof documentStyles
+                                    ] as any
+                                  ).marginBottom
+                                }
+                                onChange={(e) =>
+                                  setDocumentStyles((prev) => ({
+                                    ...prev,
+                                    [heading]: {
+                                      ...(prev as any)[heading],
+                                      marginBottom: Number(e.target.value),
+                                    },
+                                  }))
+                                }
+                                className="w-full px-1 py-1 border rounded focus:ring-1 focus:ring-[#ef8432]"
+                                title="Margin After"
+                                min="0"
+                                max="5"
+                                step="0.1"
+                              />
+                              <select
+                                value={
+                                  (
+                                    documentStyles[
+                                      heading as keyof typeof documentStyles
+                                    ] as any
+                                  ).textAlign || "left"
+                                }
+                                onChange={(e) =>
+                                  setDocumentStyles((prev) => ({
+                                    ...prev,
+                                    [heading]: {
+                                      ...(prev as any)[heading],
+                                      textAlign: e.target.value,
+                                    },
+                                  }))
+                                }
+                                className="w-full px-1 py-1 border rounded focus:ring-1 focus:ring-[#ef8432]"
+                              >
+                                <option value="left">Left</option>
+                                <option value="center">Ctr</option>
+                              </select>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      )
+                    )}
                   </div>
 
                   {/* Blockquote Style */}
@@ -4472,7 +4472,9 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                         />
                       </div>
                       <div>
-                        <label className="block text-gray-600 mb-1">Style</label>
+                        <label className="block text-gray-600 mb-1">
+                          Style
+                        </label>
                         <select
                           value={documentStyles.blockquote.fontStyle}
                           onChange={(e) =>
@@ -4480,7 +4482,9 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                               ...prev,
                               blockquote: {
                                 ...prev.blockquote,
-                                fontStyle: e.target.value as "normal" | "italic",
+                                fontStyle: e.target.value as
+                                  | "normal"
+                                  | "italic",
                               },
                             }))
                           }
@@ -4533,7 +4537,9 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                         />
                       </div>
                       <div>
-                        <label className="block text-gray-600 mb-1">Color</label>
+                        <label className="block text-gray-600 mb-1">
+                          Color
+                        </label>
                         <input
                           type="color"
                           value={documentStyles.blockquote.borderLeftColor}
@@ -4557,14 +4563,25 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               {/* Book Publishing Styles Tab */}
               {stylesPanelCategory === "book" && (
                 <>
-                  {["book-title", "title", "subtitle", "chapter-heading", "part-title"].map((styleName) => (
-                    <div key={styleName} className="mb-3 p-3 border rounded-lg bg-[#fef5e7]">
+                  {[
+                    "book-title",
+                    "title",
+                    "subtitle",
+                    "chapter-heading",
+                    "part-title",
+                  ].map((styleName) => (
+                    <div
+                      key={styleName}
+                      className="mb-3 p-3 border rounded-lg bg-[#fef5e7]"
+                    >
                       <h3 className="font-medium text-sm text-[#2c3e50] mb-2 capitalize">
                         {styleName.replace("-", " ")}
                       </h3>
                       <div className="grid grid-cols-5 gap-2 text-xs">
                         <div>
-                          <label className="block text-gray-600 mb-1">Size</label>
+                          <label className="block text-gray-600 mb-1">
+                            Size
+                          </label>
                           <input
                             type="number"
                             value={
@@ -4589,7 +4606,9 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                           />
                         </div>
                         <div>
-                          <label className="block text-gray-600 mb-1">Weight</label>
+                          <label className="block text-gray-600 mb-1">
+                            Weight
+                          </label>
                           <select
                             value={
                               (
@@ -4614,7 +4633,9 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                           </select>
                         </div>
                         <div>
-                          <label className="block text-gray-600 mb-1">Style</label>
+                          <label className="block text-gray-600 mb-1">
+                            Style
+                          </label>
                           <select
                             value={
                               (
@@ -4639,7 +4660,9 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                           </select>
                         </div>
                         <div>
-                          <label className="block text-gray-600 mb-1">Before</label>
+                          <label className="block text-gray-600 mb-1">
+                            Before
+                          </label>
                           <input
                             type="number"
                             value={
@@ -4665,7 +4688,9 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                           />
                         </div>
                         <div>
-                          <label className="block text-gray-600 mb-1">Align</label>
+                          <label className="block text-gray-600 mb-1">
+                            Align
+                          </label>
                           <select
                             value={
                               (
@@ -4700,13 +4725,18 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               {stylesPanelCategory === "special" && (
                 <>
                   {["epigraph", "dedication", "verse"].map((styleName) => (
-                    <div key={styleName} className="mb-3 p-3 border rounded-lg bg-[#fef5e7]">
+                    <div
+                      key={styleName}
+                      className="mb-3 p-3 border rounded-lg bg-[#fef5e7]"
+                    >
                       <h3 className="font-medium text-sm text-[#2c3e50] mb-2 capitalize">
                         {styleName}
                       </h3>
                       <div className="grid grid-cols-5 gap-2 text-xs">
                         <div>
-                          <label className="block text-gray-600 mb-1">Size</label>
+                          <label className="block text-gray-600 mb-1">
+                            Size
+                          </label>
                           <input
                             type="number"
                             value={
@@ -4731,7 +4761,9 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                           />
                         </div>
                         <div>
-                          <label className="block text-gray-600 mb-1">Weight</label>
+                          <label className="block text-gray-600 mb-1">
+                            Weight
+                          </label>
                           <select
                             value={
                               (
@@ -4756,7 +4788,9 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                           </select>
                         </div>
                         <div>
-                          <label className="block text-gray-600 mb-1">Style</label>
+                          <label className="block text-gray-600 mb-1">
+                            Style
+                          </label>
                           <select
                             value={
                               (
@@ -4781,7 +4815,9 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                           </select>
                         </div>
                         <div>
-                          <label className="block text-gray-600 mb-1">Before</label>
+                          <label className="block text-gray-600 mb-1">
+                            Before
+                          </label>
                           <input
                             type="number"
                             value={
@@ -4807,7 +4843,9 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                           />
                         </div>
                         <div>
-                          <label className="block text-gray-600 mb-1">Align</label>
+                          <label className="block text-gray-600 mb-1">
+                            Align
+                          </label>
                           <select
                             value={
                               (
