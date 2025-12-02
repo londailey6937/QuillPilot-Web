@@ -1592,8 +1592,16 @@ export const ChapterCheckerV2: React.FC = () => {
           setIsAnalyzing(false);
           worker.terminate();
         } else {
+          // Log with full context for debugging but don't disrupt user experience
           console.warn(
-            "Worker error event with no details - ignoring as likely false positive"
+            "Worker error event with no details - ignoring as likely false positive",
+            {
+              filename: err.filename,
+              lineno: err.lineno,
+              colno: err.colno,
+              hasError: !!err.error,
+              errorType: typeof err.error,
+            }
           );
         }
       };
@@ -3657,55 +3665,160 @@ export const ChapterCheckerV2: React.FC = () => {
                   ref={analysisControlsRef}
                   className="app-panel"
                   style={{
-                    padding: "16px",
+                    padding: "12px 16px",
                     backgroundColor: "#f5e6d3",
                     background: "#f5e6d3",
                     border: "1.5px solid #e0c392",
                     boxShadow: "0 10px 25px rgba(15,23,42,0.08)",
                   }}
                 >
-                  <h2
+                  {/* Header with inline buttons for space efficiency */}
+                  <div
                     style={{
-                      margin: "0 0 6px 0",
-                      fontSize: "18px",
-                      color: "#000000",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: "12px",
+                      marginBottom: "12px",
                     }}
                   >
-                    Analysis Controls
-                  </h2>
-                  <p
-                    style={{
-                      margin: "0 0 12px 0",
-                      fontSize: "13px",
-                      color: "#2c3e50",
-                    }}
-                  >
-                    Select the domain that best matches your chapter content for
-                    accurate concept recognition and analysis.
-                  </p>
+                    <div style={{ flex: "0 0 70%" }}>
+                      <h2
+                        style={{
+                          margin: "0 0 4px 0",
+                          fontSize: "18px",
+                          color: "#000000",
+                        }}
+                      >
+                        Analysis Controls
+                      </h2>
+                      <p
+                        style={{
+                          margin: 0,
+                          fontSize: "11px",
+                          color: "#64748b",
+                          lineHeight: "1.3",
+                        }}
+                      >
+                        Select genre • Configure settings • Run analysis
+                      </p>
+                    </div>
+                    <div
+                      style={{
+                        flex: "0 0 30%",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "6px",
+                      }}
+                    >
+                      <button
+                        onClick={handleAnalyzeChapter}
+                        disabled={
+                          !chapterText.trim() ||
+                          isAnalyzing ||
+                          (!selectedDomain && selectedDomain !== "none")
+                        }
+                        style={{
+                          width: "100%",
+                          padding: "8px 12px",
+                          backgroundColor: "white",
+                          color:
+                            chapterText.trim() &&
+                            !isAnalyzing &&
+                            (selectedDomain || selectedDomain === "none")
+                              ? "#ef8432"
+                              : "#2c3e50",
+                          border:
+                            chapterText.trim() &&
+                            !isAnalyzing &&
+                            (selectedDomain || selectedDomain === "none")
+                              ? "2px solid #ef8432"
+                              : "2px solid #e0c392",
+                          borderRadius: "20px",
+                          fontSize: "13px",
+                          fontWeight: "600",
+                          cursor:
+                            chapterText.trim() &&
+                            !isAnalyzing &&
+                            (selectedDomain || selectedDomain === "none")
+                              ? "pointer"
+                              : "not-allowed",
+                          transition: "background-color 0.2s",
+                        }}
+                        onMouseEnter={(e) => {
+                          if (
+                            chapterText.trim() &&
+                            !isAnalyzing &&
+                            (selectedDomain || selectedDomain === "none")
+                          )
+                            e.currentTarget.style.backgroundColor = "#f7e6d0";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = "white";
+                        }}
+                      >
+                        {isAnalyzing ? "⏳ Analyzing..." : "🔍 Analyze"}
+                      </button>
+                      {chapterData && analysis && !isAnalyzing && (
+                        <button
+                          onClick={() =>
+                            setAutoAnalysisEnabled(!autoAnalysisEnabled)
+                          }
+                          style={{
+                            width: "100%",
+                            padding: "6px 12px",
+                            backgroundColor: autoAnalysisEnabled
+                              ? "#ef8432"
+                              : "white",
+                            color: autoAnalysisEnabled ? "white" : "#2c3e50",
+                            border: `1.5px solid ${
+                              autoAnalysisEnabled ? "#ef8432" : "#e0c392"
+                            }`,
+                            borderRadius: "20px",
+                            fontSize: "11px",
+                            fontWeight: "600",
+                            cursor: "pointer",
+                            transition: "all 0.2s",
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!autoAnalysisEnabled) {
+                              e.currentTarget.style.backgroundColor = "#f7e6d0";
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!autoAnalysisEnabled) {
+                              e.currentTarget.style.backgroundColor = "white";
+                            }
+                          }}
+                        >
+                          {autoAnalysisEnabled ? "✓ Auto" : "Auto"}
+                        </button>
+                      )}
+                    </div>
+                  </div>
 
-                  <div style={{ marginBottom: "16px" }}>
+                  <div style={{ marginBottom: "12px" }}>
                     <label
                       style={{
                         display: "block",
-                        fontSize: "12px",
+                        fontSize: "11px",
                         fontWeight: "600",
                         marginBottom: "4px",
                         color: "#2c3e50",
                       }}
                     >
-                      Detected Genre:
+                      Genre:
                     </label>{" "}
                     {!showDomainSelector ? (
                       <div
                         style={{
                           width: "100%",
-                          padding: "12px",
+                          padding: "10px 12px",
                           border: selectedDomain
                             ? "2px solid #ef8432"
                             : "2px solid #c16659",
                           borderRadius: "20px",
-                          fontSize: "14px",
+                          fontSize: "13px",
                           backgroundColor: "white",
                           color: selectedDomain ? "#ef8432" : "#c16659",
                           fontWeight: "600",
@@ -4053,103 +4166,6 @@ export const ChapterCheckerV2: React.FC = () => {
                       </div>
                     )}
                   </div>
-
-                  <button
-                    onClick={handleAnalyzeChapter}
-                    disabled={
-                      !chapterText.trim() ||
-                      isAnalyzing ||
-                      (!selectedDomain && selectedDomain !== "none")
-                    }
-                    style={{
-                      width: "100%",
-                      padding: "12px",
-                      backgroundColor: "white",
-                      color:
-                        chapterText.trim() &&
-                        !isAnalyzing &&
-                        (selectedDomain || selectedDomain === "none")
-                          ? "#ef8432"
-                          : "#2c3e50",
-                      border:
-                        chapterText.trim() &&
-                        !isAnalyzing &&
-                        (selectedDomain || selectedDomain === "none")
-                          ? "2px solid #ef8432"
-                          : "2px solid #e0c392",
-                      borderRadius: "20px",
-                      fontSize: "16px",
-                      fontWeight: "600",
-                      cursor:
-                        chapterText.trim() &&
-                        !isAnalyzing &&
-                        (selectedDomain || selectedDomain === "none")
-                          ? "pointer"
-                          : "not-allowed",
-                      transition: "background-color 0.2s",
-                    }}
-                    onMouseEnter={(e) => {
-                      if (
-                        chapterText.trim() &&
-                        !isAnalyzing &&
-                        (selectedDomain || selectedDomain === "none")
-                      )
-                        e.currentTarget.style.backgroundColor = "#f7e6d0";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = "white";
-                    }}
-                  >
-                    {isAnalyzing ? "⏳ Analyzing..." : "🔍 Analyze Book"}
-                  </button>
-
-                  {/* Auto-Analysis Toggle */}
-                  {chapterData && analysis && !isAnalyzing && (
-                    <button
-                      onClick={() =>
-                        setAutoAnalysisEnabled(!autoAnalysisEnabled)
-                      }
-                      style={{
-                        width: "100%",
-                        marginTop: "8px",
-                        padding: "8px 12px",
-                        backgroundColor: autoAnalysisEnabled
-                          ? "#ef8432"
-                          : "white",
-                        color: autoAnalysisEnabled ? "white" : "#2c3e50",
-                        border: `1.5px solid ${
-                          autoAnalysisEnabled ? "#ef8432" : "#e0c392"
-                        }`,
-                        borderRadius: "20px",
-                        fontSize: "13px",
-                        fontWeight: "600",
-                        cursor: "pointer",
-                        transition: "all 0.2s",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: "6px",
-                      }}
-                      onMouseEnter={(e) => {
-                        if (!autoAnalysisEnabled) {
-                          e.currentTarget.style.backgroundColor = "#f7e6d0";
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!autoAnalysisEnabled) {
-                          e.currentTarget.style.backgroundColor = "white";
-                        }
-                      }}
-                      title={
-                        autoAnalysisEnabled
-                          ? "Auto-analysis is ON - will re-analyze 3 seconds after you stop typing"
-                          : "Click to enable auto-analysis"
-                      }
-                    >
-                      {autoAnalysisEnabled ? "✓" : ""} 🔄 Auto-Analysis{" "}
-                      {autoAnalysisEnabled ? "ON" : "OFF"}
-                    </button>
-                  )}
 
                   {/* Free tier info */}
                   {accessLevel === "free" && chapterText && !isAnalyzing && (
