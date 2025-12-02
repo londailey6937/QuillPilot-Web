@@ -465,7 +465,7 @@ export const ChapterCheckerV2: React.FC = () => {
   const [upgradeFeature, setUpgradeFeature] = useState("");
 
   // Document state
-  const [chapterText, setChapterText] = useState(""); // Keep for backwards compatibility
+  const [chapterText, setChapterText] = useState<string | null>(null);
   const [chapterData, setChapterData] = useState<{
     html: string;
     plainText: string;
@@ -590,10 +590,11 @@ export const ChapterCheckerV2: React.FC = () => {
   });
 
   const statisticsText =
+    chapterText ??
     chapterData?.plainText ??
     chapterData?.originalPlainText ??
-    chapterText ??
     "";
+  const currentChapterText = chapterText ?? "";
   const wordCount = useMemo(
     () => countWordsQuick(statisticsText),
     [statisticsText]
@@ -1315,12 +1316,12 @@ export const ChapterCheckerV2: React.FC = () => {
   };
 
   const handleAnalyzeChapter = async () => {
-    if (!chapterText.trim()) {
+    if (!currentChapterText.trim()) {
       setError("Please upload or enter chapter text");
       return;
     }
 
-    if (chapterText.trim().split(/\s+/).length < 200) {
+    if (currentChapterText.trim().split(/\s+/).length < 200) {
       setError("Chapter should be at least 200 words");
       return;
     }
@@ -1659,12 +1660,12 @@ export const ChapterCheckerV2: React.FC = () => {
         ? null
         : analysis ??
           buildTierOneAnalysisSummary({
-            plainText: chapterData.plainText || chapterText,
+            plainText: chapterData.plainText || currentChapterText,
             htmlContent: richHtmlContent,
           });
 
       await exportToDocx({
-        text: chapterText,
+        text: currentChapterText,
         html: richHtmlContent,
         fileName: fileName || "edited-chapter",
         analysis: fallbackAnalysis,
@@ -1706,12 +1707,12 @@ export const ChapterCheckerV2: React.FC = () => {
       const fallbackAnalysis =
         analysis ??
         buildTierOneAnalysisSummary({
-          plainText: chapterData.plainText || chapterText,
+          plainText: chapterData.plainText || currentChapterText,
           htmlContent: chapterData.editorHtml ?? chapterData.html ?? null,
         });
 
       await exportToPdf({
-        text: chapterText,
+        text: currentChapterText,
         fileName: fileName || "manuscript",
         analysis: fallbackAnalysis,
         includeAnalysis: true,
@@ -1751,12 +1752,12 @@ export const ChapterCheckerV2: React.FC = () => {
       const fallbackAnalysis =
         analysis ??
         buildTierOneAnalysisSummary({
-          plainText: chapterData.plainText || chapterText,
+          plainText: chapterData.plainText || currentChapterText,
           htmlContent: richHtmlContent,
         });
 
       exportToHtml({
-        text: chapterText,
+        text: currentChapterText,
         html: richHtmlContent,
         fileName: fileName || "edited-chapter",
         analysis: fallbackAnalysis,
@@ -2487,11 +2488,11 @@ export const ChapterCheckerV2: React.FC = () => {
           setIsChapterLibraryOpen(false);
         }}
         currentChapter={
-          chapterText
+          currentChapterText
             ? {
                 id: undefined,
                 name: fileName,
-                content: chapterText,
+                content: currentChapterText,
                 editorHtml: undefined,
                 analysis,
               }
@@ -3221,6 +3222,7 @@ export const ChapterCheckerV2: React.FC = () => {
                           )}
                         </>
                       }
+                      onOpenChapterLibrary={() => setIsChapterLibraryOpen(true)}
                     />
                   </div>
                 </div>
@@ -3694,7 +3696,7 @@ export const ChapterCheckerV2: React.FC = () => {
                       <button
                         onClick={handleAnalyzeChapter}
                         disabled={
-                          !chapterText.trim() ||
+                          !currentChapterText.trim() ||
                           isAnalyzing ||
                           (!selectedDomain && selectedDomain !== "none")
                         }
@@ -3703,13 +3705,13 @@ export const ChapterCheckerV2: React.FC = () => {
                           padding: "8px 12px",
                           backgroundColor: "white",
                           color:
-                            chapterText.trim() &&
+                            currentChapterText.trim() &&
                             !isAnalyzing &&
                             (selectedDomain || selectedDomain === "none")
                               ? "#ef8432"
                               : "#2c3e50",
                           border:
-                            chapterText.trim() &&
+                            currentChapterText.trim() &&
                             !isAnalyzing &&
                             (selectedDomain || selectedDomain === "none")
                               ? "2px solid #ef8432"
@@ -3718,7 +3720,7 @@ export const ChapterCheckerV2: React.FC = () => {
                           fontSize: "13px",
                           fontWeight: "600",
                           cursor:
-                            chapterText.trim() &&
+                            currentChapterText.trim() &&
                             !isAnalyzing &&
                             (selectedDomain || selectedDomain === "none")
                               ? "pointer"
@@ -3727,7 +3729,7 @@ export const ChapterCheckerV2: React.FC = () => {
                         }}
                         onMouseEnter={(e) => {
                           if (
-                            chapterText.trim() &&
+                            currentChapterText.trim() &&
                             !isAnalyzing &&
                             (selectedDomain || selectedDomain === "none")
                           )
@@ -4148,43 +4150,45 @@ export const ChapterCheckerV2: React.FC = () => {
                   </div>
 
                   {/* Free tier info */}
-                  {accessLevel === "free" && chapterText && !isAnalyzing && (
-                    <div
-                      style={{
-                        marginTop: "12px",
-                        padding: "12px",
-                        backgroundColor: "white",
-                        borderLeft: "4px solid #2c3e50",
-                        borderRadius: "20px",
-                        fontSize: "13px",
-                        lineHeight: 1.6,
-                      }}
-                    >
+                  {accessLevel === "free" &&
+                    currentChapterText &&
+                    !isAnalyzing && (
                       <div
                         style={{
-                          fontWeight: "600",
-                          marginBottom: "6px",
-                          color: "#2c3e50",
+                          marginTop: "12px",
+                          padding: "12px",
+                          backgroundColor: "white",
+                          borderLeft: "4px solid #2c3e50",
+                          borderRadius: "20px",
+                          fontSize: "13px",
+                          lineHeight: 1.6,
                         }}
                       >
-                        🎁 Free Preview Available
+                        <div
+                          style={{
+                            fontWeight: "600",
+                            marginBottom: "6px",
+                            color: "#2c3e50",
+                          }}
+                        >
+                          🎁 Free Preview Available
+                        </div>
+                        <div style={{ color: "#1e3a8a" }}>
+                          <strong>Spacing Analysis:</strong> See optimal concept
+                          repetition patterns for better retention.
+                          <br />
+                          <strong>Dual Coding:</strong> Get AI suggestions for
+                          where to add visuals, diagrams, and illustrations.
+                          <br />
+                          <br />
+                          <span style={{ fontSize: "12px", opacity: 0.9 }}>
+                            💡 Upgrade to Premium for full 10-principle analysis
+                            with concept graphs, pattern recognition, and
+                            detailed recommendations.
+                          </span>
+                        </div>
                       </div>
-                      <div style={{ color: "#1e3a8a" }}>
-                        <strong>Spacing Analysis:</strong> See optimal concept
-                        repetition patterns for better retention.
-                        <br />
-                        <strong>Dual Coding:</strong> Get AI suggestions for
-                        where to add visuals, diagrams, and illustrations.
-                        <br />
-                        <br />
-                        <span style={{ fontSize: "12px", opacity: 0.9 }}>
-                          💡 Upgrade to Premium for full 10-principle analysis
-                          with concept graphs, pattern recognition, and detailed
-                          recommendations.
-                        </span>
-                      </div>
-                    </div>
-                  )}
+                    )}
 
                   {error && (
                     <div
@@ -4861,7 +4865,7 @@ export const ChapterCheckerV2: React.FC = () => {
 
                         const generatedTemplate = template.generateTemplate(
                           analysis,
-                          chapterText
+                          currentChapterText
                         );
 
                         const plainTextContent = generatedTemplate.replace(
@@ -5179,13 +5183,13 @@ export const ChapterCheckerV2: React.FC = () => {
                     const generatedTemplate =
                       selectedTemplateForClaude.generateTemplate(
                         analysis,
-                        chapterText
+                        currentChapterText
                       );
 
                     // Process Claude prompts
                     const processedTemplate = await processClaudePrompts(
                       generatedTemplate,
-                      chapterText,
+                      currentChapterText,
                       { apiKey },
                       (current, total) => {
                         setClaudeProgress({ current, total });

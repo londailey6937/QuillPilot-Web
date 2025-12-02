@@ -66,6 +66,8 @@ interface CustomEditorProps {
   }) => void;
   // Document tools to render between toolbars
   documentTools?: React.ReactNode;
+  // Saved chapters hook for toolbar placeholder actions
+  onOpenChapterLibrary?: () => void;
 }
 
 const INCH_IN_PX = 96;
@@ -75,9 +77,6 @@ const RULER_BACKGROUND_LEFT_OVERHANG = 0;
 const RULER_BACKGROUND_RIGHT_OVERHANG = 0;
 const POINT_TO_PX = 96 / 72;
 const TITLE_STYLE_POINT_SIZE = 20;
-const TITLE_STYLE_FONT_SIZE_PX = parseFloat(
-  (TITLE_STYLE_POINT_SIZE * POINT_TO_PX).toFixed(2)
-);
 
 interface TextNodeMap {
   node: Text;
@@ -215,6 +214,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   onOpenHelp,
   onHeaderFooterChange,
   documentTools,
+  onOpenChapterLibrary,
 }) => {
   const editorRef = useRef<HTMLDivElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -229,7 +229,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   const [isBold, setIsBold] = useState(false);
   const [isItalic, setIsItalic] = useState(false);
   const [isUnderline, setIsUnderline] = useState(false);
-  const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const analysisTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Undo/Redo history
@@ -609,7 +609,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
       fontStyle: "normal" as "normal" | "italic",
     },
     "book-title": {
-      fontSize: TITLE_STYLE_FONT_SIZE_PX,
+      fontSize: TITLE_STYLE_POINT_SIZE,
       fontWeight: "bold" as "normal" | "bold",
       fontStyle: "normal" as "normal" | "italic",
       textAlign: "center" as "left" | "center" | "right" | "justify",
@@ -1066,17 +1066,27 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
       saveToHistory(html);
     }, 500);
 
-    // Debounce updates
-    if (updateTimeoutRef.current) {
-      clearTimeout(updateTimeoutRef.current);
+    // Notify parent immediately so stats/UI stay in sync
+    onUpdate?.({ html, text });
+
+    // Debounce heavier analysis work
+    if (analysisTimeoutRef.current) {
+      clearTimeout(analysisTimeoutRef.current);
     }
 
-    updateTimeoutRef.current = setTimeout(() => {
-      onUpdate?.({ html, text });
+    analysisTimeoutRef.current = setTimeout(() => {
       analyzeContent(text);
     }, 300);
     recomputePagination();
   }, [onUpdate, saveToHistory, analyzeContent, recomputePagination]);
+
+  useEffect(() => {
+    return () => {
+      if (analysisTimeoutRef.current) {
+        clearTimeout(analysisTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Initialize content (only on mount)
   useEffect(() => {
@@ -2977,6 +2987,50 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
 
   const showToolbarRow = viewMode === "writer" && !isFreeMode;
   const analysisLegendElement = renderAnalysisLegend();
+  const bookTitleFontSizePx = Number(
+    (documentStyles["book-title"].fontSize * POINT_TO_PX).toFixed(2)
+  );
+  const toolbarCenterPlaceholder = !focusMode ? (
+    <div
+      className="flex items-center gap-2"
+      style={{
+        padding: "4px 8px",
+        borderRadius: "999px",
+        backgroundColor: "rgba(255, 255, 255, 0.8)",
+        border: "1px dashed #e0c392",
+        boxShadow: "0 2px 6px rgba(239, 132, 50, 0.12)",
+      }}
+    >
+      <button
+        onClick={() => setActiveTool("version-history")}
+        className={`px-2 py-1 rounded transition-colors text-xs toolbar-view-button ${
+          activeTool === "version-history" ? "active" : ""
+        }`}
+        title="Open Version History"
+      >
+        📜 Version History
+      </button>
+      <div
+        style={{ width: "1px", height: "16px", backgroundColor: "#e0c392" }}
+      />
+      <button
+        onClick={() => onOpenChapterLibrary?.()}
+        disabled={!onOpenChapterLibrary}
+        className="px-2 py-1 rounded transition-colors text-xs toolbar-view-button"
+        style={{
+          opacity: onOpenChapterLibrary ? 1 : 0.5,
+          cursor: onOpenChapterLibrary ? "pointer" : "not-allowed",
+        }}
+        title={
+          onOpenChapterLibrary
+            ? "Open Saved Chapters"
+            : "Saved Chapters available when Chapter Library is provided"
+        }
+      >
+        📁 Saved Chapters
+      </button>
+    </div>
+  ) : null;
 
   // Ruler drag start handler
   const handleRulerDragStart = useCallback(
@@ -3450,7 +3504,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                 justifySelf: "center",
               }}
             >
-              {analysisLegendElement}
+              {analysisLegendElement || toolbarCenterPlaceholder}
             </div>
 
             {/* Right Toolbar Column */}
@@ -4659,19 +4713,29 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               {/* Book Publishing Styles Tab */}
               {stylesPanelCategory === "book" && (
                 <>
-                  {["title", "subtitle", "chapter-heading", "part-title"].map(
-                    (styleName) => (
+                  {[
+                    "book-title",
+                    "title",
+                    "subtitle",
+                    "chapter-heading",
+                    "part-title",
+                  ].map((styleName) => {
+                    const friendlyLabel =
+                      styleName === "book-title"
+                        ? "Book Title"
+                        : styleName.replace("-", " ");
+                    return (
                       <div
                         key={styleName}
                         className="mb-3 p-3 border rounded-lg bg-[#fef5e7]"
                       >
                         <h3 className="font-medium text-sm text-[#2c3e50] mb-2 capitalize">
-                          {styleName.replace("-", " ")}
+                          {friendlyLabel}
                         </h3>
                         <div className="grid grid-cols-5 gap-2 text-xs">
                           <div>
                             <label className="block text-gray-600 mb-1">
-                              Size
+                              Size{styleName === "book-title" ? " (pt)" : ""}
                             </label>
                             <input
                               type="number"
@@ -4694,6 +4758,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                               className="w-full px-2 py-1 border rounded focus:ring-1 focus:ring-[#ef8432]"
                               min="12"
                               max="48"
+                              step={styleName === "book-title" ? 0.5 : 1}
                             />
                           </div>
                           <div>
@@ -4808,8 +4873,8 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                           </div>
                         </div>
                       </div>
-                    )
-                  )}
+                    );
+                  })}
                 </>
               )}
 
@@ -5107,7 +5172,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                       fontStyle: "normal",
                     },
                     "book-title": {
-                      fontSize: TITLE_STYLE_FONT_SIZE_PX,
+                      fontSize: TITLE_STYLE_POINT_SIZE,
                       fontWeight: "bold",
                       fontStyle: "normal",
                       textAlign: "center",
@@ -6659,7 +6724,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           text-indent: ${
             documentStyles["book-title"].firstLineIndent
           }px !important;
-          font-size: ${documentStyles["book-title"].fontSize}px !important;
+          font-size: ${bookTitleFontSizePx}px !important;
           font-weight: ${documentStyles["book-title"].fontWeight} !important;
           font-style: ${documentStyles["book-title"].fontStyle} !important;
           margin-top: ${documentStyles["book-title"].marginTop}em !important;
