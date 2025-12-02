@@ -34,6 +34,7 @@ export function WritersReferenceModal({
     emotion: "Emotion Tracker",
     motif: "Motif & Symbol Tracker",
     productivity: "Productivity Features",
+    chapterLibrary: "Chapter Library",
     characters: "Character Management",
     export: "Export Options",
     tips: "Tips & Best Practices",
@@ -1419,6 +1420,149 @@ export function WritersReferenceModal({
               <li>Say "period" or "comma" for punctuation</li>
               <li>Say "new paragraph" for line breaks</li>
               <li>Works best in quiet environments</li>
+            </ul>
+          </div>
+        );
+
+      case "chapterLibrary":
+        return (
+          <div className="writers-ref-content">
+            <h2>📚 Chapter Library</h2>
+            <p>
+              Save and manage multiple chapters locally on your computer using
+              the File System Access API.
+            </p>
+
+            <h3>Quick Overview</h3>
+            <ul>
+              <li>
+                <strong>Save chapters</strong> as JSON files in a folder of your
+                choice
+              </li>
+              <li>
+                <strong>Load any saved chapter</strong> instantly into the
+                editor
+              </li>
+              <li>
+                <strong>No cloud storage</strong> required - all files stay on
+                your machine
+              </li>
+              <li>
+                <strong>Full control</strong> over your writing files
+              </li>
+            </ul>
+
+            <h3>How to Access</h3>
+            <ol>
+              <li>Click the hamburger menu (☰) in the top-left</li>
+              <li>Click "📚 Chapter Library"</li>
+              <li>Select a folder on your computer (first time only)</li>
+              <li>Save, load, or delete chapters</li>
+            </ol>
+
+            <h3>Features</h3>
+            <table className="ref-table">
+              <thead>
+                <tr>
+                  <th>Feature</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>💾 Save/Save As</td>
+                  <td>Quickly save current chapter or create variations</td>
+                </tr>
+                <tr>
+                  <td>📂 Load chapters</td>
+                  <td>Switch between chapters with one click</td>
+                </tr>
+                <tr>
+                  <td>🗑️ Delete chapters</td>
+                  <td>Remove unwanted chapters with confirmation</td>
+                </tr>
+                <tr>
+                  <td>🔄 Auto-refresh</td>
+                  <td>See new files added outside QuillPilot</td>
+                </tr>
+                <tr>
+                  <td>📁 Folder persistence</td>
+                  <td>QuillPilot remembers your chapter folder</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h3>Browser Support</h3>
+            <div style={{ display: "flex", gap: "1rem", marginBottom: "1rem" }}>
+              <div style={{ flex: 1 }}>
+                <h4>✅ Supported</h4>
+                <ul>
+                  <li>Chrome 86+</li>
+                  <li>Edge 86+</li>
+                  <li>Opera 72+</li>
+                </ul>
+              </div>
+              <div style={{ flex: 1 }}>
+                <h4>⚠️ Not Supported</h4>
+                <ul>
+                  <li>Firefox</li>
+                  <li>Safari</li>
+                  <li>Older browser versions</li>
+                </ul>
+              </div>
+            </div>
+            <p style={{ fontSize: "0.9em", color: "#666" }}>
+              If your browser doesn't support this feature, QuillPilot will
+              display a warning.
+            </p>
+
+            <h3>Workflow Tips</h3>
+            <div className="tip-box">
+              <strong>💡 Writing Multiple Chapters:</strong>
+              <ol>
+                <li>Select your project's chapter folder</li>
+                <li>Write Chapter 1, click Save</li>
+                <li>Create new chapter in editor</li>
+                <li>Write Chapter 2, click Save</li>
+                <li>Switch between chapters using Load</li>
+              </ol>
+            </div>
+
+            <div className="tip-box">
+              <strong>💡 Version Control:</strong>
+              <ol>
+                <li>Save "Chapter 3 - Draft 1"</li>
+                <li>Make major edits</li>
+                <li>Save As "Chapter 3 - Draft 2"</li>
+                <li>Keep both versions to compare</li>
+              </ol>
+            </div>
+
+            <h3>What Gets Saved</h3>
+            <p>Each chapter file includes:</p>
+            <ul>
+              <li>Chapter content (text)</li>
+              <li>Chapter name</li>
+              <li>Analysis results (if any)</li>
+              <li>Last modified timestamp</li>
+              <li>Unique chapter ID</li>
+            </ul>
+
+            <div className="tip-box">
+              <strong>📦 Portability:</strong>
+              <p>
+                Chapters are standard JSON files that can be opened in any text
+                editor, shared, or backed up to cloud storage (Dropbox, Google
+                Drive, etc.).
+              </p>
+            </div>
+
+            <h3>Privacy & Security</h3>
+            <ul>
+              <li>🔒 All chapters saved directly to your computer</li>
+              <li>🚫 No data sent to servers</li>
+              <li>🛡️ Browser enforces strict security</li>
+              <li>✅ You control file access</li>
             </ul>
           </div>
         );

@@ -8,6 +8,7 @@ interface NavigationMenuProps {
   onOpenReferenceLibrary: () => void;
   onOpenWritersReference: () => void;
   onOpenQuickStart: () => void;
+  onOpenChapterLibrary: () => void;
 }
 
 /**
@@ -27,6 +28,7 @@ export function NavigationMenu({
   onOpenReferenceLibrary,
   onOpenWritersReference,
   onOpenQuickStart,
+  onOpenChapterLibrary,
 }: NavigationMenuProps): JSX.Element | null {
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
 
@@ -132,6 +134,45 @@ export function NavigationMenu({
               gap: "0.75rem",
             }}
           >
+            <button
+              onClick={() => {
+                onOpenChapterLibrary();
+                onClose();
+              }}
+              style={{
+                width: "100%",
+                padding: "0.875rem 1rem",
+                background: "white",
+                color: "#2c3e50",
+                border: "2px solid #ef8432",
+                borderRadius: "20px",
+                fontSize: "1rem",
+                fontWeight: "600",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "0.75rem",
+                transition:
+                  "transform 0.2s, background-color 0.2s, box-shadow 0.2s",
+                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = "translateY(-2px)";
+                e.currentTarget.style.backgroundColor = "#f7e6d0";
+                e.currentTarget.style.boxShadow =
+                  "0 4px 12px rgba(0, 0, 0, 0.15)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.backgroundColor = "white";
+                e.currentTarget.style.boxShadow =
+                  "0 2px 8px rgba(0, 0, 0, 0.1)";
+              }}
+            >
+              <span style={{ fontSize: "1.5rem" }}>📚</span>
+              <span>Chapter Library</span>
+            </button>
+
             <button
               onClick={() => {
                 onOpenQuickStart();

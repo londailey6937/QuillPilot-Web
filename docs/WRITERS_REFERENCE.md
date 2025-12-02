@@ -10,10 +10,11 @@ Your complete guide to mastering QuillPilot's writing tools and features.
 2. [The Editor Toolbar](#the-editor-toolbar)
 3. [Advanced Tools Panel](#advanced-tools-panel)
 4. [Productivity Features](#productivity-features)
-5. [Character Management](#character-management)
-6. [Export Options](#export-options)
-7. [Tips & Best Practices](#tips--best-practices)
-8. [Keyboard Shortcuts](#keyboard-shortcuts-reference)
+5. [Chapter Library](#chapter-library)
+6. [Character Management](#character-management)
+7. [Export Options](#export-options)
+8. [Tips & Best Practices](#tips--best-practices)
+9. [Keyboard Shortcuts](#keyboard-shortcuts-reference)
 
 > **⌨️ Complete Keyboard Shortcuts Guide**: See [KEYBOARD_SHORTCUTS.md](./KEYBOARD_SHORTCUTS.md) for detailed shortcuts reference
 
@@ -607,6 +608,45 @@ Dictate your story hands-free.
 - Works best in quiet environments
 - Great for capturing dialogue naturally
 - Edit after—don't worry about perfection while speaking
+
+---
+
+## Chapter Library
+
+QuillPilot's Chapter Library feature allows you to save and manage multiple chapters locally on your computer using the File System Access API.
+
+### Quick Overview
+
+- **Save chapters** as JSON files in a folder of your choice
+- **Load any saved chapter** instantly into the editor
+- **No cloud storage** required - all files stay on your machine
+- **Full control** over your writing files
+
+### How to Access
+
+1. Click the hamburger menu (☰) in the top-left
+2. Click "📚 Chapter Library"
+3. Select a folder on your computer (first time only)
+4. Save, load, or delete chapters
+
+### Features
+
+- **Save/Save As**: Quickly save current chapter or create variations
+- **Load chapters**: Switch between chapters with one click
+- **Delete chapters**: Remove unwanted chapters with confirmation
+- **Folder persistence**: QuillPilot remembers your chapter folder
+- **Auto-refresh**: See new files added outside QuillPilot
+
+### Browser Support
+
+✅ **Supported**: Chrome 86+, Edge 86+, Opera 72+
+⚠️ **Not Supported**: Firefox, Safari (API not yet available)
+
+If your browser doesn't support this feature, QuillPilot will display a warning.
+
+### Complete Guide
+
+For detailed instructions, tips, workflows, and troubleshooting, see the complete **[Chapter Library Guide](./CHAPTER_LIBRARY_GUIDE.md)**.
 
 ---
 

@@ -3502,6 +3502,17 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                   className="hidden"
                 />
               </label>
+              <button
+                onClick={copyFormat}
+                className={`px-2 py-1 rounded transition-colors text-xs ${
+                  formatPainterActive
+                    ? "bg-[#f7e6d0] text-[#ef8432] border border-[#ef8432]"
+                    : "bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50]"
+                }`}
+                title="Format Painter - Copy formatting from selection"
+              >
+                🖌️
+              </button>
 
               <div style={toolbarDividerStyle} aria-hidden="true" />
 

@@ -337,6 +337,25 @@ const graph = await ConceptExtractor.extractConceptsFromChapter(
 
 ---
 
+#### `CHAPTER_LIBRARY_GUIDE.md` (10 KB)
+
+**Purpose**: Documentation for local folder-based chapter management
+**Contains**:
+
+- File System Access API overview
+- Browser compatibility information (Chrome/Edge only)
+- Complete usage instructions (setup, save, load, delete)
+- File format specifications (JSON structure)
+- Tips & best practices for organization
+- Troubleshooting guide
+- Privacy & security information
+- Future enhancements roadmap
+
+**When to use**: Learning how to use the Chapter Library feature
+**Best for**: Writers managing multiple chapters locally without cloud storage
+
+---
+
 ### Utility Files
 
 #### `generalConceptExtractor.ts` (~180 lines)

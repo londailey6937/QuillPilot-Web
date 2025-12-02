@@ -85,6 +85,7 @@ import {
 import { AnimatedLogo } from "./AnimatedLogo";
 import { AuthModal } from "./AuthModal";
 import { UserMenu } from "./UserMenu";
+import { ChapterLibrary } from "./ChapterLibrary";
 
 const HEADING_LENGTH_LIMIT = 120;
 const MAX_FALLBACK_SECTIONS = 8;
@@ -523,6 +524,7 @@ export const ChapterCheckerV2: React.FC = () => {
   const [isWritersReferenceModalOpen, setIsWritersReferenceModalOpen] =
     useState(false);
   const [isQuickStartModalOpen, setIsQuickStartModalOpen] = useState(false);
+  const [isChapterLibraryOpen, setIsChapterLibraryOpen] = useState(false);
 
   // Ruler and margin state
   const [leftMargin, setLeftMargin] = useState(48); // pixels
@@ -1939,6 +1941,16 @@ export const ChapterCheckerV2: React.FC = () => {
         console.log("🖨️ Custom print triggered via keyboard shortcut");
         handlePrint();
       }
+      // Check for Cmd/Ctrl + S to open Chapter Library
+      if (
+        (e.metaKey || e.ctrlKey) &&
+        (e.key.toLowerCase() === "s" || e.code === "KeyS")
+      ) {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log("📚 Chapter Library opened via keyboard shortcut");
+        setIsChapterLibraryOpen(true);
+      }
     };
 
     // Use capture phase to ensure we intercept before browser default
@@ -2583,6 +2595,34 @@ export const ChapterCheckerV2: React.FC = () => {
                       </svg>
                     </button>
 
+                    {/* Save Chapter Button - Distinct from Auto-save */}
+                    {chapterText && (
+                      <button
+                        onClick={() => setIsChapterLibraryOpen(true)}
+                        style={{
+                          padding: "6px 12px",
+                          backgroundColor: "#fef5e7",
+                          color: "#2c3e50",
+                          border: "1.5px solid #e0c392",
+                          borderRadius: "12px",
+                          cursor: "pointer",
+                          fontSize: "12px",
+                          fontWeight: "700",
+                          transition: "all 0.2s",
+                          whiteSpace: "nowrap",
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = "#f7e6d0";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = "#fef5e7";
+                        }}
+                        title="Save Chapter (Cmd+S)"
+                      >
+                        💾 Save
+                      </button>
+                    )}
+
                     {viewMode === "writer" &&
                       accessLevel === "professional" && (
                         <button
@@ -2611,6 +2651,7 @@ export const ChapterCheckerV2: React.FC = () => {
                         </button>
                       )}
 
+                    {/* Auto-save Status Button */}
                     <button
                       onClick={() => {
                         try {
@@ -2913,6 +2954,7 @@ export const ChapterCheckerV2: React.FC = () => {
         onOpenReferenceLibrary={() => setIsReferenceLibraryModalOpen(true)}
         onOpenWritersReference={() => setIsWritersReferenceModalOpen(true)}
         onOpenQuickStart={() => setIsQuickStartModalOpen(true)}
+        onOpenChapterLibrary={() => setIsChapterLibraryOpen(true)}
       />
 
       {/* Lazy-loaded modals with Suspense */}
@@ -2945,6 +2987,31 @@ export const ChapterCheckerV2: React.FC = () => {
           />
         )}
       </Suspense>
+
+      {/* Chapter Library */}
+      <ChapterLibrary
+        isOpen={isChapterLibraryOpen}
+        onClose={() => setIsChapterLibraryOpen(false)}
+        onLoadChapter={(chapter) => {
+          // Load chapter into editor - mimicking handleDocumentLoad
+          setChapterText(chapter.content);
+          setFileName(chapter.name);
+          setError(null);
+          setAnalysis(chapter.analysis || null);
+          setIsChapterLibraryOpen(false);
+        }}
+        currentChapter={
+          chapterText
+            ? {
+                id: undefined,
+                name: fileName,
+                content: chapterText,
+                editorHtml: undefined,
+                analysis,
+              }
+            : null
+        }
+      />
 
       <AuthModal
         isOpen={isAuthModalOpen}
