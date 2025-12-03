@@ -24,6 +24,8 @@ import { ResearchNotesPanel } from "./ResearchNotesPanel";
 import { ImageMoodBoard } from "./ImageMoodBoard";
 import { VersionHistory } from "./VersionHistory";
 import { CommentAnnotation } from "./CommentAnnotation";
+import { PagesSurface } from "@/components/PagesSurface";
+import { DocumentStylesState } from "../types/documentStyles";
 
 interface CustomEditorProps {
   content: string;
@@ -76,7 +78,32 @@ const PAGE_HEIGHT_PX = INCH_IN_PX * 11; // 11 inches for US Letter
 const RULER_BACKGROUND_LEFT_OVERHANG = 0;
 const RULER_BACKGROUND_RIGHT_OVERHANG = 0;
 const POINT_TO_PX = 96 / 72;
+const PAGE_WIDTH_PT = PAGE_WIDTH_PX / POINT_TO_PX; // 576pt on an 8" page
+const PAGE_CENTER_PT = PAGE_WIDTH_PT / 2; // 288pt (page midpoint)
 const TITLE_STYLE_POINT_SIZE = 20;
+const CENTERED_STYLE_SELECTORS = [
+  "p.title-content",
+  "p.book-title",
+  "p.subtitle",
+  "p.chapter-heading",
+  "p.part-title",
+  "p.image-paragraph",
+  "h1",
+  "h2",
+  "h3",
+];
+const CENTERABLE_TAGS = [
+  "p",
+  "h1",
+  "h2",
+  "h3",
+  "h4",
+  "h5",
+  "h6",
+  "blockquote",
+  "figure",
+];
+const CENTERABLE_SELECTOR = CENTERABLE_TAGS.join(", ");
 
 interface TextNodeMap {
   node: Text;
@@ -402,7 +429,168 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
 
   // Ruler alignment is now handled by CSS flexbox centering - no dynamic shift needed
   const alignRulerToPage = useCallback(() => {
-    // No-op: ruler and editor are both centered by the parent flex container
+    // Intentionally left blank – ruler follows the page container via CSS
+  }, []);
+
+  const alignCenteredBlocksToRuler = useCallback(() => {
+    const editorEl = editorRef.current;
+    if (!editorEl || typeof window === "undefined") {
+      return;
+    }
+
+    const pageRect = editorEl.getBoundingClientRect();
+    if (!pageRect || !pageRect.width) {
+      return;
+    }
+
+    const pxPerPoint = PAGE_WIDTH_PT
+      ? pageRect.width / PAGE_WIDTH_PT
+      : POINT_TO_PX;
+    const pageCenterRelative = PAGE_CENTER_PT * pxPerPoint;
+    const pageCenterAbsolute = pageRect.left + pageCenterRelative;
+
+    const legacySelector = CENTERED_STYLE_SELECTORS.join(", ");
+    const elements =
+      editorEl.querySelectorAll<HTMLElement>(CENTERABLE_SELECTOR);
+
+    console.log("📄 Page center calculation:", {
+      pageRectLeft: pageRect.left,
+      pageRectWidth: pageRect.width,
+      pageWidthPt: PAGE_WIDTH_PT,
+      pageCenterPt: PAGE_CENTER_PT,
+      pxPerPoint,
+      pageCenterRelative,
+      pageCenterAbsolute,
+      viewportWidth: window.innerWidth,
+    });
+
+    // Debug: Check what elements exist in the editor
+    const allParagraphs = editorEl.querySelectorAll("p");
+    const paragraphDetails = Array.from(allParagraphs).map((p) => ({
+      className: p.className,
+      classList: Array.from(p.classList),
+      tagName: p.tagName,
+      text: p.textContent?.slice(0, 30),
+      hasClass: {
+        titleContent: p.classList.contains("title-content"),
+        bookTitle: p.classList.contains("book-title"),
+        subtitle: p.classList.contains("subtitle"),
+        chapterHeading: p.classList.contains("chapter-heading"),
+        partTitle: p.classList.contains("part-title"),
+      },
+    }));
+
+    console.log("Centering Debug:", {
+      candidateCount: elements.length,
+      totalParagraphs: allParagraphs.length,
+      paragraphDetails,
+      legacySelector,
+      centerableSelector: CENTERABLE_SELECTOR,
+    });
+
+    // Log each paragraph individually for clarity
+    allParagraphs.forEach((p, i) => {
+      console.log(`Paragraph ${i}:`, {
+        className: p.className,
+        classList: Array.from(p.classList),
+        text: p.textContent?.slice(0, 50),
+      });
+    });
+    elements.forEach((element) => {
+      const matchesLegacy = legacySelector
+        ? element.matches(legacySelector)
+        : false;
+      const computedAlign = window.getComputedStyle(element).textAlign;
+      const isCenterAligned = computedAlign === "center";
+      const shouldAlign = matchesLegacy || isCenterAligned;
+
+      if (!shouldAlign) {
+        element.style.removeProperty("--center-shift");
+        element.removeAttribute("data-ruler-center");
+        return;
+      }
+
+      element.setAttribute("data-ruler-center", "true");
+
+      // Temporarily clear the shift to get natural position
+      element.style.removeProperty("--center-shift");
+
+      // Force layout recalc
+      void element.offsetHeight;
+
+      const rect = element.getBoundingClientRect();
+
+      if (!rect.width) {
+        element.style.setProperty("--center-shift", "0px");
+        return;
+      }
+
+      // Element's current center position relative to the ruler container
+      const elementCenterRelative = rect.left - pageRect.left + rect.width / 2;
+
+      // Align the element with the physical midpoint of the page (288pt mark)
+      const shift = pageCenterRelative - elementCenterRelative;
+
+      console.log("Element:", element.className || element.tagName, {
+        rectLeft: rect.left,
+        rectWidth: rect.width,
+        pageRectLeft: pageRect.left,
+        elementCenterRelative,
+        pageCenterRelative,
+        shift,
+        computedAlign,
+        matchesLegacy,
+      });
+      element.style.setProperty("--center-shift", `${shift}px`);
+    });
+  }, []);
+
+  const centerText = useCallback((targetElement?: HTMLElement | null) => {
+    if (!editorRef.current) {
+      return;
+    }
+
+    let element: HTMLElement | null | undefined = targetElement;
+
+    if (!element && typeof window !== "undefined") {
+      const selection = window.getSelection();
+      if (!selection || selection.rangeCount === 0) {
+        return;
+      }
+
+      let anchor: Node | null = selection.anchorNode;
+      while (
+        anchor &&
+        anchor !== editorRef.current &&
+        anchor.nodeType !== Node.ELEMENT_NODE
+      ) {
+        anchor = anchor.parentNode;
+      }
+
+      if (anchor && anchor instanceof Element) {
+        element = anchor.closest(CENTERABLE_SELECTOR) as HTMLElement | null;
+      }
+    }
+
+    if (!element) {
+      return;
+    }
+
+    const pageRect = editorRef.current.getBoundingClientRect();
+    const elementRect = element.getBoundingClientRect();
+    if (!pageRect.width || !elementRect.width) {
+      return;
+    }
+
+    element.style.removeProperty("--center-shift");
+    void element.offsetWidth;
+
+    const textCenter = elementRect.left - pageRect.left + elementRect.width / 2;
+    const pageCenter = pageRect.width / 2;
+    const shift = pageCenter - textCenter;
+
+    element.setAttribute("data-ruler-center", "true");
+    element.style.setProperty("--center-shift", `${shift}px`);
   }, []);
 
   useEffect(() => {
@@ -441,6 +629,68 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
       resizeObserver?.disconnect();
     };
   }, [alignRulerToPage]);
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    let frame: number | null = null;
+    const scheduleAlign = () => {
+      if (frame !== null) {
+        window.cancelAnimationFrame(frame);
+      }
+      frame = window.requestAnimationFrame(() => {
+        // Double RAF ensures layout is complete, particularly after stats panel updates
+        window.requestAnimationFrame(() => {
+          alignCenteredBlocksToRuler();
+          frame = null;
+        });
+      });
+    };
+
+    scheduleAlign();
+
+    window.addEventListener("resize", scheduleAlign);
+
+    const resizeObserver =
+      typeof ResizeObserver !== "undefined"
+        ? new ResizeObserver(() => scheduleAlign())
+        : null;
+
+    const mutationObserver =
+      typeof MutationObserver !== "undefined"
+        ? new MutationObserver(() => scheduleAlign())
+        : null;
+
+    const editorEl = editorRef.current;
+    const rulerEl = rulerContainerRef.current;
+
+    if (resizeObserver) {
+      if (editorEl) {
+        resizeObserver.observe(editorEl);
+      }
+      if (rulerEl) {
+        resizeObserver.observe(rulerEl);
+      }
+    }
+
+    if (mutationObserver && editorEl) {
+      mutationObserver.observe(editorEl, {
+        childList: true,
+        subtree: true,
+        characterData: true,
+      });
+    }
+
+    return () => {
+      if (frame !== null) {
+        window.cancelAnimationFrame(frame);
+      }
+      window.removeEventListener("resize", scheduleAlign);
+      resizeObserver?.disconnect();
+      mutationObserver?.disconnect();
+    };
+  }, [alignCenteredBlocksToRuler, leftMargin, rightMargin, showRuler]);
 
   useEffect(() => {
     alignRulerToPage();
@@ -597,7 +847,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   const [stylesPanelCategory, setStylesPanelCategory] = useState<
     "standard" | "book" | "special"
   >("standard");
-  const [documentStyles, setDocumentStyles] = useState({
+  const [documentStyles, setDocumentStyles] = useState<DocumentStylesState>({
     paragraph: {
       fontSize: 16,
       firstLineIndent: 32,
@@ -1550,19 +1800,38 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
         const selection = window.getSelection();
         if (!selection || !editorRef.current) return;
 
+        // Helper to detect editable blocks (paragraphs or divs inserted by the browser)
+        const isParagraphLike = (node: Node | null): node is HTMLElement => {
+          return (
+            !!node &&
+            node.nodeType === Node.ELEMENT_NODE &&
+            ["p", "div"].includes(
+              ((node as HTMLElement).tagName || "").toLowerCase()
+            )
+          );
+        };
+
         // Get the current paragraph/block element
-        let currentBlock = selection.anchorNode;
+        let currentBlock: Node | null = selection.anchorNode;
         while (
           currentBlock &&
-          currentBlock.nodeName !== "P" &&
-          currentBlock !== editorRef.current
+          currentBlock !== editorRef.current &&
+          !isParagraphLike(currentBlock)
         ) {
           currentBlock = currentBlock.parentNode;
         }
 
-        if (currentBlock && currentBlock.nodeName === "P") {
+        if (isParagraphLike(currentBlock)) {
           // Convert existing paragraph to styled paragraph
-          const p = currentBlock as HTMLElement;
+          let blockElement = currentBlock as HTMLElement;
+
+          // Normalize div blocks to paragraphs so downstream CSS expectations stay intact
+          if (blockElement.tagName.toLowerCase() === "div") {
+            const replacement = document.createElement("p");
+            replacement.innerHTML = blockElement.innerHTML;
+            blockElement.replaceWith(replacement);
+            blockElement = replacement;
+          }
 
           // Map tags to their CSS classes
           const styleMap: { [key: string]: string } = {
@@ -1592,10 +1861,31 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
             lead: "lead",
           };
 
-          p.className = styleMap[tag] || "";
-          p.removeAttribute("data-block");
-          // Trigger handleInput to update stats panel
-          setTimeout(() => handleInput(), 0);
+          blockElement.className = styleMap[tag] || "";
+          [
+            "text-indent",
+            "margin-left",
+            "margin-right",
+            "padding-left",
+            "padding-right",
+            "text-align",
+            "transform",
+            "--center-shift",
+          ].forEach((prop) => blockElement.style.removeProperty(prop));
+          console.log("🎨 Applied style:", {
+            tag,
+            className: blockElement.className,
+            classList: Array.from(blockElement.classList),
+            element: blockElement,
+          });
+          blockElement.removeAttribute("data-block");
+          centerText(blockElement);
+          // Trigger handleInput to update stats panel and centering
+          setTimeout(() => {
+            handleInput();
+            // Manually trigger centering after style is applied
+            alignCenteredBlocksToRuler();
+          }, 10);
         } else {
           // Create new styled paragraph
           const placeholders: { [key: string]: string } = {
@@ -1657,6 +1947,11 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           const className = styleMap[tag] || "";
           const blockHtml = `<p class="${className}">${selectedText}</p>`;
           document.execCommand("insertHTML", false, blockHtml);
+          if (typeof window !== "undefined") {
+            window.requestAnimationFrame(() => centerText());
+          } else {
+            centerText();
+          }
         }
         setTimeout(() => handleInput(), 0);
       } else {
@@ -1665,7 +1960,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
       }
       setBlockType(tag);
     },
-    [formatText, handleInput]
+    [formatText, handleInput, alignCenteredBlocksToRuler, centerText]
   );
 
   // Insert link
@@ -3031,6 +3326,8 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
       </button>
     </div>
   ) : null;
+  const spacingIndicators = renderIndicators();
+  const visualSuggestions = renderSuggestions();
 
   // Ruler drag start handler
   const handleRulerDragStart = useCallback(
@@ -6112,1189 +6409,69 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           </aside>
         )}
 
-        {/* Main editor area - centers the ruler/page in full viewport */}
+        <PagesSurface
+          wrapperRef={wrapperRef}
+          scrollShellRef={scrollShellRef}
+          pagesContainerRef={pagesContainerRef}
+          editorRef={editorRef}
+          rulerFrameRef={rulerFrameRef}
+          rulerContainerRef={rulerContainerRef}
+          analysisLegendElement={analysisLegendElement}
+          showToolbarRow={showToolbarRow}
+          focusMode={focusMode}
+          showRuler={showRuler}
+          showSpacingIndicators={showSpacingIndicators}
+          showVisualSuggestions={showVisualSuggestions}
+          showStyleLabels={showStyleLabels}
+          isFreeMode={isFreeMode}
+          spacingIndicators={spacingIndicators}
+          visualSuggestions={visualSuggestions}
+          isEditable={isEditable}
+          onEditorInput={handleInput}
+          onEditorPaste={handlePaste}
+          onEditorKeyDown={handleKeyDown}
+          editorClassName={className}
+          leftMargin={leftMargin}
+          rightMargin={rightMargin}
+          firstLineIndent={firstLineIndent}
+          documentStyles={documentStyles}
+          rulerDragging={rulerDragging}
+          onRulerDragStart={handleRulerDragStart}
+          pageCount={pageCount}
+          showHeaderFooter={showHeaderFooter}
+          showPageNumbers={showPageNumbers}
+          facingPages={facingPages}
+          pageWidthPx={PAGE_WIDTH_PX}
+          pageHeightPx={PAGE_HEIGHT_PX}
+          inchInPx={INCH_IN_PX}
+          rulerBackgroundLeftOverhang={RULER_BACKGROUND_LEFT_OVERHANG}
+          rulerBackgroundRightOverhang={RULER_BACKGROUND_RIGHT_OVERHANG}
+        />
+      </div>
+
+      {isLoading && (
         <div
-          ref={wrapperRef}
-          className="editor-wrapper page-view"
           style={{
-            position: "relative",
-            width: "100%",
-            height: "100%",
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(255, 255, 255, 0.8)",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
-            overflowX: "hidden",
-            overflowY: "hidden",
+            justifyContent: "center",
+            zIndex: 100,
+            backdropFilter: "blur(2px)",
           }}
         >
-          {/* Scrollable page container - contains both ruler and page */}
-          <div
-            ref={scrollShellRef}
-            className="hide-scrollbar"
-            style={{
-              flex: 1,
-              width: "100%",
-              overflowY: "auto",
-              display: "flex",
-              justifyContent: "center",
-            }}
-          >
-            <div
-              className="pages-stack-shell"
-              style={{
-                width: `${PAGE_WIDTH_PX}px`,
-                maxWidth: "100%",
-                paddingTop: "0px",
-                paddingBottom: "16px",
-              }}
-            >
-              {/* Analysis Legend - centered above the ruler */}
-              {!showToolbarRow && !focusMode && analysisLegendElement && (
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "center",
-                    width: "100%",
-                    paddingBottom: "8px",
-                  }}
-                >
-                  {analysisLegendElement}
-                </div>
-              )}
-              {/* Ruler - inside the same container as the page */}
-              {showRuler && (
-                <div
-                  ref={rulerFrameRef}
-                  style={{
-                    width: "100%",
-                    flexShrink: 0,
-                    paddingTop: 0,
-                    position: "sticky",
-                    top: 0,
-                    zIndex: 20,
-                    backgroundColor: "#eddcc5",
-                  }}
-                >
-                  <div
-                    style={{
-                      position: "relative",
-                      width: "100%",
-                      height: "24px",
-                      display: "flex",
-                      alignItems: "flex-end",
-                      marginBottom: "2px",
-                    }}
-                  >
-                    <div
-                      aria-hidden="true"
-                      style={{
-                        position: "absolute",
-                        top: 0,
-                        bottom: 0,
-                        left: `-${RULER_BACKGROUND_LEFT_OVERHANG}px`,
-                        right: `-${RULER_BACKGROUND_RIGHT_OVERHANG}px`,
-                        backgroundColor: "#fffaf3",
-                        borderRadius: "4px",
-                        border: "1px solid #e0c392",
-                        boxShadow: "0 4px 12px rgba(44, 62, 80, 0.12)",
-                        pointerEvents: "none",
-                        zIndex: 0,
-                      }}
-                    />
-                    <div
-                      ref={rulerContainerRef}
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        position: "relative",
-                        userSelect: rulerDragging ? "none" : "auto",
-                        cursor: rulerDragging ? "ew-resize" : "default",
-                        zIndex: 1,
-                      }}
-                    >
-                      {/* Ruler tick marks */}
-                      {Array.from({ length: 9 }, (_, i) => i).map((inch) => (
-                        <div
-                          key={inch}
-                          style={{
-                            position: "absolute",
-                            left: `${(inch / 8) * 100}%`,
-                            bottom: 0,
-                            width: "1px",
-                            height: inch === 0 || inch === 8 ? "16px" : "12px",
-                            backgroundColor:
-                              inch === 0 || inch === 8 ? "#b45309" : "#d97706",
-                          }}
-                        />
-                      ))}
-                      {/* Half-inch marks */}
-                      {Array.from({ length: 8 }, (_, i) => i).map((i) => (
-                        <div
-                          key={`half-${i}`}
-                          style={{
-                            position: "absolute",
-                            left: `${((i + 0.5) / 8) * 100}%`,
-                            bottom: 0,
-                            width: "1px",
-                            height: "8px",
-                            backgroundColor: "#f59e0b",
-                          }}
-                        />
-                      ))}
-                      {/* Inch labels */}
-                      {Array.from({ length: 9 }, (_, i) => i).map((inch) => (
-                        <div
-                          key={`label-${inch}`}
-                          style={{
-                            position: "absolute",
-                            left: `${(inch / 8) * 100}%`,
-                            top: "0px",
-                            transform:
-                              inch === 0
-                                ? "translateX(0)"
-                                : inch === 8
-                                ? "translateX(-100%)"
-                                : "translateX(-50%)",
-                            fontSize: "9px",
-                            fontWeight: 600,
-                            color: "#92400e",
-                          }}
-                        >
-                          {inch}
-                        </div>
-                      ))}
-                      {/* Left margin indicator */}
-                      <div
-                        style={{
-                          position: "absolute",
-                          left: `${(leftMargin / PAGE_WIDTH_PX) * 100}%`,
-                          top: 0,
-                          bottom: 0,
-                          width: "2px",
-                          backgroundColor: "#ef4444",
-                          cursor: "ew-resize",
-                          zIndex: 2,
-                        }}
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          setRulerDragging("left");
-                        }}
-                      >
-                        <div
-                          style={{
-                            position: "absolute",
-                            top: "-2px",
-                            left: "50%",
-                            transform: "translateX(-50%)",
-                            width: "8px",
-                            height: "8px",
-                            backgroundColor: "#ef4444",
-                            borderRadius: "2px",
-                          }}
-                        />
-                      </div>
-                      {/* Right margin indicator */}
-                      <div
-                        style={{
-                          position: "absolute",
-                          left: `${
-                            ((PAGE_WIDTH_PX - rightMargin) / PAGE_WIDTH_PX) *
-                            100
-                          }%`,
-                          top: 0,
-                          bottom: 0,
-                          width: "2px",
-                          backgroundColor: "#ef4444",
-                          cursor: "ew-resize",
-                          zIndex: 2,
-                        }}
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          setRulerDragging("right");
-                        }}
-                      >
-                        <div
-                          style={{
-                            position: "absolute",
-                            top: "-2px",
-                            left: "50%",
-                            transform: "translateX(-50%)",
-                            width: "8px",
-                            height: "8px",
-                            backgroundColor: "#ef4444",
-                            borderRadius: "2px",
-                          }}
-                        />
-                      </div>
-                      {/* First line indent indicator */}
-                      <div
-                        style={{
-                          position: "absolute",
-                          left: `${
-                            ((leftMargin + firstLineIndent) / PAGE_WIDTH_PX) *
-                            100
-                          }%`,
-                          top: "2px",
-                          transform: "translateX(-50%)",
-                          cursor: "ew-resize",
-                          zIndex: 3,
-                        }}
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          setRulerDragging("indent");
-                        }}
-                        title="First Line Indent"
-                      >
-                        <svg
-                          width="12"
-                          height="12"
-                          viewBox="0 0 12 12"
-                          fill="none"
-                          xmlns="http://www.w3.org/2000/svg"
-                          style={{ display: "block" }}
-                        >
-                          {/* Down-pointing triangle (like Word's first-line indent marker) */}
-                          <path d="M6 12L0 6H4V0H8V6H12L6 12Z" fill="#2c3e50" />
-                        </svg>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Legend fallback when ruler is hidden */}
-              {!showRuler &&
-                showStyleLabels &&
-                (showSpacingIndicators || showVisualSuggestions) &&
-                !(!isFreeMode && focusMode) && (
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "flex-end",
-                      padding: "2px 8px",
-                      fontSize: "9px",
-                      color: "#78716c",
-                    }}
-                  >
-                    {showSpacingIndicators && (
-                      <>
-                        <span
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "2px",
-                            marginRight: "8px",
-                          }}
-                        >
-                          <span
-                            style={{
-                              width: "5px",
-                              height: "5px",
-                              borderRadius: "50%",
-                              backgroundColor: "#3b82f6",
-                              display: "inline-block",
-                            }}
-                          />
-                          Short
-                        </span>
-                        <span
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "2px",
-                            marginRight: "8px",
-                          }}
-                        >
-                          <span
-                            style={{
-                              width: "5px",
-                              height: "5px",
-                              borderRadius: "50%",
-                              backgroundColor: "#f97316",
-                              display: "inline-block",
-                            }}
-                          />
-                          Long
-                        </span>
-                      </>
-                    )}
-                    {showVisualSuggestions && (
-                      <span
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "2px",
-                        }}
-                      >
-                        <span
-                          style={{
-                            width: "5px",
-                            height: "5px",
-                            borderRadius: "50%",
-                            backgroundColor: "#eab308",
-                            display: "inline-block",
-                          }}
-                        />
-                        Senses
-                      </span>
-                    )}
-                  </div>
-                )}
-
-              <div
-                ref={pagesContainerRef}
-                className="pages-container"
-                style={{
-                  width: "100%",
-                  position: "relative",
-                }}
-              >
-                {/* Spacing indicators - inside pages container for natural scrolling */}
-                {renderIndicators()}
-
-                {/* Visual suggestions - inside pages container for natural scrolling */}
-                {renderSuggestions()}
-
-                {/* The actual editable content - single continuous page */}
-                <div
-                  ref={editorRef}
-                  contentEditable={isEditable}
-                  onInput={handleInput}
-                  onPaste={handlePaste}
-                  onKeyDown={handleKeyDown}
-                  className={`editor-content page-editor focus:outline-none ${
-                    className || ""
-                  }`}
-                  style={{
-                    width: "100%",
-                    minHeight: `${PAGE_HEIGHT_PX}px`,
-                    paddingLeft: `${leftMargin}px`,
-                    paddingRight: `${rightMargin}px`,
-                    paddingTop: `${INCH_IN_PX}px`,
-                    paddingBottom: `${INCH_IN_PX}px`,
-                    boxSizing: "border-box",
-                    backgroundColor: "#ffffff",
-                    caretColor: "#2c3e50",
-                    cursor: isEditable ? "text" : "default",
-                    position: "relative",
-                    zIndex: 5,
-                    boxShadow:
-                      "0 14px 32px rgba(44, 62, 80, 0.16), 0 2px 6px rgba(44, 62, 80, 0.08)",
-                    borderRadius: "2px",
-                    // CSS variable for dynamic text-indent
-                    ["--first-line-indent" as string]: `${documentStyles.paragraph.firstLineIndent}px`,
-                  }}
-                  suppressContentEditableWarning
-                />
-
-                {/* Page break lines (visual indicators only) */}
-                {pageCount > 1 &&
-                  Array.from({ length: pageCount - 1 }, (_, i) => (
-                    <div
-                      key={`page-break-${i}`}
-                      style={{
-                        position: "absolute",
-                        left: 0,
-                        right: 0,
-                        top: `${(i + 1) * PAGE_HEIGHT_PX}px`,
-                        height: "1px",
-                        borderTop: "1px dashed #e0c392",
-                        pointerEvents: "none",
-                        zIndex: 10,
-                      }}
-                    >
-                      {/* Page number indicator */}
-                      <div
-                        style={{
-                          position: "absolute",
-                          right: "8px",
-                          top: "-20px",
-                          fontSize: "10px",
-                          color: "#9ca3af",
-                          backgroundColor: "#ffffff",
-                          padding: "2px 8px",
-                          borderRadius: "4px",
-                        }}
-                      >
-                        End of page {i + 1}
-                      </div>
-                    </div>
-                  ))}
-
-                {/* Legacy footer with page numbers (when showHeaderFooter is off but page numbers are on) */}
-                {!showHeaderFooter &&
-                  showPageNumbers &&
-                  Array.from({ length: pageCount }, (_, pageIndex) => {
-                    const isEvenPage = pageIndex % 2 === 0;
-                    const alignment = facingPages
-                      ? isEvenPage
-                        ? "left"
-                        : "right"
-                      : "center";
-
-                    return (
-                      <div
-                        key={`footer-${pageIndex}`}
-                        style={{
-                          position: "absolute",
-                          left: `${leftMargin}px`,
-                          right: `${rightMargin}px`,
-                          top: `${
-                            (pageIndex + 1) * PAGE_HEIGHT_PX - INCH_IN_PX * 0.6
-                          }px`,
-                          textAlign: alignment,
-                          fontSize: "11px",
-                          color: "#6b7280",
-                          pointerEvents: "none",
-                          zIndex: 5,
-                          paddingLeft: alignment === "left" ? "8px" : "0",
-                          paddingRight: alignment === "right" ? "8px" : "0",
-                        }}
-                      >
-                        {pageIndex + 1}
-                      </div>
-                    );
-                  })}
-              </div>
-            </div>
-            {/* End pages-container and pages-stack-shell */}
+          <div className="text-center">
+            <div className="loading-spinner"></div>
+            <p className="mt-4 text-gray-600">Loading...</p>
           </div>
-          {/* End scrollable page container */}
         </div>
-      </div>
-
-      <style
-        key={`editor-styles-${documentStyles.paragraph.firstLineIndent}-${documentStyles.paragraph.lineHeight}`}
-      >{`
-        .editor-content {
-          color: #000000;
-        }
-        /* Page editor styling */
-        .page-editor {
-          position: relative;
-          background-color: #ffffff;
-        }
-        /* Pages container */
-        .pages-container {
-          position: relative;
-        }
-        /* Apply text-indent to all block-level children for first line indent */
-        .editor-content > p,
-        .editor-content > div:not(.toc-placeholder):not(.index-placeholder) {
-          margin: ${documentStyles.paragraph.marginBottom}em 0;
-          line-height: ${documentStyles.paragraph.lineHeight};
-          text-indent: ${documentStyles.paragraph.firstLineIndent}px;
-          text-align: ${documentStyles.paragraph.textAlign};
-        }
-        .editor-content p {
-          margin: ${documentStyles.paragraph.marginBottom}em 0;
-          line-height: ${documentStyles.paragraph.lineHeight};
-          text-indent: ${documentStyles.paragraph.firstLineIndent}px;
-          text-align: ${documentStyles.paragraph.textAlign};
-        }
-        .editor-content p.body-text {
-          text-indent: ${documentStyles.paragraph.firstLineIndent}px !important;
-          line-height: ${documentStyles.paragraph.lineHeight} !important;
-        }
-        /* Screenplay block formatting - highest priority */
-        .editor-content p.screenplay-block {
-          text-indent: 0 !important;
-          font-family: "Courier Prime", "Courier New", Courier, monospace !important;
-          font-size: 16px !important;
-          line-height: 1.35 !important;
-          margin: 0 !important;
-          margin-bottom: 12px !important;
-          white-space: pre-wrap !important;
-          max-width: 700px !important;
-        }
-        .editor-content p.screenplay-block.scene-heading {
-          font-weight: bold !important;
-          text-transform: uppercase !important;
-          margin-top: 20px !important;
-          margin-bottom: 12px !important;
-          margin-left: 0 !important;
-          margin-right: 0 !important;
-        }
-        .editor-content p.screenplay-block.character {
-          margin-left: auto !important;
-          margin-right: auto !important;
-          margin-top: 20px !important;
-          margin-bottom: 4px !important;
-          text-transform: uppercase !important;
-          font-weight: bold !important;
-          text-align: center !important;
-          width: 100% !important;
-          letter-spacing: 1px !important;
-        }
-        .editor-content p.screenplay-block.dialogue {
-          margin-left: auto !important;
-          margin-right: auto !important;
-          margin-bottom: 16px !important;
-          margin-top: 0 !important;
-          width: 50% !important;
-          text-align: left !important;
-        }
-        .editor-content p.screenplay-block.parenthetical {
-          margin-left: auto !important;
-          margin-right: auto !important;
-          margin-bottom: 10px !important;
-          margin-top: 0 !important;
-          width: 40% !important;
-          font-style: italic !important;
-          text-align: center !important;
-        }
-        .editor-content p.screenplay-block.action {
-          margin-left: 0 !important;
-          margin-right: 0 !important;
-          margin-bottom: 12px !important;
-          margin-top: 0 !important;
-        }
-        /* Center action blocks at the start (title page) - before first scene heading */
-        .screenplay-block.action {
-          text-align: left !important;
-        }
-        .screenplay-block.scene-heading ~ .screenplay-block.action {
-          text-align: left !important;
-        }
-        .screenplay-block.action:not(.screenplay-block.scene-heading ~ .screenplay-block.action) {
-          text-align: center !important;
-        }
-        .editor-content p.screenplay-block.transition {
-          text-align: right !important;
-          margin-top: 1rem !important;
-          margin-bottom: 1rem !important;
-          margin-left: 0 !important;
-          margin-right: 0 !important;
-          text-transform: uppercase !important;
-        }
-        .editor-content p.screenplay-block.spacer {
-          height: 1rem !important;
-          margin: 0 !important;
-          margin-bottom: 0 !important;
-          text-indent: 0 !important;
-        }
-        .editor-content p:first-child {
-          margin-top: 0;
-        }
-        /* Center images */
-        .editor-content img {
-          display: block !important;
-          margin-left: auto !important;
-          margin-right: auto !important;
-          margin-top: 1em !important;
-          margin-bottom: 1em !important;
-          max-width: 100%;
-        }
-        /* Center paragraphs containing images */
-        .editor-content p > img {
-          display: block !important;
-          margin-left: auto !important;
-          margin-right: auto !important;
-        }
-        /* Center title paragraphs that only contain bold/strong text */
-        .editor-content p:has(> strong:only-child),
-        .editor-content p:has(> em:only-child),
-        .editor-content p:has(> strong > em:only-child) {
-          text-align: center;
-          text-indent: 0 !important;
-        }
-        /* Center short paragraphs (likely titles/headings) - under 100 characters */
-        .editor-content p:has(> strong) {
-          /* Only center if it's short text (title-like) */
-        }
-        /* Reset body text to left-align with indent */
-        .editor-content p:not(:has(> strong:only-child)):not(:has(> em:only-child)):not(:has(> strong > em:only-child)) {
-          text-align: left;
-        }
-        /* Center paragraphs that only contain images */
-        .editor-content p:has(> img:only-child) {
-          text-align: center;
-          text-indent: 0 !important;
-        }
-        /* Title page content - centered, no indent */
-        .editor-content p.title-content {
-          text-align: ${documentStyles.title.textAlign} !important;
-          text-indent: 0 !important;
-          font-size: ${documentStyles.title.fontSize * 0.85}px !important;
-          margin: ${documentStyles.title.marginBottom * 0.7}em 0 !important;
-          position: relative;
-        }
-        .editor-content p.book-title {
-          text-align: ${documentStyles["book-title"].textAlign} !important;
-          text-indent: ${
-            documentStyles["book-title"].firstLineIndent
-          }px !important;
-          font-size: ${bookTitleFontSizePx}px !important;
-          font-weight: ${documentStyles["book-title"].fontWeight} !important;
-          font-style: ${documentStyles["book-title"].fontStyle} !important;
-          margin-top: ${documentStyles["book-title"].marginTop}em !important;
-          margin-bottom: ${
-            documentStyles["book-title"].marginBottom
-          }em !important;
-          position: relative;
-          overflow: visible !important;
-        }
-        .editor-content p.subtitle {
-          text-align: ${documentStyles.title.textAlign} !important;
-          text-indent: 0 !important;
-          font-size: ${documentStyles.title.fontSize * 0.7}px !important;
-          font-style: italic !important;
-          margin: 0.3em 0 !important;
-          position: relative;
-        }
-        .editor-content p.chapter-heading {
-          text-align: center !important;
-          text-indent: 0 !important;
-          font-weight: bold;
-          font-size: 1.2em;
-          margin: 1.5em 0 0.8em 0 !important;
-          position: relative;
-        }
-        .editor-content p.image-paragraph {
-          text-align: center !important;
-          text-indent: 0 !important;
-          margin: 1em 0 !important;
-        }
-        .editor-content p.body-text {
-          text-align: ${documentStyles.paragraph.textAlign} !important;
-          text-indent: ${documentStyles.paragraph.firstLineIndent}px !important;
-        }
-        /* Copyright/boilerplate text (all caps, short lines) */
-        .editor-content p:has(> strong:only-child):not(:has(em)),
-        .editor-content p > strong:only-child {
-          text-align: center;
-        }
-        /* Also center paragraphs with strong at start and only a few words (likely titles) */
-        .editor-content p > strong:first-child:last-child {
-          display: block;
-          text-align: center;
-        }
-        .editor-content h1 {
-          font-size: ${documentStyles.heading1.fontSize}px;
-          font-weight: ${documentStyles.heading1.fontWeight};
-          text-align: ${documentStyles.heading1.textAlign || "left"};
-          margin: ${documentStyles.heading1.marginTop}em 0 ${
-        documentStyles.heading1.marginBottom
-      }em 0;
-          position: relative;
-        }
-        .editor-content h2 {
-          font-size: ${documentStyles.heading2.fontSize}px;
-          font-weight: ${documentStyles.heading2.fontWeight};
-          text-align: ${documentStyles.heading2.textAlign || "left"};
-          margin: ${documentStyles.heading2.marginTop}em 0 ${
-        documentStyles.heading2.marginBottom
-      }em 0;
-          position: relative;
-        }
-        .editor-content h3 {
-          font-size: ${documentStyles.heading3.fontSize}px;
-          font-weight: ${documentStyles.heading3.fontWeight};
-          text-align: ${documentStyles.heading3.textAlign || "left"};
-          margin: ${documentStyles.heading3.marginTop}em 0 ${
-        documentStyles.heading3.marginBottom
-      }em 0;
-          position: relative;
-        }
-
-        /* Labels for styled elements - conditional on showStyleLabels */
-        .editor-content h1::before {
-          content: "H1";
-          position: absolute;
-          left: -40px;
-          top: 50%;
-          transform: translateY(-50%);
-          background: #fef5e7;
-          color: #ef8432;
-          font-size: 10px;
-          font-weight: bold;
-          padding: 2px 6px;
-          border-radius: 4px;
-          border: 1px solid #e0c392;
-          pointer-events: none;
-          transition: background 0.2s;
-          display: ${showStyleLabels ? "block" : "none"};
-        }
-        .editor-content h1:hover::before {
-          background: #f7e6d0;
-        }
-        .editor-content h2::before {
-          content: "H2";
-          position: absolute;
-          left: -40px;
-          top: 50%;
-          transform: translateY(-50%);
-          background: #fef5e7;
-          color: #ef8432;
-          font-size: 10px;
-          font-weight: bold;
-          padding: 2px 6px;
-          border-radius: 4px;
-          border: 1px solid #e0c392;
-          pointer-events: none;
-          transition: background 0.2s;
-          display: ${showStyleLabels ? "block" : "none"};
-        }
-        .editor-content h2:hover::before {
-          background: #f7e6d0;
-        }
-        .editor-content h3::before {
-          content: "H3";
-          position: absolute;
-          left: -40px;
-          top: 50%;
-          transform: translateY(-50%);
-          background: #fef5e7;
-          color: #ef8432;
-          font-size: 10px;
-          font-weight: bold;
-          padding: 2px 6px;
-          border-radius: 4px;
-          border: 1px solid #e0c392;
-          pointer-events: none;
-          transition: background 0.2s;
-          display: ${showStyleLabels ? "block" : "none"};
-        }
-        .editor-content h3:hover::before {
-          background: #f7e6d0;
-        }
-        .editor-content p.chapter-heading::before {
-          content: "CH";
-          position: absolute;
-          left: -40px;
-          top: 50%;
-          transform: translateY(-50%);
-          background: #fef5e7;
-          color: #2c3e50;
-          font-size: 10px;
-          font-weight: bold;
-          padding: 2px 6px;
-          border-radius: 4px;
-          border: 1px solid #e0c392;
-          pointer-events: none;
-          white-space: nowrap;
-          transition: background 0.2s;
-          display: ${showStyleLabels ? "block" : "none"};
-        }
-        .editor-content p.chapter-heading:hover::before {
-          background: #f7e6d0;
-        }
-        .editor-content p.title-content::before {
-          content: "T";
-          position: absolute;
-          left: -40px;
-          top: 50%;
-          transform: translateY(-50%);
-          background: #fef5e7;
-          color: #6b7280;
-          font-size: 10px;
-          font-weight: bold;
-          padding: 2px 6px;
-          border-radius: 4px;
-          border: 1px solid #e0c392;
-          pointer-events: none;
-          white-space: nowrap;
-          transition: background 0.2s;
-          display: ${showStyleLabels ? "block" : "none"};
-        }
-        .editor-content p.title-content:hover::before {
-          background: #f7e6d0;
-        }
-        .editor-content p.subtitle::before {
-          content: "ST";
-          position: absolute;
-          left: -40px;
-          top: 50%;
-          transform: translateY(-50%);
-          background: #fef5e7;
-          color: #6b7280;
-          font-size: 10px;
-          font-weight: bold;
-          padding: 2px 6px;
-          border-radius: 4px;
-          border: 1px solid #e0c392;
-          pointer-events: none;
-          white-space: nowrap;
-          transition: background 0.2s;
-          display: ${showStyleLabels ? "block" : "none"};
-        }
-        .editor-content p.subtitle:hover::before {
-          background: #f7e6d0;
-        }
-        .editor-content p.book-title::before {
-          content: "BT";
-          position: absolute;
-          left: -40px;
-          top: 50%;
-          transform: translateY(-50%);
-          background: #fef5e7;
-          color: #2c3e50;
-          font-size: 10px;
-          font-weight: bold;
-          padding: 2px 6px;
-          border-radius: 4px;
-          border: 1px solid #e0c392;
-          pointer-events: none;
-          white-space: nowrap;
-          transition: background 0.2s;
-          display: ${showStyleLabels ? "block" : "none"};
-        }
-        .editor-content p.book-title:hover::before {
-          background: #f7e6d0;
-        }
-        /* Position relative for labels */
-        .editor-content p.book-title,
-        .editor-content p.chapter-heading,
-        .editor-content p.title-content,
-        .editor-content p.subtitle,
-        .editor-content p.part-title {
-          position: relative;
-        }
-        .editor-content p.part-title::before {
-          content: "PT";
-          position: absolute;
-          left: -40px;
-          top: 50%;
-          transform: translateY(-50%);
-          background: #fef5e7;
-          color: #2c3e50;
-          font-size: 10px;
-          font-weight: bold;
-          padding: 2px 6px;
-          border-radius: 4px;
-          border: 1px solid #e0c392;
-          pointer-events: none;
-          white-space: nowrap;
-          transition: background 0.2s;
-          display: ${showStyleLabels ? "block" : "none"};
-        }
-        .editor-content p.part-title:hover::before {
-          background: #f7e6d0;
-        }
-        .editor-content h4 {
-          font-size: 1.1em;
-          font-weight: bold;
-          margin: 1.2em 0 0.6em 0;
-          color: #2c3e50;
-        }
-        .editor-content h5 {
-          font-size: 1em;
-          font-weight: bold;
-          margin: 1em 0 0.5em 0;
-          color: #2c3e50;
-        }
-        .editor-content h6 {
-          font-size: 0.9em;
-          font-weight: bold;
-          margin: 1em 0 0.5em 0;
-          color: #2c3e50;
-          text-transform: uppercase;
-        }
-        /* Academic Styles */
-        .editor-content p.abstract {
-          font-size: 0.95em;
-          margin: 1.5em 3em;
-          text-align: justify;
-          text-indent: 0 !important;
-          line-height: 1.6;
-        }
-        .editor-content p.keywords {
-          font-size: 0.9em;
-          margin: 1em 3em;
-          text-indent: 0 !important;
-          font-style: italic;
-        }
-        .editor-content p.bibliography,
-        .editor-content p.references {
-          margin-left: 3em;
-          text-indent: -2em;
-          margin-bottom: 0.5em;
-          font-size: 0.95em;
-        }
-        .editor-content p.appendix {
-          margin: 1em 0;
-          text-indent: ${documentStyles.paragraph.firstLineIndent}px !important;
-        }
-        /* Professional Styles */
-        .editor-content p.author-info {
-          text-align: right;
-          text-indent: 0 !important;
-          margin: 0.5em 0;
-          font-weight: 500;
-        }
-        .editor-content p.date-info {
-          text-align: right;
-          text-indent: 0 !important;
-          margin: 0.5em 0;
-          font-size: 0.95em;
-        }
-        .editor-content p.address {
-          text-indent: 0 !important;
-          margin: 0.3em 0;
-          line-height: 1.4;
-        }
-        .editor-content p.salutation {
-          text-indent: 0 !important;
-          margin: 1.5em 0 1em 0;
-        }
-        .editor-content p.closing {
-          text-indent: 0 !important;
-          margin: 1.5em 0 0.5em 0;
-        }
-        .editor-content p.signature {
-          text-indent: 0 !important;
-          margin: 3em 0 0.5em 0;
-          font-weight: 500;
-        }
-        .editor-content p.sidebar {
-          background: #f5ead9;
-          border-left: 4px solid #ef8432;
-          padding: 1em;
-          margin: 1.5em 0;
-          text-indent: 0 !important;
-          font-size: 0.95em;
-          border-radius: 4px;
-        }
-        .editor-content p.callout {
-          background: #fef5e7;
-          border: 2px solid #ef8432;
-          padding: 1em 1.5em;
-          margin: 1.5em 0;
-          text-indent: 0 !important;
-          border-radius: 6px;
-          font-weight: 500;
-        }
-        .editor-content p.lead {
-          font-size: 1.15em;
-          font-weight: 400;
-          line-height: 1.6;
-          margin: 1em 0 1.5em 0;
-          text-indent: 0 !important;
-          color: #374151;
-        }
-        /* Book Publishing Styles */
-        .editor-content p.part-title {
-          position: relative;
-          text-align: center;
-          text-indent: 0 !important;
-          font-size: 1.8em;
-          font-weight: bold;
-          margin: 3em 0 2em 0;
-          text-transform: uppercase;
-          letter-spacing: 0.1em;
-        }
-        .editor-content p.epigraph {
-          position: relative;
-          text-align: right;
-          text-indent: 0 !important;
-          font-style: italic;
-          margin: 2em 4em 2em auto;
-          max-width: 60%;
-          font-size: 0.95em;
-        }
-        .editor-content p.dedication {
-          position: relative;
-          text-align: center;
-          text-indent: 0 !important;
-          font-style: italic;
-          margin: 4em 2em;
-          font-size: 1.1em;
-        }
-        .editor-content p.acknowledgments {
-          position: relative;
-          text-indent: ${documentStyles.paragraph.firstLineIndent}px !important;
-          margin: 0.8em 0;
-        }
-        .editor-content p.copyright {
-          position: relative;
-          text-align: center;
-          text-indent: 0 !important;
-          font-size: 0.85em;
-          margin: 0.5em 0;
-          color: #666;
-        }
-        .editor-content p.verse {
-          position: relative;
-          white-space: pre-wrap;
-          font-family: 'Georgia', serif;
-          text-indent: 0 !important;
-          margin: 0.5em 0 0.5em 3em;
-          line-height: 1.8;
-        }
-        /* Screenplay Transition */
-        .editor-content p.transition {
-          position: relative;
-          text-align: right;
-          text-indent: 0 !important;
-          margin: 1em 0;
-          font-weight: bold;
-        }
-        .editor-content blockquote {
-          border-left: ${documentStyles.blockquote.borderLeftWidth}px solid ${
-        documentStyles.blockquote.borderLeftColor
-      };
-          padding-left: 1em;
-          margin: 1em 0 1em ${documentStyles.blockquote.marginLeft}px;
-          color: #666;
-          font-style: ${documentStyles.blockquote.fontStyle};
-        }
-        .editor-content pullquote {
-          border-left: 4px solid #ef8432;
-          border-right: 4px solid #ef8432;
-          padding: 1em 1.5em;
-          margin: 1.5em 0;
-          color: #2c3e50;
-          font-style: italic;
-          font-size: 1.25em;
-          text-align: center;
-          background-color: #fef5e7;
-        }
-        .editor-content pre {
-          background-color: #f5f5f5;
-          border: 1px solid #ddd;
-          border-radius: 4px;
-          padding: 1em;
-          margin: 1em 0;
-          overflow-x: auto;
-          font-family: 'Courier New', Courier, monospace;
-          font-size: 0.9em;
-          line-height: 1.4;
-        }
-        .editor-content footnote {
-          display: block;
-          font-size: 0.85em;
-          color: #666;
-          border-top: 1px solid #e0e0e0;
-          padding-top: 0.5em;
-          margin: 1.5em 0 0.5em 0;
-        }
-        .editor-content footnote::before {
-          content: "Note: ";
-          font-weight: bold;
-          color: #2c3e50;
-        }
-        .editor-content citation {
-          display: block;
-          font-size: 0.9em;
-          color: #2c3e50;
-          padding-left: 2em;
-          text-indent: -2em;
-          margin: 0.5em 0;
-          line-height: 1.6;
-        }
-        .editor-content toc {
-          display: block;
-          background-color: #fef5e7;
-          border: 2px solid #e0c392;
-          border-radius: 8px;
-          padding: 1.5em;
-          margin: 2em 0;
-        }
-        .editor-content toc::before {
-          content: "Table of Contents";
-          display: block;
-          font-size: 1.25em;
-          font-weight: bold;
-          color: #2c3e50;
-          margin-bottom: 1em;
-          border-bottom: 2px solid #ef8432;
-          padding-bottom: 0.5em;
-        }
-        .editor-content .toc-entry {
-          font-weight: bold;
-          color: #2c3e50;
-          margin: 1.5em 0 0.5em 0;
-        }
-        .editor-content .toc-entry.heading-1 {
-          font-size: 1.5em;
-          border-bottom: 2px solid #e0c392;
-          padding-bottom: 0.25em;
-        }
-        .editor-content .toc-placeholder {
-          user-select: none;
-        }
-        .editor-content index {
-          display: block;
-          background-color: #f5ead9;
-          border: 2px solid #e0c392;
-          border-radius: 8px;
-          padding: 1.5em;
-          margin: 2em 0;
-          column-count: 2;
-          column-gap: 2em;
-        }
-        .editor-content index::before {
-          content: "Index";
-          display: block;
-          font-size: 1.25em;
-          font-weight: bold;
-          color: #2c3e50;
-          margin-bottom: 1em;
-          border-bottom: 2px solid #ef8432;
-          padding-bottom: 0.5em;
-          column-span: all;
-        }
-        .editor-content figure {
-          display: block;
-          margin: 2em auto;
-          padding: 1em;
-          background-color: #ffffff;
-          border: 2px solid #e0c392;
-          border-radius: 8px;
-          text-align: center;
-          max-width: 90%;
-        }
-        .editor-content figure img {
-          max-width: 100%;
-          height: auto;
-          display: block;
-          margin: 0 auto 0.5em auto;
-        }
-        .editor-content figcaption {
-          font-size: 0.9em;
-          color: #374151;
-          font-style: italic;
-          margin-top: 0.5em;
-          padding-top: 0.5em;
-          border-top: 1px solid #e0c392;
-        }
-        .editor-content img {
-          max-width: 100%;
-          height: auto;
-          display: block;
-          margin: 1rem 0;
-        }
-        .editor-content ul {
-          list-style-type: disc;
-          margin: 1em 0;
-          padding-left: 2em;
-        }
-        .editor-content ol {
-          list-style-type: decimal;
-          margin: 1em 0;
-          padding-left: 2em;
-        }
-        .editor-content li {
-          margin: 0.5em 0;
-        }
-        .editor-content table {
-          border-collapse: collapse;
-          width: 100%;
-          margin: 1em 0;
-        }
-        .editor-content table td {
-          padding: 8px;
-          border: 1px solid #ddd;
-        }
-        .editor-content a {
-          color: #2563eb;
-          text-decoration: underline;
-        }
-        .editor-content a:hover {
-          color: #1d4ed8;
-        }
-      `}</style>
-
+      )}
       {isLoading && (
         <div
           style={{
@@ -7316,20 +6493,6 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           <p style={{ marginTop: "1rem", color: "#2c3e50", fontWeight: 500 }}>
             Loading document...
           </p>
-          <style>{`
-            .editor-spinner {
-              width: 40px;
-              height: 40px;
-              border: 4px solid #f3f3f3;
-              border-top: 4px solid #3498db;
-              border-radius: 50%;
-              animation: spin 1s linear infinite;
-            }
-            @keyframes spin {
-              0% { transform: rotate(0deg); }
-              100% { transform: rotate(360deg); }
-            }
-          `}</style>
         </div>
       )}
 
