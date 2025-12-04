@@ -36,26 +36,68 @@ export default defineConfig({
   build: {
     outDir: "dist",
     sourcemap: false,
-    // Use esbuild default minify to avoid requiring optional terser dependency
-    minify: true,
-    chunkSizeWarningLimit: 1000, // Increase limit for document processing libraries
+    minify: "esbuild",
+    target: "es2020",
+    chunkSizeWarningLimit: 600,
     rollupOptions: {
       output: {
         manualChunks: {
           // React core libraries
           "react-vendor": ["react", "react-dom"],
-          // Split document processing libraries separately
+          // Document processing libraries (large)
           "mammoth-vendor": ["mammoth"],
           "docx-vendor": ["docx"],
-          // Large evaluators and analysis engine
+          // DOMPurify for sanitization
+          purify: ["dompurify"],
+          // Analysis engine
           "analysis-engine": ["./src/components/AnalysisEngine.ts"],
           // Fiction analysis libraries
           "fiction-libs": [
             "./src/data/genreRegistry.ts",
             "./src/utils/fictionElementsAnalyzer.ts",
           ],
-          // Visualization and UI components
+          // Visualization components
           visualization: ["./src/components/VisualizationComponents.tsx"],
+          // Export utilities
+          docxExport: ["./src/utils/docxExport.ts"],
+          // Heavy modals - lazy loaded
+          HelpModal: ["./src/components/HelpModal.tsx"],
+          QuickStartModal: ["./src/components/QuickStartModal.tsx"],
+          ReferenceLibraryModal: ["./src/components/ReferenceLibraryModal.tsx"],
+          WritersReferenceModal: ["./src/components/WritersReferenceModal.tsx"],
+          // Advanced tools panel components
+          "advanced-tools": [
+            "./src/components/AdvancedToolsPanel.tsx",
+            "./src/components/AIWritingAssistant.tsx",
+            "./src/components/DialogueEnhancer.tsx",
+            "./src/components/ReadabilityAnalyzer.tsx",
+            "./src/components/ClicheDetector.tsx",
+            "./src/components/BeatSheetGenerator.tsx",
+            "./src/components/POVChecker.tsx",
+            "./src/components/EmotionTracker.tsx",
+            "./src/components/MotifTracker.tsx",
+            "./src/components/PoetryMeterAnalyzer.tsx",
+          ],
+          // Editor components
+          "editor-core": [
+            "./src/components/CustomEditor.tsx",
+            "./src/components/DocumentEditor.tsx",
+          ],
+          // Chapter checker
+          "chapter-checker": ["./src/components/ChapterCheckerV2.tsx"],
+          // Document upload/processing
+          "document-processing": ["./src/components/DocumentUploader.tsx"],
+          // Character and world building
+          "world-building": [
+            "./src/components/CharacterNameGenerator.tsx",
+            "./src/components/WorldBuildingNotebook.tsx",
+            "./src/components/ImageMoodBoard.tsx",
+          ],
+          // Academic tools
+          "academic-tools": [
+            "./src/components/AcademicCitationManager.tsx",
+            "./src/components/NonFictionOutlineGenerator.tsx",
+          ],
         },
       },
     },
