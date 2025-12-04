@@ -279,7 +279,7 @@ export const MotifTracker: React.FC<MotifTrackerProps> = ({
       }}
     >
       <div className="mb-4 flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-black">
+        <h2 className="text-2xl font-bold text-[#111827]">
           🔮 Motif & Symbol Tracker
         </h2>
         <button
@@ -300,7 +300,7 @@ export const MotifTracker: React.FC<MotifTrackerProps> = ({
       {isAnalyzing ? (
         <div className="text-center py-12">
           <div className="animate-spin text-4xl mb-4">🔮</div>
-          <div className="text-gray-600">Tracking motifs and symbols...</div>
+          <div className="text-[#111827]">Tracking motifs and symbols...</div>
         </div>
       ) : analysis ? (
         <div className="space-y-6">
@@ -339,21 +339,21 @@ export const MotifTracker: React.FC<MotifTrackerProps> = ({
                 borderColor: palette.border,
               }}
             >
-              <h3 className="font-bold text-lg mb-3 text-black">
+              <h3 className="font-bold text-lg mb-3 text-[#111827]">
                 💬 Recurring Phrases
               </h3>
               <div className="grid grid-cols-2 gap-2">
                 {analysis.recurringPhrases.slice(0, 10).map((phrase, idx) => (
                   <div
                     key={idx}
-                    className="p-2 rounded border text-sm text-black"
+                    className="p-2 rounded border text-sm text-[#111827]"
                     style={{
                       background: palette.subtle,
                       borderColor: palette.border,
                     }}
                   >
                     <div className="font-semibold">"{phrase.phrase}"</div>
-                    <div className="text-xs text-gray-600">
+                    <div className="text-xs text-[#111827]">
                       {phrase.count} times
                     </div>
                   </div>
@@ -371,14 +371,14 @@ export const MotifTracker: React.FC<MotifTrackerProps> = ({
                 borderColor: palette.border,
               }}
             >
-              <h3 className="font-bold text-lg mb-3 text-black">
+              <h3 className="font-bold text-lg mb-3 text-[#111827]">
                 📚 Detected Motifs ({filteredMotifs.length})
               </h3>
               <div className="space-y-4">
                 {filteredMotifs.map((motif, idx) => (
                   <div
                     key={idx}
-                    className="border-2 rounded-lg p-4 text-black"
+                    className="border-2 rounded-lg p-4 text-[#111827]"
                     style={getCategoryStyles(motif.category)}
                   >
                     <div className="flex items-start justify-between mb-3">
@@ -412,7 +412,7 @@ export const MotifTracker: React.FC<MotifTrackerProps> = ({
                           }}
                           onClick={() => onNavigate && onNavigate(occ.location)}
                         >
-                          <div className="text-xs text-gray-600 mb-1">
+                          <div className="text-xs text-[#111827] mb-1">
                             Chapter {occ.chapter + 1}
                           </div>
                           <div className="text-sm">
@@ -421,7 +421,7 @@ export const MotifTracker: React.FC<MotifTrackerProps> = ({
                         </div>
                       ))}
                       {motif.occurrences.length > 3 && (
-                        <div className="text-xs text-gray-600 text-center">
+                        <div className="text-xs text-[#111827] text-center">
                           + {motif.occurrences.length - 3} more occurrences
                         </div>
                       )}
@@ -431,7 +431,7 @@ export const MotifTracker: React.FC<MotifTrackerProps> = ({
               </div>
             </div>
           ) : (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-[#111827]">
               No motifs found in selected category
             </div>
           )}
@@ -445,7 +445,7 @@ export const MotifTracker: React.FC<MotifTrackerProps> = ({
                 borderColor: palette.border,
               }}
             >
-              <h3 className="font-bold text-lg mb-3 text-black">
+              <h3 className="font-bold text-lg mb-3 text-[#111827]">
                 🔮 Detected Symbolism
               </h3>
               <div className="grid grid-cols-2 gap-3 text-sm">
@@ -478,7 +478,7 @@ export const MotifTracker: React.FC<MotifTrackerProps> = ({
               borderColor: palette.lightBorder,
             }}
           >
-            <h3 className="font-bold text-lg mb-2 text-black">
+            <h3 className="font-bold text-lg mb-2 text-[#111827]">
               💡 Thematic Insights
             </h3>
             <ul className="text-sm space-y-1" style={{ color: palette.navy }}>
@@ -504,7 +504,7 @@ export const MotifTracker: React.FC<MotifTrackerProps> = ({
               borderColor: palette.border,
             }}
           >
-            <h3 className="font-bold text-lg mb-3 text-black">
+            <h3 className="font-bold text-lg mb-3 text-[#111827]">
               🧭 Genre-Specific
             </h3>
             <ul className="text-sm space-y-2" style={{ color: palette.navy }}>

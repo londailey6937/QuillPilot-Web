@@ -4679,9 +4679,14 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                                 }
                               }}
                             >
-                              <span>{item.label}</span>
+                              <span style={{ color: "#111827" }}>
+                                {item.label}
+                              </span>
                               {item.shortcut && (
-                                <span className="dropdown-shortcut">
+                                <span
+                                  className="dropdown-shortcut"
+                                  style={{ color: "#111827", opacity: 0.7 }}
+                                >
                                   {item.shortcut}
                                 </span>
                               )}
@@ -5113,7 +5118,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                 <button
                   onClick={performUndo}
                   disabled={!canUndo}
-                  className="px-2 py-1 rounded hover:bg-gray-200 text-gray-700 transition-colors text-xs disabled:opacity-30"
+                  className="px-2 py-1 rounded hover:bg-gray-200 text-[#111827] transition-colors text-xs disabled:opacity-30"
                   title="Undo"
                 >
                   ↶
@@ -5121,7 +5126,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                 <button
                   onClick={performRedo}
                   disabled={!canRedo}
-                  className="px-2 py-1 rounded hover:bg-gray-200 text-gray-700 transition-colors text-xs disabled:opacity-30"
+                  className="px-2 py-1 rounded hover:bg-gray-200 text-[#111827] transition-colors text-xs disabled:opacity-30"
                   title="Redo"
                 >
                   ↷
@@ -5410,13 +5415,13 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                 <div className="text-xs text-amber-700 mb-1">
                   Selected text:
                 </div>
-                <div className="text-sm text-gray-700 italic">
+                <div className="text-sm text-[#111827] italic">
                   "{selectedTextForBookmark.substring(0, 100)}
                   {selectedTextForBookmark.length > 100 ? "..." : ""}"
                 </div>
               </div>
             ) : (
-              <div className="mb-4 p-3 bg-gray-50 rounded border border-gray-200 text-sm text-gray-500 italic">
+              <div className="mb-4 p-3 bg-gray-50 rounded border border-gray-200 text-sm text-[#111827] italic">
                 No text selected. Select text in the editor first to bookmark a
                 specific passage.
               </div>
@@ -5439,7 +5444,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               }}
             />
             <div className="flex items-center gap-3 mb-4">
-              <label className="text-sm text-gray-600">Color:</label>
+              <label className="text-sm text-[#111827]">Color:</label>
               <div className="flex gap-2">
                 {[
                   "#fbbf24",
@@ -5495,20 +5500,20 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
             <h3 className="text-lg font-semibold mb-1 flex items-center gap-2">
               <span>🔗</span> Add Cross-Reference
             </h3>
-            <p className="text-xs text-gray-500 mb-4">
+            <p className="text-xs text-[#111827] mb-4">
               Link this passage to a bookmarked scene (foreshadowing, callbacks,
               related elements)
             </p>
             {selectedTextForBookmark ? (
               <div className="mb-4 p-3 bg-purple-50 rounded border border-purple-200">
                 <div className="text-xs text-purple-700 mb-1">Source text:</div>
-                <div className="text-sm text-gray-700 italic">
+                <div className="text-sm text-[#111827] italic">
                   "{selectedTextForBookmark.substring(0, 100)}
                   {selectedTextForBookmark.length > 100 ? "..." : ""}"
                 </div>
               </div>
             ) : (
-              <div className="mb-4 p-3 bg-gray-50 rounded border border-gray-200 text-sm text-gray-500 italic">
+              <div className="mb-4 p-3 bg-gray-50 rounded border border-gray-200 text-sm text-[#111827] italic">
                 No text selected. Select text to mark as a reference point.
               </div>
             )}
@@ -5522,7 +5527,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
             />
             {bookmarks.length > 0 ? (
               <div className="mb-3">
-                <label className="block text-sm text-gray-600 mb-1">
+                <label className="block text-sm text-[#111827] mb-1">
                   Links to bookmark:
                 </label>
                 <select
@@ -5600,7 +5605,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
             {(!selectedTextForBookmark ||
               !newCrossRefName.trim() ||
               !newCrossRefTarget) && (
-              <div className="mt-3 pt-3 border-t text-xs text-gray-500">
+              <div className="mt-3 pt-3 border-t text-xs text-[#111827]">
                 <strong>To add a reference:</strong>
                 <ul className="mt-1 ml-4 list-disc space-y-0.5">
                   {!selectedTextForBookmark && (
@@ -5644,7 +5649,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
             </h3>
             <button
               onClick={() => setShowBookmarksPanel(false)}
-              className="text-gray-500 hover:text-gray-700 text-lg"
+              className="text-[#111827] hover:text-[#ef8432] text-lg"
             >
               ×
             </button>
@@ -5657,12 +5662,12 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
             <div className="p-3 border-b">
               <div className="flex items-center gap-2 mb-2">
                 <span>🔖</span>
-                <span className="font-medium text-sm text-gray-700">
+                <span className="font-medium text-sm text-[#111827]">
                   Bookmarks ({bookmarks.length})
                 </span>
               </div>
               {bookmarks.length === 0 ? (
-                <div className="text-xs text-gray-500 italic py-2">
+                <div className="text-xs text-[#111827] italic py-2">
                   No bookmarks yet. Select text and click 🔖 to add one.
                 </div>
               ) : (
@@ -5688,7 +5693,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                           ✕
                         </button>
                       </div>
-                      <div className="text-xs text-gray-500 mt-1 truncate italic">
+                      <div className="text-xs text-[#111827] mt-1 truncate italic">
                         "{bookmark.selectedText.substring(0, 60)}
                         {bookmark.selectedText.length > 60 ? "..." : ""}"
                       </div>
@@ -5702,12 +5707,12 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
             <div className="p-3">
               <div className="flex items-center gap-2 mb-2">
                 <span>🔗</span>
-                <span className="font-medium text-sm text-gray-700">
+                <span className="font-medium text-sm text-[#111827]">
                   Cross-References ({crossReferences.length})
                 </span>
               </div>
               {crossReferences.length === 0 ? (
-                <div className="text-xs text-gray-500 italic py-2">
+                <div className="text-xs text-[#111827] italic py-2">
                   No cross-references yet. Link related scenes or foreshadowing
                   elements.
                 </div>
@@ -5733,7 +5738,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                             ✕
                           </button>
                         </div>
-                        <div className="text-xs text-gray-600 mt-1 italic">
+                        <div className="text-xs text-[#111827] mt-1 italic">
                           "{crossRef.sourceText.substring(0, 40)}
                           {crossRef.sourceText.length > 40 ? "..." : ""}"
                         </div>
@@ -5750,7 +5755,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                           </div>
                         )}
                         {crossRef.note && (
-                          <div className="text-xs text-gray-500 mt-1 bg-white rounded px-2 py-1">
+                          <div className="text-xs text-[#111827] mt-1 bg-white rounded px-2 py-1">
                             {crossRef.note}
                           </div>
                         )}
@@ -5786,7 +5791,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                   className={`px-3 py-1 text-xs rounded-t transition-colors ${
                     stylesPanelCategory === "standard"
                       ? "bg-white text-[#ef8432] font-semibold"
-                      : "bg-[#f5e6d3] text-gray-600 hover:bg-[#ead5bb]"
+                      : "bg-[#f5e6d3] text-[#111827] hover:bg-[#ead5bb]"
                   }`}
                 >
                   Standard
@@ -5796,7 +5801,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                   className={`px-3 py-1 text-xs rounded-t transition-colors ${
                     stylesPanelCategory === "book"
                       ? "bg-white text-[#ef8432] font-semibold"
-                      : "bg-[#f5e6d3] text-gray-600 hover:bg-[#ead5bb]"
+                      : "bg-[#f5e6d3] text-[#111827] hover:bg-[#ead5bb]"
                   }`}
                 >
                   Book Publishing
@@ -5806,7 +5811,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                   className={`px-3 py-1 text-xs rounded-t transition-colors ${
                     stylesPanelCategory === "special"
                       ? "bg-white text-[#ef8432] font-semibold"
-                      : "bg-[#f5e6d3] text-gray-600 hover:bg-[#ead5bb]"
+                      : "bg-[#f5e6d3] text-[#111827] hover:bg-[#ead5bb]"
                   }`}
                 >
                   Special
@@ -5825,7 +5830,9 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                     </h3>
                     <div className="grid grid-cols-5 gap-2 text-xs">
                       <div>
-                        <label className="block text-gray-600 mb-1">Size</label>
+                        <label className="block text-[#111827] mb-1">
+                          Size
+                        </label>
                         <input
                           type="number"
                           value={documentStyles.paragraph.fontSize}
@@ -5844,7 +5851,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                         />
                       </div>
                       <div>
-                        <label className="block text-gray-600 mb-1">
+                        <label className="block text-[#111827] mb-1">
                           Indent
                         </label>
                         <input
@@ -5865,7 +5872,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                         />
                       </div>
                       <div>
-                        <label className="block text-gray-600 mb-1">
+                        <label className="block text-[#111827] mb-1">
                           Line Ht
                         </label>
                         <select
@@ -5888,7 +5895,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                         </select>
                       </div>
                       <div>
-                        <label className="block text-gray-600 mb-1">
+                        <label className="block text-[#111827] mb-1">
                           After
                         </label>
                         <input
@@ -5910,7 +5917,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                         />
                       </div>
                       <div>
-                        <label className="block text-gray-600 mb-1">
+                        <label className="block text-[#111827] mb-1">
                           Align
                         </label>
                         <select
@@ -5948,7 +5955,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                       (heading, idx) => (
                         <div key={heading} className="mb-2 last:mb-0">
                           <div className="flex items-center gap-2">
-                            <span className="text-xs font-medium text-gray-600 w-8">
+                            <span className="text-xs font-medium text-[#111827] w-8">
                               H{idx + 1}
                             </span>
                             <div className="grid grid-cols-5 gap-2 flex-1 text-xs">
@@ -6081,7 +6088,9 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                     </h3>
                     <div className="grid grid-cols-5 gap-2 text-xs">
                       <div>
-                        <label className="block text-gray-600 mb-1">Size</label>
+                        <label className="block text-[#111827] mb-1">
+                          Size
+                        </label>
                         <input
                           type="number"
                           value={documentStyles.blockquote.fontSize}
@@ -6100,7 +6109,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                         />
                       </div>
                       <div>
-                        <label className="block text-gray-600 mb-1">
+                        <label className="block text-[#111827] mb-1">
                           Style
                         </label>
                         <select
@@ -6123,7 +6132,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                         </select>
                       </div>
                       <div>
-                        <label className="block text-gray-600 mb-1">
+                        <label className="block text-[#111827] mb-1">
                           Indent
                         </label>
                         <input
@@ -6144,7 +6153,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                         />
                       </div>
                       <div>
-                        <label className="block text-gray-600 mb-1">
+                        <label className="block text-[#111827] mb-1">
                           Border
                         </label>
                         <input
@@ -6165,7 +6174,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                         />
                       </div>
                       <div>
-                        <label className="block text-gray-600 mb-1">
+                        <label className="block text-[#111827] mb-1">
                           Color
                         </label>
                         <input
@@ -6212,7 +6221,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                         </h3>
                         <div className="grid grid-cols-5 gap-2 text-xs">
                           <div>
-                            <label className="block text-gray-600 mb-1">
+                            <label className="block text-[#111827] mb-1">
                               Size{styleName === "book-title" ? " (pt)" : ""}
                             </label>
                             <input
@@ -6240,7 +6249,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                             />
                           </div>
                           <div>
-                            <label className="block text-gray-600 mb-1">
+                            <label className="block text-[#111827] mb-1">
                               Weight
                             </label>
                             <select
@@ -6267,7 +6276,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                             </select>
                           </div>
                           <div>
-                            <label className="block text-gray-600 mb-1">
+                            <label className="block text-[#111827] mb-1">
                               Style
                             </label>
                             <select
@@ -6294,7 +6303,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                             </select>
                           </div>
                           <div>
-                            <label className="block text-gray-600 mb-1">
+                            <label className="block text-[#111827] mb-1">
                               Before
                             </label>
                             <input
@@ -6322,7 +6331,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                             />
                           </div>
                           <div>
-                            <label className="block text-gray-600 mb-1">
+                            <label className="block text-[#111827] mb-1">
                               Align
                             </label>
                             <select
@@ -6369,7 +6378,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                       </h3>
                       <div className="grid grid-cols-5 gap-2 text-xs">
                         <div>
-                          <label className="block text-gray-600 mb-1">
+                          <label className="block text-[#111827] mb-1">
                             Size
                           </label>
                           <input
@@ -6396,7 +6405,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                           />
                         </div>
                         <div>
-                          <label className="block text-gray-600 mb-1">
+                          <label className="block text-[#111827] mb-1">
                             Weight
                           </label>
                           <select
@@ -6423,7 +6432,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                           </select>
                         </div>
                         <div>
-                          <label className="block text-gray-600 mb-1">
+                          <label className="block text-[#111827] mb-1">
                             Style
                           </label>
                           <select
@@ -6450,7 +6459,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                           </select>
                         </div>
                         <div>
-                          <label className="block text-gray-600 mb-1">
+                          <label className="block text-[#111827] mb-1">
                             Before
                           </label>
                           <input
@@ -6478,7 +6487,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                           />
                         </div>
                         <div>
-                          <label className="block text-gray-600 mb-1">
+                          <label className="block text-[#111827] mb-1">
                             Align
                           </label>
                           <select
@@ -6519,7 +6528,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                 <div className="space-y-2">
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="block text-xs text-gray-400">
+                      <label className="block text-xs text-[#111827]">
                         Header
                       </label>
                       <input
@@ -6531,7 +6540,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                       />
                     </div>
                     <div>
-                      <label className="block text-xs text-gray-400">
+                      <label className="block text-xs text-[#111827]">
                         Align
                       </label>
                       <select
@@ -6556,7 +6565,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="block text-xs text-gray-400">
+                      <label className="block text-xs text-[#111827]">
                         Footer
                       </label>
                       <input
@@ -6568,7 +6577,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                       />
                     </div>
                     <div>
-                      <label className="block text-xs text-gray-400">
+                      <label className="block text-xs text-[#111827]">
                         Align
                       </label>
                       <select
@@ -6599,7 +6608,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                         onChange={(e) => setShowPageNumbers(e.target.checked)}
                         className="w-3 h-3 rounded border-gray-300 text-[#ef8432] focus:ring-[#ef8432]"
                       />
-                      <span className="text-gray-600">Page #s</span>
+                      <span className="text-[#111827]">Page #s</span>
                     </label>
                     {showPageNumbers && (
                       <>
@@ -6625,7 +6634,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                             onChange={(e) => setFacingPages(e.target.checked)}
                             className="w-3 h-3 rounded border-gray-300 text-[#ef8432] focus:ring-[#ef8432]"
                           />
-                          <span className="text-gray-600">Facing Pages</span>
+                          <span className="text-[#111827]">Facing Pages</span>
                         </label>
                       </>
                     )}
@@ -6646,7 +6655,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                   setHeaderAlign("center");
                   setFooterAlign("center");
                 }}
-                className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800 transition-colors"
+                className="px-3 py-1.5 text-sm text-[#111827] hover:text-[#ef8432] transition-colors"
               >
                 Reset to Defaults
               </button>
@@ -6705,7 +6714,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               Find Next
             </button>
             {findMatches.length > 0 && (
-              <span className="text-xs text-gray-600">
+              <span className="text-xs text-[#111827]">
                 {Math.max(0, currentMatchIndex + 1)} / {findMatches.length}
               </span>
             )}
@@ -6726,7 +6735,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           </button>
           <button
             onClick={() => setShowFindReplace(false)}
-            className="px-3 py-1.5 hover:bg-gray-200 text-gray-700 rounded transition-colors text-sm"
+            className="px-3 py-1.5 hover:bg-gray-200 text-[#111827] rounded transition-colors text-sm"
           >
             Close
           </button>
@@ -7680,7 +7689,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           <PoetryMeterAnalyzer
             text={editorRef.current?.innerText || ""}
             onClose={() => setActiveTool(null)}
-            onOpenHelp={() => onOpenHelp?.("advancedTools")}
+            onOpenHelp={() => onOpenHelp?.("poetryMeter")}
           />
         )}
       {viewMode === "writer" &&
@@ -7689,7 +7698,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           <NonFictionOutlineGenerator
             text={editorRef.current?.innerText || ""}
             onClose={() => setActiveTool(null)}
-            onOpenHelp={() => onOpenHelp?.("advancedTools")}
+            onOpenHelp={() => onOpenHelp?.("nonfictionOutline")}
           />
         )}
       {viewMode === "writer" &&
@@ -7698,7 +7707,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           <AcademicCitationManager
             text={editorRef.current?.innerText || ""}
             onClose={() => setActiveTool(null)}
-            onOpenHelp={() => onOpenHelp?.("advancedTools")}
+            onOpenHelp={() => onOpenHelp?.("citationManager")}
           />
         )}
       {viewMode === "writer" &&
@@ -7706,7 +7715,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
         activeTool === "name-generator" && (
           <CharacterNameGenerator
             onClose={() => setActiveTool(null)}
-            onOpenHelp={() => onOpenHelp?.("advancedTools")}
+            onOpenHelp={() => onOpenHelp?.("nameGenerator")}
           />
         )}
       {viewMode === "writer" &&
@@ -7714,7 +7723,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
         activeTool === "world-building" && (
           <WorldBuildingNotebook
             onClose={() => setActiveTool(null)}
-            onOpenHelp={() => onOpenHelp?.("advancedTools")}
+            onOpenHelp={() => onOpenHelp?.("worldBuilding")}
           />
         )}
       {viewMode === "writer" &&
@@ -7722,13 +7731,13 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
         activeTool === "research-notes" && (
           <ResearchNotesPanel
             onClose={() => setActiveTool(null)}
-            onOpenHelp={() => onOpenHelp?.("advancedTools")}
+            onOpenHelp={() => onOpenHelp?.("researchNotes")}
           />
         )}
       {viewMode === "writer" && !isFreeMode && activeTool === "mood-board" && (
         <ImageMoodBoard
           onClose={() => setActiveTool(null)}
-          onOpenHelp={() => onOpenHelp?.("advancedTools")}
+          onOpenHelp={() => onOpenHelp?.("moodBoard")}
         />
       )}
       {viewMode === "writer" &&

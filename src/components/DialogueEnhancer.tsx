@@ -217,7 +217,9 @@ export const DialogueEnhancer: React.FC<DialogueEnhancerProps> = ({
       }}
     >
       <div className="mb-4 flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-black">💬 Dialogue Enhancer</h2>
+        <h2 className="text-2xl font-bold text-[#111827]">
+          💬 Dialogue Enhancer
+        </h2>
         <button
           onClick={onOpenHelp}
           style={{
@@ -235,7 +237,7 @@ export const DialogueEnhancer: React.FC<DialogueEnhancerProps> = ({
       </div>
 
       {characterName && (
-        <div className="mb-4 text-sm text-gray-600">
+        <div className="mb-4 text-sm text-[#111827]">
           Analyzing dialogue for: <strong>{characterName}</strong>
         </div>
       )}
@@ -243,7 +245,7 @@ export const DialogueEnhancer: React.FC<DialogueEnhancerProps> = ({
       {isAnalyzing ? (
         <div className="text-center py-12">
           <div className="animate-spin text-4xl mb-4">🎭</div>
-          <div className="text-gray-600">Analyzing dialogue...</div>
+          <div className="text-[#111827]">Analyzing dialogue...</div>
         </div>
       ) : analysis ? (
         <div className="space-y-6">
@@ -252,11 +254,11 @@ export const DialogueEnhancer: React.FC<DialogueEnhancerProps> = ({
             className="border rounded-lg p-4"
             style={{ background: palette.base, borderColor: palette.border }}
           >
-            <h3 className="font-bold text-lg mb-2 text-black">
+            <h3 className="font-bold text-lg mb-2 text-[#111827]">
               🎭 Natural Flow
             </h3>
             <div className="mb-2">
-              <div className="text-sm text-gray-600 mb-1">Score:</div>
+              <div className="text-sm text-[#111827] mb-1">Score:</div>
               <div className="w-full bg-gray-200 rounded-full h-4">
                 <div
                   className="bg-blue-500 h-4 rounded-full transition-all"
@@ -305,7 +307,9 @@ export const DialogueEnhancer: React.FC<DialogueEnhancerProps> = ({
             className="border rounded-lg p-4"
             style={{ background: palette.base, borderColor: palette.border }}
           >
-            <h3 className="font-bold text-lg mb-2 text-black">🎯 Subtext</h3>
+            <h3 className="font-bold text-lg mb-2 text-[#111827]">
+              🎯 Subtext
+            </h3>
             <div className="mb-2">
               <div className="text-sm">
                 Subtext detected:{" "}
@@ -365,11 +369,11 @@ export const DialogueEnhancer: React.FC<DialogueEnhancerProps> = ({
             className="border rounded-lg p-4"
             style={{ background: palette.base, borderColor: palette.border }}
           >
-            <h3 className="font-bold text-lg mb-2 text-black">
+            <h3 className="font-bold text-lg mb-2 text-[#111827]">
               👤 Character Voice
             </h3>
             <div className="mb-2">
-              <div className="text-sm text-gray-600 mb-1">
+              <div className="text-sm text-[#111827] mb-1">
                 Consistency Score:
               </div>
               <div className="w-full bg-gray-200 rounded-full h-4">
@@ -429,7 +433,7 @@ export const DialogueEnhancer: React.FC<DialogueEnhancerProps> = ({
                 borderColor: palette.border,
               }}
             >
-              <h3 className="font-bold text-lg mb-2 text-black">
+              <h3 className="font-bold text-lg mb-2 text-[#111827]">
                 🏷️ Dialogue Tags
               </h3>
               {analysis.tags.overused.length > 0 && (
@@ -467,7 +471,7 @@ export const DialogueEnhancer: React.FC<DialogueEnhancerProps> = ({
           )}
         </div>
       ) : (
-        <div className="text-center py-8 text-gray-500">
+        <div className="text-center py-8 text-[#111827]">
           No dialogue found to analyze
         </div>
       )}

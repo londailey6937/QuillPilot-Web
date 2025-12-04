@@ -44,6 +44,13 @@ export function WritersReferenceModal({
     cliche: "Cliché Detector",
     emotion: "Emotion Tracker",
     motif: "Motif & Symbol Tracker",
+    poetryMeter: "Poetry Meter Analyzer",
+    nonfictionOutline: "Non-Fiction Outline Generator",
+    citationManager: "Academic Citation Manager",
+    nameGenerator: "Character Name Generator",
+    worldBuilding: "World-Building Notebook",
+    researchNotes: "Writer's Notes",
+    moodBoard: "Image Mood Board",
     productivity: "Productivity Features",
     chapterLibrary: "Chapter Library",
     characters: "Character Management",
@@ -703,6 +710,36 @@ export function WritersReferenceModal({
               </li>
             </ul>
 
+            <h3>Specialized Tools</h3>
+            <ul>
+              <li>
+                <strong>🎭 Poetry Meter Analyzer</strong> — Analyze rhythm and
+                meter
+              </li>
+              <li>
+                <strong>📋 Non-Fiction Outline Generator</strong> — Create
+                structured outlines
+              </li>
+              <li>
+                <strong>📚 Academic Citation Manager</strong> — Format citations
+              </li>
+              <li>
+                <strong>🎲 Character Name Generator</strong> — Generate
+                culturally appropriate names
+              </li>
+              <li>
+                <strong>🌍 World-Building Notebook</strong> — Organize your
+                world's details
+              </li>
+              <li>
+                <strong>📝 Writer's Notes</strong> — Keep research organized
+              </li>
+              <li>
+                <strong>🖼️ Image Mood Board</strong> — Visual inspiration
+                collection
+              </li>
+            </ul>
+
             <div className="tip-box">
               <strong>💡 Tip:</strong> Use Advanced Tools during revision, not
               first drafts. Write first, analyze later!
@@ -811,6 +848,104 @@ export function WritersReferenceModal({
                   }}
                 >
                   Motif Tracker
+                </button>
+                <button
+                  onClick={() => setActiveSection("poetryMeter")}
+                  style={{
+                    background: "#ef8432",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    padding: "4px 12px",
+                    fontSize: "0.8rem",
+                    cursor: "pointer",
+                  }}
+                >
+                  Poetry Meter
+                </button>
+                <button
+                  onClick={() => setActiveSection("nonfictionOutline")}
+                  style={{
+                    background: "#ef8432",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    padding: "4px 12px",
+                    fontSize: "0.8rem",
+                    cursor: "pointer",
+                  }}
+                >
+                  Outline Generator
+                </button>
+                <button
+                  onClick={() => setActiveSection("citationManager")}
+                  style={{
+                    background: "#ef8432",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    padding: "4px 12px",
+                    fontSize: "0.8rem",
+                    cursor: "pointer",
+                  }}
+                >
+                  Citations
+                </button>
+                <button
+                  onClick={() => setActiveSection("nameGenerator")}
+                  style={{
+                    background: "#ef8432",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    padding: "4px 12px",
+                    fontSize: "0.8rem",
+                    cursor: "pointer",
+                  }}
+                >
+                  Name Generator
+                </button>
+                <button
+                  onClick={() => setActiveSection("worldBuilding")}
+                  style={{
+                    background: "#ef8432",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    padding: "4px 12px",
+                    fontSize: "0.8rem",
+                    cursor: "pointer",
+                  }}
+                >
+                  World-Building
+                </button>
+                <button
+                  onClick={() => setActiveSection("researchNotes")}
+                  style={{
+                    background: "#ef8432",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    padding: "4px 12px",
+                    fontSize: "0.8rem",
+                    cursor: "pointer",
+                  }}
+                >
+                  Writer's Notes
+                </button>
+                <button
+                  onClick={() => setActiveSection("moodBoard")}
+                  style={{
+                    background: "#ef8432",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    padding: "4px 12px",
+                    fontSize: "0.8rem",
+                    cursor: "pointer",
+                  }}
+                >
+                  Mood Board
                 </button>
               </div>
             </div>
@@ -1459,6 +1594,296 @@ export function WritersReferenceModal({
                   Track your phrases—repetition can be powerful or annoying
                 </li>
               </ul>
+            </div>
+          </div>
+        );
+
+      case "poetryMeter":
+        return (
+          <div className="writers-ref-content">
+            <h2>🎭 Poetry Meter Analyzer</h2>
+            <p>
+              Analyze the rhythmic patterns and meter of your poetry or prose.
+            </p>
+
+            <h3>Features</h3>
+            <ul>
+              <li>
+                <strong>Syllable Counting:</strong> Automatic syllable detection
+                for each line
+              </li>
+              <li>
+                <strong>Stress Patterns:</strong> Identifies stressed and
+                unstressed syllables
+              </li>
+              <li>
+                <strong>Meter Detection:</strong> Recognizes iambic, trochaic,
+                anapestic, dactylic patterns
+              </li>
+              <li>
+                <strong>Rhyme Scheme:</strong> Maps end rhymes (ABAB, AABB,
+                etc.)
+              </li>
+            </ul>
+
+            <h3>Common Meters</h3>
+            <ul>
+              <li>
+                <strong>Iambic Pentameter:</strong> da-DUM × 5 (Shakespeare's
+                sonnets)
+              </li>
+              <li>
+                <strong>Trochaic:</strong> DUM-da pattern (Poe's "The Raven")
+              </li>
+              <li>
+                <strong>Anapestic:</strong> da-da-DUM (Dr. Seuss)
+              </li>
+              <li>
+                <strong>Free Verse:</strong> No consistent meter
+              </li>
+            </ul>
+
+            <div className="tip-box">
+              <strong>💡 Tip:</strong> Even prose benefits from rhythm
+              awareness. Varied sentence lengths create natural cadence.
+            </div>
+          </div>
+        );
+
+      case "nonfictionOutline":
+        return (
+          <div className="writers-ref-content">
+            <h2>📋 Non-Fiction Outline Generator</h2>
+            <p>
+              Create structured outlines for articles, essays, and non-fiction
+              books.
+            </p>
+
+            <h3>Outline Types</h3>
+            <ul>
+              <li>
+                <strong>Article:</strong> Hook → Problem → Solution → Call to
+                Action
+              </li>
+              <li>
+                <strong>Essay:</strong> Thesis → Supporting Arguments →
+                Counterarguments → Conclusion
+              </li>
+              <li>
+                <strong>Book Chapter:</strong> Introduction → Key Points →
+                Examples → Summary
+              </li>
+              <li>
+                <strong>How-To Guide:</strong> Overview → Steps → Tips →
+                Troubleshooting
+              </li>
+            </ul>
+
+            <h3>Features</h3>
+            <ul>
+              <li>AI-suggested section headers</li>
+              <li>Drag-and-drop reordering</li>
+              <li>Nested sub-sections</li>
+              <li>Word count targets per section</li>
+            </ul>
+
+            <div className="tip-box">
+              <strong>💡 Tip:</strong> Start with a rough outline, then refine.
+              Your structure can evolve as you write.
+            </div>
+          </div>
+        );
+
+      case "citationManager":
+        return (
+          <div className="writers-ref-content">
+            <h2>📚 Academic Citation Manager</h2>
+            <p>Manage references and format citations for academic writing.</p>
+
+            <h3>Citation Styles</h3>
+            <ul>
+              <li>
+                <strong>APA 7th:</strong> Psychology, Education, Social Sciences
+              </li>
+              <li>
+                <strong>MLA 9th:</strong> Humanities, Literature, Arts
+              </li>
+              <li>
+                <strong>Chicago:</strong> History, some Humanities
+              </li>
+              <li>
+                <strong>Harvard:</strong> Business, Economics
+              </li>
+            </ul>
+
+            <h3>Features</h3>
+            <ul>
+              <li>Auto-format citations from URLs, DOIs, or ISBNs</li>
+              <li>In-text citation insertion</li>
+              <li>Bibliography generation</li>
+              <li>Citation validation</li>
+            </ul>
+
+            <div className="tip-box">
+              <strong>💡 Tip:</strong> Add sources as you research, not after
+              writing. It saves hours of backtracking.
+            </div>
+          </div>
+        );
+
+      case "nameGenerator":
+        return (
+          <div className="writers-ref-content">
+            <h2>🎲 Character Name Generator</h2>
+            <p>Generate culturally appropriate names for your characters.</p>
+
+            <h3>Options</h3>
+            <ul>
+              <li>
+                <strong>Culture/Region:</strong> English, Japanese, Arabic,
+                African, etc.
+              </li>
+              <li>
+                <strong>Time Period:</strong> Ancient, Medieval, Victorian,
+                Modern, Futuristic
+              </li>
+              <li>
+                <strong>Gender:</strong> Male, Female, Neutral
+              </li>
+              <li>
+                <strong>Name Type:</strong> First name, Last name, Full name,
+                Nickname
+              </li>
+            </ul>
+
+            <h3>Advanced Features</h3>
+            <ul>
+              <li>Meaning lookup for names</li>
+              <li>Phonetic filtering (soft/hard sounds)</li>
+              <li>Alliteration matching</li>
+              <li>Save favorites for your project</li>
+            </ul>
+
+            <div className="tip-box">
+              <strong>💡 Tip:</strong> Names carry cultural weight. Research
+              before using names from cultures different from your own.
+            </div>
+          </div>
+        );
+
+      case "worldBuilding":
+        return (
+          <div className="writers-ref-content">
+            <h2>🌍 World-Building Notebook</h2>
+            <p>Organize and track your fictional world's details.</p>
+
+            <h3>Categories</h3>
+            <ul>
+              <li>
+                <strong>Geography:</strong> Maps, locations, climate, terrain
+              </li>
+              <li>
+                <strong>Culture:</strong> Customs, beliefs, holidays, food
+              </li>
+              <li>
+                <strong>Magic/Tech:</strong> Systems, rules, limitations
+              </li>
+              <li>
+                <strong>History:</strong> Timeline, major events, legends
+              </li>
+              <li>
+                <strong>Politics:</strong> Governments, factions, conflicts
+              </li>
+            </ul>
+
+            <h3>Features</h3>
+            <ul>
+              <li>Cross-referenced entries</li>
+              <li>Consistency checker</li>
+              <li>Quick-reference tooltips in editor</li>
+              <li>Export as wiki or appendix</li>
+            </ul>
+
+            <div className="tip-box">
+              <strong>💡 Tip:</strong> Build your world iteratively. Add details
+              as they become relevant to your story.
+            </div>
+          </div>
+        );
+
+      case "researchNotes":
+        return (
+          <div className="writers-ref-content">
+            <h2>📝 Writer's Notes</h2>
+            <p>
+              Keep research, ideas, and reference material organized alongside
+              your manuscript.
+            </p>
+
+            <h3>Note Types</h3>
+            <ul>
+              <li>
+                <strong>Research:</strong> Facts, quotes, source links
+              </li>
+              <li>
+                <strong>Ideas:</strong> Plot points, character ideas, "what ifs"
+              </li>
+              <li>
+                <strong>To-Do:</strong> Scenes to write, edits to make
+              </li>
+              <li>
+                <strong>Reference:</strong> Character sheets, timelines, maps
+              </li>
+            </ul>
+
+            <h3>Features</h3>
+            <ul>
+              <li>Tag and categorize notes</li>
+              <li>Link notes to specific passages</li>
+              <li>Search across all notes</li>
+              <li>Import from web clipper</li>
+            </ul>
+
+            <div className="tip-box">
+              <strong>💡 Tip:</strong> Capture ideas immediately. A quick note
+              now beats a forgotten brilliant idea later.
+            </div>
+          </div>
+        );
+
+      case "moodBoard":
+        return (
+          <div className="writers-ref-content">
+            <h2>🖼️ Image Mood Board</h2>
+            <p>Collect visual inspiration for your writing projects.</p>
+
+            <h3>Uses</h3>
+            <ul>
+              <li>
+                <strong>Setting:</strong> Landscapes, architecture, interiors
+              </li>
+              <li>
+                <strong>Characters:</strong> Face claims, fashion, poses
+              </li>
+              <li>
+                <strong>Mood:</strong> Color palettes, lighting, atmosphere
+              </li>
+              <li>
+                <strong>Objects:</strong> Props, vehicles, weapons, artifacts
+              </li>
+            </ul>
+
+            <h3>Features</h3>
+            <ul>
+              <li>Drag-and-drop image upload</li>
+              <li>Organize by project or category</li>
+              <li>Add captions and tags</li>
+              <li>Full-screen slideshow</li>
+            </ul>
+
+            <div className="tip-box">
+              <strong>💡 Tip:</strong> Visual references help maintain
+              consistency. Describe what you see, not what you imagine.
             </div>
           </div>
         );

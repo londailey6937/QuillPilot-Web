@@ -10,7 +10,7 @@ export const creamPalette = {
   accentDark: "#d97326",
   navy: "#2c3e50",
   heading: "#111827",
-  mutedText: "#6b7280",
+  mutedText: "#111827",
   success: "#10b981",
   warning: "#f59e0b",
   danger: "#ef4444",

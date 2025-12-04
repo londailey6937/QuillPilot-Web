@@ -409,7 +409,9 @@ export const ClicheDetector: React.FC<ClicheDetectorProps> = ({
       }}
     >
       <div className="mb-4 flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-black">🚫 Cliché Detector</h2>
+        <h2 className="text-2xl font-bold text-[#111827]">
+          🚫 Cliché Detector
+        </h2>
         <button
           onClick={onOpenHelp}
           style={{
@@ -428,7 +430,7 @@ export const ClicheDetector: React.FC<ClicheDetectorProps> = ({
       {isAnalyzing ? (
         <div className="text-center py-12">
           <div className="animate-spin text-4xl mb-4">🔍</div>
-          <div className="text-gray-600">Analyzing text for clichés...</div>
+          <div className="text-[#111827]">Analyzing text for clichés...</div>
         </div>
       ) : (
         <>
@@ -447,11 +449,11 @@ export const ClicheDetector: React.FC<ClicheDetectorProps> = ({
                 >
                   {detections.length}
                 </span>
-                <span className="text-gray-700">
+                <span className="text-[#111827]">
                   cliché{detections.length !== 1 ? "s" : ""} detected
                 </span>
               </div>
-              <div className="text-sm text-gray-600">
+              <div className="text-sm text-[#111827]">
                 Total occurrences:{" "}
                 {detections.reduce((sum, d) => sum + d.count, 0)}
               </div>
@@ -460,7 +462,7 @@ export const ClicheDetector: React.FC<ClicheDetectorProps> = ({
 
           {/* Category Filter */}
           <div className="mb-4">
-            <div className="text-sm text-gray-600 mb-2">
+            <div className="text-sm text-[#111827] mb-2">
               Filter by category:
             </div>
             <div className="flex gap-2 flex-wrap">
@@ -493,7 +495,7 @@ export const ClicheDetector: React.FC<ClicheDetectorProps> = ({
               >
                 No clichés detected!
               </div>
-              <div className="text-gray-600">
+              <div className="text-[#111827]">
                 Your writing is fresh and original
               </div>
             </div>
@@ -521,7 +523,7 @@ export const ClicheDetector: React.FC<ClicheDetectorProps> = ({
                           {detection.category}
                         </span>
                       </div>
-                      <div className="text-sm text-gray-600">
+                      <div className="text-sm text-[#111827]">
                         Found {detection.count} time
                         {detection.count !== 1 ? "s" : ""}
                       </div>
@@ -529,7 +531,7 @@ export const ClicheDetector: React.FC<ClicheDetectorProps> = ({
                   </div>
 
                   <div className="mb-3">
-                    <div className="text-sm font-semibold text-gray-700 mb-2">
+                    <div className="text-sm font-semibold text-[#111827] mb-2">
                       💡 Better alternatives:
                     </div>
                     <div className="flex gap-2 flex-wrap">
@@ -556,7 +558,7 @@ export const ClicheDetector: React.FC<ClicheDetectorProps> = ({
                   </div>
 
                   {onReplace && (
-                    <div className="text-xs text-gray-500 italic">
+                    <div className="text-xs text-[#111827] italic">
                       Click an alternative to replace in your text
                     </div>
                   )}
@@ -574,8 +576,8 @@ export const ClicheDetector: React.FC<ClicheDetectorProps> = ({
                 border: `1px solid ${palette.lightBorder}`,
               }}
             >
-              <h3 className="font-bold text-black mb-2">📚 Writing Tips</h3>
-              <ul className="text-sm text-gray-700 space-y-1">
+              <h3 className="font-bold text-[#111827] mb-2">📚 Writing Tips</h3>
+              <ul className="text-sm text-[#111827] space-y-1">
                 <li>• Clichés weaken your writing by making it predictable</li>
                 <li>• Fresh, specific language creates stronger impact</li>
                 <li>• Show rather than tell using concrete details</li>

@@ -357,7 +357,9 @@ export const EmotionTracker: React.FC<EmotionTrackerProps> = ({
       }}
     >
       <div className="mb-4 flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-black">💖 Emotion Tracker</h2>
+        <h2 className="text-2xl font-bold text-[#111827]">
+          💖 Emotion Tracker
+        </h2>
         <button
           onClick={onOpenHelp}
           style={{
@@ -376,7 +378,7 @@ export const EmotionTracker: React.FC<EmotionTrackerProps> = ({
       {isAnalyzing ? (
         <div className="text-center py-12">
           <div className="animate-spin text-4xl mb-4">❤️</div>
-          <div className="text-black">Analyzing emotional arcs...</div>
+          <div className="text-[#111827]">Analyzing emotional arcs...</div>
         </div>
       ) : analysis ? (
         <div className="space-y-6">
@@ -388,7 +390,7 @@ export const EmotionTracker: React.FC<EmotionTrackerProps> = ({
               borderColor: palette.border,
             }}
           >
-            <h3 className="font-bold text-lg mb-3 text-black">
+            <h3 className="font-bold text-lg mb-3 text-[#111827]">
               🎭 Dominant Emotions
             </h3>
             <div className="flex gap-2 flex-wrap">
@@ -408,7 +410,7 @@ export const EmotionTracker: React.FC<EmotionTrackerProps> = ({
                     <span className="text-2xl">{getEmotionIcon(emotion)}</span>
                     <div>
                       <div className="font-bold capitalize">{emotion}</div>
-                      <div className="text-sm text-black">
+                      <div className="text-sm text-[#111827]">
                         {count} occurrence{count !== 1 ? "s" : ""}
                       </div>
                     </div>
@@ -425,13 +427,13 @@ export const EmotionTracker: React.FC<EmotionTrackerProps> = ({
               borderColor: palette.border,
             }}
           >
-            <h3 className="font-bold text-lg mb-3 text-black">
+            <h3 className="font-bold text-lg mb-3 text-[#111827]">
               📊 Emotional Arc
             </h3>
             <div className="space-y-3">
               {analysis.emotionalArc.map((arc, idx) => (
                 <div key={idx} className="flex items-center gap-3">
-                  <div className="text-sm font-bold w-20 text-black">
+                  <div className="text-sm font-bold w-20 text-[#111827]">
                     Ch. {arc.chapter + 1}
                   </div>
                   <div className="flex-1">
@@ -439,7 +441,7 @@ export const EmotionTracker: React.FC<EmotionTrackerProps> = ({
                       <span className="text-xl">
                         {getEmotionIcon(arc.dominantEmotion)}
                       </span>
-                      <span className="text-sm capitalize text-black">
+                      <span className="text-sm capitalize text-[#111827]">
                         {arc.dominantEmotion}
                       </span>
                     </div>
@@ -456,7 +458,7 @@ export const EmotionTracker: React.FC<EmotionTrackerProps> = ({
                       />
                     </div>
                   </div>
-                  <div className="text-sm font-bold w-12 text-right text-black">
+                  <div className="text-sm font-bold w-12 text-right text-[#111827]">
                     {arc.averageIntensity}%
                   </div>
                 </div>
@@ -473,7 +475,7 @@ export const EmotionTracker: React.FC<EmotionTrackerProps> = ({
                 borderColor: palette.border,
               }}
             >
-              <h3 className="font-bold text-lg mb-3 text-black">
+              <h3 className="font-bold text-lg mb-3 text-[#111827]">
                 ⚡ High Tension Points ({analysis.tensionPoints.length})
               </h3>
               <div className="space-y-2">
@@ -488,11 +490,11 @@ export const EmotionTracker: React.FC<EmotionTrackerProps> = ({
                     onClick={() => onNavigate && onNavigate(point.location)}
                   >
                     <div className="flex justify-between items-center mb-2">
-                      <span className="font-bold text-black">
+                      <span className="font-bold text-[#111827]">
                         Chapter {point.chapter + 1}
                       </span>
                       <div className="flex items-center gap-2">
-                        <div className="text-sm text-black">
+                        <div className="text-sm text-[#111827]">
                           Intensity: {point.intensity}%
                         </div>
                         <div
@@ -506,7 +508,7 @@ export const EmotionTracker: React.FC<EmotionTrackerProps> = ({
                         </div>
                       </div>
                     </div>
-                    <div className="text-sm text-black">
+                    <div className="text-sm text-[#111827]">
                       {point.description}...
                     </div>
                   </div>
@@ -523,10 +525,10 @@ export const EmotionTracker: React.FC<EmotionTrackerProps> = ({
               borderColor: palette.lightBorder,
             }}
           >
-            <h3 className="font-bold text-lg mb-2 text-black">
+            <h3 className="font-bold text-lg mb-2 text-[#111827]">
               💡 Emotional Insights
             </h3>
-            <ul className="text-sm space-y-1 text-black">
+            <ul className="text-sm space-y-1 text-[#111827]">
               {analysis.emotionalArc.length > 5 && (
                 <li>
                   • Story has {analysis.emotionalArc.length} emotional sections

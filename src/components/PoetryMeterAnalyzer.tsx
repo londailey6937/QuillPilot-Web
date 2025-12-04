@@ -268,7 +268,7 @@ export const PoetryMeterAnalyzer: React.FC<PoetryMeterAnalyzerProps> = ({
       }}
     >
       <div className="mb-4 flex justify-between items-center gap-4">
-        <h2 className="text-2xl font-bold text-black">
+        <h2 className="text-2xl font-bold text-[#111827]">
           📖 Poetry Meter Analyzer
         </h2>
         <button
@@ -290,7 +290,7 @@ export const PoetryMeterAnalyzer: React.FC<PoetryMeterAnalyzerProps> = ({
       {isAnalyzing ? (
         <div className="text-center py-12">
           <div className="animate-spin text-4xl mb-4">📖</div>
-          <div className="text-gray-600">Analyzing rhythm and rhyme...</div>
+          <div className="text-[#111827]">Analyzing rhythm and rhyme...</div>
         </div>
       ) : analysis ? (
         <div className="space-y-6">
@@ -360,7 +360,7 @@ export const PoetryMeterAnalyzer: React.FC<PoetryMeterAnalyzerProps> = ({
               borderColor: palette.border,
             }}
           >
-            <h3 className="font-bold text-lg mb-3 text-black">
+            <h3 className="font-bold text-lg mb-3 text-[#111827]">
               🎵 Meter Analysis
             </h3>
             <div
@@ -442,7 +442,7 @@ export const PoetryMeterAnalyzer: React.FC<PoetryMeterAnalyzerProps> = ({
                 borderColor: palette.border,
               }}
             >
-              <h3 className="font-bold text-lg mb-3 text-black">
+              <h3 className="font-bold text-lg mb-3 text-[#111827]">
                 🎭 Rhyme Scheme
               </h3>
               <div className="space-y-2">
@@ -480,7 +480,7 @@ export const PoetryMeterAnalyzer: React.FC<PoetryMeterAnalyzerProps> = ({
               borderColor: palette.lightBorder,
             }}
           >
-            <h3 className="font-bold text-lg mb-3 text-black">
+            <h3 className="font-bold text-lg mb-3 text-[#111827]">
               🎼 Musical Devices
             </h3>
             <div className="space-y-3">
@@ -520,7 +520,7 @@ export const PoetryMeterAnalyzer: React.FC<PoetryMeterAnalyzerProps> = ({
               borderColor: palette.border,
             }}
           >
-            <h3 className="font-bold text-lg mb-3 text-black">
+            <h3 className="font-bold text-lg mb-3 text-[#111827]">
               📚 Meter Reference Guide
             </h3>
             <div className="space-y-2">

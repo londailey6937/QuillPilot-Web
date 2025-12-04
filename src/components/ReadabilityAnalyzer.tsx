@@ -154,7 +154,7 @@ export const ReadabilityAnalyzer: React.FC<ReadabilityAnalyzerProps> = ({
       }}
     >
       <div className="mb-4 flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-black">
+        <h2 className="text-2xl font-bold text-[#111827]">
           📊 Readability Metrics
         </h2>
         <button
@@ -177,7 +177,7 @@ export const ReadabilityAnalyzer: React.FC<ReadabilityAnalyzerProps> = ({
           className="p-4 rounded-lg border"
           style={{ background: palette.base, borderColor: palette.border }}
         >
-          <div className="text-sm text-gray-600 mb-1">Total Words</div>
+          <div className="text-sm text-[#111827] mb-1">Total Words</div>
           <div className="text-3xl font-bold" style={{ color: palette.accent }}>
             {metrics.totalWords.toLocaleString()}
           </div>
@@ -186,7 +186,7 @@ export const ReadabilityAnalyzer: React.FC<ReadabilityAnalyzerProps> = ({
           className="p-4 rounded-lg border"
           style={{ background: palette.subtle, borderColor: palette.border }}
         >
-          <div className="text-sm text-gray-600 mb-1">Reading Time</div>
+          <div className="text-sm text-[#111827] mb-1">Reading Time</div>
           <div className="text-3xl font-bold" style={{ color: palette.navy }}>
             {metrics.readingTime}
           </div>
@@ -199,7 +199,7 @@ export const ReadabilityAnalyzer: React.FC<ReadabilityAnalyzerProps> = ({
           className="border rounded-lg p-4"
           style={{ background: palette.base, borderColor: palette.border }}
         >
-          <h3 className="font-bold text-lg mb-2 text-black">
+          <h3 className="font-bold text-lg mb-2 text-[#111827]">
             📖 Flesch Reading Ease
           </h3>
           <div className="flex items-center justify-between mb-2">
@@ -210,8 +210,10 @@ export const ReadabilityAnalyzer: React.FC<ReadabilityAnalyzerProps> = ({
               {metrics.fleschReadingEase}
             </div>
             <div className="text-right">
-              <div className="text-sm text-gray-600">Reading Level:</div>
-              <div className="font-bold text-black">{metrics.readingLevel}</div>
+              <div className="text-sm text-[#111827]">Reading Level:</div>
+              <div className="font-bold text-[#111827]">
+                {metrics.readingLevel}
+              </div>
             </div>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-3 mb-2">
@@ -223,7 +225,7 @@ export const ReadabilityAnalyzer: React.FC<ReadabilityAnalyzerProps> = ({
               }}
             />
           </div>
-          <div className="text-xs text-gray-600">
+          <div className="text-xs text-[#111827]">
             100 = Very Easy | 60-70 = Standard | 0 = Very Difficult
           </div>
         </div>
@@ -233,7 +235,7 @@ export const ReadabilityAnalyzer: React.FC<ReadabilityAnalyzerProps> = ({
           className="border rounded-lg p-4"
           style={{ background: palette.subtle, borderColor: palette.border }}
         >
-          <h3 className="font-bold text-lg mb-2 text-black">
+          <h3 className="font-bold text-lg mb-2 text-[#111827]">
             🎓 Flesch-Kincaid Grade
           </h3>
           <div className="flex items-center justify-between">
@@ -243,7 +245,7 @@ export const ReadabilityAnalyzer: React.FC<ReadabilityAnalyzerProps> = ({
             >
               {metrics.fleschKincaidGrade}
             </div>
-            <div className="text-sm text-gray-600">
+            <div className="text-sm text-[#111827]">
               U.S. school grade level required to understand the text
             </div>
           </div>
@@ -254,7 +256,7 @@ export const ReadabilityAnalyzer: React.FC<ReadabilityAnalyzerProps> = ({
           className="border rounded-lg p-4"
           style={{ background: palette.base, borderColor: palette.border }}
         >
-          <h3 className="font-bold text-lg mb-2 text-black">
+          <h3 className="font-bold text-lg mb-2 text-[#111827]">
             🌫️ Gunning Fog Index
           </h3>
           <div className="flex items-center justify-between">
@@ -264,7 +266,7 @@ export const ReadabilityAnalyzer: React.FC<ReadabilityAnalyzerProps> = ({
             >
               {metrics.gunningFogIndex}
             </div>
-            <div className="text-sm text-gray-600">
+            <div className="text-sm text-[#111827]">
               Years of formal education needed
             </div>
           </div>
@@ -275,7 +277,9 @@ export const ReadabilityAnalyzer: React.FC<ReadabilityAnalyzerProps> = ({
           className="border rounded-lg p-4"
           style={{ background: palette.subtle, borderColor: palette.border }}
         >
-          <h3 className="font-bold text-lg mb-2 text-black">📚 SMOG Index</h3>
+          <h3 className="font-bold text-lg mb-2 text-[#111827]">
+            📚 SMOG Index
+          </h3>
           <div className="flex items-center justify-between">
             <div
               className="text-3xl font-bold"
@@ -283,7 +287,7 @@ export const ReadabilityAnalyzer: React.FC<ReadabilityAnalyzerProps> = ({
             >
               {metrics.smogIndex}
             </div>
-            <div className="text-sm text-gray-600">
+            <div className="text-sm text-[#111827]">
               Grade level for 100% comprehension
             </div>
           </div>
@@ -294,43 +298,43 @@ export const ReadabilityAnalyzer: React.FC<ReadabilityAnalyzerProps> = ({
           className="border rounded-lg p-4"
           style={{ background: palette.base, borderColor: palette.border }}
         >
-          <h3 className="font-bold text-lg mb-3 text-black">
+          <h3 className="font-bold text-lg mb-3 text-[#111827]">
             📈 Detailed Statistics
           </h3>
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div>
-              <span className="text-black">Total Sentences:</span>
-              <span className="font-bold ml-2 text-black">
+              <span className="text-[#111827]">Total Sentences:</span>
+              <span className="font-bold ml-2 text-[#111827]">
                 {metrics.totalSentences}
               </span>
             </div>
             <div>
-              <span className="text-black">Total Syllables:</span>
-              <span className="font-bold ml-2 text-black">
+              <span className="text-[#111827]">Total Syllables:</span>
+              <span className="font-bold ml-2 text-[#111827]">
                 {metrics.totalSyllables}
               </span>
             </div>
             <div>
-              <span className="text-black">Avg Words/Sentence:</span>
-              <span className="font-bold ml-2 text-black">
+              <span className="text-[#111827]">Avg Words/Sentence:</span>
+              <span className="font-bold ml-2 text-[#111827]">
                 {metrics.averageWordsPerSentence}
               </span>
             </div>
             <div>
-              <span className="text-black">Avg Syllables/Word:</span>
-              <span className="font-bold ml-2 text-black">
+              <span className="text-[#111827]">Avg Syllables/Word:</span>
+              <span className="font-bold ml-2 text-[#111827]">
                 {metrics.averageSyllablesPerWord}
               </span>
             </div>
             <div>
-              <span className="text-black">Complex Words (3+ syl):</span>
-              <span className="font-bold ml-2 text-black">
+              <span className="text-[#111827]">Complex Words (3+ syl):</span>
+              <span className="font-bold ml-2 text-[#111827]">
                 {metrics.complexWords}
               </span>
             </div>
             <div>
-              <span className="text-black">Complex Word %:</span>
-              <span className="font-bold ml-2 text-black">
+              <span className="text-[#111827]">Complex Word %:</span>
+              <span className="font-bold ml-2 text-[#111827]">
                 {Math.round((metrics.complexWords / metrics.totalWords) * 100)}%
               </span>
             </div>
@@ -342,28 +346,28 @@ export const ReadabilityAnalyzer: React.FC<ReadabilityAnalyzerProps> = ({
           className="border rounded-lg p-4"
           style={{ background: palette.light, borderColor: palette.border }}
         >
-          <h3 className="font-bold text-lg mb-2 text-black">
+          <h3 className="font-bold text-lg mb-2 text-[#111827]">
             💡 Recommendations
           </h3>
           <ul className="text-sm space-y-2">
             {metrics.averageWordsPerSentence > 25 && (
-              <li className="text-gray-700">
+              <li className="text-[#111827]">
                 • Shorten sentences (average is{" "}
                 {metrics.averageWordsPerSentence} words)
               </li>
             )}
             {metrics.complexWords / metrics.totalWords > 0.15 && (
-              <li className="text-gray-700">
+              <li className="text-[#111827]">
                 • Reduce complex words for easier reading
               </li>
             )}
             {metrics.fleschReadingEase < 50 && (
-              <li className="text-gray-700">
+              <li className="text-[#111827]">
                 • Text is difficult - consider simplifying language
               </li>
             )}
             {metrics.fleschKincaidGrade > 12 && (
-              <li className="text-gray-700">
+              <li className="text-[#111827]">
                 • Grade level is high - consider your target audience
               </li>
             )}

@@ -339,12 +339,12 @@ export const AIWritingAssistant: React.FC<AIWritingAssistantProps> = ({
       }}
     >
       <div className="flex justify-between items-center mb-3">
-        <h3 className="text-lg font-bold text-black">
+        <h3 className="text-lg font-bold text-[#111827]">
           ✨ AI Writing Assistant
         </h3>
         <button
           onClick={onOpenHelp}
-          className="text-gray-500 hover:text-blue-600 text-xl leading-none"
+          className="text-[#111827] hover:text-blue-600 text-xl leading-none"
           title="Help"
         >
           ?
@@ -352,7 +352,7 @@ export const AIWritingAssistant: React.FC<AIWritingAssistantProps> = ({
       </div>
 
       <div className="mb-3">
-        <div className="text-sm text-gray-600 mb-1">Selected text:</div>
+        <div className="text-sm text-[#111827] mb-1">Selected text:</div>
         <div
           className="text-sm bg-white p-2 rounded border border-gray-300"
           style={{ maxHeight: "80px", overflow: "auto" }}
@@ -363,7 +363,7 @@ export const AIWritingAssistant: React.FC<AIWritingAssistantProps> = ({
       </div>
 
       <div className="mb-3">
-        <div className="text-sm text-gray-600 mb-2">Choose an action:</div>
+        <div className="text-sm text-[#111827] mb-2">Choose an action:</div>
         <div className="flex gap-2 flex-wrap">
           <button
             onClick={() => generateSuggestions("rephrase")}
@@ -409,17 +409,17 @@ export const AIWritingAssistant: React.FC<AIWritingAssistantProps> = ({
       </div>
 
       {isLoading ? (
-        <div className="text-center py-6 text-gray-500">
+        <div className="text-center py-6 text-[#111827]">
           <div className="animate-spin text-2xl mb-2">⏳</div>
           Generating suggestions...
         </div>
       ) : suggestions.length === 0 ? (
-        <div className="text-sm text-gray-500 text-center py-4 bg-white rounded border border-dashed border-gray-300">
+        <div className="text-sm text-[#111827] text-center py-4 bg-white rounded border border-dashed border-gray-300">
           Click a button above to generate suggestions
         </div>
       ) : (
         <div>
-          <div className="text-sm text-gray-600 mb-2">
+          <div className="text-sm text-[#111827] mb-2">
             Click a suggestion to replace your selection:
           </div>
           <div className="space-y-2 max-h-48 overflow-y-auto">
@@ -437,7 +437,7 @@ export const AIWritingAssistant: React.FC<AIWritingAssistantProps> = ({
                   onClose();
                 }}
               >
-                <div className="text-sm text-gray-800">{suggestion}</div>
+                <div className="text-sm text-[#111827]">{suggestion}</div>
               </div>
             ))}
           </div>

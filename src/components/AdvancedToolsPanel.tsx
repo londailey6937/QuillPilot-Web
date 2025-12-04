@@ -362,8 +362,8 @@ export const AdvancedToolsPanel: React.FC<AdvancedToolsPanelProps> = ({
                     {tool.icon}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-bold text-black">{tool.name}</div>
-                    <div className="text-sm text-gray-600 line-clamp-2">
+                    <div className="font-bold text-[#111827]">{tool.name}</div>
+                    <div className="text-sm text-[#111827] line-clamp-2">
                       {tool.description}
                     </div>
                   </div>
@@ -460,8 +460,10 @@ export const AdvancedToolsPanel: React.FC<AdvancedToolsPanelProps> = ({
                       {tool.icon}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="font-bold text-black">{tool.name}</div>
-                      <div className="text-sm text-gray-600 line-clamp-2">
+                      <div className="font-bold text-[#111827]">
+                        {tool.name}
+                      </div>
+                      <div className="text-sm text-[#111827] line-clamp-2">
                         {tool.description}
                       </div>
                     </div>
@@ -559,8 +561,10 @@ export const AdvancedToolsPanel: React.FC<AdvancedToolsPanelProps> = ({
                       {tool.icon}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="font-bold text-black">{tool.name}</div>
-                      <div className="text-sm text-gray-600 line-clamp-2">
+                      <div className="font-bold text-[#111827]">
+                        {tool.name}
+                      </div>
+                      <div className="text-sm text-[#111827] line-clamp-2">
                         {tool.description}
                       </div>
                     </div>
@@ -666,30 +670,56 @@ export const AdvancedToolsPanel: React.FC<AdvancedToolsPanelProps> = ({
       )}
 
       {activeTool === "poetry-meter" && (
-        <PoetryMeterAnalyzer text={text} onClose={closeTool} />
+        <PoetryMeterAnalyzer
+          text={text}
+          onClose={closeTool}
+          onOpenHelp={() => onOpenHelp?.("poetryMeter")}
+        />
       )}
 
       {activeTool === "nonfiction-outline" && (
-        <NonFictionOutlineGenerator text={text} onClose={closeTool} />
+        <NonFictionOutlineGenerator
+          text={text}
+          onClose={closeTool}
+          onOpenHelp={() => onOpenHelp?.("nonfictionOutline")}
+        />
       )}
 
       {activeTool === "citation-manager" && (
-        <AcademicCitationManager text={text} onClose={closeTool} />
+        <AcademicCitationManager
+          text={text}
+          onClose={closeTool}
+          onOpenHelp={() => onOpenHelp?.("citationManager")}
+        />
       )}
 
       {activeTool === "name-generator" && (
-        <CharacterNameGenerator onClose={closeTool} />
+        <CharacterNameGenerator
+          onClose={closeTool}
+          onOpenHelp={() => onOpenHelp?.("nameGenerator")}
+        />
       )}
 
       {activeTool === "world-building" && (
-        <WorldBuildingNotebook onClose={closeTool} />
+        <WorldBuildingNotebook
+          onClose={closeTool}
+          onOpenHelp={() => onOpenHelp?.("worldBuilding")}
+        />
       )}
 
       {activeTool === "research-notes" && (
-        <ResearchNotesPanel onClose={closeTool} />
+        <ResearchNotesPanel
+          onClose={closeTool}
+          onOpenHelp={() => onOpenHelp?.("researchNotes")}
+        />
       )}
 
-      {activeTool === "mood-board" && <ImageMoodBoard onClose={closeTool} />}
+      {activeTool === "mood-board" && (
+        <ImageMoodBoard
+          onClose={closeTool}
+          onOpenHelp={() => onOpenHelp?.("moodBoard")}
+        />
+      )}
 
       {activeTool === "version-history" && (
         <VersionHistory

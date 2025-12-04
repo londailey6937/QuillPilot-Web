@@ -267,7 +267,7 @@ export const NonFictionOutlineGenerator: React.FC<
       }}
     >
       <div className="mb-4 flex justify-between items-center gap-4">
-        <h2 className="text-2xl font-bold text-black">
+        <h2 className="text-2xl font-bold text-[#111827]">
           📝 Non-Fiction Outline Generator
         </h2>
         <button
@@ -289,7 +289,7 @@ export const NonFictionOutlineGenerator: React.FC<
       {isGenerating ? (
         <div className="text-center py-12">
           <div className="animate-spin text-4xl mb-4">📝</div>
-          <div className="text-gray-600">Generating outline structure...</div>
+          <div className="text-[#111827]">Generating outline structure...</div>
         </div>
       ) : outline ? (
         <div className="space-y-6">
@@ -366,7 +366,7 @@ export const NonFictionOutlineGenerator: React.FC<
               borderColor: palette.accent,
             }}
           >
-            <h3 className="font-bold text-lg mb-2 text-black">
+            <h3 className="font-bold text-lg mb-2 text-[#111827]">
               🎯 Thesis Statement
             </h3>
             <p className="text-sm" style={{ color: palette.navy }}>
@@ -383,7 +383,7 @@ export const NonFictionOutlineGenerator: React.FC<
                 borderColor: palette.border,
               }}
             >
-              <h3 className="font-bold text-lg mb-3 text-black">
+              <h3 className="font-bold text-lg mb-3 text-[#111827]">
                 📚 Outline Structure
               </h3>
               <div className="space-y-3">
@@ -439,7 +439,7 @@ export const NonFictionOutlineGenerator: React.FC<
                 borderColor: palette.border,
               }}
             >
-              <h3 className="font-bold text-lg mb-3 text-black">
+              <h3 className="font-bold text-lg mb-3 text-[#111827]">
                 📊 Evidence & Arguments Map
               </h3>
               <div className="space-y-4">
@@ -543,7 +543,7 @@ export const NonFictionOutlineGenerator: React.FC<
                 borderColor: palette.lightBorder,
               }}
             >
-              <h3 className="font-bold text-lg mb-2 text-black">
+              <h3 className="font-bold text-lg mb-2 text-[#111827]">
                 💡 Recommendations
               </h3>
               <ul className="text-sm space-y-1" style={{ color: palette.navy }}>
@@ -562,7 +562,7 @@ export const NonFictionOutlineGenerator: React.FC<
               borderColor: palette.border,
             }}
           >
-            <h3 className="font-bold text-lg mb-2 text-black">
+            <h3 className="font-bold text-lg mb-2 text-[#111827]">
               📚 Structure Guide
             </h3>
             <div className="text-sm space-y-2" style={{ color: palette.navy }}>

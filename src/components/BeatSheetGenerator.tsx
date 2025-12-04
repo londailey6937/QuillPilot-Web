@@ -447,7 +447,7 @@ export const BeatSheetGenerator: React.FC<BeatSheetGeneratorProps> = ({
       }}
     >
       <div className="mb-4 flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-black">
+        <h2 className="text-2xl font-bold text-[#111827]">
           📖 Beat Sheet Generator
         </h2>
         <button
@@ -467,7 +467,7 @@ export const BeatSheetGenerator: React.FC<BeatSheetGeneratorProps> = ({
 
       {/* Structure Type Selector */}
       <div className="mb-4">
-        <div className="text-sm text-black mb-2">Story Structure:</div>
+        <div className="text-sm text-[#111827] mb-2">Story Structure:</div>
         <div className="flex gap-2">
           <button
             onClick={() => setStructureType("three-act")}
@@ -496,7 +496,7 @@ export const BeatSheetGenerator: React.FC<BeatSheetGeneratorProps> = ({
       {isAnalyzing ? (
         <div className="text-center py-12">
           <div className="animate-spin text-4xl mb-4">📊</div>
-          <div className="text-gray-600">Analyzing story structure...</div>
+          <div className="text-[#111827]">Analyzing story structure...</div>
         </div>
       ) : analysis ? (
         <div className="space-y-6">
@@ -505,7 +505,7 @@ export const BeatSheetGenerator: React.FC<BeatSheetGeneratorProps> = ({
             className="border rounded-lg p-4"
             style={{ background: palette.base, borderColor: palette.border }}
           >
-            <h3 className="font-bold text-lg mb-3 text-black">
+            <h3 className="font-bold text-lg mb-3 text-[#111827]">
               📊 Story Timeline
             </h3>
             <div
@@ -538,7 +538,7 @@ export const BeatSheetGenerator: React.FC<BeatSheetGeneratorProps> = ({
                 </div>
               ))}
             </div>
-            <div className="flex justify-between text-xs text-gray-500 mt-1">
+            <div className="flex justify-between text-xs text-[#111827] mt-1">
               <span>0%</span>
               <span>25%</span>
               <span>50%</span>
@@ -552,7 +552,7 @@ export const BeatSheetGenerator: React.FC<BeatSheetGeneratorProps> = ({
             className="border rounded-lg p-4"
             style={{ background: palette.subtle, borderColor: palette.border }}
           >
-            <h3 className="font-bold text-lg mb-3 text-black">
+            <h3 className="font-bold text-lg mb-3 text-[#111827]">
               ⏱️ Pacing Analysis
             </h3>
             <div className="grid grid-cols-3 gap-4">
@@ -566,8 +566,8 @@ export const BeatSheetGenerator: React.FC<BeatSheetGeneratorProps> = ({
                   )}
                   %
                 </div>
-                <div className="text-sm text-black">Act 1 (Setup)</div>
-                <div className="text-xs text-black">
+                <div className="text-sm text-[#111827]">Act 1 (Setup)</div>
+                <div className="text-xs text-[#111827]">
                   {analysis.pacing.act1.toLocaleString()} words
                 </div>
               </div>
@@ -581,8 +581,8 @@ export const BeatSheetGenerator: React.FC<BeatSheetGeneratorProps> = ({
                   )}
                   %
                 </div>
-                <div className="text-sm text-black">Act 2 (Conflict)</div>
-                <div className="text-xs text-black">
+                <div className="text-sm text-[#111827]">Act 2 (Conflict)</div>
+                <div className="text-xs text-[#111827]">
                   {analysis.pacing.act2.toLocaleString()} words
                 </div>
               </div>
@@ -596,8 +596,8 @@ export const BeatSheetGenerator: React.FC<BeatSheetGeneratorProps> = ({
                   )}
                   %
                 </div>
-                <div className="text-sm text-black">Act 3 (Resolution)</div>
-                <div className="text-xs text-black">
+                <div className="text-sm text-[#111827]">Act 3 (Resolution)</div>
+                <div className="text-xs text-[#111827]">
                   {analysis.pacing.act3.toLocaleString()} words
                 </div>
               </div>
@@ -606,7 +606,7 @@ export const BeatSheetGenerator: React.FC<BeatSheetGeneratorProps> = ({
 
           {/* Story Beats */}
           <div>
-            <h3 className="font-bold text-lg mb-3 text-black">
+            <h3 className="font-bold text-lg mb-3 text-[#111827]">
               🎬 Detected Story Beats
             </h3>
             <div className="space-y-3">
@@ -622,20 +622,22 @@ export const BeatSheetGenerator: React.FC<BeatSheetGeneratorProps> = ({
                 >
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex-1">
-                      <h4 className="font-bold text-black">{beat.name}</h4>
-                      <p className="text-sm text-black">{beat.description}</p>
+                      <h4 className="font-bold text-[#111827]">{beat.name}</h4>
+                      <p className="text-sm text-[#111827]">
+                        {beat.description}
+                      </p>
                     </div>
                     <div className="text-right">
-                      <div className="text-sm font-bold text-black">
+                      <div className="text-sm font-bold text-[#111827]">
                         {Math.round(beat.actualPosition)}%
                       </div>
-                      <div className="text-xs text-black">
+                      <div className="text-xs text-[#111827]">
                         Confidence: {beat.confidence}%
                       </div>
                     </div>
                   </div>
                   <div
-                    className="text-sm p-2 rounded border text-black"
+                    className="text-sm p-2 rounded border text-[#111827]"
                     style={{
                       background: palette.subtle,
                       borderColor: palette.lightBorder,
@@ -663,12 +665,12 @@ export const BeatSheetGenerator: React.FC<BeatSheetGeneratorProps> = ({
               className="border rounded-lg p-4"
               style={{ background: palette.light, borderColor: palette.border }}
             >
-              <h3 className="font-bold text-lg mb-2 text-black">
+              <h3 className="font-bold text-lg mb-2 text-[#111827]">
                 💡 Recommendations
               </h3>
               <ul className="space-y-1">
                 {analysis.recommendations.map((rec, idx) => (
-                  <li key={idx} className="text-sm text-gray-700">
+                  <li key={idx} className="text-sm text-[#111827]">
                     • {rec}
                   </li>
                 ))}

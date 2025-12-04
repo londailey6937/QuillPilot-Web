@@ -60,7 +60,7 @@ This document tracks recent features, improvements, and changes to the Chapter A
 - Increase: Increases font by 1px (maximum 72px)
 - Applies to selected text
 
-**Default Font Size:** 16px (Georgia serif)
+**Default Font Size:** 16px (Inter sans-serif default)
 
 **How to use:**
 

@@ -300,7 +300,7 @@ export const POVChecker: React.FC<POVCheckerProps> = ({
       }}
     >
       <div className="mb-4 flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-black">👁️ POV Checker</h2>
+        <h2 className="text-2xl font-bold text-[#111827]">👁️ POV Checker</h2>
         <button
           onClick={onOpenHelp}
           style={{
@@ -319,7 +319,7 @@ export const POVChecker: React.FC<POVCheckerProps> = ({
       {isAnalyzing ? (
         <div className="text-center py-12">
           <div className="animate-spin text-4xl mb-4">🔍</div>
-          <div className="text-gray-600">Analyzing point of view...</div>
+          <div className="text-[#111827]">Analyzing point of view...</div>
         </div>
       ) : analysis ? (
         <div className="space-y-6">
@@ -332,7 +332,7 @@ export const POVChecker: React.FC<POVCheckerProps> = ({
                 borderColor: palette.border,
               }}
             >
-              <div className="text-sm text-gray-600 mb-1">Dominant POV</div>
+              <div className="text-sm text-[#111827] mb-1">Dominant POV</div>
               <div
                 className="text-xl font-bold"
                 style={{ color: palette.navy }}
@@ -347,7 +347,7 @@ export const POVChecker: React.FC<POVCheckerProps> = ({
                 borderColor: palette.border,
               }}
             >
-              <div className="text-sm text-gray-600 mb-1">
+              <div className="text-sm text-[#111827] mb-1">
                 Consistency Score
               </div>
               <div
@@ -377,7 +377,7 @@ export const POVChecker: React.FC<POVCheckerProps> = ({
                 borderColor: palette.border,
               }}
             >
-              <h3 className="font-bold text-lg mb-2 text-black">
+              <h3 className="font-bold text-lg mb-2 text-[#111827]">
                 🎭 Character Perspectives
               </h3>
               <div className="grid grid-cols-2 gap-2">
@@ -393,7 +393,7 @@ export const POVChecker: React.FC<POVCheckerProps> = ({
                       }}
                     >
                       <span className="font-semibold">{char}</span>
-                      <span className="text-sm text-gray-600">
+                      <span className="text-sm text-[#111827]">
                         {count} instance{count !== 1 ? "s" : ""}
                       </span>
                     </div>
@@ -411,14 +411,14 @@ export const POVChecker: React.FC<POVCheckerProps> = ({
                 borderColor: palette.border,
               }}
             >
-              <h3 className="font-bold text-lg mb-3 text-black">
+              <h3 className="font-bold text-lg mb-3 text-[#111827]">
                 ⚠️ POV Issues ({analysis.issues.length})
               </h3>
               <div className="space-y-3">
                 {analysis.issues.map((issue, idx) => (
                   <div
                     key={idx}
-                    className="border rounded-lg p-4 cursor-pointer hover:shadow-md transition-shadow text-black"
+                    className="border rounded-lg p-4 cursor-pointer hover:shadow-md transition-shadow text-[#111827]"
                     style={getSeverityStyles(issue.severity)}
                     onClick={() => onNavigate && onNavigate(issue.location)}
                   >
@@ -460,7 +460,7 @@ export const POVChecker: React.FC<POVCheckerProps> = ({
               >
                 No POV Issues Detected!
               </div>
-              <div className="text-gray-600">
+              <div className="text-[#111827]">
                 Your point of view is consistent and well-maintained
               </div>
             </div>
@@ -475,7 +475,7 @@ export const POVChecker: React.FC<POVCheckerProps> = ({
                 borderColor: palette.lightBorder,
               }}
             >
-              <h3 className="font-bold text-lg mb-2 text-black">
+              <h3 className="font-bold text-lg mb-2 text-[#111827]">
                 💡 Recommendations
               </h3>
               <ul className="space-y-1" style={{ color: palette.navy }}>
@@ -496,7 +496,7 @@ export const POVChecker: React.FC<POVCheckerProps> = ({
               borderColor: palette.border,
             }}
           >
-            <h3 className="font-bold text-lg mb-2 text-black">
+            <h3 className="font-bold text-lg mb-2 text-[#111827]">
               📚 POV Quick Guide
             </h3>
             <div className="text-sm space-y-2" style={{ color: palette.navy }}>
