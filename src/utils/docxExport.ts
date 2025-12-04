@@ -1406,6 +1406,51 @@ async function convertNodeToParagraphs(
     return convertTableElementToParagraphs(element, combinedStyle);
   }
 
+  // Handle doc-title and doc-subtitle classes for round-trip fidelity with Word
+  // These elements should be exported with Word's Title and Subtitle styles
+  if (className.includes("doc-title")) {
+    // Export as Word's Title style
+    const runs = buildRunsFromInlineElement(element, combinedStyle);
+    return [
+      new Paragraph({
+        children:
+          runs.length > 0
+            ? runs
+            : ([createTextRun(element.textContent || "", combinedStyle)].filter(
+                Boolean
+              ) as TextRun[]),
+        heading: HeadingLevel.TITLE,
+        alignment: AlignmentType.CENTER,
+        spacing: { before: 400, after: 200 },
+      }),
+    ];
+  }
+
+  if (className.includes("doc-subtitle")) {
+    // Export as Word's Subtitle style - use HEADING_2 which Word often uses for subtitles
+    // or we can just use centered italic paragraph
+    const runs = buildRunsFromInlineElement(element, {
+      ...combinedStyle,
+      italic: true,
+    });
+    return [
+      new Paragraph({
+        children:
+          runs.length > 0
+            ? runs
+            : ([
+                createTextRun(element.textContent || "", {
+                  ...combinedStyle,
+                  italic: true,
+                }),
+              ].filter(Boolean) as TextRun[]),
+        alignment: AlignmentType.CENTER,
+        spacing: { before: 100, after: 400 },
+        style: "Subtitle", // Use Word's built-in Subtitle style
+      }),
+    ];
+  }
+
   const heading = headingTagToLevel(tag);
   const spacing = getSpacingForTag(tag);
   const paragraphOptions: ParagraphBuildOptions = {

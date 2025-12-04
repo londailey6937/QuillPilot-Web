@@ -56,21 +56,40 @@ export const CSS_CLASSES = {
 /**
  * Mammoth style map for DOCX import
  * Maps Word style names to HTML elements/classes
+ * Based on Word's built-in styles panel
+ *
+ * Note: Word uses both style-name (display name) and style-id (internal ID).
+ * We include both to handle different Word versions and localized documents.
  */
 export const MAMMOTH_STYLE_MAP = [
   // Paragraph styles - Title and headings
+  // Match by both style-name (display) and style-id (internal)
   "p[style-name='Title'] => h1.doc-title:fresh",
+  "p[style-id='Title'] => h1.doc-title:fresh",
+  "p[style-id='Titre'] => h1.doc-title:fresh", // French
+  "p[style-id='Titel'] => h1.doc-title:fresh", // German
   "p[style-name='Subtitle'] => p.doc-subtitle:fresh",
+  "p[style-id='Subtitle'] => p.doc-subtitle:fresh",
+  "p[style-id='Sous-titre'] => p.doc-subtitle:fresh", // French
+  "p[style-id='Untertitel'] => p.doc-subtitle:fresh", // German
   "p[style-name='Heading 1'] => h1.chapter-heading:fresh",
+  "p[style-id='Heading1'] => h1.chapter-heading:fresh",
   "p[style-name='Heading 2'] => h2.section-heading:fresh",
+  "p[style-id='Heading2'] => h2.section-heading:fresh",
   "p[style-name='Heading 3'] => h3.subsection-heading:fresh",
+  "p[style-id='Heading3'] => h3.subsection-heading:fresh",
   "p[style-name='Heading 4'] => h4:fresh",
+  "p[style-id='Heading4'] => h4:fresh",
   "p[style-name='Heading 5'] => h5:fresh",
+  "p[style-id='Heading5'] => h5:fresh",
   "p[style-name='Heading 6'] => h6:fresh",
+  "p[style-id='Heading6'] => h6:fresh",
 
   // Body text styles
   "p[style-name='Body Text'] => p.body-text:fresh",
   "p[style-name='Body Text First Indent'] => p.first-paragraph:fresh",
+  "p[style-name='Body Text 2'] => p.body-text:fresh",
+  "p[style-name='Body Text 3'] => p.body-text:fresh",
   "p[style-name='First Paragraph'] => p.first-paragraph:fresh",
   "p[style-name='No Spacing'] => p.no-spacing:fresh",
   "p[style-name='Normal'] => p:fresh",
@@ -87,17 +106,55 @@ export const MAMMOTH_STYLE_MAP = [
   "p[style-name='List Bullet'] => li.list-bullet:fresh",
   "p[style-name='List Number'] => li.list-number:fresh",
 
-  // Character styles
+  // TOC styles
+  "p[style-name='TOC Heading'] => p.toc-heading:fresh",
+  "p[style-name='TOC 1'] => p.toc-1:fresh",
+  "p[style-name='TOC 2'] => p.toc-2:fresh",
+  "p[style-name='TOC 3'] => p.toc-3:fresh",
+
+  // Character styles - these apply to runs (r) within paragraphs
   "r[style-name='Strong'] => strong",
   "r[style-name='Emphasis'] => em",
-  "r[style-name='Intense Emphasis'] => strong > em",
-  "r[style-name='Book Title'] => em.book-title",
-  "r[style-name='Subtle Emphasis'] => span.subtle-emphasis",
+  "r[style-name='Intense Emphasis'] => strong.intense-emphasis > em",
+  "r[style-name='Subtle Emphasis'] => em.subtle-emphasis",
+  "r[style-name='Book Title'] => em.book-title-char",
   "r[style-name='Subtle Reference'] => span.subtle-reference",
+  "r[style-name='Intense Reference'] => span.intense-reference",
 
-  // Preserve underlines
+  // Preserve bold, italic, underline
+  "b => strong",
+  "i => em",
   "u => u",
 ].join("\n");
+
+/**
+ * Mammoth transformDocument function to preserve alignment and other formatting
+ * This captures formatting that the style map alone cannot handle
+ */
+export function createMammothTransform() {
+  function transformElement(element: any): any {
+    if (element.children) {
+      const children = element.children.map(transformElement);
+      element = { ...element, children };
+    }
+
+    // Preserve paragraph alignment
+    if (element.type === "paragraph" && element.alignment) {
+      // Store alignment info in a property that we can use post-conversion
+      element = {
+        ...element,
+        // Add a custom class based on alignment
+        styleId: element.styleId || "",
+        styleName: element.styleName || "",
+        _alignment: element.alignment,
+      };
+    }
+
+    return element;
+  }
+
+  return transformElement;
+}
 
 /**
  * HTML-to-DOCX style options

@@ -690,8 +690,8 @@ export function ReferenceLibraryModal({
                     color: "#000000",
                   }}
                 >
-                  <strong>Best for:</strong> Sharing, viewing in browser,
-                  printing
+                  <strong>Best for:</strong> Analysis reports, sharing results,
+                  viewing in browser
                 </p>
                 <p
                   style={{
@@ -700,10 +700,31 @@ export function ReferenceLibraryModal({
                     color: "#000000",
                   }}
                 >
-                  <strong>Features:</strong> Self-contained file, works in any
-                  browser, color-coded indicators, print-optimized, responsive
+                  <strong>Features:</strong> Self-contained file with embedded
+                  analysis, color-coded indicators, print-optimized, responsive
                   design
                 </p>
+                <div
+                  style={{
+                    background: "#fef5e7",
+                    padding: "1rem",
+                    borderRadius: "8px",
+                    marginBottom: "1rem",
+                    borderLeft: "4px solid #d4a574",
+                  }}
+                >
+                  <p
+                    style={{
+                      marginBottom: "0",
+                      color: "#8b5a2b",
+                      fontWeight: "500",
+                    }}
+                  >
+                    ℹ️ HTML export creates an <strong>analysis report</strong>{" "}
+                    with pacing/sensory highlights. Not intended for round-trip
+                    editing—use DOCX for that workflow.
+                  </p>
+                </div>
 
                 <h3
                   style={{
@@ -721,8 +742,8 @@ export function ReferenceLibraryModal({
                     color: "#000000",
                   }}
                 >
-                  <strong>Best for:</strong> Editing in Word, collaborating,
-                  formal documents
+                  <strong>Best for:</strong> Round-trip editing, Word
+                  collaboration, preserving styles
                 </p>
                 <p
                   style={{
@@ -731,9 +752,32 @@ export function ReferenceLibraryModal({
                     color: "#000000",
                   }}
                 >
-                  <strong>Features:</strong> Editable in Microsoft Word, colored
-                  shaded backgrounds, professional formatting
+                  <strong>Features:</strong> Full Word compatibility, styles
+                  preserved on re-import (Book Title, Chapter Heading,
+                  Subtitle), professional formatting
                 </p>
+                <div
+                  style={{
+                    background: "#f5ebe0",
+                    padding: "1rem",
+                    borderRadius: "8px",
+                    marginBottom: "1rem",
+                    borderLeft: "4px solid #c9a87c",
+                  }}
+                >
+                  <p
+                    style={{
+                      marginBottom: "0",
+                      color: "#6b4423",
+                      fontWeight: "500",
+                    }}
+                  >
+                    ✓ <strong>Round-trip fidelity:</strong> Write in QuillPilot
+                    → Save as DOCX → Edit in Word → Re-import to QuillPilot.
+                    Your Book Title, Chapter Heading, and Subtitle styles come
+                    back exactly as you left them.
+                  </p>
+                </div>
                 <div
                   style={{
                     background: "#fef5e7",
@@ -749,7 +793,7 @@ export function ReferenceLibraryModal({
                       color: "#000000",
                     }}
                   >
-                    Color Coding:
+                    Color Coding (Analysis Export):
                   </p>
                   <ul
                     style={{
@@ -764,6 +808,142 @@ export function ReferenceLibraryModal({
                     <li>Yellow background = Sensory detail suggestion</li>
                   </ul>
                 </div>
+
+                <h3
+                  style={{
+                    marginTop: "2rem",
+                    marginBottom: "0.5rem",
+                    color: "#000000",
+                  }}
+                >
+                  HTML vs DOCX: Quick Comparison
+                </h3>
+                <table
+                  style={{
+                    width: "100%",
+                    borderCollapse: "collapse",
+                    marginBottom: "1rem",
+                    fontSize: "0.9rem",
+                  }}
+                >
+                  <thead>
+                    <tr style={{ backgroundColor: "#f5f5f5" }}>
+                      <th
+                        style={{
+                          padding: "0.75rem",
+                          textAlign: "left",
+                          borderBottom: "2px solid #ddd",
+                        }}
+                      >
+                        Feature
+                      </th>
+                      <th
+                        style={{
+                          padding: "0.75rem",
+                          textAlign: "center",
+                          borderBottom: "2px solid #ddd",
+                        }}
+                      >
+                        HTML
+                      </th>
+                      <th
+                        style={{
+                          padding: "0.75rem",
+                          textAlign: "center",
+                          borderBottom: "2px solid #ddd",
+                        }}
+                      >
+                        DOCX
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td style={{ padding: "0.5rem 0.75rem" }}>
+                        <strong>Purpose</strong>
+                      </td>
+                      <td
+                        style={{
+                          padding: "0.5rem 0.75rem",
+                          textAlign: "center",
+                        }}
+                      >
+                        Analysis report
+                      </td>
+                      <td
+                        style={{
+                          padding: "0.5rem 0.75rem",
+                          textAlign: "center",
+                        }}
+                      >
+                        Round-trip editing
+                      </td>
+                    </tr>
+                    <tr style={{ backgroundColor: "#fafafa" }}>
+                      <td style={{ padding: "0.5rem 0.75rem" }}>
+                        <strong>Round-trip</strong>
+                      </td>
+                      <td
+                        style={{
+                          padding: "0.5rem 0.75rem",
+                          textAlign: "center",
+                        }}
+                      >
+                        ❌ No
+                      </td>
+                      <td
+                        style={{
+                          padding: "0.5rem 0.75rem",
+                          textAlign: "center",
+                        }}
+                      >
+                        ✓ Yes
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style={{ padding: "0.5rem 0.75rem" }}>
+                        <strong>Styles preserved</strong>
+                      </td>
+                      <td
+                        style={{
+                          padding: "0.5rem 0.75rem",
+                          textAlign: "center",
+                        }}
+                      >
+                        Visual only
+                      </td>
+                      <td
+                        style={{
+                          padding: "0.5rem 0.75rem",
+                          textAlign: "center",
+                        }}
+                      >
+                        ✓ Word styles
+                      </td>
+                    </tr>
+                    <tr style={{ backgroundColor: "#fafafa" }}>
+                      <td style={{ padding: "0.5rem 0.75rem" }}>
+                        <strong>Best use</strong>
+                      </td>
+                      <td
+                        style={{
+                          padding: "0.5rem 0.75rem",
+                          textAlign: "center",
+                        }}
+                      >
+                        Share/print analysis
+                      </td>
+                      <td
+                        style={{
+                          padding: "0.5rem 0.75rem",
+                          textAlign: "center",
+                        }}
+                      >
+                        Save/collaborate
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
 
                 <h3
                   style={{

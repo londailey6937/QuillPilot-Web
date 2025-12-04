@@ -7,6 +7,11 @@ import {
 } from "../utils/screenplayConverter";
 import { AccessLevel, ACCESS_TIERS } from "../../types";
 import { MAMMOTH_STYLE_MAP } from "../utils/docxStyles";
+import {
+  extractVmlText,
+  hasVmlContent,
+  debugDocx,
+} from "../utils/vmlTextExtractor";
 
 // Helper to detect magic numbers
 function detectMimeType(buffer: ArrayBuffer): string {
@@ -64,14 +69,14 @@ function base64ToArrayBuffer(base64: string) {
 }
 
 /**
- * Post-process HTML from mammoth to add proper formatting classes
+ * Post-process HTML from mammoth to add proper formatting classes and inline styles
  * for title pages, chapter headings, and body text.
  * Mammoth doesn't preserve Word alignment/indentation, so we infer it from content.
  */
 function enhanceDocumentFormatting(html: string): string {
   const parser = new DOMParser();
   const doc = parser.parseFromString(html, "text/html");
-  const paragraphs = doc.querySelectorAll("p");
+  const paragraphs = doc.querySelectorAll("p, h1, h2, h3, h4, h5, h6");
 
   let foundBodyText = false; // Track when we've passed title/front matter
   let consecutiveShortLines = 0; // Track clusters of short lines (front matter)
@@ -107,6 +112,21 @@ function enhanceDocumentFormatting(html: string): string {
         text
       ) || looksLikeCopyright;
 
+    // Check if element already has doc-title, chapter-heading, etc from mammoth style mapping
+    const isHeading = p.tagName.match(/^H[1-6]$/);
+    const hasDocTitle = p.classList.contains("doc-title");
+    const hasChapterHeading = p.classList.contains("chapter-heading");
+    const hasSectionHeading = p.classList.contains("section-heading");
+    const hasDocSubtitle = p.classList.contains("doc-subtitle");
+
+    // Apply centering to elements that should be centered
+    if (hasDocTitle || hasDocSubtitle) {
+      (p as HTMLElement).style.textAlign = "center";
+    }
+    if (hasChapterHeading) {
+      (p as HTMLElement).style.textAlign = "center";
+    }
+
     // Track consecutive short lines (indicates front matter block)
     if (isShortLine && text.length > 0) {
       consecutiveShortLines++;
@@ -127,26 +147,39 @@ function enhanceDocumentFormatting(html: string): string {
         (consecutiveShortLines > 3 && isShortLine); // In a cluster of short lines
 
       if (isFrontMatter) {
-        p.classList.add("title-content");
+        if (!p.classList.contains("doc-title") && !isHeading) {
+          p.classList.add("title-content");
+        }
+        // Apply centering for front matter content
+        (p as HTMLElement).style.textAlign = "center";
+        (p as HTMLElement).style.textIndent = "0";
+
         // Check for main title (largest/first bold text)
-        if (hasOnlyBold && index < 5) {
+        if (hasOnlyBold && index < 5 && !hasDocTitle) {
           p.classList.add("book-title");
         }
       } else if (text.length > 150) {
         // Long paragraph = body text has started
         foundBodyText = true;
-        p.classList.add("body-text");
+        if (!p.classList.contains("body-text")) {
+          p.classList.add("body-text");
+        }
       } else if (text.length > 80) {
         // Medium paragraph in front matter - might be dedication or intro
         p.classList.add("title-content");
+        (p as HTMLElement).style.textAlign = "center";
       }
     } else {
       // After title page, mark chapter headings and body text
       if (looksLikeChapterHeading || (isVeryShortLine && isAllCaps)) {
-        p.classList.add("chapter-heading");
+        if (!hasChapterHeading) {
+          p.classList.add("chapter-heading");
+        }
+        (p as HTMLElement).style.textAlign = "center";
+        (p as HTMLElement).style.textIndent = "0";
       } else if (hasImage) {
         p.classList.add("image-paragraph");
-      } else if (text.length > 0) {
+      } else if (text.length > 0 && !p.classList.contains("body-text")) {
         p.classList.add("body-text");
       }
     }
@@ -330,8 +363,46 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
         arrayBuffer: textBuffer,
       });
 
+      let rawHtml = htmlResult.value?.trim() ?? "";
+      let plainText = textResult.value?.trim() ?? "";
+
+      // Extract VML text (WordArt, decorative text, text boxes) that mammoth misses
+      const vmlBuffer = sourceBuffer.slice(0);
+      const vmlTextElements = await extractVmlText(vmlBuffer);
+
+      if (vmlTextElements.length > 0) {
+        console.log(
+          "[DocumentUploader] Sample: Found VML text elements:",
+          vmlTextElements
+        );
+
+        // Check if any VML text is missing from the extracted plain text
+        const missingVmlText = vmlTextElements.filter((el) => {
+          const normalizedVml = el.text.toLowerCase().replace(/\s+/g, " ");
+          const normalizedPlain = plainText.toLowerCase().replace(/\s+/g, " ");
+          return !normalizedPlain.includes(normalizedVml);
+        });
+
+        if (missingVmlText.length > 0) {
+          // Prepend missing VML text to the HTML output with appropriate styling
+          const vmlHtmlElements = missingVmlText.map((el) => {
+            const className =
+              el.type === "wordart"
+                ? "book-title vml-recovered"
+                : el.type === "textbox"
+                ? "title-content vml-recovered"
+                : "vml-recovered";
+            return `<p class="${className}" style="text-align: center; font-weight: bold;">${el.text}</p>`;
+          });
+
+          rawHtml = vmlHtmlElements.join("\n") + "\n" + rawHtml;
+          const vmlPlainText = missingVmlText.map((el) => el.text).join("\n\n");
+          plainText = vmlPlainText + "\n\n" + plainText;
+        }
+      }
+
       // Auto-detect and convert screenplay format using plain text as source
-      const detectionText = textResult.value || htmlResult.value || "";
+      const detectionText = plainText || rawHtml || "";
       const screenplayResult = processScreenplayDocument(
         detectionText,
         detectionText,
@@ -341,24 +412,24 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
       // Enhance HTML with proper formatting classes (title pages, body text, etc.)
       const enhancedHtml = screenplayResult.isScreenplay
         ? screenplayResult.content
-        : enhanceDocumentFormatting(htmlResult.value);
+        : enhanceDocumentFormatting(rawHtml);
 
       const payload: UploadedDocumentPayload = {
         fileName,
         fileType,
         format: screenplayResult.isScreenplay ? "html" : "html",
         content: enhancedHtml,
-        plainText: screenplayResult.plainText,
+        plainText: screenplayResult.plainText || plainText,
         imageCount,
         isScreenplay: screenplayResult.isScreenplay,
       };
 
       console.log("Sample story loaded:", {
         fileName,
-        htmlLength: htmlResult.value.length,
-        plainTextLength: textResult.value.length,
-        htmlPreview: htmlResult.value.substring(0, 500),
-        plainTextPreview: textResult.value.substring(0, 200),
+        htmlLength: rawHtml.length,
+        plainTextLength: plainText.length,
+        htmlPreview: rawHtml.substring(0, 500),
+        plainTextPreview: plainText.substring(0, 200),
       });
 
       setHasScreenplay(screenplayResult.isScreenplay);
@@ -596,8 +667,100 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
         const textResult = await mammoth.extractRawText({
           arrayBuffer: textBuffer,
         });
-        const rawHtml = htmlResult.value?.trim() ?? "";
-        const plainText = textResult.value?.trim() ?? "";
+        let rawHtml = htmlResult.value?.trim() ?? "";
+        let plainText = textResult.value?.trim() ?? "";
+
+        // Debug: Log mammoth conversion results
+        console.log(
+          "[DocumentUploader] Mammoth HTML output (first 2000 chars):",
+          rawHtml.substring(0, 2000)
+        );
+        console.log(
+          "[DocumentUploader] Mammoth messages:",
+          htmlResult.messages
+        );
+
+        // Check if any Word styles were detected
+        const hasStyleClasses =
+          /class="[^"]*doc-title|chapter-heading|doc-subtitle|quote|intense-quote/.test(
+            rawHtml
+          );
+        console.log(
+          "[DocumentUploader] Style classes detected in HTML:",
+          hasStyleClasses
+        );
+
+        // Debug the DOCX structure to understand any issues
+        const debugBuffer = sourceBuffer.slice(0);
+        const docxDebugInfo = await debugDocx(debugBuffer);
+        console.log("[DocumentUploader] DOCX Debug Info:", docxDebugInfo);
+
+        // Warn user about tracked changes if detected
+        if (docxDebugInfo.hasTrackedChanges) {
+          console.warn(
+            "[DocumentUploader] WARNING: Document has tracked changes which may cause duplicate/garbled text"
+          );
+          console.warn(
+            "[DocumentUploader] Deleted text (may appear in output):",
+            docxDebugInfo.deletedText
+          );
+          console.warn(
+            "[DocumentUploader] Inserted text:",
+            docxDebugInfo.insertedText
+          );
+        }
+
+        // Extract VML text (WordArt, decorative text, text boxes) that mammoth misses
+        const vmlBuffer = sourceBuffer.slice(0);
+        const vmlTextElements = await extractVmlText(vmlBuffer);
+
+        if (vmlTextElements.length > 0) {
+          console.log(
+            "[DocumentUploader] Found VML text elements:",
+            vmlTextElements
+          );
+
+          // Check if any VML text is missing from the extracted plain text
+          const missingVmlText = vmlTextElements.filter((el) => {
+            const normalizedVml = el.text.toLowerCase().replace(/\s+/g, " ");
+            const normalizedPlain = plainText
+              .toLowerCase()
+              .replace(/\s+/g, " ");
+            return !normalizedPlain.includes(normalizedVml);
+          });
+
+          if (missingVmlText.length > 0) {
+            console.log(
+              "[DocumentUploader] VML text missing from extraction:",
+              missingVmlText
+            );
+
+            // Prepend missing VML text to the HTML output with appropriate styling
+            const vmlHtmlElements = missingVmlText.map((el) => {
+              const className =
+                el.type === "wordart"
+                  ? "book-title vml-recovered"
+                  : el.type === "textbox"
+                  ? "title-content vml-recovered"
+                  : "vml-recovered";
+              return `<p class="${className}" style="text-align: center; font-weight: bold;">${el.text}</p>`;
+            });
+
+            // Insert VML text at the beginning of the document
+            rawHtml = vmlHtmlElements.join("\n") + "\n" + rawHtml;
+
+            // Also add to plain text
+            const vmlPlainText = missingVmlText
+              .map((el) => el.text)
+              .join("\n\n");
+            plainText = vmlPlainText + "\n\n" + plainText;
+
+            // Notify user that decorative text was recovered
+            console.log(
+              `[DocumentUploader] Recovered ${missingVmlText.length} decorative text element(s)`
+            );
+          }
+        }
 
         // Check if the DOCX has styling/indentation (indicates already formatted screenplay)
         const hasInlineStyles =

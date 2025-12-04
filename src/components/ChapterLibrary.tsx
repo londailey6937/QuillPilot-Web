@@ -398,7 +398,7 @@ export function ChapterLibrary({
                           fontSize: "14px",
                         }}
                       >
-                        Save As...
+                        or Save As...
                       </button>
                     </div>
                   )}

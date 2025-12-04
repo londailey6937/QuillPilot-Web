@@ -974,6 +974,10 @@ const CENTERED_STYLE_SELECTORS = [
   "p.chapter-heading",
   "p.part-title",
   "p.image-paragraph",
+  "p.doc-title",
+  "p.doc-subtitle",
+  ".doc-title",
+  ".doc-subtitle",
   "h1",
   "h2",
   "h3",
@@ -1850,7 +1854,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
 
     // Directly update all standard paragraphs
     const paragraphs = editorRef.current.querySelectorAll(
-      "p:not(.screenplay-block):not(.title-content):not(.book-title):not(.subtitle):not(.chapter-heading):not(.image-paragraph)"
+      "p:not(.screenplay-block):not(.title-content):not(.book-title):not(.subtitle):not(.chapter-heading):not(.image-paragraph):not(.doc-title):not(.doc-subtitle)"
     );
     paragraphs.forEach((p) => {
       (p as HTMLElement).style.setProperty(
@@ -2672,9 +2676,10 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
 
         const styleMap: { [key: string]: string } = {
           paragraph: "", // Empty class = reset to normal paragraph
-          title: "title-content",
-          "book-title": "title-content book-title",
-          subtitle: "title-content subtitle",
+          // Align with mammoth style map classes for round-trip fidelity
+          title: "doc-title",
+          "book-title": "doc-title",
+          subtitle: "doc-subtitle",
           "chapter-heading": "chapter-heading",
           "part-title": "part-title",
           epigraph: "epigraph",
@@ -2723,6 +2728,10 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           "code-reference": "code-reference",
           "warning-note": "warning-note",
           "success-note": "success-note",
+          // Legacy mappings for backwards compatibility
+          "title-content": "doc-title",
+          "title-content book-title": "doc-title",
+          "title-content subtitle": "doc-subtitle",
         };
 
         const isParagraphLike = (node: Node | null): node is HTMLElement => {
@@ -2771,14 +2780,6 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
 
           // Also check if block contains <br> tags (multiple visual lines)
           const hasBrTags = blockElement.innerHTML.includes("<br");
-
-          console.log("[applyCustomParagraphStyle] Selection analysis:", {
-            selectedText: selectedText.substring(0, 50) + "...",
-            blockTextLength: blockText.length,
-            selectedLength: selectedText.length,
-            isPartialSelection,
-            hasBrTags,
-          });
 
           if (
             isPartialSelection &&
@@ -2891,20 +2892,86 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
 
               return; // Done with partial selection handling
             } catch (err) {
-              console.warn(
-                "[applyCustomParagraphStyle] Partial selection extraction failed, falling back to block styling:",
-                err
-              );
               // Fall through to block styling below
             }
           }
 
           // FULL BLOCK SELECTION: Style the entire block element
-          // NOTE: Do NOT use replaceWith() to convert element types - it breaks React's DOM reconciliation
-          // Instead, just apply styles directly to the existing element regardless of tag type
-          // styleMap is already defined above
+          // NOTE: We need to convert heading elements (h1, h2, etc.) to <p> elements
+          // when applying custom paragraph styles, because our CSS targets p.doc-title etc.
+          // This ensures uploaded DOCX content (which uses h1.doc-title) can be restyled.
 
-          blockElement.className = styleMap[styleTag] || "";
+          const newClassName = styleMap[styleTag] || "";
+
+          // Check if we need to convert a heading element to a paragraph
+          const isHeadingElement = /^H[1-6]$/i.test(blockElement.tagName);
+
+          if (isHeadingElement) {
+            // Convert heading to paragraph for custom styles
+            // Create a new paragraph with the same content
+            const newParagraph = document.createElement("p");
+            newParagraph.innerHTML = blockElement.innerHTML;
+            newParagraph.className = newClassName;
+
+            // Do NOT copy over positioning attributes - start fresh
+            // Clear any transform/centering from the old element
+            newParagraph.style.removeProperty("transform");
+            newParagraph.style.removeProperty("--center-shift");
+            newParagraph.removeAttribute("data-ruler-center");
+
+            // Replace the heading with the paragraph
+            blockElement.parentNode?.replaceChild(newParagraph, blockElement);
+
+            // Update reference to the new element
+            const updatedBlock = newParagraph;
+
+            // Apply text alignment
+            const styleKey = styleTag as keyof typeof documentStyles;
+            const isCenterAligned =
+              documentStyles[styleKey] &&
+              "textAlign" in documentStyles[styleKey] &&
+              (documentStyles[styleKey] as { textAlign?: string }).textAlign ===
+                "center";
+
+            if (
+              documentStyles[styleKey] &&
+              "textAlign" in documentStyles[styleKey]
+            ) {
+              const align = (documentStyles[styleKey] as { textAlign?: string })
+                .textAlign;
+              if (align) {
+                updatedBlock.style.textAlign = align;
+              }
+            }
+
+            // Don't call centerText immediately - wait for layout to settle
+            // The setTimeout below will handle centering after DOM updates
+
+            // Set cursor into the new paragraph
+            const selection = window.getSelection();
+            if (selection) {
+              const range = document.createRange();
+              range.selectNodeContents(updatedBlock);
+              range.collapse(false);
+              selection.removeAllRanges();
+              selection.addRange(range);
+            }
+
+            // Wait for layout to settle, then apply centering
+            setTimeout(() => {
+              handleInput();
+              if (isCenterAligned) {
+                // Now it's safe to center
+                centerText(updatedBlock);
+                alignCenteredBlocksToRuler();
+              }
+            }, 50); // Increased delay for layout to fully settle
+
+            return;
+          }
+
+          // For non-heading elements, apply style directly
+          blockElement.className = newClassName;
           [
             "text-indent",
             "margin-left",
@@ -2976,9 +3043,10 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
 
           const styleMap: { [key: string]: string } = {
             paragraph: "", // Empty class = reset to normal paragraph
-            title: "title-content",
-            "book-title": "title-content book-title",
-            subtitle: "title-content subtitle",
+            // Align with mammoth style map classes for round-trip fidelity
+            title: "doc-title",
+            "book-title": "doc-title",
+            subtitle: "doc-subtitle",
             "chapter-heading": "chapter-heading",
             "part-title": "part-title",
             epigraph: "epigraph",
@@ -3027,6 +3095,10 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
             "code-reference": "code-reference",
             "warning-note": "warning-note",
             "success-note": "success-note",
+            // Legacy mappings for backwards compatibility
+            "title-content": "doc-title",
+            "title-content book-title": "doc-title",
+            "title-content subtitle": "doc-subtitle",
           };
 
           if (targetParagraph) {
@@ -4010,7 +4082,9 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               className.includes("chapter-heading") ||
               className.includes("subtitle") ||
               className.includes("title-content") ||
-              className.includes("part-title")
+              className.includes("part-title") ||
+              className.includes("doc-title") ||
+              className.includes("doc-subtitle")
             ) {
               // Let the Enter happen, then reset to paragraph
               setTimeout(() => {
@@ -4031,7 +4105,9 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                       newClass.includes("chapter-heading") ||
                       newClass.includes("subtitle") ||
                       newClass.includes("title-content") ||
-                      newClass.includes("part-title")
+                      newClass.includes("part-title") ||
+                      newClass.includes("doc-title") ||
+                      newClass.includes("doc-subtitle")
                     ) {
                       // Convert this element to a paragraph
                       document.execCommand("formatBlock", false, "p");

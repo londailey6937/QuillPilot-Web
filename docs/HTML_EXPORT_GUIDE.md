@@ -49,17 +49,20 @@ Open the downloaded `.html` file in any web browser:
 
 ### HTML Export vs DOCX Export
 
-| Aspect              | HTML                    | DOCX                          |
-| ------------------- | ----------------------- | ----------------------------- |
-| **Viewing**         | Any browser             | Requires Word/Office          |
-| **Editing**         | HTML/CSS skills         | Word processor                |
-| **Styling**         | Full CSS control        | Colored backgrounds (Nov '25) |
-| **File Size**       | Smaller                 | Larger                        |
-| **Sharing**         | Email, web, link        | Email, cloud drive            |
-| **Printing**        | Browser print           | Word print                    |
-| **Portability**     | ✅ Universal            | ⚠️ Needs software             |
-| **Visual Richness** | ✅ Full CSS             | ✅ Shaded backgrounds (new)   |
-| **Consistency**     | ✅ Unified HTML builder | ✅ Same content as HTML       |
+| Aspect              | HTML             | DOCX                          |
+| ------------------- | ---------------- | ----------------------------- |
+| **Purpose**         | Analysis report  | Round-trip document editing   |
+| **Viewing**         | Any browser      | Requires Word/Office          |
+| **Editing**         | HTML/CSS skills  | Word processor                |
+| **Styling**         | Full CSS control | Word styles (Title, Subtitle) |
+| **File Size**       | Smaller          | Larger                        |
+| **Sharing**         | Email, web, link | Email, cloud drive            |
+| **Printing**        | Browser print    | Word print                    |
+| **Portability**     | ✅ Universal     | ⚠️ Needs software             |
+| **Visual Richness** | ✅ Full CSS      | ✅ Shaded backgrounds (new)   |
+| **Round-trip**      | ❌ Not supported | ✅ Full fidelity              |
+
+**Important**: HTML export produces an **analysis report** that includes annotations, highlights, and analysis results. It is not intended for round-trip editing. For document editing workflows where you need to export and re-import with styles preserved, use **DOCX export** which maintains full round-trip fidelity with Word styles (Title, Subtitle, Heading, Quote, etc.).
 
 **Note**: As of November 2025, DOCX exports now include colored shaded backgrounds for spacing indicators and dual-coding callouts, matching the HTML design.
 

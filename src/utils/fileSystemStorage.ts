@@ -14,6 +14,7 @@ import {
   convertInchesToTwip,
 } from "docx";
 import mammoth from "mammoth";
+import { extractVmlText } from "./vmlTextExtractor";
 
 export interface ChapterFile {
   id: string;
@@ -544,6 +545,43 @@ export async function loadChapterFromFolder(
         const temp = document.createElement("div");
         temp.innerHTML = html;
         content = temp.textContent || "";
+
+        // Extract VML text (WordArt, decorative text) that mammoth misses
+        try {
+          const vmlTextElements = await extractVmlText(arrayBuffer);
+          if (vmlTextElements.length > 0) {
+            // Check if any VML text is missing from the extracted content
+            const missingVmlText = vmlTextElements.filter((el) => {
+              const normalizedVml = el.text.toLowerCase().replace(/\s+/g, " ");
+              const normalizedContent = content
+                .toLowerCase()
+                .replace(/\s+/g, " ");
+              return !normalizedContent.includes(normalizedVml);
+            });
+
+            if (missingVmlText.length > 0) {
+              // Prepend missing VML text to the HTML output
+              const vmlHtmlElements = missingVmlText.map((el) => {
+                const className =
+                  el.type === "wordart"
+                    ? "book-title vml-recovered"
+                    : el.type === "textbox"
+                    ? "title-content vml-recovered"
+                    : "vml-recovered";
+                return `<p class="${className}" style="text-align: center; font-weight: bold;">${el.text}</p>`;
+              });
+
+              html = vmlHtmlElements.join("\n") + "\n" + html;
+              const vmlPlainText = missingVmlText
+                .map((el) => el.text)
+                .join("\n\n");
+              content = vmlPlainText + "\n\n" + content;
+            }
+          }
+        } catch (vmlError) {
+          // VML extraction is optional, continue without it
+          console.warn("[fileSystemStorage] VML extraction failed:", vmlError);
+        }
       }
 
       return {

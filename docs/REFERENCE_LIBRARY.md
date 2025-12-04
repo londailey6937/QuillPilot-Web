@@ -949,7 +949,9 @@ When you see a yellow callout box in Writer Mode or exports, it contains:
 
 ### HTML Export (.html)
 
-**Best for**: Sharing, viewing in browser, printing
+**Best for**: Sharing analysis reports, viewing in browser, printing
+
+**Purpose**: HTML export produces an **analysis report** that includes annotations, highlights, and analysis results. It is **not intended for round-trip editing**.
 
 **Features:**
 
@@ -958,6 +960,7 @@ When you see a yellow callout box in Writer Mode or exports, it contains:
 - ✅ Color-coded indicators and callouts
 - ✅ Print-optimized styles
 - ✅ Responsive design (desktop/tablet/mobile)
+- ✅ No external dependencies
 
 **Contains:**
 
@@ -978,15 +981,31 @@ When you see a yellow callout box in Writer Mode or exports, it contains:
 
 ### DOCX Export (.docx)
 
-**Best for**: Editing in Word, collaborating, formal documents
+**Best for**: Round-trip editing, Word collaboration, formal documents
+
+**Purpose**: DOCX export maintains **full round-trip fidelity** with Word styles. Export your document, edit in Word, and re-import with all styles preserved.
 
 **Features:**
 
 - ✅ Editable in Microsoft Word
+- ✅ **Round-trip fidelity** - styles preserved on re-import
+- ✅ Word styles (Title, Subtitle, Heading, Quote)
 - ✅ Colored shaded backgrounds (Nov 2025 update!)
 - ✅ Mode-aware export (Writer vs Analysis)
 - ✅ **Automatic Table of Contents** with page numbers
 - ✅ Professional formatting
+
+### HTML vs DOCX Comparison
+
+| Aspect          | HTML             | DOCX                          |
+| --------------- | ---------------- | ----------------------------- |
+| **Purpose**     | Analysis report  | Round-trip document editing   |
+| **Viewing**     | Any browser      | Requires Word/Office          |
+| **Editing**     | HTML/CSS skills  | Word processor                |
+| **Styling**     | Full CSS control | Word styles (Title, Subtitle) |
+| **File Size**   | Smaller          | Larger                        |
+| **Portability** | ✅ Universal     | ⚠️ Needs software             |
+| **Round-trip**  | ❌ Not supported | ✅ Full fidelity              |
 
 **Export Modes:**
 

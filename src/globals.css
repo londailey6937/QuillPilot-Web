@@ -833,7 +833,9 @@ p {
 }
 
 /* Document title from Word Title style */
-.editor-content h1.doc-title {
+.editor-content h1.doc-title,
+.editor-content p.doc-title,
+.editor-content .doc-title {
   font-size: 36px;
   font-weight: bold;
   text-align: center;
@@ -842,8 +844,16 @@ p {
   text-indent: 0;
 }
 
+/* Override italic for text inside doc-title (often has book-title-char) */
+.editor-content h1.doc-title em,
+.editor-content p.doc-title em,
+.editor-content .doc-title em.book-title-char {
+  font-style: normal;
+}
+
 /* Document subtitle from Word Subtitle style */
-.editor-content p.doc-subtitle {
+.editor-content p.doc-subtitle,
+.editor-content .doc-subtitle {
   font-size: 20px;
   font-style: italic;
   text-align: center;
@@ -884,12 +894,14 @@ p {
   margin-top: 1.5em;
   margin-bottom: 0.5em;
   text-indent: 0;
+  text-align: center;
 }
 
 .editor-content p.title-content.book-title {
   font-size: 32px;
   margin-top: 2em;
   margin-bottom: 1em;
+  text-align: center;
 }
 
 .editor-content p.title-content.subtitle {
@@ -898,6 +910,7 @@ p {
   font-style: italic;
   margin-top: 0.5em;
   margin-bottom: 1em;
+  text-align: center;
 }
 
 .editor-content p.epigraph,
@@ -944,6 +957,61 @@ p {
   background-color: #f9fafb;
 }
 
+/* =========================================
+   Word Character Styles
+   These map to Word's built-in character styles
+   ========================================= */
+
+/* Strong - bold text */
+.editor-content strong {
+  font-weight: bold;
+}
+
+/* Emphasis - italic text */
+.editor-content em {
+  font-style: italic;
+}
+
+/* Intense Emphasis - bold italic */
+.editor-content strong.intense-emphasis em,
+.editor-content .intense-emphasis {
+  font-weight: bold;
+  font-style: italic;
+}
+
+/* Subtle Emphasis - light italic */
+.editor-content em.subtle-emphasis,
+.editor-content .subtle-emphasis {
+  font-style: italic;
+  color: #6b7280;
+}
+
+/* Book Title character style - italic for book/work titles */
+.editor-content em.book-title-char,
+.editor-content .book-title-char {
+  font-style: italic;
+}
+
+/* Subtle Reference - small caps style */
+.editor-content span.subtle-reference,
+.editor-content .subtle-reference {
+  font-variant: small-caps;
+  color: #6b7280;
+}
+
+/* Intense Reference - bold small caps with underline */
+.editor-content span.intense-reference,
+.editor-content .intense-reference {
+  font-variant: small-caps;
+  font-weight: bold;
+  text-decoration: underline;
+  color: #1f2937;
+}
+
+/* =========================================
+   End Word Character Styles
+   ========================================= */
+
 .editor-content p.body-text {
   text-indent: 1.5em;
   margin-bottom: 0;
@@ -956,6 +1024,22 @@ p {
 .editor-content p.no-spacing {
   margin-top: 0;
   margin-bottom: 0;
+}
+
+/* List Paragraph - for bulleted/numbered list items */
+.editor-content p.list-paragraph {
+  margin-left: 1.5em;
+  text-indent: 0;
+  margin-top: 0.25em;
+  margin-bottom: 0.25em;
+}
+
+/* List items */
+.editor-content li.list-bullet,
+.editor-content li.list-number {
+  margin-left: 1.5em;
+  margin-top: 0.25em;
+  margin-bottom: 0.25em;
 }
 
 .editor-content p.dedication {
@@ -1490,22 +1574,27 @@ p {
 .editor-content p.part-title,
 .editor-content p.dedication,
 .editor-content p.image-paragraph,
-.editor-content [data-ruler-center="true"] {
+.editor-content p.doc-title,
+.editor-content p.doc-subtitle,
+.editor-content [data-ruler-center="true"]:not(h1):not(h2):not(h3) {
   transform: translateX(var(--center-shift, 0));
   position: relative;
-  display: inline-block;
-  max-width: 100%;
 }
 
-/* Left-aligned block styles - ensure they display as block */
-.editor-content p.chapter-heading,
+/* Heading block styles - ensure they display as block, not inline-block */
 .editor-content h1,
 .editor-content h2,
 .editor-content h3 {
   display: block !important;
-  text-align: left !important;
   transform: none !important;
   --center-shift: 0 !important;
+}
+
+/* Chapter headings and doc-title should be centered */
+.editor-content p.chapter-heading,
+.editor-content h1.chapter-heading,
+.editor-content h1.doc-title {
+  text-align: center !important;
 }
 
 .editor-content h1 {
