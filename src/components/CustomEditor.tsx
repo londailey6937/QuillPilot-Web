@@ -26,6 +26,7 @@ import { VersionHistory } from "./VersionHistory";
 import { CommentAnnotation } from "./CommentAnnotation";
 import { PagesSurface } from "@/components/PagesSurface";
 import { DocumentStylesState } from "../types/documentStyles";
+import { useTheme } from "./ThemeProvider";
 
 interface CustomEditorProps {
   content: string;
@@ -1066,6 +1067,16 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   const [canRedo, setCanRedo] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
+  const { theme } = useTheme();
+  const isDarkMode = theme === "dark";
+  const blockTypeButtonBaseBg = isDarkMode ? "rgb(42, 36, 33)" : "#fff8ec";
+  const blockTypeButtonHoverBg = isDarkMode ? "rgb(58, 51, 49)" : "#f7e6d0";
+  const blockTypeButtonTextColor = isDarkMode ? "#fff8ec" : "#2a2421";
+  const blockTypeButtonBorderColor = "#e0c392";
+  const toolbarInactiveButtonClass = isDarkMode
+    ? "border border-[#4b433f] bg-[#5a534e] hover:bg-[#6a635c] text-[rgb(232,213,183)]"
+    : "border border-[#e0c392] bg-[#fff8ec] hover:bg-[#f7e6d0] text-[#2a2421]";
+
   // New feature states
   const [blockType, setBlockType] = useState("p");
   const [fontFamily, setFontFamily] = useState("default");
@@ -1615,9 +1626,9 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
 
   // Styles Panel state
   const [showStylesPanel, setShowStylesPanel] = useState(false);
-  const [stylesPanelCategory, setStylesPanelCategory] = useState<
-    "standard" | "book" | "special"
-  >("standard");
+  const [expandedStylesSections, setExpandedStylesSections] = useState<
+    Set<string>
+  >(new Set(["basic"]));
   const [documentStyles, setDocumentStyles] = useState<DocumentStylesState>(
     () => buildDefaultDocumentStyles()
   );
@@ -4502,9 +4513,9 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                     style={{
                       padding: "4px 8px",
                       borderRadius: "6px",
-                      border: "1.5px solid #e0c392",
-                      backgroundColor: "#3a3634",
-                      color: "rgb(232, 213, 183)",
+                      border: `1.5px solid ${blockTypeButtonBorderColor}`,
+                      backgroundColor: blockTypeButtonBaseBg,
+                      color: blockTypeButtonTextColor,
                       fontSize: "12px",
                       cursor: "pointer",
                       display: "flex",
@@ -4515,12 +4526,15 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                       transition: "all 0.15s",
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = "#4a4340";
+                      e.currentTarget.style.backgroundColor =
+                        blockTypeButtonHoverBg;
                       e.currentTarget.style.borderColor = "#ef8432";
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = "#3a3634";
-                      e.currentTarget.style.borderColor = "#e0c392";
+                      e.currentTarget.style.backgroundColor =
+                        blockTypeButtonBaseBg;
+                      e.currentTarget.style.borderColor =
+                        blockTypeButtonBorderColor;
                     }}
                     title="Block Type"
                   >
@@ -4753,36 +4767,54 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                 </button>
 
                 {/* Font Family dropdown */}
-                <select
-                  value={fontFamily}
-                  onChange={(e) => {
-                    const newFont = e.target.value;
-                    setFontFamily(newFont);
-                    if (newFont === "default") {
-                      formatText("fontName", "inherit");
-                    } else {
-                      formatText("fontName", newFont);
-                    }
-                  }}
-                  className="px-1.5 py-1 rounded border bg-white hover:bg-gray-50 transition-colors text-xs"
-                  title="Font Family"
-                  style={{ maxWidth: "100px" }}
+                <div
+                  className="relative inline-flex items-center"
+                  style={{ maxWidth: "120px" }}
                 >
-                  <option value="default">Default</option>
-                  <option value="Georgia, serif">Georgia</option>
-                  <option value="Times New Roman, serif">
-                    Times New Roman
-                  </option>
-                  <option value="Palatino Linotype, serif">Palatino</option>
-                  <option value="Garamond, serif">Garamond</option>
-                  <option value="Arial, sans-serif">Arial</option>
-                  <option value="Helvetica, sans-serif">Helvetica</option>
-                  <option value="Verdana, sans-serif">Verdana</option>
-                  <option value="Courier New, monospace">Courier New</option>
-                  <option value="Courier Prime, monospace">
-                    Courier Prime
-                  </option>
-                </select>
+                  <select
+                    value={fontFamily}
+                    onChange={(e) => {
+                      const newFont = e.target.value;
+                      setFontFamily(newFont);
+                      if (newFont === "default") {
+                        formatText("fontName", "inherit");
+                      } else {
+                        formatText("fontName", newFont);
+                      }
+                    }}
+                    className="w-full px-1.5 py-1 pr-6 rounded border border-[#e0c392] hover:border-[#ef8432] transition-colors text-xs text-[#2a2421]"
+                    title="Font Family"
+                    style={{
+                      backgroundColor: "#fff8ec",
+                      color: "#2a2421",
+                      appearance: "none",
+                      WebkitAppearance: "none",
+                      MozAppearance: "none",
+                      lineHeight: "1.2",
+                    }}
+                  >
+                    <option value="default">Default</option>
+                    <option value="Georgia, serif">Georgia</option>
+                    <option value="Times New Roman, serif">
+                      Times New Roman
+                    </option>
+                    <option value="Palatino Linotype, serif">Palatino</option>
+                    <option value="Garamond, serif">Garamond</option>
+                    <option value="Arial, sans-serif">Arial</option>
+                    <option value="Helvetica, sans-serif">Helvetica</option>
+                    <option value="Verdana, sans-serif">Verdana</option>
+                    <option value="Courier New, monospace">Courier New</option>
+                    <option value="Courier Prime, monospace">
+                      Courier Prime
+                    </option>
+                  </select>
+                  <span
+                    aria-hidden="true"
+                    className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-[#2a2421]"
+                  >
+                    ▼
+                  </span>
+                </div>
 
                 {/* Font Size Controls */}
                 <button
@@ -4849,7 +4881,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                       }
                     });
                   }}
-                  className="px-1.5 py-1 rounded border border-[#e0c392] bg-[#3a3634] hover:bg-[#4a4340] text-[rgb(232,213,183)] transition-colors text-xs font-bold"
+                  className={`px-1.5 py-1 rounded transition-colors text-xs font-bold ${toolbarInactiveButtonClass}`}
                   title="Decrease Font Size"
                 >
                   A-
@@ -4924,7 +4956,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                       }
                     });
                   }}
-                  className="px-1.5 py-1 rounded border border-[#e0c392] bg-[#3a3634] hover:bg-[#4a4340] text-[rgb(232,213,183)] transition-colors text-xs font-bold"
+                  className={`px-1.5 py-1 rounded transition-colors text-xs font-bold ${toolbarInactiveButtonClass}`}
                   title="Increase Font Size"
                 >
                   A+
@@ -4941,7 +4973,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                   className={`px-2 py-1 rounded font-bold transition-colors text-xs ${
                     isBold
                       ? "bg-[#ef8432] text-white border border-[#ef8432]"
-                      : "bg-[#3a3634] hover:bg-[#4a4340] text-[rgb(232,213,183)]"
+                      : toolbarInactiveButtonClass
                   }`}
                   title="Bold"
                 >
@@ -4955,7 +4987,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                   className={`px-2 py-1 rounded italic transition-colors text-xs ${
                     isItalic
                       ? "bg-[#ef8432] text-white border border-[#ef8432]"
-                      : "bg-[#3a3634] hover:bg-[#4a4340] text-[rgb(232,213,183)]"
+                      : toolbarInactiveButtonClass
                   }`}
                   title="Italic"
                 >
@@ -4969,7 +5001,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                   className={`px-2 py-1 rounded underline transition-colors text-xs ${
                     isUnderline
                       ? "bg-[#ef8432] text-white border border-[#ef8432]"
-                      : "bg-[#3a3634] hover:bg-[#4a4340] text-[rgb(232,213,183)]"
+                      : toolbarInactiveButtonClass
                   }`}
                   title="Underline"
                 >
@@ -4987,7 +5019,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                   className={`px-1.5 py-1 rounded transition-colors text-xs ${
                     textAlign === "left"
                       ? "bg-[#ef8432] text-white border border-[#ef8432]"
-                      : "bg-[#3a3634] hover:bg-[#4a4340] text-[rgb(232,213,183)]"
+                      : toolbarInactiveButtonClass
                   }`}
                   title="Align Left"
                 >
@@ -5001,7 +5033,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                   className={`px-1.5 py-1 rounded transition-colors text-xs ${
                     textAlign === "center"
                       ? "bg-[#ef8432] text-white border border-[#ef8432]"
-                      : "bg-[#3a3634] hover:bg-[#4a4340] text-[rgb(232,213,183)]"
+                      : toolbarInactiveButtonClass
                   }`}
                   title="Center"
                 >
@@ -5015,7 +5047,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                   className={`px-1.5 py-1 rounded transition-colors text-xs ${
                     textAlign === "right"
                       ? "bg-[#ef8432] text-white border border-[#ef8432]"
-                      : "bg-[#3a3634] hover:bg-[#4a4340] text-[rgb(232,213,183)]"
+                      : toolbarInactiveButtonClass
                   }`}
                   title="Align Right"
                 >
@@ -5821,870 +5853,551 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           onClick={() => setShowStylesPanel(false)}
         >
           <div
-            className="bg-white rounded-lg shadow-2xl w-full max-w-xl max-h-[80vh] overflow-hidden flex flex-col"
+            className="bg-white rounded-lg shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col"
             style={{ border: "2px solid #e0c392" }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="p-3 border-b bg-gradient-to-r from-[#fef5e7] to-[#fff7ed] flex-shrink-0">
-              <h2 className="text-lg font-bold text-[#2c3e50] mb-2">
-                Modify Styles
+              <h2 className="text-lg font-bold text-[#111827] flex items-center gap-2">
+                <span>⚙</span> Modify Styles
               </h2>
-              {/* Category Tabs */}
-              <div className="flex gap-1">
-                <button
-                  onClick={() => setStylesPanelCategory("standard")}
-                  className={`px-3 py-1 text-xs rounded-t transition-colors ${
-                    stylesPanelCategory === "standard"
-                      ? "bg-white text-[#ef8432] font-semibold"
-                      : "bg-[#f5e6d3] text-[#111827] hover:bg-[#ead5bb]"
-                  }`}
-                >
-                  Standard
-                </button>
-                <button
-                  onClick={() => setStylesPanelCategory("book")}
-                  className={`px-3 py-1 text-xs rounded-t transition-colors ${
-                    stylesPanelCategory === "book"
-                      ? "bg-white text-[#ef8432] font-semibold"
-                      : "bg-[#f5e6d3] text-[#111827] hover:bg-[#ead5bb]"
-                  }`}
-                >
-                  Book Publishing
-                </button>
-                <button
-                  onClick={() => setStylesPanelCategory("special")}
-                  className={`px-3 py-1 text-xs rounded-t transition-colors ${
-                    stylesPanelCategory === "special"
-                      ? "bg-white text-[#ef8432] font-semibold"
-                      : "bg-[#f5e6d3] text-[#111827] hover:bg-[#ead5bb]"
-                  }`}
-                >
-                  Special
-                </button>
-              </div>
+              <p className="text-xs text-[#6b7280] mt-1">
+                Customize formatting for all style categories. Click a section
+                to expand.
+              </p>
             </div>
 
-            <div className="p-3 overflow-y-auto flex-1">
-              {/* Standard Styles Tab */}
-              {stylesPanelCategory === "standard" && (
-                <>
-                  {/* Paragraph Style */}
-                  <div className="mb-3 p-3 border rounded-lg bg-[#fef5e7]">
-                    <h3 className="font-semibold text-[#2c3e50] mb-2 text-sm flex items-center gap-2">
-                      <span>¶</span> Paragraph
-                    </h3>
-                    <div className="grid grid-cols-5 gap-2 text-xs">
-                      <div>
-                        <label className="block text-[#111827] mb-1">
-                          Size
-                        </label>
-                        <input
-                          type="number"
-                          value={documentStyles.paragraph.fontSize}
-                          onChange={(e) =>
-                            setDocumentStyles((prev) => ({
-                              ...prev,
-                              paragraph: {
-                                ...prev.paragraph,
-                                fontSize: Number(e.target.value),
-                              },
-                            }))
-                          }
-                          className="w-full px-2 py-1 border rounded focus:ring-1 focus:ring-[#ef8432]"
-                          min="10"
-                          max="24"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[#111827] mb-1">
-                          Indent
-                        </label>
-                        <input
-                          type="number"
-                          value={documentStyles.paragraph.firstLineIndent}
-                          onChange={(e) =>
-                            setDocumentStyles((prev) => ({
-                              ...prev,
-                              paragraph: {
-                                ...prev.paragraph,
-                                firstLineIndent: Number(e.target.value),
-                              },
-                            }))
-                          }
-                          className="w-full px-2 py-1 border rounded focus:ring-1 focus:ring-[#ef8432]"
-                          min="0"
-                          max="200"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[#111827] mb-1">
-                          Line Ht
-                        </label>
-                        <select
-                          value={documentStyles.paragraph.lineHeight}
-                          onChange={(e) =>
-                            setDocumentStyles((prev) => ({
-                              ...prev,
-                              paragraph: {
-                                ...prev.paragraph,
-                                lineHeight: Number(e.target.value),
-                              },
-                            }))
-                          }
-                          className="w-full px-2 py-1 border rounded focus:ring-1 focus:ring-[#ef8432]"
-                        >
-                          <option value="1">1.0</option>
-                          <option value="1.15">1.15</option>
-                          <option value="1.5">1.5</option>
-                          <option value="2">2.0</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-[#111827] mb-1">
-                          After
-                        </label>
-                        <input
-                          type="number"
-                          value={documentStyles.paragraph.marginBottom}
-                          onChange={(e) =>
-                            setDocumentStyles((prev) => ({
-                              ...prev,
-                              paragraph: {
-                                ...prev.paragraph,
-                                marginBottom: Number(e.target.value),
-                              },
-                            }))
-                          }
-                          className="w-full px-2 py-1 border rounded focus:ring-1 focus:ring-[#ef8432]"
-                          min="0"
-                          max="5"
-                          step="0.1"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[#111827] mb-1">
-                          Align
-                        </label>
-                        <select
-                          value={documentStyles.paragraph.textAlign}
-                          onChange={(e) =>
-                            setDocumentStyles((prev) => ({
-                              ...prev,
-                              paragraph: {
-                                ...prev.paragraph,
-                                textAlign: e.target.value as
-                                  | "left"
-                                  | "center"
-                                  | "right"
-                                  | "justify",
-                              },
-                            }))
-                          }
-                          className="w-full px-2 py-1 border rounded focus:ring-1 focus:ring-[#ef8432]"
-                        >
-                          <option value="left">Left</option>
-                          <option value="center">Ctr</option>
-                          <option value="right">Right</option>
-                          <option value="justify">Just</option>
-                        </select>
-                      </div>
+            <div className="overflow-y-auto flex-1">
+              {/* Accordion Sections for each category */}
+              {BLOCK_TYPE_SECTIONS.map((section) => (
+                <div key={section.key} className="border-b border-[#e0c392]">
+                  {/* Section Header - Collapsible */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setExpandedStylesSections((prev) => {
+                        const next = new Set(prev);
+                        if (next.has(section.key)) {
+                          next.delete(section.key);
+                        } else {
+                          next.add(section.key);
+                        }
+                        return next;
+                      });
+                    }}
+                    className="w-full px-4 py-2 flex items-center justify-between bg-[#f5ead9] hover:bg-[#eddcc5] transition-colors"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="w-3 h-3 rounded-full"
+                        style={{ backgroundColor: section.accent }}
+                      />
+                      <span className="font-semibold text-sm text-[#92400e]">
+                        {section.label}
+                      </span>
+                      <span className="text-xs text-[#6b7280]">
+                        ({section.items.length} styles)
+                      </span>
                     </div>
-                  </div>
+                    <span className="text-xs text-[#6b7280]">
+                      {expandedStylesSections.has(section.key) ? "▼" : "▶"}
+                    </span>
+                  </button>
 
-                  {/* Heading Styles */}
-                  <div className="mb-3 p-3 border rounded-lg bg-[#fef5e7]">
-                    <h3 className="font-semibold text-[#2c3e50] mb-2 text-sm">
-                      Headings
-                    </h3>
-                    {["heading1", "heading2", "heading3"].map(
-                      (heading, idx) => (
-                        <div key={heading} className="mb-2 last:mb-0">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-medium text-[#111827] w-8">
-                              H{idx + 1}
-                            </span>
-                            <div className="grid grid-cols-5 gap-2 flex-1 text-xs">
-                              <input
-                                type="number"
-                                value={
-                                  (
-                                    documentStyles[
-                                      heading as keyof typeof documentStyles
-                                    ] as any
-                                  ).fontSize
-                                }
-                                onChange={(e) =>
-                                  setDocumentStyles((prev) => ({
-                                    ...prev,
-                                    [heading]: {
-                                      ...(prev as any)[heading],
-                                      fontSize: Number(e.target.value),
-                                    },
-                                  }))
-                                }
-                                className="w-full px-2 py-1 border rounded focus:ring-1 focus:ring-[#ef8432]"
-                                title="Font Size"
-                                min="12"
-                                max="48"
-                              />
-                              <select
-                                value={
-                                  (
-                                    documentStyles[
-                                      heading as keyof typeof documentStyles
-                                    ] as any
-                                  ).fontWeight
-                                }
-                                onChange={(e) =>
-                                  setDocumentStyles((prev) => ({
-                                    ...prev,
-                                    [heading]: {
-                                      ...(prev as any)[heading],
-                                      fontWeight: e.target.value,
-                                    },
-                                  }))
-                                }
-                                className="w-full px-1 py-1 border rounded focus:ring-1 focus:ring-[#ef8432]"
-                              >
-                                <option value="normal">Norm</option>
-                                <option value="bold">Bold</option>
-                              </select>
-                              <input
-                                type="number"
-                                value={
-                                  (
-                                    documentStyles[
-                                      heading as keyof typeof documentStyles
-                                    ] as any
-                                  ).marginTop
-                                }
-                                onChange={(e) =>
-                                  setDocumentStyles((prev) => ({
-                                    ...prev,
-                                    [heading]: {
-                                      ...(prev as any)[heading],
-                                      marginTop: Number(e.target.value),
-                                    },
-                                  }))
-                                }
-                                className="w-full px-1 py-1 border rounded focus:ring-1 focus:ring-[#ef8432]"
-                                title="Margin Before"
-                                min="0"
-                                max="5"
-                                step="0.1"
-                              />
-                              <input
-                                type="number"
-                                value={
-                                  (
-                                    documentStyles[
-                                      heading as keyof typeof documentStyles
-                                    ] as any
-                                  ).marginBottom
-                                }
-                                onChange={(e) =>
-                                  setDocumentStyles((prev) => ({
-                                    ...prev,
-                                    [heading]: {
-                                      ...(prev as any)[heading],
-                                      marginBottom: Number(e.target.value),
-                                    },
-                                  }))
-                                }
-                                className="w-full px-1 py-1 border rounded focus:ring-1 focus:ring-[#ef8432]"
-                                title="Margin After"
-                                min="0"
-                                max="5"
-                                step="0.1"
-                              />
-                              <select
-                                value={
-                                  (
-                                    documentStyles[
-                                      heading as keyof typeof documentStyles
-                                    ] as any
-                                  ).textAlign || "left"
-                                }
-                                onChange={(e) =>
-                                  setDocumentStyles((prev) => ({
-                                    ...prev,
-                                    [heading]: {
-                                      ...(prev as any)[heading],
-                                      textAlign: e.target.value,
-                                    },
-                                  }))
-                                }
-                                className="w-full px-1 py-1 border rounded focus:ring-1 focus:ring-[#ef8432]"
-                              >
-                                <option value="left">Left</option>
-                                <option value="center">Ctr</option>
-                              </select>
+                  {/* Section Content - Expanded */}
+                  {expandedStylesSections.has(section.key) && (
+                    <div className="p-3 bg-[#fffaf3] space-y-2">
+                      {section.items.map((item) => {
+                        // Map block type value to documentStyles key
+                        const styleKey =
+                          item.value === "p"
+                            ? "paragraph"
+                            : item.value === "h1"
+                            ? "heading1"
+                            : item.value === "h2"
+                            ? "heading2"
+                            : item.value === "h3"
+                            ? "heading3"
+                            : item.value === "h4"
+                            ? "heading3"
+                            : item.value === "h5"
+                            ? "heading3"
+                            : item.value === "h6"
+                            ? "heading3"
+                            : item.value === "blockquote"
+                            ? "blockquote"
+                            : item.value === "pre"
+                            ? "paragraph"
+                            : item.value;
+
+                        const style =
+                          documentStyles[
+                            styleKey as keyof typeof documentStyles
+                          ];
+
+                        if (!style) return null;
+
+                        return (
+                          <div
+                            key={item.value}
+                            className="p-2 border rounded bg-white"
+                          >
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-xs font-medium text-[#111827]">
+                                {item.label}
+                              </span>
                             </div>
+                            <div className="grid grid-cols-6 gap-1.5 text-xs">
+                              <div>
+                                <label className="block text-[#6b7280] mb-0.5 text-[10px]">
+                                  Size
+                                </label>
+                                <input
+                                  type="number"
+                                  value={(style as any).fontSize || 16}
+                                  onChange={(e) =>
+                                    setDocumentStyles((prev) => ({
+                                      ...prev,
+                                      [styleKey]: {
+                                        ...(prev as any)[styleKey],
+                                        fontSize: Number(e.target.value),
+                                      },
+                                    }))
+                                  }
+                                  className="w-full px-1 py-0.5 border rounded text-xs focus:ring-1 focus:ring-[#ef8432]"
+                                  min="8"
+                                  max="72"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[#6b7280] mb-0.5 text-[10px]">
+                                  Weight
+                                </label>
+                                <select
+                                  value={(style as any).fontWeight || "normal"}
+                                  onChange={(e) =>
+                                    setDocumentStyles((prev) => ({
+                                      ...prev,
+                                      [styleKey]: {
+                                        ...(prev as any)[styleKey],
+                                        fontWeight: e.target.value,
+                                      },
+                                    }))
+                                  }
+                                  className="w-full px-0.5 py-0.5 border rounded text-xs focus:ring-1 focus:ring-[#ef8432]"
+                                >
+                                  <option value="normal">Norm</option>
+                                  <option value="bold">Bold</option>
+                                </select>
+                              </div>
+                              <div>
+                                <label className="block text-[#6b7280] mb-0.5 text-[10px]">
+                                  Style
+                                </label>
+                                <select
+                                  value={(style as any).fontStyle || "normal"}
+                                  onChange={(e) =>
+                                    setDocumentStyles((prev) => ({
+                                      ...prev,
+                                      [styleKey]: {
+                                        ...(prev as any)[styleKey],
+                                        fontStyle: e.target.value,
+                                      },
+                                    }))
+                                  }
+                                  className="w-full px-0.5 py-0.5 border rounded text-xs focus:ring-1 focus:ring-[#ef8432]"
+                                >
+                                  <option value="normal">Norm</option>
+                                  <option value="italic">Italic</option>
+                                </select>
+                              </div>
+                              <div>
+                                <label className="block text-[#6b7280] mb-0.5 text-[10px]">
+                                  Align
+                                </label>
+                                <select
+                                  value={(style as any).textAlign || "left"}
+                                  onChange={(e) =>
+                                    setDocumentStyles((prev) => ({
+                                      ...prev,
+                                      [styleKey]: {
+                                        ...(prev as any)[styleKey],
+                                        textAlign: e.target.value,
+                                      },
+                                    }))
+                                  }
+                                  className="w-full px-0.5 py-0.5 border rounded text-xs focus:ring-1 focus:ring-[#ef8432]"
+                                >
+                                  <option value="left">L</option>
+                                  <option value="center">C</option>
+                                  <option value="right">R</option>
+                                  <option value="justify">J</option>
+                                </select>
+                              </div>
+                              <div>
+                                <label className="block text-[#6b7280] mb-0.5 text-[10px]">
+                                  Before
+                                </label>
+                                <input
+                                  type="number"
+                                  value={(style as any).marginTop || 0}
+                                  onChange={(e) =>
+                                    setDocumentStyles((prev) => ({
+                                      ...prev,
+                                      [styleKey]: {
+                                        ...(prev as any)[styleKey],
+                                        marginTop: Number(e.target.value),
+                                      },
+                                    }))
+                                  }
+                                  className="w-full px-1 py-0.5 border rounded text-xs focus:ring-1 focus:ring-[#ef8432]"
+                                  min="0"
+                                  max="5"
+                                  step="0.1"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[#6b7280] mb-0.5 text-[10px]">
+                                  After
+                                </label>
+                                <input
+                                  type="number"
+                                  value={(style as any).marginBottom || 0}
+                                  onChange={(e) =>
+                                    setDocumentStyles((prev) => ({
+                                      ...prev,
+                                      [styleKey]: {
+                                        ...(prev as any)[styleKey],
+                                        marginBottom: Number(e.target.value),
+                                      },
+                                    }))
+                                  }
+                                  className="w-full px-1 py-0.5 border rounded text-xs focus:ring-1 focus:ring-[#ef8432]"
+                                  min="0"
+                                  max="5"
+                                  step="0.1"
+                                />
+                              </div>
+                            </div>
+                            {/* Additional controls for styles with special properties */}
+                            {((style as any).firstLineIndent !== undefined ||
+                              (style as any).lineHeight !== undefined ||
+                              (style as any).marginLeft !== undefined ||
+                              (style as any).borderLeftWidth !== undefined) && (
+                              <div className="grid grid-cols-6 gap-1.5 text-xs mt-1.5 pt-1.5 border-t border-[#e0c392]">
+                                {(style as any).firstLineIndent !==
+                                  undefined && (
+                                  <div>
+                                    <label className="block text-[#6b7280] mb-0.5 text-[10px]">
+                                      Indent
+                                    </label>
+                                    <input
+                                      type="number"
+                                      value={(style as any).firstLineIndent}
+                                      onChange={(e) =>
+                                        setDocumentStyles((prev) => ({
+                                          ...prev,
+                                          [styleKey]: {
+                                            ...(prev as any)[styleKey],
+                                            firstLineIndent: Number(
+                                              e.target.value
+                                            ),
+                                          },
+                                        }))
+                                      }
+                                      className="w-full px-1 py-0.5 border rounded text-xs focus:ring-1 focus:ring-[#ef8432]"
+                                      min="0"
+                                      max="200"
+                                    />
+                                  </div>
+                                )}
+                                {(style as any).lineHeight !== undefined && (
+                                  <div>
+                                    <label className="block text-[#6b7280] mb-0.5 text-[10px]">
+                                      Line Ht
+                                    </label>
+                                    <select
+                                      value={(style as any).lineHeight}
+                                      onChange={(e) =>
+                                        setDocumentStyles((prev) => ({
+                                          ...prev,
+                                          [styleKey]: {
+                                            ...(prev as any)[styleKey],
+                                            lineHeight: Number(e.target.value),
+                                          },
+                                        }))
+                                      }
+                                      className="w-full px-0.5 py-0.5 border rounded text-xs focus:ring-1 focus:ring-[#ef8432]"
+                                    >
+                                      <option value="1">1.0</option>
+                                      <option value="1.15">1.15</option>
+                                      <option value="1.4">1.4</option>
+                                      <option value="1.5">1.5</option>
+                                      <option value="1.6">1.6</option>
+                                      <option value="1.7">1.7</option>
+                                      <option value="2">2.0</option>
+                                    </select>
+                                  </div>
+                                )}
+                                {(style as any).marginLeft !== undefined && (
+                                  <div>
+                                    <label className="block text-[#6b7280] mb-0.5 text-[10px]">
+                                      L Margin
+                                    </label>
+                                    <input
+                                      type="number"
+                                      value={(style as any).marginLeft}
+                                      onChange={(e) =>
+                                        setDocumentStyles((prev) => ({
+                                          ...prev,
+                                          [styleKey]: {
+                                            ...(prev as any)[styleKey],
+                                            marginLeft: Number(e.target.value),
+                                          },
+                                        }))
+                                      }
+                                      className="w-full px-1 py-0.5 border rounded text-xs focus:ring-1 focus:ring-[#ef8432]"
+                                      min="0"
+                                      max="200"
+                                    />
+                                  </div>
+                                )}
+                                {(style as any).marginRight !== undefined && (
+                                  <div>
+                                    <label className="block text-[#6b7280] mb-0.5 text-[10px]">
+                                      R Margin
+                                    </label>
+                                    <input
+                                      type="number"
+                                      value={(style as any).marginRight}
+                                      onChange={(e) =>
+                                        setDocumentStyles((prev) => ({
+                                          ...prev,
+                                          [styleKey]: {
+                                            ...(prev as any)[styleKey],
+                                            marginRight: Number(e.target.value),
+                                          },
+                                        }))
+                                      }
+                                      className="w-full px-1 py-0.5 border rounded text-xs focus:ring-1 focus:ring-[#ef8432]"
+                                      min="0"
+                                      max="200"
+                                    />
+                                  </div>
+                                )}
+                                {(style as any).borderLeftWidth !==
+                                  undefined && (
+                                  <>
+                                    <div>
+                                      <label className="block text-[#6b7280] mb-0.5 text-[10px]">
+                                        Border
+                                      </label>
+                                      <input
+                                        type="number"
+                                        value={(style as any).borderLeftWidth}
+                                        onChange={(e) =>
+                                          setDocumentStyles((prev) => ({
+                                            ...prev,
+                                            [styleKey]: {
+                                              ...(prev as any)[styleKey],
+                                              borderLeftWidth: Number(
+                                                e.target.value
+                                              ),
+                                            },
+                                          }))
+                                        }
+                                        className="w-full px-1 py-0.5 border rounded text-xs focus:ring-1 focus:ring-[#ef8432]"
+                                        min="0"
+                                        max="10"
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="block text-[#6b7280] mb-0.5 text-[10px]">
+                                        Color
+                                      </label>
+                                      <input
+                                        type="color"
+                                        value={
+                                          (style as any).borderLeftColor ||
+                                          "#e0c392"
+                                        }
+                                        onChange={(e) =>
+                                          setDocumentStyles((prev) => ({
+                                            ...prev,
+                                            [styleKey]: {
+                                              ...(prev as any)[styleKey],
+                                              borderLeftColor: e.target.value,
+                                            },
+                                          }))
+                                        }
+                                        className="w-full h-5 px-0.5 border rounded cursor-pointer"
+                                      />
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                            )}
                           </div>
-                        </div>
-                      )
-                    )}
-                  </div>
-
-                  {/* Blockquote Style */}
-                  <div className="mb-3 p-3 border rounded-lg bg-[#fef5e7]">
-                    <h3 className="font-medium text-sm text-[#2c3e50] mb-2 flex items-center gap-2">
-                      <span>"</span> Block Quote
-                    </h3>
-                    <div className="grid grid-cols-5 gap-2 text-xs">
-                      <div>
-                        <label className="block text-[#111827] mb-1">
-                          Size
-                        </label>
-                        <input
-                          type="number"
-                          value={documentStyles.blockquote.fontSize}
-                          onChange={(e) =>
-                            setDocumentStyles((prev) => ({
-                              ...prev,
-                              blockquote: {
-                                ...prev.blockquote,
-                                fontSize: Number(e.target.value),
-                              },
-                            }))
-                          }
-                          className="w-full px-1 py-1 border rounded focus:ring-1 focus:ring-[#ef8432]"
-                          min="10"
-                          max="24"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[#111827] mb-1">
-                          Style
-                        </label>
-                        <select
-                          value={documentStyles.blockquote.fontStyle}
-                          onChange={(e) =>
-                            setDocumentStyles((prev) => ({
-                              ...prev,
-                              blockquote: {
-                                ...prev.blockquote,
-                                fontStyle: e.target.value as
-                                  | "normal"
-                                  | "italic",
-                              },
-                            }))
-                          }
-                          className="w-full px-1 py-1 border rounded focus:ring-1 focus:ring-[#ef8432]"
-                        >
-                          <option value="normal">Norm</option>
-                          <option value="italic">Italic</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-[#111827] mb-1">
-                          Indent
-                        </label>
-                        <input
-                          type="number"
-                          value={documentStyles.blockquote.marginLeft}
-                          onChange={(e) =>
-                            setDocumentStyles((prev) => ({
-                              ...prev,
-                              blockquote: {
-                                ...prev.blockquote,
-                                marginLeft: Number(e.target.value),
-                              },
-                            }))
-                          }
-                          className="w-full px-1 py-1 border rounded focus:ring-1 focus:ring-[#ef8432]"
-                          min="0"
-                          max="100"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[#111827] mb-1">
-                          Border
-                        </label>
-                        <input
-                          type="number"
-                          value={documentStyles.blockquote.borderLeftWidth}
-                          onChange={(e) =>
-                            setDocumentStyles((prev) => ({
-                              ...prev,
-                              blockquote: {
-                                ...prev.blockquote,
-                                borderLeftWidth: Number(e.target.value),
-                              },
-                            }))
-                          }
-                          className="w-full px-1 py-1 border rounded focus:ring-1 focus:ring-[#ef8432]"
-                          min="0"
-                          max="10"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[#111827] mb-1">
-                          Color
-                        </label>
-                        <input
-                          type="color"
-                          value={documentStyles.blockquote.borderLeftColor}
-                          onChange={(e) =>
-                            setDocumentStyles((prev) => ({
-                              ...prev,
-                              blockquote: {
-                                ...prev.blockquote,
-                                borderLeftColor: e.target.value,
-                              },
-                            }))
-                          }
-                          className="w-full h-6 px-1 border rounded cursor-pointer"
-                        />
-                      </div>
+                        );
+                      })}
                     </div>
+                  )}
+                </div>
+              ))}
+
+              {/* Header & Footer Section - Always visible at bottom */}
+              <div className="border-b border-[#e0c392]">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setExpandedStylesSections((prev) => {
+                      const next = new Set(prev);
+                      if (next.has("header-footer")) {
+                        next.delete("header-footer");
+                      } else {
+                        next.add("header-footer");
+                      }
+                      return next;
+                    });
+                  }}
+                  className="w-full px-4 py-2 flex items-center justify-between bg-[#f5ead9] hover:bg-[#eddcc5] transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm">📄</span>
+                    <span className="font-semibold text-sm text-[#111827]">
+                      Header & Footer
+                    </span>
                   </div>
-                </>
-              )}
+                  <span className="text-xs text-[#6b7280]">
+                    {expandedStylesSections.has("header-footer") ? "▼" : "▶"}
+                  </span>
+                </button>
 
-              {/* Book Publishing Styles Tab */}
-              {stylesPanelCategory === "book" && (
-                <>
-                  {[
-                    "book-title",
-                    "title",
-                    "subtitle",
-                    "chapter-heading",
-                    "part-title",
-                  ].map((styleName) => {
-                    const friendlyLabel =
-                      styleName === "book-title"
-                        ? "Book Title"
-                        : styleName.replace("-", " ");
-                    return (
-                      <div
-                        key={styleName}
-                        className="mb-3 p-3 border rounded-lg bg-[#fef5e7]"
-                      >
-                        <h3 className="font-medium text-sm text-[#2c3e50] mb-2 capitalize">
-                          {friendlyLabel}
-                        </h3>
-                        <div className="grid grid-cols-5 gap-2 text-xs">
-                          <div>
-                            <label className="block text-[#111827] mb-1">
-                              Size{styleName === "book-title" ? " (pt)" : ""}
-                            </label>
-                            <input
-                              type="number"
-                              value={
-                                (
-                                  documentStyles[
-                                    styleName as keyof typeof documentStyles
-                                  ] as any
-                                ).fontSize
-                              }
-                              onChange={(e) =>
-                                setDocumentStyles((prev) => ({
-                                  ...prev,
-                                  [styleName]: {
-                                    ...(prev as any)[styleName],
-                                    fontSize: Number(e.target.value),
-                                  },
-                                }))
-                              }
-                              className="w-full px-2 py-1 border rounded focus:ring-1 focus:ring-[#ef8432]"
-                              min="12"
-                              max="48"
-                              step={styleName === "book-title" ? 0.5 : 1}
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-[#111827] mb-1">
-                              Weight
-                            </label>
-                            <select
-                              value={
-                                (
-                                  documentStyles[
-                                    styleName as keyof typeof documentStyles
-                                  ] as any
-                                ).fontWeight
-                              }
-                              onChange={(e) =>
-                                setDocumentStyles((prev) => ({
-                                  ...prev,
-                                  [styleName]: {
-                                    ...(prev as any)[styleName],
-                                    fontWeight: e.target.value,
-                                  },
-                                }))
-                              }
-                              className="w-full px-1 py-1 border rounded focus:ring-1 focus:ring-[#ef8432]"
-                            >
-                              <option value="normal">Norm</option>
-                              <option value="bold">Bold</option>
-                            </select>
-                          </div>
-                          <div>
-                            <label className="block text-[#111827] mb-1">
-                              Style
-                            </label>
-                            <select
-                              value={
-                                (
-                                  documentStyles[
-                                    styleName as keyof typeof documentStyles
-                                  ] as any
-                                ).fontStyle
-                              }
-                              onChange={(e) =>
-                                setDocumentStyles((prev) => ({
-                                  ...prev,
-                                  [styleName]: {
-                                    ...(prev as any)[styleName],
-                                    fontStyle: e.target.value,
-                                  },
-                                }))
-                              }
-                              className="w-full px-1 py-1 border rounded focus:ring-1 focus:ring-[#ef8432]"
-                            >
-                              <option value="normal">Norm</option>
-                              <option value="italic">Italic</option>
-                            </select>
-                          </div>
-                          <div>
-                            <label className="block text-[#111827] mb-1">
-                              Before
-                            </label>
-                            <input
-                              type="number"
-                              value={
-                                (
-                                  documentStyles[
-                                    styleName as keyof typeof documentStyles
-                                  ] as any
-                                ).marginTop
-                              }
-                              onChange={(e) =>
-                                setDocumentStyles((prev) => ({
-                                  ...prev,
-                                  [styleName]: {
-                                    ...(prev as any)[styleName],
-                                    marginTop: Number(e.target.value),
-                                  },
-                                }))
-                              }
-                              className="w-full px-1 py-1 border rounded focus:ring-1 focus:ring-[#ef8432]"
-                              min="0"
-                              max="5"
-                              step="0.1"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-[#111827] mb-1">
-                              Align
-                            </label>
-                            <select
-                              value={
-                                (
-                                  documentStyles[
-                                    styleName as keyof typeof documentStyles
-                                  ] as any
-                                ).textAlign
-                              }
-                              onChange={(e) =>
-                                setDocumentStyles((prev) => ({
-                                  ...prev,
-                                  [styleName]: {
-                                    ...(prev as any)[styleName],
-                                    textAlign: e.target.value,
-                                  },
-                                }))
-                              }
-                              className="w-full px-1 py-1 border rounded focus:ring-1 focus:ring-[#ef8432]"
-                            >
-                              <option value="left">Left</option>
-                              <option value="center">Ctr</option>
-                              <option value="right">Right</option>
-                            </select>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </>
-              )}
-
-              {/* Special Styles Tab */}
-              {stylesPanelCategory === "special" && (
-                <>
-                  {["epigraph", "dedication", "verse"].map((styleName) => (
-                    <div
-                      key={styleName}
-                      className="mb-3 p-3 border rounded-lg bg-[#fef5e7]"
-                    >
-                      <h3 className="font-medium text-sm text-[#2c3e50] mb-2 capitalize">
-                        {styleName}
-                      </h3>
-                      <div className="grid grid-cols-5 gap-2 text-xs">
+                {expandedStylesSections.has("header-footer") && (
+                  <div className="p-3 bg-[#fffaf3]">
+                    <div className="p-2 border rounded bg-white space-y-2">
+                      <div className="grid grid-cols-2 gap-2">
                         <div>
-                          <label className="block text-[#111827] mb-1">
-                            Size
+                          <label className="block text-xs text-[#111827]">
+                            Header
                           </label>
                           <input
-                            type="number"
-                            value={
-                              (
-                                documentStyles[
-                                  styleName as keyof typeof documentStyles
-                                ] as any
-                              ).fontSize
-                            }
-                            onChange={(e) =>
-                              setDocumentStyles((prev) => ({
-                                ...prev,
-                                [styleName]: {
-                                  ...(prev as any)[styleName],
-                                  fontSize: Number(e.target.value),
-                                },
-                              }))
-                            }
-                            className="w-full px-2 py-1 border rounded focus:ring-1 focus:ring-[#ef8432]"
-                            min="10"
-                            max="24"
+                            type="text"
+                            value={headerText}
+                            onChange={(e) => setHeaderText(e.target.value)}
+                            placeholder="Header text"
+                            className="w-full px-2 py-1 border rounded text-xs focus:ring-1 focus:ring-[#ef8432]"
                           />
                         </div>
                         <div>
-                          <label className="block text-[#111827] mb-1">
-                            Weight
-                          </label>
-                          <select
-                            value={
-                              (
-                                documentStyles[
-                                  styleName as keyof typeof documentStyles
-                                ] as any
-                              ).fontWeight
-                            }
-                            onChange={(e) =>
-                              setDocumentStyles((prev) => ({
-                                ...prev,
-                                [styleName]: {
-                                  ...(prev as any)[styleName],
-                                  fontWeight: e.target.value,
-                                },
-                              }))
-                            }
-                            className="w-full px-1 py-1 border rounded focus:ring-1 focus:ring-[#ef8432]"
-                          >
-                            <option value="normal">Norm</option>
-                            <option value="bold">Bold</option>
-                          </select>
-                        </div>
-                        <div>
-                          <label className="block text-[#111827] mb-1">
-                            Style
-                          </label>
-                          <select
-                            value={
-                              (
-                                documentStyles[
-                                  styleName as keyof typeof documentStyles
-                                ] as any
-                              ).fontStyle
-                            }
-                            onChange={(e) =>
-                              setDocumentStyles((prev) => ({
-                                ...prev,
-                                [styleName]: {
-                                  ...(prev as any)[styleName],
-                                  fontStyle: e.target.value,
-                                },
-                              }))
-                            }
-                            className="w-full px-1 py-1 border rounded focus:ring-1 focus:ring-[#ef8432]"
-                          >
-                            <option value="normal">Norm</option>
-                            <option value="italic">Italic</option>
-                          </select>
-                        </div>
-                        <div>
-                          <label className="block text-[#111827] mb-1">
-                            Before
-                          </label>
-                          <input
-                            type="number"
-                            value={
-                              (
-                                documentStyles[
-                                  styleName as keyof typeof documentStyles
-                                ] as any
-                              ).marginTop
-                            }
-                            onChange={(e) =>
-                              setDocumentStyles((prev) => ({
-                                ...prev,
-                                [styleName]: {
-                                  ...(prev as any)[styleName],
-                                  marginTop: Number(e.target.value),
-                                },
-                              }))
-                            }
-                            className="w-full px-1 py-1 border rounded focus:ring-1 focus:ring-[#ef8432]"
-                            min="0"
-                            max="5"
-                            step="0.1"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-[#111827] mb-1">
+                          <label className="block text-xs text-[#111827]">
                             Align
                           </label>
                           <select
-                            value={
-                              (
-                                documentStyles[
-                                  styleName as keyof typeof documentStyles
-                                ] as any
-                              ).textAlign
-                            }
+                            value={headerAlign}
                             onChange={(e) =>
-                              setDocumentStyles((prev) => ({
-                                ...prev,
-                                [styleName]: {
-                                  ...(prev as any)[styleName],
-                                  textAlign: e.target.value,
-                                },
-                              }))
+                              setHeaderAlign(
+                                e.target.value as
+                                  | "left"
+                                  | "center"
+                                  | "right"
+                                  | "justify"
+                              )
                             }
-                            className="w-full px-1 py-1 border rounded focus:ring-1 focus:ring-[#ef8432]"
+                            className="w-full px-2 py-1 border rounded text-xs focus:ring-1 focus:ring-[#ef8432]"
                           >
                             <option value="left">Left</option>
-                            <option value="center">Ctr</option>
+                            <option value="center">Center</option>
                             <option value="right">Right</option>
+                            <option value="justify">Justify</option>
                           </select>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </>
-              )}
-
-              {/* Header & Footer - shown in all tabs */}
-              <div className="mb-3 p-2 border rounded-lg bg-[#fef5e7]">
-                <h3 className="font-medium text-sm text-[#2c3e50] mb-2 flex items-center gap-2">
-                  📄 Header & Footer
-                </h3>
-                <div className="space-y-2">
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="block text-xs text-[#111827]">
-                        Header
-                      </label>
-                      <input
-                        type="text"
-                        value={headerText}
-                        onChange={(e) => setHeaderText(e.target.value)}
-                        placeholder="Header text"
-                        className="w-full px-2 py-1 border rounded text-xs focus:ring-1 focus:ring-[#ef8432]"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs text-[#111827]">
-                        Align
-                      </label>
-                      <select
-                        value={headerAlign}
-                        onChange={(e) =>
-                          setHeaderAlign(
-                            e.target.value as
-                              | "left"
-                              | "center"
-                              | "right"
-                              | "justify"
-                          )
-                        }
-                        className="w-full px-2 py-1 border rounded text-xs focus:ring-1 focus:ring-[#ef8432]"
-                      >
-                        <option value="left">Left</option>
-                        <option value="center">Center</option>
-                        <option value="right">Right</option>
-                        <option value="justify">Justify</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="block text-xs text-[#111827]">
-                        Footer
-                      </label>
-                      <input
-                        type="text"
-                        value={footerText}
-                        onChange={(e) => setFooterText(e.target.value)}
-                        placeholder="Footer text"
-                        className="w-full px-2 py-1 border rounded text-xs focus:ring-1 focus:ring-[#ef8432]"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs text-[#111827]">
-                        Align
-                      </label>
-                      <select
-                        value={footerAlign}
-                        onChange={(e) =>
-                          setFooterAlign(
-                            e.target.value as
-                              | "left"
-                              | "center"
-                              | "right"
-                              | "justify"
-                          )
-                        }
-                        className="w-full px-2 py-1 border rounded text-xs focus:ring-1 focus:ring-[#ef8432]"
-                      >
-                        <option value="left">Left</option>
-                        <option value="center">Center</option>
-                        <option value="right">Right</option>
-                        <option value="justify">Justify</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4 text-xs">
-                    <label className="flex items-center gap-1 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={showPageNumbers}
-                        onChange={(e) => setShowPageNumbers(e.target.checked)}
-                        className="w-3 h-3 rounded border-gray-300 text-[#ef8432] focus:ring-[#ef8432]"
-                      />
-                      <span className="text-[#111827]">Page #s</span>
-                    </label>
-                    {showPageNumbers && (
-                      <>
-                        <select
-                          value={pageNumberPosition}
-                          onChange={(e) =>
-                            setPageNumberPosition(
-                              e.target.value as "header" | "footer"
-                            )
-                          }
-                          className="px-1 py-0.5 border rounded text-xs focus:ring-1 focus:ring-[#ef8432]"
-                        >
-                          <option value="header">In Header</option>
-                          <option value="footer">In Footer</option>
-                        </select>
-                        <label
-                          className="flex items-center gap-1 cursor-pointer"
-                          title="Alternate page numbers on outside edges (left on even pages, right on odd pages)"
-                        >
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-xs text-[#111827]">
+                            Footer
+                          </label>
+                          <input
+                            type="text"
+                            value={footerText}
+                            onChange={(e) => setFooterText(e.target.value)}
+                            placeholder="Footer text"
+                            className="w-full px-2 py-1 border rounded text-xs focus:ring-1 focus:ring-[#ef8432]"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-[#111827]">
+                            Align
+                          </label>
+                          <select
+                            value={footerAlign}
+                            onChange={(e) =>
+                              setFooterAlign(
+                                e.target.value as
+                                  | "left"
+                                  | "center"
+                                  | "right"
+                                  | "justify"
+                              )
+                            }
+                            className="w-full px-2 py-1 border rounded text-xs focus:ring-1 focus:ring-[#ef8432]"
+                          >
+                            <option value="left">Left</option>
+                            <option value="center">Center</option>
+                            <option value="right">Right</option>
+                            <option value="justify">Justify</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4 text-xs">
+                        <label className="flex items-center gap-1 cursor-pointer">
                           <input
                             type="checkbox"
-                            checked={facingPages}
-                            onChange={(e) => setFacingPages(e.target.checked)}
+                            checked={showPageNumbers}
+                            onChange={(e) =>
+                              setShowPageNumbers(e.target.checked)
+                            }
                             className="w-3 h-3 rounded border-gray-300 text-[#ef8432] focus:ring-[#ef8432]"
                           />
-                          <span className="text-[#111827]">Facing Pages</span>
+                          <span className="text-[#111827]">Page #s</span>
                         </label>
-                      </>
-                    )}
+                        {showPageNumbers && (
+                          <>
+                            <select
+                              value={pageNumberPosition}
+                              onChange={(e) =>
+                                setPageNumberPosition(
+                                  e.target.value as "header" | "footer"
+                                )
+                              }
+                              className="px-1 py-0.5 border rounded text-xs focus:ring-1 focus:ring-[#ef8432]"
+                            >
+                              <option value="header">In Header</option>
+                              <option value="footer">In Footer</option>
+                            </select>
+                            <label
+                              className="flex items-center gap-1 cursor-pointer"
+                              title="Alternate page numbers on outside edges (left on even pages, right on odd pages)"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={facingPages}
+                                onChange={(e) =>
+                                  setFacingPages(e.target.checked)
+                                }
+                                className="w-3 h-3 rounded border-gray-300 text-[#ef8432] focus:ring-[#ef8432]"
+                              />
+                              <span className="text-[#111827]">
+                                Facing Pages
+                              </span>
+                            </label>
+                          </>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             </div>
 

@@ -509,27 +509,26 @@
 
 /* Override native select dropdown styling */
 select option {
-  background-color: white !important;
-  color: #000 !important;
+  background-color: white;
+  color: #000;
 }
 
 select option:checked,
 select option:hover,
 select option:focus,
 select option[selected] {
-  background-color: white !important;
-  background: white !important;
-  color: #000 !important;
+  background-color: inherit;
+  background: inherit;
+  color: inherit;
 }
 
-/* Force white background on all select elements and their options */
+/* Allow inline styles or component overrides to customize select backgrounds */
 select {
-  background-color: white !important;
+  background-color: white;
 }
 
 select:focus option:checked {
-  background: linear-gradient(white, white) !important;
-  background-color: white !important;
+  background: inherit;
 }
 
 /* Concept underlines in editor */
