@@ -2480,12 +2480,93 @@ export const ChapterCheckerV2: React.FC = () => {
         isOpen={isChapterLibraryOpen}
         onClose={() => setIsChapterLibraryOpen(false)}
         onLoadChapter={(chapter) => {
-          // Load chapter into editor - mimicking handleDocumentLoad
-          setChapterText(chapter.content);
+          // Load chapter into editor - properly restore all data
+          const plainText = chapter.content || "";
+          let editorHtml = chapter.editorHtml || "";
+
+          // Helper function to normalize HTML into proper paragraph structure
+          // This ensures each paragraph is in its own <p> element, not combined with <br> tags
+          const normalizeHtmlParagraphs = (html: string): string => {
+            // If the HTML is a single <p> element containing <br><br> patterns, split it
+            // This handles content that was saved with poor structure
+
+            // First, check if we have a single paragraph with multiple <br> breaks
+            const tempDiv = document.createElement("div");
+            tempDiv.innerHTML = html;
+
+            const paragraphs = tempDiv.querySelectorAll("p");
+            if (paragraphs.length === 1) {
+              const singleP = paragraphs[0];
+              const innerHtml = singleP.innerHTML;
+
+              // Check for double <br> patterns that indicate paragraph breaks
+              if (
+                innerHtml.includes("<br><br>") ||
+                innerHtml.includes("<br>\n<br>") ||
+                innerHtml.includes("<br/><br/>")
+              ) {
+                // Split on double breaks and create proper paragraphs
+                const parts = innerHtml.split(/<br\s*\/?>\s*<br\s*\/?>/gi);
+                if (parts.length > 1) {
+                  return parts
+                    .map((part) => part.trim())
+                    .filter((part) => part.length > 0)
+                    .map((part) => `<p>${part}</p>`)
+                    .join("");
+                }
+              }
+            }
+
+            return html;
+          };
+
+          // Normalize the HTML if it exists
+          if (editorHtml) {
+            editorHtml = normalizeHtmlParagraphs(editorHtml);
+          }
+
+          // If no editorHtml, convert plain text to proper HTML paragraphs
+          // This ensures paragraph breaks are preserved in the editor
+          const htmlContent =
+            editorHtml ||
+            plainText
+              .split(/\n\n+/)
+              .map((para) => `<p>${para.replace(/\n/g, "<br>")}</p>`)
+              .join("");
+
+          console.log(
+            "[ChapterCheckerV2] Setting chapterData with htmlContent length:",
+            htmlContent.length
+          );
+          console.log(
+            "[ChapterCheckerV2] htmlContent first 500 chars:",
+            htmlContent.substring(0, 500)
+          );
+
+          // Set chapterData with full structure for the editor
+          setChapterData({
+            html: htmlContent,
+            plainText,
+            originalPlainText: plainText,
+            isHybridDocx: !!editorHtml,
+            imageCount: 0,
+            editorHtml: htmlContent, // Use normalized content
+          });
+
+          // Bump instance key to trigger editor reload
+          console.log("[ChapterCheckerV2] Bumping documentInstanceKey");
+          bumpDocumentInstanceKey();
+
+          // Set other state
+          setChapterText(plainText);
           setFileName(chapter.name);
           setError(null);
           setAnalysis(chapter.analysis || null);
           setIsChapterLibraryOpen(false);
+
+          // Switch to writer mode to show the loaded content
+          console.log("[ChapterCheckerV2] Switching to writer mode");
+          setViewMode("writer");
         }}
         currentChapter={
           currentChapterText
@@ -2493,7 +2574,7 @@ export const ChapterCheckerV2: React.FC = () => {
                 id: undefined,
                 name: fileName,
                 content: currentChapterText,
-                editorHtml: undefined,
+                editorHtml: chapterData?.editorHtml || chapterData?.html || "",
                 analysis,
               }
             : null

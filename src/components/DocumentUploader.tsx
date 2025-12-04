@@ -6,6 +6,7 @@ import {
   isScreenplay,
 } from "../utils/screenplayConverter";
 import { AccessLevel, ACCESS_TIERS } from "../../types";
+import { MAMMOTH_STYLE_MAP } from "../utils/docxStyles";
 
 // Helper to detect magic numbers
 function detectMimeType(buffer: ArrayBuffer): string {
@@ -265,12 +266,8 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
         {
           includeDefaultStyleMap: true,
           includeEmbeddedStyleMap: true,
-          styleMap: [
-            "p => p:fresh",
-            "p[style-name='Normal'] => p:fresh",
-            // Preserve indentation
-            "p => p.preserve-indent:fresh",
-          ].join("\n"),
+          // Use shared style map for consistent round-trip fidelity
+          styleMap: MAMMOTH_STYLE_MAP,
           convertImage: mammoth.images.imgElement((image) => {
             imageCount += 1;
             return image.read("base64").then((base64String) => {
@@ -514,12 +511,8 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
           {
             includeDefaultStyleMap: true,
             includeEmbeddedStyleMap: true,
-            styleMap: [
-              "p => p:fresh",
-              "p[style-name='Normal'] => p:fresh",
-              // Preserve indentation
-              "p => p.preserve-indent:fresh",
-            ].join("\n"),
+            // Use shared style map for consistent round-trip fidelity
+            styleMap: MAMMOTH_STYLE_MAP,
             convertImage: mammoth.images.imgElement((image) => {
               imageCount += 1;
               return image.read("base64").then((base64String) => {

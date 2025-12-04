@@ -162,6 +162,7 @@ const BLOCK_TYPE_SECTIONS: BlockTypeMenuSection[] = [
     accent: palette.border,
     background: "#eddcc5",
     items: [
+      { value: "paragraph", label: "Paragraph (Reset)" },
       { value: "book-title", label: "Book Title" },
       { value: "title", label: "Section Title" },
       { value: "subtitle", label: "Subtitle" },
@@ -2594,6 +2595,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
 
       // Custom paragraph styles (not native HTML tags)
       const customParagraphStyles = [
+        "paragraph", // Reset to normal paragraph
         "title",
         "subtitle",
         "book-title",
@@ -2668,6 +2670,61 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
       ) => {
         if (!editorRef.current) return;
 
+        const styleMap: { [key: string]: string } = {
+          paragraph: "", // Empty class = reset to normal paragraph
+          title: "title-content",
+          "book-title": "title-content book-title",
+          subtitle: "title-content subtitle",
+          "chapter-heading": "chapter-heading",
+          "part-title": "part-title",
+          epigraph: "epigraph",
+          dedication: "dedication",
+          acknowledgments: "acknowledgments",
+          copyright: "copyright",
+          verse: "verse",
+          "lead-paragraph": "lead-paragraph",
+          pullquote: "pullquote",
+          caption: "caption",
+          abstract: "abstract",
+          keywords: "keywords",
+          bibliography: "bibliography",
+          references: "references",
+          appendix: "appendix",
+          footnote: "footnote",
+          citation: "citation",
+          "figure-caption": "figure-caption",
+          "table-title": "table-title",
+          equation: "equation",
+          "author-info": "author-info",
+          "date-info": "date-info",
+          address: "address",
+          salutation: "salutation",
+          closing: "closing",
+          signature: "signature",
+          sidebar: "sidebar",
+          callout: "callout",
+          "memo-heading": "memo-heading",
+          "subject-line": "subject-line",
+          "executive-summary": "executive-summary",
+          "front-matter": "front-matter",
+          "scene-break": "scene-break",
+          afterword: "afterword",
+          "press-lead": "press-lead",
+          "nut-graf": "nut-graf",
+          byline: "byline",
+          dateline: "dateline",
+          "fact-box": "fact-box",
+          "hero-headline": "hero-headline",
+          "marketing-subhead": "marketing-subhead",
+          "feature-callout": "feature-callout",
+          testimonial: "testimonial",
+          "cta-block": "cta-block",
+          "api-heading": "api-heading",
+          "code-reference": "code-reference",
+          "warning-note": "warning-note",
+          "success-note": "success-note",
+        };
+
         const isParagraphLike = (node: Node | null): node is HTMLElement => {
           return (
             !!node &&
@@ -2687,6 +2744,11 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           );
         };
 
+        // Get the selection range
+        const range = activeSelection.getRangeAt(0);
+        const selectedText = range.toString().trim();
+
+        // Find the containing block element
         let currentBlock: Node | null = activeSelection.anchorNode;
         while (
           currentBlock &&
@@ -2697,65 +2759,223 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
         }
 
         if (isParagraphLike(currentBlock)) {
-          let blockElement = currentBlock as HTMLElement;
+          const blockElement = currentBlock as HTMLElement;
+          const blockText = blockElement.textContent || "";
 
-          const tagLower = blockElement.tagName.toLowerCase();
-          // Convert non-paragraph block elements (div, headings, blockquote, pre) to <p>
+          // Check if the selection is a PARTIAL selection of a larger paragraph
+          // If the paragraph is significantly larger than the selection,
+          // we need to extract the selection into its own paragraph
+          const isPartialSelection =
+            selectedText.length > 0 &&
+            selectedText.length < blockText.trim().length * 0.9; // Less than 90% of block
+
+          // Also check if block contains <br> tags (multiple visual lines)
+          const hasBrTags = blockElement.innerHTML.includes("<br");
+
+          console.log("[applyCustomParagraphStyle] Selection analysis:", {
+            selectedText: selectedText.substring(0, 50) + "...",
+            blockTextLength: blockText.length,
+            selectedLength: selectedText.length,
+            isPartialSelection,
+            hasBrTags,
+          });
+
           if (
-            tagLower === "div" ||
-            /^h[1-6]$/.test(tagLower) ||
-            tagLower === "blockquote" ||
-            tagLower === "pre"
+            isPartialSelection &&
+            (hasBrTags || blockText.length > selectedText.length * 2)
           ) {
-            const currentSelection = window.getSelection();
-            let cursorOffset = 0;
-            if (currentSelection && currentSelection.rangeCount > 0) {
-              const range = currentSelection.getRangeAt(0);
-              cursorOffset = range.startOffset;
-            }
-
-            const replacement = document.createElement("p");
-            replacement.innerHTML = blockElement.innerHTML;
-
-            if (!replacement.firstChild) {
-              replacement.appendChild(document.createElement("br"));
-            }
-
-            blockElement.replaceWith(replacement);
-            blockElement = replacement;
+            // PARTIAL SELECTION: Extract selected text into its own styled paragraph
+            // This prevents styling the entire document when user only wants to style a heading
 
             try {
-              const firstChild = replacement.firstChild;
-              if (firstChild) {
-                const newRange = document.createRange();
-                const newSelection = window.getSelection();
-                let caretTarget: ChildNode = firstChild;
-                if (
-                  caretTarget.nodeType !== Node.TEXT_NODE &&
-                  caretTarget.childNodes.length > 0
-                ) {
-                  caretTarget = caretTarget.childNodes[0];
+              // Get what's before and after the selection within this block
+              const beforeRange = document.createRange();
+              beforeRange.setStart(blockElement, 0);
+              beforeRange.setEnd(range.startContainer, range.startOffset);
+
+              const afterRange = document.createRange();
+              afterRange.setStart(range.endContainer, range.endOffset);
+              afterRange.setEnd(blockElement, blockElement.childNodes.length);
+
+              // Clone the content
+              const beforeContent = beforeRange.cloneContents();
+              const afterContent = afterRange.cloneContents();
+
+              // Get text content to check if there's meaningful content before/after
+              const beforeText = beforeContent.textContent?.trim() || "";
+              const afterText = afterContent.textContent?.trim() || "";
+
+              // Create the styled element for the selection
+              const styledPara = document.createElement("p");
+              styledPara.className = styleMap[styleTag] || "";
+              styledPara.textContent = selectedText;
+
+              // Apply alignment if needed
+              const styleKey = styleTag as keyof typeof documentStyles;
+              const isCenterAligned =
+                documentStyles[styleKey] &&
+                "textAlign" in documentStyles[styleKey] &&
+                (documentStyles[styleKey] as { textAlign?: string })
+                  .textAlign === "center";
+
+              if (
+                documentStyles[styleKey] &&
+                "textAlign" in documentStyles[styleKey]
+              ) {
+                const align = (
+                  documentStyles[styleKey] as { textAlign?: string }
+                ).textAlign;
+                if (align) {
+                  styledPara.style.textAlign = align;
                 }
-
-                const offset =
-                  caretTarget.nodeType === Node.TEXT_NODE
-                    ? Math.min(
-                        cursorOffset,
-                        caretTarget.textContent?.length || 0
-                      )
-                    : Math.min(cursorOffset, caretTarget.childNodes.length);
-
-                newRange.setStart(caretTarget, offset);
-                newRange.collapse(true);
-                newSelection?.removeAllRanges();
-                newSelection?.addRange(newRange);
               }
-            } catch (e) {
-              console.warn("Could not restore cursor position:", e);
+
+              // Build new structure: before paragraph(s), styled selection, after paragraph(s)
+              const fragment = document.createDocumentFragment();
+
+              // Add before content if exists
+              if (beforeText) {
+                const beforePara = document.createElement("p");
+                // Clean up - remove trailing <br> tags
+                let beforeHtml = "";
+                const tempDiv = document.createElement("div");
+                tempDiv.appendChild(beforeContent);
+                beforeHtml = tempDiv.innerHTML
+                  .replace(/<br\s*\/?>\s*$/, "")
+                  .trim();
+                if (beforeHtml) {
+                  beforePara.innerHTML = beforeHtml;
+                  fragment.appendChild(beforePara);
+                }
+              }
+
+              // Add the styled selection
+              fragment.appendChild(styledPara);
+
+              // Add after content if exists
+              if (afterText) {
+                const afterPara = document.createElement("p");
+                // Clean up - remove leading <br> tags
+                const tempDiv = document.createElement("div");
+                tempDiv.appendChild(afterContent);
+                let afterHtml = tempDiv.innerHTML
+                  .replace(/^<br\s*\/?>\s*/, "")
+                  .trim();
+                if (afterHtml) {
+                  afterPara.innerHTML = afterHtml;
+                  fragment.appendChild(afterPara);
+                }
+              }
+
+              // Replace the block element with our new structure
+              blockElement.parentNode?.replaceChild(fragment, blockElement);
+
+              // Apply centering if needed
+              if (isCenterAligned) {
+                centerText(styledPara);
+              }
+
+              // Set cursor into the styled paragraph
+              const newRange = document.createRange();
+              newRange.selectNodeContents(styledPara);
+              newRange.collapse(false);
+              activeSelection.removeAllRanges();
+              activeSelection.addRange(newRange);
+
+              setTimeout(() => {
+                handleInput();
+                if (isCenterAligned) {
+                  alignCenteredBlocksToRuler();
+                }
+              }, 10);
+
+              return; // Done with partial selection handling
+            } catch (err) {
+              console.warn(
+                "[applyCustomParagraphStyle] Partial selection extraction failed, falling back to block styling:",
+                err
+              );
+              // Fall through to block styling below
             }
           }
 
+          // FULL BLOCK SELECTION: Style the entire block element
+          // NOTE: Do NOT use replaceWith() to convert element types - it breaks React's DOM reconciliation
+          // Instead, just apply styles directly to the existing element regardless of tag type
+          // styleMap is already defined above
+
+          blockElement.className = styleMap[styleTag] || "";
+          [
+            "text-indent",
+            "margin-left",
+            "margin-right",
+            "padding-left",
+            "padding-right",
+            "text-align",
+            "transform",
+            "--center-shift",
+          ].forEach((prop) => blockElement.style.removeProperty(prop));
+
+          const styleKey = styleTag as keyof typeof documentStyles;
+          const isCenterAligned =
+            documentStyles[styleKey] &&
+            "textAlign" in documentStyles[styleKey] &&
+            (documentStyles[styleKey] as { textAlign?: string }).textAlign ===
+              "center";
+
+          if (
+            documentStyles[styleKey] &&
+            "textAlign" in documentStyles[styleKey]
+          ) {
+            const align = (documentStyles[styleKey] as { textAlign?: string })
+              .textAlign;
+            if (align) {
+              blockElement.style.textAlign = align;
+            }
+          }
+
+          blockElement.removeAttribute("data-block");
+          blockElement.removeAttribute("data-ruler-center");
+
+          if (isCenterAligned) {
+            centerText(blockElement);
+          }
+
+          setTimeout(() => {
+            handleInput();
+            if (isCenterAligned) {
+              alignCenteredBlocksToRuler();
+            }
+          }, 10);
+        } else {
+          // No valid block element found at selection - this can happen if:
+          // 1. Selection spans multiple paragraphs
+          // 2. Content structure is broken
+          // 3. Cursor is directly in editor div
+
+          // SAFETY: Do NOT use insertHTML which would replace the selection
+          // Instead, try to find the nearest paragraph and style it
+
+          // Try to find a paragraph by looking at the selection's range more carefully
+          const range = activeSelection.getRangeAt(0);
+          let targetParagraph: HTMLElement | null = null;
+
+          // Walk up from startContainer
+          let node: Node | null = range.startContainer;
+          while (node && node !== editorRef.current) {
+            if (node.nodeType === Node.ELEMENT_NODE) {
+              const el = node as HTMLElement;
+              const tag = el.tagName.toLowerCase();
+              if (tag === "p" || tag === "div" || /^h[1-6]$/.test(tag)) {
+                targetParagraph = el;
+                break;
+              }
+            }
+            node = node.parentNode;
+          }
+
           const styleMap: { [key: string]: string } = {
+            paragraph: "", // Empty class = reset to normal paragraph
             title: "title-content",
             "book-title": "title-content book-title",
             subtitle: "title-content subtitle",
@@ -2809,174 +3029,71 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
             "success-note": "success-note",
           };
 
-          blockElement.className = styleMap[styleTag] || "";
-          [
-            "text-indent",
-            "margin-left",
-            "margin-right",
-            "padding-left",
-            "padding-right",
-            "text-align",
-            "transform",
-            "--center-shift",
-          ].forEach((prop) => blockElement.style.removeProperty(prop));
+          if (targetParagraph) {
+            // Found a paragraph - apply style directly without replacing element
+            // NOTE: Do NOT use replaceWith() - it breaks React's DOM reconciliation
+            const blockElement = targetParagraph;
 
-          const styleKey = styleTag as keyof typeof documentStyles;
-          const isCenterAligned =
-            documentStyles[styleKey] &&
-            "textAlign" in documentStyles[styleKey] &&
-            (documentStyles[styleKey] as { textAlign?: string }).textAlign ===
-              "center";
+            // Apply the style
+            blockElement.className = styleMap[styleTag] || "";
+            blockElement.removeAttribute("data-block");
+            blockElement.removeAttribute("data-ruler-center");
 
-          if (
-            documentStyles[styleKey] &&
-            "textAlign" in documentStyles[styleKey]
-          ) {
-            const align = (documentStyles[styleKey] as { textAlign?: string })
-              .textAlign;
-            if (align) {
-              blockElement.style.textAlign = align;
+            const styleKey = styleTag as keyof typeof documentStyles;
+            const isCenterAligned =
+              documentStyles[styleKey] &&
+              "textAlign" in documentStyles[styleKey] &&
+              (documentStyles[styleKey] as { textAlign?: string }).textAlign ===
+                "center";
+
+            if (
+              documentStyles[styleKey] &&
+              "textAlign" in documentStyles[styleKey]
+            ) {
+              const align = (documentStyles[styleKey] as { textAlign?: string })
+                .textAlign;
+              if (align) {
+                blockElement.style.textAlign = align;
+              }
             }
-          }
 
-          blockElement.removeAttribute("data-block");
-          blockElement.removeAttribute("data-ruler-center");
-
-          if (isCenterAligned) {
-            centerText(blockElement);
-          }
-
-          setTimeout(() => {
-            handleInput();
             if (isCenterAligned) {
-              alignCenteredBlocksToRuler();
+              centerText(blockElement);
             }
-          }, 10);
-        } else {
-          const placeholders: { [key: string]: string } = {
-            title: "Section Title",
-            "book-title": "Book Title",
-            subtitle: "Subtitle",
-            "chapter-heading": "Chapter 1",
-            "part-title": "Part I",
-            epigraph: "Epigraph text...",
-            dedication: "For...",
-            acknowledgments: "I would like to thank...",
-            copyright: "© 2025",
-            verse: "Poetry line...",
-            "lead-paragraph": "Lead paragraph...",
-            pullquote: "Pull quote text...",
-            caption: "Caption text...",
-            byline: "By Jane Smith",
-            dateline: "Austin, Texas — Jan 5, 2025",
-            "press-lead": "Lead news paragraph...",
-            "nut-graf": "Nut graf context...",
-            "fact-box": "Key fact highlight...",
-            abstract: "Abstract...",
-            keywords: "Keywords: ",
-            bibliography: "Bibliography entry...",
-            references: "Reference...",
-            appendix: "Appendix content...",
-            footnote: "Footnote text...",
-            citation: "(Author, Year)",
-            "figure-caption": "Figure caption...",
-            "table-title": "Table title...",
-            equation: "Equation placeholder...",
-            "author-info": "Author Name",
-            "date-info": "Date",
-            address: "Address...",
-            salutation: "Dear...",
-            closing: "Sincerely,",
-            signature: "Name",
-            sidebar: "Sidebar content...",
-            callout: "Important note...",
-            "memo-heading": "MEMORANDUM",
-            "subject-line": "Subject: ...",
-            "executive-summary": "This executive summary...",
-            "front-matter": "Front matter note...",
-            "scene-break": "***",
-            afterword: "Afterword text...",
-            "hero-headline": "Hero headline...",
-            "marketing-subhead": "Supporting statement...",
-            "feature-callout": "Feature highlight...",
-            testimonial: '"Customer praise..."',
-            "cta-block": "Call to action...",
-            "api-heading": "Endpoint name...",
-            "code-reference": "Code sample...",
-            "warning-note": "Warning: ...",
-            "success-note": "Success note...",
-          };
+          } else {
+            // Truly no paragraph found - only insert if editor is empty
+            console.warn(
+              "[CustomEditor] No paragraph found for style application"
+            );
 
-          const styleMap: { [key: string]: string } = {
-            title: "title-content",
-            "book-title": "title-content book-title",
-            subtitle: "title-content subtitle",
-            "chapter-heading": "chapter-heading",
-            "part-title": "part-title",
-            epigraph: "epigraph",
-            dedication: "dedication",
-            acknowledgments: "acknowledgments",
-            copyright: "copyright",
-            verse: "verse",
-            "lead-paragraph": "lead-paragraph",
-            pullquote: "pullquote",
-            caption: "caption",
-            abstract: "abstract",
-            keywords: "keywords",
-            bibliography: "bibliography",
-            references: "references",
-            appendix: "appendix",
-            footnote: "footnote",
-            citation: "citation",
-            "figure-caption": "figure-caption",
-            "table-title": "table-title",
-            equation: "equation",
-            "author-info": "author-info",
-            "date-info": "date-info",
-            address: "address",
-            salutation: "salutation",
-            closing: "closing",
-            signature: "signature",
-            sidebar: "sidebar",
-            callout: "callout",
-            "memo-heading": "memo-heading",
-            "subject-line": "subject-line",
-            "executive-summary": "executive-summary",
-            "front-matter": "front-matter",
-            "scene-break": "scene-break",
-            afterword: "afterword",
-          };
+            const placeholders: { [key: string]: string } = {
+              title: "Section Title",
+              "book-title": "Book Title",
+              subtitle: "Subtitle",
+              "chapter-heading": "Chapter 1",
+              "part-title": "Part I",
+            };
 
-          const selectedText =
-            activeSelection.toString() || placeholders[styleTag] || "Text";
-          const className = styleMap[styleTag] || "";
+            const className = styleMap[styleTag] || "";
+            const placeholder = placeholders[styleTag] || "Text";
 
-          const styleKey = styleTag as keyof typeof documentStyles;
-          const isCenterAligned =
-            documentStyles[styleKey] &&
-            "textAlign" in documentStyles[styleKey] &&
-            (documentStyles[styleKey] as { textAlign?: string }).textAlign ===
-              "center";
-          let alignStyle = "";
-          if (
-            documentStyles[styleKey] &&
-            "textAlign" in documentStyles[styleKey]
-          ) {
-            const align = (documentStyles[styleKey] as { textAlign?: string })
-              .textAlign;
-            if (align) {
-              alignStyle = ` style="text-align: ${align}"`;
-            }
-          }
-
-          const blockHtml = `<p class="${className}"${alignStyle}>${selectedText}</p>`;
-          document.execCommand("insertHTML", false, blockHtml);
-
-          if (isCenterAligned) {
-            if (typeof window !== "undefined") {
-              window.requestAnimationFrame(() => centerText());
-            } else {
-              centerText();
+            // Only insert if editor is empty to avoid destroying content
+            if (!editorRef.current.textContent?.trim()) {
+              const styleKey = styleTag as keyof typeof documentStyles;
+              let alignStyle = "";
+              if (
+                documentStyles[styleKey] &&
+                "textAlign" in documentStyles[styleKey]
+              ) {
+                const align = (
+                  documentStyles[styleKey] as { textAlign?: string }
+                ).textAlign;
+                if (align) {
+                  alignStyle = ` style="text-align: ${align}"`;
+                }
+              }
+              const blockHtml = `<p class="${className}"${alignStyle}>${placeholder}</p>`;
+              document.execCommand("insertHTML", false, blockHtml);
             }
           }
         }
@@ -4531,11 +4648,11 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
         }}
         title={
           onOpenChapterLibrary
-            ? "Open Saved Chapters"
-            : "Saved Chapters available when Chapter Library is provided"
+            ? "Open Chapter Library"
+            : "Chapter Library available when provided"
         }
       >
-        📁 Saved Chapters
+        📁 Chapter Library
       </button>
     </div>
   ) : null;

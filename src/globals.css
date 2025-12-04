@@ -822,11 +822,51 @@ p {
 }
 
 /* Custom paragraph styles - chapter-heading, part-title, etc. */
-.editor-content p.chapter-heading {
+.editor-content p.chapter-heading,
+.editor-content h1.chapter-heading {
   font-size: 26px;
   font-weight: bold;
   margin-top: 2em;
   margin-bottom: 1em;
+  text-indent: 0;
+  text-align: center;
+}
+
+/* Document title from Word Title style */
+.editor-content h1.doc-title {
+  font-size: 36px;
+  font-weight: bold;
+  text-align: center;
+  margin-top: 2em;
+  margin-bottom: 0.5em;
+  text-indent: 0;
+}
+
+/* Document subtitle from Word Subtitle style */
+.editor-content p.doc-subtitle {
+  font-size: 20px;
+  font-style: italic;
+  text-align: center;
+  margin-top: 0.5em;
+  margin-bottom: 2em;
+  text-indent: 0;
+}
+
+/* Section heading (H2) - for section titles */
+.editor-content h2.section-heading {
+  font-size: 22px;
+  font-weight: bold;
+  margin-top: 1.5em;
+  margin-bottom: 0.75em;
+  text-indent: 0;
+}
+
+/* Subsection heading (H3) - for subsection titles */
+.editor-content h3.subsection-heading {
+  font-size: 18px;
+  font-weight: bold;
+  margin-top: 1em;
+  margin-bottom: 0.5em;
   text-indent: 0;
 }
 
@@ -860,12 +900,62 @@ p {
   margin-bottom: 1em;
 }
 
-.editor-content p.epigraph {
+.editor-content p.epigraph,
+.editor-content blockquote.epigraph {
   font-size: 14px;
   font-style: italic;
   margin-top: 1em;
   margin-bottom: 1em;
   text-indent: 0;
+  margin-left: 2em;
+  margin-right: 2em;
+  text-align: right;
+}
+
+.editor-content blockquote {
+  margin: 1em 2em;
+  padding: 0.5em 1em;
+  border-left: 3px solid #d1d5db;
+  font-style: italic;
+}
+
+/* Block quote style - same as blockquote but can be used with class */
+.editor-content blockquote.block-quote {
+  margin: 1em 2em;
+  padding: 0.5em 1em;
+  border-left: 3px solid #d1d5db;
+}
+
+/* Quote style - for shorter inline quotes */
+.editor-content blockquote.quote {
+  margin: 1em 2em;
+  padding: 0.5em 1em;
+  border-left: 3px solid #d1d5db;
+  font-style: italic;
+}
+
+/* Intense quote - emphasized block quote */
+.editor-content blockquote.intense-quote {
+  margin: 1em 2em;
+  padding: 0.75em 1.25em;
+  border-left: 4px solid #6b7280;
+  font-style: italic;
+  font-weight: 500;
+  background-color: #f9fafb;
+}
+
+.editor-content p.body-text {
+  text-indent: 1.5em;
+  margin-bottom: 0;
+}
+
+.editor-content p.first-paragraph {
+  text-indent: 0;
+}
+
+.editor-content p.no-spacing {
+  margin-top: 0;
+  margin-bottom: 0;
 }
 
 .editor-content p.dedication {

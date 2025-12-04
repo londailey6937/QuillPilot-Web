@@ -132,10 +132,12 @@ export function ChapterLibrary({
       if (chapter) {
         onLoadChapter(chapter);
         onClose();
+      } else {
+        setError("Failed to load chapter - file may be corrupted");
       }
     } catch (err) {
       setError("Failed to load chapter");
-      console.error(err);
+      console.error("[ChapterLibrary] Error loading chapter:", err);
     } finally {
       setLoading(false);
     }
@@ -413,7 +415,7 @@ export function ChapterLibrary({
                 }}
               >
                 <h3 style={{ margin: 0, fontSize: "16px", color: "#2c3e50" }}>
-                  Saved Chapters ({chapters.length})
+                  Chapter Library ({chapters.length})
                 </h3>
                 <button
                   onClick={() => refreshChapterList(dirHandle)}
