@@ -1072,6 +1072,9 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   const [fontSize, setFontSize] = useState("16px");
   const [showStyleLabels, setShowStyleLabels] = useState(true);
   const [showBlockTypeDropdown, setShowBlockTypeDropdown] = useState(false);
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(
+    new Set()
+  );
   const blockTypeDropdownRef = useRef<HTMLDivElement>(null);
   const [showLinkModal, setShowLinkModal] = useState(false);
   const [linkUrl, setLinkUrl] = useState("");
@@ -4142,6 +4145,19 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     return indicators;
   };
 
+  // Toggle section expansion in styles dropdown
+  const toggleSection = (sectionKey: string) => {
+    setExpandedSections((prev) => {
+      const next = new Set(prev);
+      if (next.has(sectionKey)) {
+        next.delete(sectionKey);
+      } else {
+        next.add(sectionKey);
+      }
+      return next;
+    });
+  };
+
   // Render visual suggestions - small yellow dots inside the right margin
   const renderSuggestions = () => {
     if (
@@ -4487,8 +4503,8 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                       padding: "4px 8px",
                       borderRadius: "6px",
                       border: "1.5px solid #e0c392",
-                      backgroundColor: "#fffaf3",
-                      color: BLOCK_TYPE_TEXT_COLOR,
+                      backgroundColor: "#3a3634",
+                      color: "rgb(232, 213, 183)",
                       fontSize: "12px",
                       cursor: "pointer",
                       display: "flex",
@@ -4499,11 +4515,11 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                       transition: "all 0.15s",
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = "#fef5e7";
+                      e.currentTarget.style.backgroundColor = "#4a4340";
                       e.currentTarget.style.borderColor = "#ef8432";
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = "#fffaf3";
+                      e.currentTarget.style.backgroundColor = "#3a3634";
                       e.currentTarget.style.borderColor = "#e0c392";
                     }}
                     title="Block Type"
@@ -4511,7 +4527,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                     <span>
                       {(() => {
                         const labels: Record<string, string> = {
-                          p: "Paragraph",
+                          p: "Styles",
                           h1: "Heading 1",
                           h2: "Heading 2",
                           h3: "Heading 3",
@@ -4605,93 +4621,122 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                         borderRadius: "10px",
                         boxShadow: "0 10px 28px rgba(44, 62, 80, 0.18)",
                         zIndex: 1000,
-                        color: BLOCK_TYPE_TEXT_COLOR,
+                        color: "#111827",
                       }}
                     >
                       {BLOCK_TYPE_SECTIONS.map((section) => (
                         <React.Fragment key={section.key}>
-                          <div
+                          <button
+                            type="button"
                             className="dropdown-section-label"
+                            onClick={() => toggleSection(section.key)}
                             style={{
+                              width: "100%",
                               padding: "6px 12px",
-                              backgroundColor: section.background,
+                              backgroundColor: "#f5ead9",
                               fontWeight: 700,
                               fontSize: "11px",
                               textTransform: "uppercase",
                               letterSpacing: "0.5px",
                               borderTop: "1px solid #e0c392",
                               borderBottom: "1px solid #e0c392",
-                              color: BLOCK_TYPE_TEXT_COLOR,
+                              color: "#111827",
                               display: "flex",
                               alignItems: "center",
+                              justifyContent: "space-between",
                               gap: "6px",
+                              border: "none",
+                              cursor: "pointer",
+                              transition: "background-color 0.15s",
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = "#eddcc5";
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = "#f5ead9";
                             }}
                           >
-                            <span
+                            <div
                               style={{
-                                width: "10px",
-                                height: "10px",
-                                borderRadius: "999px",
-                                backgroundColor: section.accent,
-                                display: "inline-block",
-                              }}
-                            />
-                            {section.label}
-                          </div>
-                          {section.items.map((item) => (
-                            <button
-                              key={item.value}
-                              type="button"
-                              onMouseDown={(e) => {
-                                e.preventDefault();
-                                ensureEditorSelection();
-                                changeBlockType(item.value);
-                                setShowBlockTypeDropdown(false);
-                              }}
-                              style={{
-                                width: "100%",
-                                textAlign: "left",
-                                padding: "8px 12px",
                                 display: "flex",
-                                justifyContent: "space-between",
                                 alignItems: "center",
-                                backgroundColor:
-                                  blockType === item.value
-                                    ? "#fef5e7"
-                                    : "transparent",
-                                fontWeight:
-                                  blockType === item.value ? 600 : 500,
-                                color: BLOCK_TYPE_TEXT_COLOR,
-                                border: "none",
-                                cursor: "pointer",
-                                transition: "background-color 0.15s",
-                              }}
-                              onMouseEnter={(e) => {
-                                if (blockType !== item.value) {
-                                  e.currentTarget.style.backgroundColor =
-                                    "#f7e6d0";
-                                }
-                              }}
-                              onMouseLeave={(e) => {
-                                if (blockType !== item.value) {
-                                  e.currentTarget.style.backgroundColor =
-                                    "transparent";
-                                }
+                                gap: "6px",
+                                color: "#111827",
+                                opacity: 1,
                               }}
                             >
-                              <span style={{ color: "#111827" }}>
-                                {item.label}
+                              <span
+                                style={{
+                                  width: "10px",
+                                  height: "10px",
+                                  borderRadius: "999px",
+                                  backgroundColor: section.accent,
+                                  display: "inline-block",
+                                }}
+                              />
+                              <span style={{ color: "#111827", opacity: 1 }}>
+                                {section.label}
                               </span>
-                              {item.shortcut && (
-                                <span
-                                  className="dropdown-shortcut"
-                                  style={{ color: "#111827", opacity: 0.7 }}
-                                >
-                                  {item.shortcut}
+                            </div>
+                            <span style={{ fontSize: "10px" }}>
+                              {expandedSections.has(section.key) ? "▼" : "▶"}
+                            </span>
+                          </button>
+                          {expandedSections.has(section.key) &&
+                            section.items.map((item) => (
+                              <button
+                                key={item.value}
+                                type="button"
+                                onMouseDown={(e) => {
+                                  e.preventDefault();
+                                  ensureEditorSelection();
+                                  changeBlockType(item.value);
+                                  setShowBlockTypeDropdown(false);
+                                }}
+                                style={{
+                                  width: "100%",
+                                  textAlign: "left",
+                                  padding: "8px 12px",
+                                  display: "flex",
+                                  justifyContent: "space-between",
+                                  alignItems: "center",
+                                  backgroundColor:
+                                    blockType === item.value
+                                      ? "#fef5e7"
+                                      : "transparent",
+                                  fontWeight:
+                                    blockType === item.value ? 600 : 500,
+                                  color: "#111827",
+                                  border: "none",
+                                  cursor: "pointer",
+                                  transition: "background-color 0.15s",
+                                }}
+                                onMouseEnter={(e) => {
+                                  if (blockType !== item.value) {
+                                    e.currentTarget.style.backgroundColor =
+                                      "#f7e6d0";
+                                  }
+                                }}
+                                onMouseLeave={(e) => {
+                                  if (blockType !== item.value) {
+                                    e.currentTarget.style.backgroundColor =
+                                      "transparent";
+                                  }
+                                }}
+                              >
+                                <span style={{ color: "#111827" }}>
+                                  {item.label}
                                 </span>
-                              )}
-                            </button>
-                          ))}
+                                {item.shortcut && (
+                                  <span
+                                    className="dropdown-shortcut"
+                                    style={{ color: "#6b7280", opacity: 0.8 }}
+                                  >
+                                    {item.shortcut}
+                                  </span>
+                                )}
+                              </button>
+                            ))}
                         </React.Fragment>
                       ))}
                     </div>
@@ -4804,7 +4849,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                       }
                     });
                   }}
-                  className="px-1.5 py-1 rounded border border-[#e0c392] bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50] transition-colors text-xs font-bold"
+                  className="px-1.5 py-1 rounded border border-[#e0c392] bg-[#3a3634] hover:bg-[#4a4340] text-[rgb(232,213,183)] transition-colors text-xs font-bold"
                   title="Decrease Font Size"
                 >
                   A-
@@ -4879,7 +4924,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                       }
                     });
                   }}
-                  className="px-1.5 py-1 rounded border border-[#e0c392] bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50] transition-colors text-xs font-bold"
+                  className="px-1.5 py-1 rounded border border-[#e0c392] bg-[#3a3634] hover:bg-[#4a4340] text-[rgb(232,213,183)] transition-colors text-xs font-bold"
                   title="Increase Font Size"
                 >
                   A+
@@ -4895,8 +4940,8 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                   }}
                   className={`px-2 py-1 rounded font-bold transition-colors text-xs ${
                     isBold
-                      ? "bg-[#f7e6d0] text-[#ef8432] border border-[#ef8432]"
-                      : "bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50]"
+                      ? "bg-[#ef8432] text-white border border-[#ef8432]"
+                      : "bg-[#3a3634] hover:bg-[#4a4340] text-[rgb(232,213,183)]"
                   }`}
                   title="Bold"
                 >
@@ -4909,8 +4954,8 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                   }}
                   className={`px-2 py-1 rounded italic transition-colors text-xs ${
                     isItalic
-                      ? "bg-[#f7e6d0] text-[#ef8432] border border-[#ef8432]"
-                      : "bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50]"
+                      ? "bg-[#ef8432] text-white border border-[#ef8432]"
+                      : "bg-[#3a3634] hover:bg-[#4a4340] text-[rgb(232,213,183)]"
                   }`}
                   title="Italic"
                 >
@@ -4923,8 +4968,8 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                   }}
                   className={`px-2 py-1 rounded underline transition-colors text-xs ${
                     isUnderline
-                      ? "bg-[#f7e6d0] text-[#ef8432] border border-[#ef8432]"
-                      : "bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50]"
+                      ? "bg-[#ef8432] text-white border border-[#ef8432]"
+                      : "bg-[#3a3634] hover:bg-[#4a4340] text-[rgb(232,213,183)]"
                   }`}
                   title="Underline"
                 >
@@ -4941,8 +4986,8 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                   }}
                   className={`px-1.5 py-1 rounded transition-colors text-xs ${
                     textAlign === "left"
-                      ? "bg-[#f7e6d0] text-[#ef8432] border border-[#ef8432]"
-                      : "bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50]"
+                      ? "bg-[#ef8432] text-white border border-[#ef8432]"
+                      : "bg-[#3a3634] hover:bg-[#4a4340] text-[rgb(232,213,183)]"
                   }`}
                   title="Align Left"
                 >
@@ -4955,8 +5000,8 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                   }}
                   className={`px-1.5 py-1 rounded transition-colors text-xs ${
                     textAlign === "center"
-                      ? "bg-[#f7e6d0] text-[#ef8432] border border-[#ef8432]"
-                      : "bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50]"
+                      ? "bg-[#ef8432] text-white border border-[#ef8432]"
+                      : "bg-[#3a3634] hover:bg-[#4a4340] text-[rgb(232,213,183)]"
                   }`}
                   title="Center"
                 >
@@ -4969,8 +5014,8 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                   }}
                   className={`px-1.5 py-1 rounded transition-colors text-xs ${
                     textAlign === "right"
-                      ? "bg-[#f7e6d0] text-[#ef8432] border border-[#ef8432]"
-                      : "bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50]"
+                      ? "bg-[#ef8432] text-white border border-[#ef8432]"
+                      : "bg-[#3a3634] hover:bg-[#4a4340] text-[rgb(232,213,183)]"
                   }`}
                   title="Align Right"
                 >
