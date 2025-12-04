@@ -107,7 +107,7 @@ export const WorldBuildingNotebook: React.FC<WorldBuildingNotebookProps> = ({
           📚 World-Building Notebook
         </h2>
         <button
-          onClick={onOpenHelp}
+          onClick={() => onOpenHelp?.()}
           style={{
             background: "none",
             border: "none",

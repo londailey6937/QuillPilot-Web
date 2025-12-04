@@ -271,7 +271,7 @@ export const NonFictionOutlineGenerator: React.FC<
           📝 Non-Fiction Outline Generator
         </h2>
         <button
-          onClick={onOpenHelp}
+          onClick={() => onOpenHelp?.()}
           style={{
             background: "none",
             border: "none",

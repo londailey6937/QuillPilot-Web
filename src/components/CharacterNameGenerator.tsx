@@ -268,7 +268,7 @@ export const CharacterNameGenerator: React.FC<CharacterNameGeneratorProps> = ({
           🎭 Character Name Generator
         </h2>
         <button
-          onClick={onOpenHelp}
+          onClick={() => onOpenHelp?.()}
           style={{
             background: "none",
             border: "none",

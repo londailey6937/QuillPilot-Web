@@ -158,7 +158,7 @@ export const ReadabilityAnalyzer: React.FC<ReadabilityAnalyzerProps> = ({
           📊 Readability Metrics
         </h2>
         <button
-          onClick={onOpenHelp}
+          onClick={() => onOpenHelp?.()}
           style={{
             background: "none",
             border: "none",

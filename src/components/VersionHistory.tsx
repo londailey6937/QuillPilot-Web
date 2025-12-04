@@ -237,7 +237,7 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
           📜 Version History
         </h2>
         <button
-          onClick={onOpenHelp}
+          onClick={() => onOpenHelp?.()}
           style={{
             background: "none",
             border: "none",

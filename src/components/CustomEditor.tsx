@@ -6659,7 +6659,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
 
             <div className="p-3 border-t bg-gray-50 flex justify-between items-center">
               <button
-                onClick={() => {
+                onClick={(e) => {
                   // Reset to defaults
                   setDocumentStyles(buildDefaultDocumentStyles());
                   setHeaderText("");
@@ -6668,6 +6668,15 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                   setPageNumberPosition("footer");
                   setHeaderAlign("center");
                   setFooterAlign("center");
+                  // Visual feedback
+                  const btn = e.currentTarget;
+                  const originalText = btn.textContent;
+                  btn.textContent = "✓ Reset!";
+                  btn.classList.add("text-green-600");
+                  setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.classList.remove("text-green-600");
+                  }, 1500);
                 }}
                 className="px-3 py-1.5 text-sm text-[#111827] hover:text-[#ef8432] transition-colors"
               >
@@ -6675,7 +6684,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               </button>
               <div className="flex gap-2">
                 <button
-                  onClick={() => {
+                  onClick={(e) => {
                     // Apply styles to CSS variables and close
                     if (editorRef.current) {
                       editorRef.current.style.setProperty(
@@ -6683,7 +6692,15 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                         `${documentStyles.paragraph.firstLineIndent}px`
                       );
                     }
-                    setShowStylesPanel(false);
+                    // Visual feedback before closing
+                    const btn = e.currentTarget;
+                    const originalText = btn.textContent;
+                    btn.textContent = "✓ Applied!";
+                    btn.classList.remove("bg-[#ef8432]");
+                    btn.classList.add("bg-green-600");
+                    setTimeout(() => {
+                      setShowStylesPanel(false);
+                    }, 800);
                   }}
                   className="px-3 py-1.5 text-sm bg-[#ef8432] text-white rounded hover:bg-[#d97320] transition-colors"
                 >

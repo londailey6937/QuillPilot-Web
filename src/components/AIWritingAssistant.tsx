@@ -343,7 +343,7 @@ export const AIWritingAssistant: React.FC<AIWritingAssistantProps> = ({
           ✨ AI Writing Assistant
         </h3>
         <button
-          onClick={onOpenHelp}
+          onClick={() => onOpenHelp?.()}
           className="text-[#111827] hover:text-blue-600 text-xl leading-none"
           title="Help"
         >

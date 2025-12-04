@@ -413,7 +413,7 @@ export const ClicheDetector: React.FC<ClicheDetectorProps> = ({
           🚫 Cliché Detector
         </h2>
         <button
-          onClick={onOpenHelp}
+          onClick={() => onOpenHelp?.()}
           style={{
             background: "none",
             border: "none",

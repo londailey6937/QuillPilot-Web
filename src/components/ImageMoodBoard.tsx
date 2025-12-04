@@ -135,7 +135,7 @@ export const ImageMoodBoard: React.FC<ImageMoodBoardProps> = ({
           </p>
         </div>
         <button
-          onClick={onOpenHelp}
+          onClick={() => onOpenHelp?.()}
           style={{
             background: "none",
             border: "none",

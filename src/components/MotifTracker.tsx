@@ -78,27 +78,35 @@ export const MotifTracker: React.FC<MotifTrackerProps> = ({
     const phraseCount: Record<string, number> = {};
     const symbolism: Record<string, string[]> = {};
 
-    // Find recurring phrases (3-5 words)
-    const words = inputText.toLowerCase().split(/\s+/);
+    // Find recurring phrases (3-5 words) - count actual occurrences in text
+    const normalizedText = inputText
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, " ")
+      .replace(/\s+/g, " ");
+    const words = normalizedText.split(/\s+/).filter((w) => w.length > 2);
+    const seenPhrases = new Set<string>();
+
+    // Collect candidate phrases (only 3-word phrases to avoid double-counting)
     for (let i = 0; i < words.length - 2; i++) {
       const phrase3 = words.slice(i, i + 3).join(" ");
-      const phrase4 = words.slice(i, i + 4).join(" ");
-      const phrase5 = words.slice(i, i + 5).join(" ");
-
       if (phrase3.split(" ").every((w) => w.length > 2)) {
-        phraseCount[phrase3] = (phraseCount[phrase3] || 0) + 1;
-      }
-      if (phrase4.split(" ").every((w) => w.length > 2)) {
-        phraseCount[phrase4] = (phraseCount[phrase4] || 0) + 1;
-      }
-      if (phrase5.split(" ").every((w) => w.length > 2)) {
-        phraseCount[phrase5] = (phraseCount[phrase5] || 0) + 1;
+        seenPhrases.add(phrase3);
       }
     }
 
-    // Filter for significant recurring phrases
+    // Count actual occurrences of each phrase in the original text
+    seenPhrases.forEach((phrase) => {
+      const escapedPhrase = phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const regex = new RegExp(`\\b${escapedPhrase}\\b`, "gi");
+      const matches = normalizedText.match(regex);
+      if (matches) {
+        phraseCount[phrase] = matches.length;
+      }
+    });
+
+    // Filter for significant recurring phrases (must appear 2+ times)
     const recurringPhrases = Object.entries(phraseCount)
-      .filter(([, count]) => count >= 3)
+      .filter(([, count]) => count >= 2)
       .map(([phrase, count]) => ({ phrase, count }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 20);
@@ -283,7 +291,7 @@ export const MotifTracker: React.FC<MotifTrackerProps> = ({
           🔮 Motif & Symbol Tracker
         </h2>
         <button
-          onClick={onOpenHelp}
+          onClick={() => onOpenHelp?.()}
           style={{
             background: "none",
             border: "none",

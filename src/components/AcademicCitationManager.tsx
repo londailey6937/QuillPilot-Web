@@ -296,7 +296,7 @@ export const AcademicCitationManager: React.FC<
           📚 Academic Citation Manager
         </h2>
         <button
-          onClick={onOpenHelp}
+          onClick={() => onOpenHelp?.()}
           style={{
             background: "none",
             border: "none",

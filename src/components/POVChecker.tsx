@@ -302,7 +302,7 @@ export const POVChecker: React.FC<POVCheckerProps> = ({
       <div className="mb-4 flex justify-between items-center">
         <h2 className="text-2xl font-bold text-[#111827]">👁️ POV Checker</h2>
         <button
-          onClick={onOpenHelp}
+          onClick={() => onOpenHelp?.()}
           style={{
             background: "none",
             border: "none",

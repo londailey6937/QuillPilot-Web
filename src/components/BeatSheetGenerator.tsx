@@ -451,7 +451,7 @@ export const BeatSheetGenerator: React.FC<BeatSheetGeneratorProps> = ({
           📖 Beat Sheet Generator
         </h2>
         <button
-          onClick={onOpenHelp}
+          onClick={() => onOpenHelp?.()}
           style={{
             background: "none",
             border: "none",

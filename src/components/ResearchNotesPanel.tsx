@@ -151,7 +151,7 @@ export const ResearchNotesPanel: React.FC<ResearchNotesPanelProps> = ({
           </p>
         </div>
         <button
-          onClick={onOpenHelp}
+          onClick={() => onOpenHelp?.()}
           style={{
             background: "none",
             border: "none",

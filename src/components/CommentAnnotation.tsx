@@ -209,7 +209,7 @@ export const CommentAnnotation: React.FC<CommentAnnotationProps> = ({
           💬 Comments & Annotations
         </h2>
         <button
-          onClick={onOpenHelp}
+          onClick={() => onOpenHelp?.()}
           style={{
             background: "none",
             border: "none",
