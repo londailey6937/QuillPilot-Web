@@ -234,6 +234,95 @@ const BLOCK_TYPE_SECTIONS: BlockTypeMenuSection[] = [
   },
 ];
 
+const normalizeFontName = (fontName: string): string =>
+  fontName.toLowerCase().replace(/['"]/g, "").split(",")[0].trim();
+
+const FONT_FAMILY_OPTIONS = [
+  {
+    value: "default",
+    label: "Default",
+    commandValue: "inherit",
+    cssFamily: "",
+    matchFaces: ["inherit", "default"],
+  },
+  {
+    value: "georgia",
+    label: "Georgia",
+    commandValue: "Georgia",
+    cssFamily: "'Georgia', serif",
+    matchFaces: ["Georgia", "Georgia, serif"],
+  },
+  {
+    value: "times-new-roman",
+    label: "Times New Roman",
+    commandValue: "Times New Roman",
+    cssFamily: "'Times New Roman', Times, serif",
+    matchFaces: ["Times New Roman", "Times New Roman, serif"],
+  },
+  {
+    value: "palatino",
+    label: "Palatino",
+    commandValue: "Palatino Linotype",
+    cssFamily: "'Palatino Linotype', 'Book Antiqua', Palatino, serif",
+    matchFaces: [
+      "Palatino Linotype",
+      "Palatino Linotype, serif",
+      "Palatino, serif",
+    ],
+  },
+  {
+    value: "garamond",
+    label: "Garamond",
+    commandValue: "Garamond",
+    cssFamily: "Garamond, 'Apple Garamond', 'ITC Garamond', serif",
+    matchFaces: ["Garamond", "Garamond, serif"],
+  },
+  {
+    value: "arial",
+    label: "Arial",
+    commandValue: "Arial",
+    cssFamily: "Arial, 'Liberation Sans', 'Helvetica Neue', sans-serif",
+    matchFaces: ["Arial", "Arial, sans-serif"],
+  },
+  {
+    value: "helvetica",
+    label: "Helvetica",
+    commandValue: "Helvetica",
+    cssFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
+    matchFaces: ["Helvetica", "Helvetica, sans-serif"],
+  },
+  {
+    value: "verdana",
+    label: "Verdana",
+    commandValue: "Verdana",
+    cssFamily: "Verdana, Geneva, sans-serif",
+    matchFaces: ["Verdana", "Verdana, sans-serif"],
+  },
+  {
+    value: "courier-new",
+    label: "Courier New",
+    commandValue: "Courier New",
+    cssFamily: "'Courier New', Courier, monospace",
+    matchFaces: ["Courier New", "Courier New, monospace"],
+  },
+  {
+    value: "courier-prime",
+    label: "Courier Prime",
+    commandValue: "Courier Prime",
+    cssFamily: "'Courier Prime', 'Courier New', Courier, monospace",
+    matchFaces: ["Courier Prime", "Courier Prime, monospace"],
+  },
+].map((option) => ({
+  ...option,
+  matchFaces: Array.from(
+    new Set(
+      [option.commandValue, ...option.matchFaces]
+        .filter(Boolean)
+        .map((face) => normalizeFontName(face))
+    )
+  ),
+}));
+
 const buildDefaultDocumentStyles = (): DocumentStylesState => ({
   paragraph: {
     fontSize: 16,
@@ -1055,6 +1144,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   const analysisTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastSelectionRangeRef = useRef<Range | null>(null);
+  const hasMigratedLegacyFontsRef = useRef(false);
 
   // Undo/Redo history
   const historyRef = useRef<string[]>([]);
@@ -1076,6 +1166,9 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   const toolbarInactiveButtonClass = isDarkMode
     ? "border border-[#4b433f] bg-[#5a534e] hover:bg-[#6a635c] text-[rgb(232,213,183)]"
     : "border border-[#e0c392] bg-[#fff8ec] hover:bg-[#f7e6d0] text-[#2a2421]";
+  const stylesPanelTitleColor = "#f5a623";
+  const stylesPanelSectionHeadingColor = "#f7b84b";
+  const stylesPanelItemLabelColor = "#d4a35a";
 
   // New feature states
   const [blockType, setBlockType] = useState("p");
@@ -2329,6 +2422,25 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     return false;
   }, []);
 
+  const snapshotCurrentSelection = useCallback(() => {
+    if (typeof window === "undefined" || !editorRef.current) {
+      return null;
+    }
+
+    const selection = window.getSelection();
+    if (
+      selection &&
+      selection.rangeCount > 0 &&
+      editorRef.current.contains(selection.anchorNode)
+    ) {
+      const snapshot = selection.getRangeAt(0).cloneRange();
+      lastSelectionRangeRef.current = snapshot;
+      return snapshot;
+    }
+
+    return null;
+  }, []);
+
   // Update format state
   const updateFormatState = useCallback(() => {
     setIsBold(document.queryCommandState("bold"));
@@ -2391,6 +2503,72 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     },
     [ensureEditorSelection, handleInput, updateFormatState]
   );
+
+  const replaceFontTagsWithStyledSpans = useCallback(
+    (faces: string[], cssFamily: string): HTMLSpanElement[] => {
+      const editorElement = editorRef.current;
+      if (!editorElement || faces.length === 0) {
+        return [];
+      }
+
+      const normalizedTargets = new Set(
+        faces.map((face) => normalizeFontName(face))
+      );
+      const createdSpans: HTMLSpanElement[] = [];
+
+      const fontNodes = editorElement.querySelectorAll("font[face]");
+      fontNodes.forEach((fontNode) => {
+        const faceAttr = fontNode.getAttribute("face");
+        if (!faceAttr) return;
+
+        const normalizedFace = normalizeFontName(faceAttr);
+        if (!normalizedTargets.has(normalizedFace)) return;
+
+        if (cssFamily && cssFamily.trim().length > 0) {
+          const span = document.createElement("span");
+          span.style.fontFamily = cssFamily;
+          while (fontNode.firstChild) {
+            span.appendChild(fontNode.firstChild);
+          }
+          fontNode.parentNode?.replaceChild(span, fontNode);
+          createdSpans.push(span);
+        } else {
+          const fragment = document.createDocumentFragment();
+          while (fontNode.firstChild) {
+            fragment.appendChild(fontNode.firstChild);
+          }
+          fontNode.parentNode?.replaceChild(fragment, fontNode);
+        }
+      });
+
+      return createdSpans;
+    },
+    []
+  );
+
+  useEffect(() => {
+    if (hasMigratedLegacyFontsRef.current) return;
+
+    if (!editorRef.current) return;
+
+    let modified = false;
+
+    FONT_FAMILY_OPTIONS.forEach((option) => {
+      const spans = replaceFontTagsWithStyledSpans(
+        option.matchFaces,
+        option.cssFamily
+      );
+      if (spans.length > 0) {
+        modified = true;
+      }
+    });
+
+    if (modified) {
+      setTimeout(() => handleInput(), 0);
+    }
+
+    hasMigratedLegacyFontsRef.current = true;
+  }, [handleInput, replaceFontTagsWithStyledSpans]);
 
   // Change block type (heading, paragraph, etc.)
   const changeBlockType = useCallback(
@@ -4501,13 +4679,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                     type="button"
                     onMouseDown={(e) => {
                       e.preventDefault(); // Prevent stealing editor focus
-                      // Save selection before opening dropdown
-                      const sel = window.getSelection();
-                      if (sel && sel.rangeCount > 0) {
-                        lastSelectionRangeRef.current = sel
-                          .getRangeAt(0)
-                          .cloneRange();
-                      }
+                      snapshotCurrentSelection();
                       setShowBlockTypeDropdown((prev) => !prev);
                     }}
                     style={{
@@ -4770,17 +4942,101 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                 <div
                   className="relative inline-flex items-center"
                   style={{ maxWidth: "120px" }}
+                  onMouseDown={() => {
+                    // Capture selection BEFORE the select steals focus
+                    // This fires before the select's mousedown
+                    if (editorRef.current) {
+                      const selection = window.getSelection();
+                      if (
+                        selection &&
+                        selection.rangeCount > 0 &&
+                        editorRef.current.contains(selection.anchorNode)
+                      ) {
+                        lastSelectionRangeRef.current = selection
+                          .getRangeAt(0)
+                          .cloneRange();
+                      }
+                    }
+                  }}
                 >
                   <select
                     value={fontFamily}
                     onChange={(e) => {
-                      const newFont = e.target.value;
-                      setFontFamily(newFont);
-                      if (newFont === "default") {
-                        formatText("fontName", "inherit");
-                      } else {
-                        formatText("fontName", newFont);
+                      const selectedValue = e.target.value;
+                      const selectedOption = FONT_FAMILY_OPTIONS.find(
+                        (option) => option.value === selectedValue
+                      );
+
+                      if (!selectedOption) return;
+
+                      setFontFamily(selectedOption.value);
+
+                      // Restore selection from snapshot captured on wrapper mousedown
+                      if (
+                        !lastSelectionRangeRef.current ||
+                        !editorRef.current
+                      ) {
+                        return;
                       }
+
+                      // Focus editor and restore selection BEFORE applying format
+                      editorRef.current.focus({ preventScroll: true });
+                      const selection = window.getSelection();
+                      if (selection) {
+                        selection.removeAllRanges();
+                        selection.addRange(
+                          lastSelectionRangeRef.current.cloneRange()
+                        );
+                      }
+
+                      // Apply formatting - this creates <font> tags
+                      formatText("fontName", selectedOption.commandValue);
+
+                      // Replace font tags with spans and track them
+                      const newSpans = replaceFontTagsWithStyledSpans(
+                        selectedOption.matchFaces,
+                        selectedOption.cssFamily
+                      );
+
+                      // Restore selection using the newly created spans (like font size does)
+                      requestAnimationFrame(() => {
+                        editorRef.current?.focus();
+
+                        if (newSpans.length > 0) {
+                          try {
+                            const newSelection = window.getSelection();
+                            if (newSelection) {
+                              const newRange = document.createRange();
+                              const firstSpan = newSpans[0];
+                              const lastSpan = newSpans[newSpans.length - 1];
+
+                              // Select from the start of the first span to the end of the last
+                              newRange.setStart(
+                                firstSpan.firstChild || firstSpan,
+                                0
+                              );
+                              const lastNode = lastSpan.lastChild || lastSpan;
+                              const endOffset =
+                                lastNode.nodeType === Node.TEXT_NODE
+                                  ? (lastNode as Text).length
+                                  : lastSpan.childNodes.length;
+                              newRange.setEnd(lastNode, endOffset);
+
+                              newSelection.removeAllRanges();
+                              newSelection.addRange(newRange);
+
+                              // Update the stored selection
+                              lastSelectionRangeRef.current =
+                                newRange.cloneRange();
+                            }
+                          } catch (err) {
+                            console.warn(
+                              "Could not restore selection after font change",
+                              err
+                            );
+                          }
+                        }
+                      });
                     }}
                     className="w-full px-1.5 py-1 pr-6 rounded border border-[#e0c392] hover:border-[#ef8432] transition-colors text-xs text-[#2a2421]"
                     title="Font Family"
@@ -4793,20 +5049,11 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                       lineHeight: "1.2",
                     }}
                   >
-                    <option value="default">Default</option>
-                    <option value="Georgia, serif">Georgia</option>
-                    <option value="Times New Roman, serif">
-                      Times New Roman
-                    </option>
-                    <option value="Palatino Linotype, serif">Palatino</option>
-                    <option value="Garamond, serif">Garamond</option>
-                    <option value="Arial, sans-serif">Arial</option>
-                    <option value="Helvetica, sans-serif">Helvetica</option>
-                    <option value="Verdana, sans-serif">Verdana</option>
-                    <option value="Courier New, monospace">Courier New</option>
-                    <option value="Courier Prime, monospace">
-                      Courier Prime
-                    </option>
+                    {FONT_FAMILY_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
                   </select>
                   <span
                     aria-hidden="true"
@@ -5858,7 +6105,10 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
             onClick={(e) => e.stopPropagation()}
           >
             <div className="p-3 border-b bg-gradient-to-r from-[#fef5e7] to-[#fff7ed] flex-shrink-0">
-              <h2 className="text-lg font-bold text-[#111827] flex items-center gap-2">
+              <h2
+                className="text-lg font-bold flex items-center gap-2"
+                style={{ color: stylesPanelTitleColor }}
+              >
                 <span>⚙</span> Modify Styles
               </h2>
               <p className="text-xs text-[#6b7280] mt-1">
@@ -5892,7 +6142,10 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                         className="w-3 h-3 rounded-full"
                         style={{ backgroundColor: section.accent }}
                       />
-                      <span className="font-semibold text-sm text-[#92400e]">
+                      <span
+                        className="font-semibold text-sm"
+                        style={{ color: stylesPanelSectionHeadingColor }}
+                      >
                         {section.label}
                       </span>
                       <span className="text-xs text-[#6b7280]">
@@ -5943,7 +6196,10 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                             className="p-2 border rounded bg-white"
                           >
                             <div className="flex items-center justify-between mb-2">
-                              <span className="text-xs font-medium text-[#111827]">
+                              <span
+                                className="text-xs font-medium"
+                                style={{ color: stylesPanelItemLabelColor }}
+                              >
                                 {item.label}
                               </span>
                             </div>
