@@ -2,18 +2,7 @@ export type TextAlignOption = "left" | "center" | "right" | "justify";
 export type FontWeightOption = "normal" | "bold";
 export type FontStyleOption = "normal" | "italic";
 
-export interface ParagraphStyle {
-  fontSize: number;
-  firstLineIndent: number;
-  lineHeight: number;
-  marginBottom: number;
-  marginTop: number;
-  textAlign: TextAlignOption;
-  fontWeight: FontWeightOption;
-  fontStyle: FontStyleOption;
-}
-
-export interface TitleStyle {
+export interface BlockStyle {
   fontSize: number;
   fontWeight: FontWeightOption;
   fontStyle: FontStyleOption;
@@ -21,54 +10,79 @@ export interface TitleStyle {
   marginTop: number;
   marginBottom: number;
   firstLineIndent: number;
-}
-
-export interface HeadingStyle {
-  fontSize: number;
-  fontWeight: FontWeightOption;
-  fontStyle: FontStyleOption;
-  textAlign: TextAlignOption;
-  marginTop: number;
-  marginBottom: number;
-  firstLineIndent: number;
-}
-
-export interface BlockquoteStyle {
-  fontSize: number;
-  fontStyle: FontStyleOption;
-  fontWeight: FontWeightOption;
-  textAlign: TextAlignOption;
-  marginLeft: number;
-  marginTop: number;
-  marginBottom: number;
-  firstLineIndent: number;
-  borderLeftWidth: number;
-  borderLeftColor: string;
-}
-
-export interface SimpleCenteredStyle {
-  fontSize: number;
-  fontStyle: FontStyleOption;
-  fontWeight: FontWeightOption;
-  textAlign: TextAlignOption;
-  marginTop: number;
-  marginBottom: number;
-  firstLineIndent: number;
+  lineHeight?: number;
   marginLeft?: number;
+  marginRight?: number;
+  borderLeftWidth?: number;
+  borderLeftColor?: string;
 }
+
+export type ParagraphStyle = BlockStyle & { lineHeight: number };
 
 export interface DocumentStylesState {
   paragraph: ParagraphStyle;
-  "book-title": TitleStyle;
-  title: TitleStyle;
-  subtitle: TitleStyle;
-  "chapter-heading": TitleStyle;
-  "part-title": TitleStyle;
-  heading1: HeadingStyle;
-  heading2: HeadingStyle;
-  heading3: HeadingStyle;
-  blockquote: BlockquoteStyle;
-  epigraph: SimpleCenteredStyle;
-  dedication: SimpleCenteredStyle;
-  verse: SimpleCenteredStyle;
+  "book-title": BlockStyle;
+  title: BlockStyle;
+  subtitle: BlockStyle;
+  "chapter-heading": BlockStyle;
+  "part-title": BlockStyle;
+  heading1: BlockStyle;
+  heading2: BlockStyle;
+  heading3: BlockStyle;
+  blockquote: BlockStyle;
+  epigraph: BlockStyle;
+  dedication: BlockStyle;
+  verse: BlockStyle;
+  "scene-heading": BlockStyle;
+  action: BlockStyle;
+  character: BlockStyle;
+  dialogue: BlockStyle;
+  parenthetical: BlockStyle;
+  transition: BlockStyle;
+  abstract: BlockStyle;
+  keywords: BlockStyle;
+  bibliography: BlockStyle;
+  references: BlockStyle;
+  appendix: BlockStyle;
+  footnote: BlockStyle;
+  citation: BlockStyle;
+  "author-info": BlockStyle;
+  "date-info": BlockStyle;
+  address: BlockStyle;
+  salutation: BlockStyle;
+  closing: BlockStyle;
+  signature: BlockStyle;
+  sidebar: BlockStyle;
+  callout: BlockStyle;
+  acknowledgments: BlockStyle;
+  copyright: BlockStyle;
+  "lead-paragraph": BlockStyle;
+  pullquote: BlockStyle;
+  caption: BlockStyle;
+  "figure-caption": BlockStyle;
+  "table-title": BlockStyle;
+  equation: BlockStyle;
+  byline: BlockStyle;
+  dateline: BlockStyle;
+  "press-lead": BlockStyle;
+  "nut-graf": BlockStyle;
+  "fact-box": BlockStyle;
+  "hero-headline": BlockStyle;
+  "marketing-subhead": BlockStyle;
+  "feature-callout": BlockStyle;
+  testimonial: BlockStyle;
+  "cta-block": BlockStyle;
+  "api-heading": BlockStyle;
+  "code-reference": BlockStyle;
+  "warning-note": BlockStyle;
+  "success-note": BlockStyle;
+  "memo-heading": BlockStyle;
+  "subject-line": BlockStyle;
+  "executive-summary": BlockStyle;
+  "front-matter": BlockStyle;
+  "scene-break": BlockStyle;
+  afterword: BlockStyle;
+  shot: BlockStyle;
+  lyric: BlockStyle;
+  beat: BlockStyle;
 }

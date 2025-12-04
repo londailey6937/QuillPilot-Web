@@ -81,6 +81,801 @@ const POINT_TO_PX = 96 / 72;
 const PAGE_WIDTH_PT = PAGE_WIDTH_PX / POINT_TO_PX; // 576pt on an 8" page
 const PAGE_CENTER_PT = PAGE_WIDTH_PT / 2; // 288pt (page midpoint)
 const TITLE_STYLE_POINT_SIZE = 20;
+const BLOCK_TYPE_TEXT_COLOR = palette.heading;
+
+interface BlockTypeMenuItem {
+  value: string;
+  label: string;
+  shortcut?: string;
+}
+
+interface BlockTypeMenuSection {
+  key: string;
+  label: string;
+  accent: string;
+  background: string;
+  items: BlockTypeMenuItem[];
+}
+
+const BLOCK_TYPE_SECTIONS: BlockTypeMenuSection[] = [
+  {
+    key: "basic",
+    label: "Basic",
+    accent: palette.accent,
+    background: "#fffaf3",
+    items: [
+      { value: "p", label: "Paragraph", shortcut: "⌘⌥0" },
+      { value: "h1", label: "Heading 1", shortcut: "⌘⌥1" },
+      { value: "h2", label: "Heading 2", shortcut: "⌘⌥2" },
+      { value: "h3", label: "Heading 3", shortcut: "⌘⌥3" },
+      { value: "h4", label: "Heading 4", shortcut: "⌘⌥4" },
+      { value: "h5", label: "Heading 5", shortcut: "⌘⌥5" },
+      { value: "h6", label: "Heading 6", shortcut: "⌘⌥6" },
+      { value: "blockquote", label: "Quote", shortcut: "⌘⇧." },
+      { value: "pre", label: "Code Block" },
+      { value: "lead-paragraph", label: "Lead Paragraph" },
+      { value: "pullquote", label: "Pull Quote" },
+      { value: "caption", label: "Caption" },
+    ],
+  },
+  {
+    key: "academic",
+    label: "Academic",
+    accent: "#8b5cf6",
+    background: palette.subtle,
+    items: [
+      { value: "abstract", label: "Abstract" },
+      { value: "keywords", label: "Keywords" },
+      { value: "bibliography", label: "Bibliography" },
+      { value: "references", label: "References" },
+      { value: "appendix", label: "Appendix" },
+      { value: "footnote", label: "Footnote" },
+      { value: "citation", label: "Citation" },
+      { value: "figure-caption", label: "Figure Caption" },
+      { value: "table-title", label: "Table Title" },
+      { value: "equation", label: "Equation" },
+    ],
+  },
+  {
+    key: "professional",
+    label: "Professional",
+    accent: "#92400e",
+    background: palette.hover,
+    items: [
+      { value: "author-info", label: "Author Info" },
+      { value: "date-info", label: "Date" },
+      { value: "address", label: "Address" },
+      { value: "salutation", label: "Salutation" },
+      { value: "closing", label: "Closing" },
+      { value: "signature", label: "Signature Line" },
+      { value: "sidebar", label: "Sidebar" },
+      { value: "callout", label: "Callout / Alert" },
+      { value: "memo-heading", label: "Memo Heading" },
+      { value: "subject-line", label: "Subject Line" },
+      { value: "executive-summary", label: "Executive Summary" },
+    ],
+  },
+  {
+    key: "book",
+    label: "Book Publishing",
+    accent: palette.border,
+    background: "#eddcc5",
+    items: [
+      { value: "book-title", label: "Book Title" },
+      { value: "title", label: "Section Title" },
+      { value: "subtitle", label: "Subtitle" },
+      { value: "chapter-heading", label: "Chapter Heading" },
+      { value: "part-title", label: "Part Title" },
+      { value: "epigraph", label: "Epigraph" },
+      { value: "dedication", label: "Dedication" },
+      { value: "acknowledgments", label: "Acknowledgments" },
+      { value: "copyright", label: "Copyright Notice" },
+      { value: "verse", label: "Verse / Poetry" },
+      { value: "front-matter", label: "Front Matter" },
+      { value: "scene-break", label: "Scene Break" },
+      { value: "afterword", label: "Afterword" },
+    ],
+  },
+  {
+    key: "journalism",
+    label: "Journalism & Media",
+    accent: "#111827",
+    background: palette.base,
+    items: [
+      { value: "press-lead", label: "Press Lead" },
+      { value: "nut-graf", label: "Nut Graf" },
+      { value: "byline", label: "Byline" },
+      { value: "dateline", label: "Dateline" },
+      { value: "fact-box", label: "Fact Box" },
+    ],
+  },
+  {
+    key: "marketing",
+    label: "Marketing & Copy",
+    accent: palette.accent,
+    background: palette.hover,
+    items: [
+      { value: "hero-headline", label: "Hero Headline" },
+      { value: "marketing-subhead", label: "Promo Subhead" },
+      { value: "feature-callout", label: "Feature Callout" },
+      { value: "testimonial", label: "Testimonial" },
+      { value: "cta-block", label: "CTA Block" },
+    ],
+  },
+  {
+    key: "technical",
+    label: "Technical Docs",
+    accent: palette.success,
+    background: palette.subtle,
+    items: [
+      { value: "api-heading", label: "API Heading" },
+      { value: "code-reference", label: "Code Reference" },
+      { value: "warning-note", label: "Warning Note" },
+      { value: "success-note", label: "Success Note" },
+    ],
+  },
+  {
+    key: "screenplay",
+    label: "Screenplay",
+    accent: palette.navy,
+    background: "#f5e6d3",
+    items: [
+      { value: "scene-heading", label: "Scene Heading" },
+      { value: "action", label: "Action" },
+      { value: "character", label: "Character" },
+      { value: "dialogue", label: "Dialogue" },
+      { value: "parenthetical", label: "Parenthetical" },
+      { value: "transition", label: "Transition" },
+      { value: "shot", label: "Shot Direction" },
+      { value: "lyric", label: "Lyric" },
+      { value: "beat", label: "Beat" },
+    ],
+  },
+];
+
+const buildDefaultDocumentStyles = (): DocumentStylesState => ({
+  paragraph: {
+    fontSize: 16,
+    firstLineIndent: 32,
+    lineHeight: 1.5,
+    marginBottom: 0.5,
+    marginTop: 0,
+    textAlign: "left",
+    fontWeight: "normal",
+    fontStyle: "normal",
+  },
+  "lead-paragraph": {
+    fontSize: 18,
+    fontWeight: "normal",
+    fontStyle: "normal",
+    textAlign: "left",
+    marginTop: 0,
+    marginBottom: 0.8,
+    firstLineIndent: 0,
+    lineHeight: 1.7,
+  },
+  pullquote: {
+    fontSize: 20,
+    fontWeight: "normal",
+    fontStyle: "italic",
+    textAlign: "center",
+    marginTop: 1.2,
+    marginBottom: 1.2,
+    firstLineIndent: 0,
+    marginLeft: 24,
+    marginRight: 24,
+    borderLeftWidth: 4,
+    borderLeftColor: "#8b5cf6",
+  },
+  caption: {
+    fontSize: 13,
+    fontWeight: "normal",
+    fontStyle: "italic",
+    textAlign: "center",
+    marginTop: 0.3,
+    marginBottom: 0.6,
+    firstLineIndent: 0,
+  },
+  "book-title": {
+    fontSize: TITLE_STYLE_POINT_SIZE,
+    fontWeight: "bold",
+    fontStyle: "normal",
+    textAlign: "center",
+    marginTop: 2,
+    marginBottom: 1,
+    firstLineIndent: 0,
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: "bold",
+    fontStyle: "normal",
+    textAlign: "center",
+    marginTop: 1.5,
+    marginBottom: 0.5,
+    firstLineIndent: 0,
+  },
+  subtitle: {
+    fontSize: 18,
+    fontWeight: "normal",
+    fontStyle: "italic",
+    textAlign: "center",
+    marginTop: 0.5,
+    marginBottom: 1,
+    firstLineIndent: 0,
+  },
+  "chapter-heading": {
+    fontSize: 26,
+    fontWeight: "bold",
+    fontStyle: "normal",
+    textAlign: "left",
+    marginTop: 2,
+    marginBottom: 1,
+    firstLineIndent: 0,
+  },
+  "part-title": {
+    fontSize: 28,
+    fontWeight: "bold",
+    fontStyle: "normal",
+    textAlign: "center",
+    marginTop: 3,
+    marginBottom: 1.5,
+    firstLineIndent: 0,
+  },
+  heading1: {
+    fontSize: 28,
+    fontWeight: "bold",
+    fontStyle: "normal",
+    textAlign: "left",
+    marginTop: 1.5,
+    marginBottom: 0.8,
+    firstLineIndent: 0,
+  },
+  heading2: {
+    fontSize: 22,
+    fontWeight: "bold",
+    fontStyle: "normal",
+    textAlign: "left",
+    marginTop: 1.2,
+    marginBottom: 0.6,
+    firstLineIndent: 0,
+  },
+  heading3: {
+    fontSize: 18,
+    fontWeight: "bold",
+    fontStyle: "normal",
+    textAlign: "left",
+    marginTop: 1,
+    marginBottom: 0.5,
+    firstLineIndent: 0,
+  },
+  blockquote: {
+    fontSize: 16,
+    fontStyle: "italic",
+    fontWeight: "normal",
+    textAlign: "left",
+    marginLeft: 40,
+    marginTop: 1,
+    marginBottom: 1,
+    firstLineIndent: 0,
+    borderLeftWidth: 4,
+    borderLeftColor: "#e0c392",
+  },
+  "figure-caption": {
+    fontSize: 13,
+    fontStyle: "italic",
+    fontWeight: "normal",
+    textAlign: "center",
+    marginTop: 0.4,
+    marginBottom: 0.6,
+    firstLineIndent: 0,
+  },
+  "table-title": {
+    fontSize: 14,
+    fontStyle: "normal",
+    fontWeight: "bold",
+    textAlign: "left",
+    marginTop: 0.5,
+    marginBottom: 0.2,
+    firstLineIndent: 0,
+  },
+  equation: {
+    fontSize: 15,
+    fontStyle: "normal",
+    fontWeight: "normal",
+    textAlign: "center",
+    marginTop: 0.5,
+    marginBottom: 0.5,
+    firstLineIndent: 0,
+    marginLeft: 20,
+    marginRight: 20,
+  },
+  byline: {
+    fontSize: 14,
+    fontStyle: "italic",
+    fontWeight: "normal",
+    textAlign: "left",
+    marginTop: 0.2,
+    marginBottom: 0.2,
+    firstLineIndent: 0,
+    lineHeight: 1.4,
+  },
+  dateline: {
+    fontSize: 13,
+    fontStyle: "normal",
+    fontWeight: "bold",
+    textAlign: "left",
+    marginTop: 0.2,
+    marginBottom: 0.2,
+    firstLineIndent: 0,
+  },
+  "press-lead": {
+    fontSize: 17,
+    fontStyle: "normal",
+    fontWeight: "bold",
+    textAlign: "left",
+    marginTop: 0.5,
+    marginBottom: 0.3,
+    firstLineIndent: 0,
+    lineHeight: 1.6,
+    borderLeftWidth: 4,
+    borderLeftColor: palette.accent,
+  },
+  "nut-graf": {
+    fontSize: 16,
+    fontStyle: "normal",
+    fontWeight: "normal",
+    textAlign: "left",
+    marginTop: 0.4,
+    marginBottom: 0.6,
+    firstLineIndent: 0,
+    lineHeight: 1.6,
+  },
+  "fact-box": {
+    fontSize: 14,
+    fontStyle: "normal",
+    fontWeight: "normal",
+    textAlign: "left",
+    marginTop: 0.5,
+    marginBottom: 0.5,
+    firstLineIndent: 0,
+    lineHeight: 1.5,
+    marginLeft: 16,
+    marginRight: 16,
+    borderLeftWidth: 4,
+    borderLeftColor: "#8b5cf6",
+  },
+  "hero-headline": {
+    fontSize: 26,
+    fontStyle: "normal",
+    fontWeight: "bold",
+    textAlign: "center",
+    marginTop: 1,
+    marginBottom: 0.4,
+    firstLineIndent: 0,
+  },
+  "marketing-subhead": {
+    fontSize: 18,
+    fontStyle: "normal",
+    fontWeight: "normal",
+    textAlign: "center",
+    marginTop: 0.3,
+    marginBottom: 0.7,
+    firstLineIndent: 0,
+  },
+  "feature-callout": {
+    fontSize: 16,
+    fontStyle: "normal",
+    fontWeight: "normal",
+    textAlign: "left",
+    marginTop: 0.4,
+    marginBottom: 0.4,
+    firstLineIndent: 0,
+    marginLeft: 20,
+    borderLeftWidth: 4,
+    borderLeftColor: palette.accent,
+  },
+  testimonial: {
+    fontSize: 15,
+    fontStyle: "italic",
+    fontWeight: "normal",
+    textAlign: "left",
+    marginTop: 0.6,
+    marginBottom: 0.6,
+    firstLineIndent: 0,
+    marginLeft: 16,
+    borderLeftWidth: 4,
+    borderLeftColor: palette.lightBorder,
+  },
+  "cta-block": {
+    fontSize: 16,
+    fontStyle: "normal",
+    fontWeight: "bold",
+    textAlign: "center",
+    marginTop: 0.8,
+    marginBottom: 0.8,
+    firstLineIndent: 0,
+    lineHeight: 1.4,
+  },
+  "api-heading": {
+    fontSize: 15,
+    fontStyle: "normal",
+    fontWeight: "bold",
+    textAlign: "left",
+    marginTop: 0.8,
+    marginBottom: 0.2,
+    firstLineIndent: 0,
+  },
+  "code-reference": {
+    fontSize: 14,
+    fontStyle: "normal",
+    fontWeight: "normal",
+    textAlign: "left",
+    marginTop: 0.3,
+    marginBottom: 0.5,
+    firstLineIndent: 0,
+    marginLeft: 12,
+    marginRight: 12,
+  },
+  "warning-note": {
+    fontSize: 15,
+    fontStyle: "normal",
+    fontWeight: "normal",
+    textAlign: "left",
+    marginTop: 0.4,
+    marginBottom: 0.4,
+    firstLineIndent: 0,
+    borderLeftWidth: 4,
+    borderLeftColor: palette.info,
+  },
+  "success-note": {
+    fontSize: 15,
+    fontStyle: "normal",
+    fontWeight: "normal",
+    textAlign: "left",
+    marginTop: 0.4,
+    marginBottom: 0.4,
+    firstLineIndent: 0,
+    borderLeftWidth: 4,
+    borderLeftColor: palette.success,
+  },
+  epigraph: {
+    fontSize: 14,
+    fontStyle: "italic",
+    fontWeight: "normal",
+    textAlign: "right",
+    marginTop: 1,
+    marginBottom: 1,
+    firstLineIndent: 0,
+  },
+  dedication: {
+    fontSize: 16,
+    fontStyle: "italic",
+    fontWeight: "normal",
+    textAlign: "center",
+    marginTop: 2,
+    marginBottom: 2,
+    firstLineIndent: 0,
+  },
+  verse: {
+    fontSize: 15,
+    fontStyle: "normal",
+    fontWeight: "normal",
+    textAlign: "left",
+    marginLeft: 40,
+    marginTop: 0.5,
+    marginBottom: 0.5,
+    firstLineIndent: 0,
+  },
+  "scene-heading": {
+    fontSize: 16,
+    fontStyle: "normal",
+    fontWeight: "bold",
+    textAlign: "left",
+    marginTop: 1,
+    marginBottom: 0.5,
+    firstLineIndent: 0,
+  },
+  action: {
+    fontSize: 16,
+    fontStyle: "normal",
+    fontWeight: "normal",
+    textAlign: "left",
+    marginTop: 0.5,
+    marginBottom: 0.5,
+    firstLineIndent: 0,
+  },
+  character: {
+    fontSize: 16,
+    fontStyle: "normal",
+    fontWeight: "bold",
+    textAlign: "center",
+    marginTop: 0.5,
+    marginBottom: 0,
+    firstLineIndent: 0,
+  },
+  dialogue: {
+    fontSize: 16,
+    fontStyle: "normal",
+    fontWeight: "normal",
+    textAlign: "center",
+    marginTop: 0,
+    marginBottom: 0.5,
+    firstLineIndent: 0,
+    marginLeft: 60,
+    marginRight: 60,
+  },
+  parenthetical: {
+    fontSize: 14,
+    fontStyle: "italic",
+    fontWeight: "normal",
+    textAlign: "center",
+    marginTop: 0,
+    marginBottom: 0,
+    firstLineIndent: 0,
+    marginLeft: 80,
+    marginRight: 80,
+  },
+  transition: {
+    fontSize: 16,
+    fontStyle: "normal",
+    fontWeight: "bold",
+    textAlign: "right",
+    marginTop: 0.5,
+    marginBottom: 0.5,
+    firstLineIndent: 0,
+  },
+  abstract: {
+    fontSize: 15,
+    fontStyle: "normal",
+    fontWeight: "normal",
+    textAlign: "justify",
+    marginTop: 1,
+    marginBottom: 1,
+    firstLineIndent: 0,
+    marginLeft: 20,
+    marginRight: 20,
+  },
+  keywords: {
+    fontSize: 14,
+    fontStyle: "italic",
+    fontWeight: "normal",
+    textAlign: "left",
+    marginTop: 0.5,
+    marginBottom: 1,
+    firstLineIndent: 0,
+  },
+  bibliography: {
+    fontSize: 14,
+    fontStyle: "normal",
+    fontWeight: "normal",
+    textAlign: "left",
+    marginTop: 0.3,
+    marginBottom: 0.3,
+    firstLineIndent: -20,
+    marginLeft: 20,
+  },
+  references: {
+    fontSize: 14,
+    fontStyle: "normal",
+    fontWeight: "normal",
+    textAlign: "left",
+    marginTop: 0.3,
+    marginBottom: 0.3,
+    firstLineIndent: -20,
+    marginLeft: 20,
+  },
+  appendix: {
+    fontSize: 15,
+    fontStyle: "normal",
+    fontWeight: "normal",
+    textAlign: "left",
+    marginTop: 0.5,
+    marginBottom: 0.5,
+    firstLineIndent: 32,
+  },
+  footnote: {
+    fontSize: 12,
+    fontStyle: "normal",
+    fontWeight: "normal",
+    textAlign: "left",
+    marginTop: 0.2,
+    marginBottom: 0.2,
+    firstLineIndent: 0,
+  },
+  citation: {
+    fontSize: 14,
+    fontStyle: "italic",
+    fontWeight: "normal",
+    textAlign: "left",
+    marginTop: 0.3,
+    marginBottom: 0.3,
+    firstLineIndent: 0,
+  },
+  "author-info": {
+    fontSize: 15,
+    fontStyle: "normal",
+    fontWeight: "normal",
+    textAlign: "left",
+    marginTop: 0.5,
+    marginBottom: 0.3,
+    firstLineIndent: 0,
+  },
+  "date-info": {
+    fontSize: 15,
+    fontStyle: "normal",
+    fontWeight: "normal",
+    textAlign: "left",
+    marginTop: 0.3,
+    marginBottom: 0.5,
+    firstLineIndent: 0,
+  },
+  address: {
+    fontSize: 15,
+    fontStyle: "normal",
+    fontWeight: "normal",
+    textAlign: "left",
+    marginTop: 0.3,
+    marginBottom: 0.3,
+    firstLineIndent: 0,
+  },
+  salutation: {
+    fontSize: 16,
+    fontStyle: "normal",
+    fontWeight: "normal",
+    textAlign: "left",
+    marginTop: 1,
+    marginBottom: 0.5,
+    firstLineIndent: 0,
+  },
+  closing: {
+    fontSize: 16,
+    fontStyle: "normal",
+    fontWeight: "normal",
+    textAlign: "left",
+    marginTop: 1,
+    marginBottom: 0.3,
+    firstLineIndent: 0,
+  },
+  signature: {
+    fontSize: 16,
+    fontStyle: "normal",
+    fontWeight: "normal",
+    textAlign: "left",
+    marginTop: 0.3,
+    marginBottom: 0.5,
+    firstLineIndent: 0,
+  },
+  sidebar: {
+    fontSize: 14,
+    fontStyle: "normal",
+    fontWeight: "normal",
+    textAlign: "left",
+    marginTop: 0.5,
+    marginBottom: 0.5,
+    firstLineIndent: 0,
+    marginLeft: 20,
+    marginRight: 20,
+    borderLeftWidth: 4,
+    borderLeftColor: "#8b5cf6",
+  },
+  callout: {
+    fontSize: 15,
+    fontStyle: "normal",
+    fontWeight: "bold",
+    textAlign: "left",
+    marginTop: 0.5,
+    marginBottom: 0.5,
+    firstLineIndent: 0,
+    marginLeft: 20,
+    marginRight: 20,
+    borderLeftWidth: 4,
+    borderLeftColor: "#f97316",
+  },
+  "memo-heading": {
+    fontSize: 14,
+    fontStyle: "normal",
+    fontWeight: "bold",
+    textAlign: "left",
+    marginTop: 1,
+    marginBottom: 0.5,
+    firstLineIndent: 0,
+  },
+  "subject-line": {
+    fontSize: 15,
+    fontStyle: "italic",
+    fontWeight: "normal",
+    textAlign: "left",
+    marginTop: 0.3,
+    marginBottom: 0.7,
+    firstLineIndent: 0,
+  },
+  "executive-summary": {
+    fontSize: 15,
+    fontStyle: "normal",
+    fontWeight: "normal",
+    textAlign: "left",
+    marginTop: 0.5,
+    marginBottom: 0.5,
+    firstLineIndent: 32,
+    lineHeight: 1.6,
+    borderLeftWidth: 4,
+    borderLeftColor: "#f97316",
+  },
+  acknowledgments: {
+    fontSize: 15,
+    fontStyle: "normal",
+    fontWeight: "normal",
+    textAlign: "left",
+    marginTop: 0.5,
+    marginBottom: 0.5,
+    firstLineIndent: 32,
+  },
+  copyright: {
+    fontSize: 12,
+    fontStyle: "normal",
+    fontWeight: "normal",
+    textAlign: "center",
+    marginTop: 2,
+    marginBottom: 2,
+    firstLineIndent: 0,
+  },
+  "front-matter": {
+    fontSize: 16,
+    fontStyle: "italic",
+    fontWeight: "normal",
+    textAlign: "center",
+    marginTop: 1.2,
+    marginBottom: 0.8,
+    firstLineIndent: 0,
+  },
+  "scene-break": {
+    fontSize: 14,
+    fontStyle: "normal",
+    fontWeight: "normal",
+    textAlign: "center",
+    marginTop: 1.5,
+    marginBottom: 1.5,
+    firstLineIndent: 0,
+  },
+  afterword: {
+    fontSize: 16,
+    fontStyle: "italic",
+    fontWeight: "normal",
+    textAlign: "left",
+    marginTop: 1,
+    marginBottom: 0.8,
+    firstLineIndent: 32,
+  },
+  shot: {
+    fontSize: 16,
+    fontStyle: "normal",
+    fontWeight: "bold",
+    textAlign: "left",
+    marginTop: 0.5,
+    marginBottom: 0.5,
+    firstLineIndent: 0,
+  },
+  lyric: {
+    fontSize: 15,
+    fontStyle: "italic",
+    fontWeight: "normal",
+    textAlign: "center",
+    marginTop: 0.3,
+    marginBottom: 0.3,
+    firstLineIndent: 0,
+  },
+  beat: {
+    fontSize: 15,
+    fontStyle: "italic",
+    fontWeight: "normal",
+    textAlign: "left",
+    marginTop: 0.3,
+    marginBottom: 0.3,
+    firstLineIndent: 0,
+    marginLeft: 50,
+    marginRight: 50,
+  },
+});
 const CENTERED_STYLE_SELECTORS = [
   "p.title-content",
   "p.book-title",
@@ -258,6 +1053,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   const [isUnderline, setIsUnderline] = useState(false);
   const analysisTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastSelectionRangeRef = useRef<Range | null>(null);
 
   // Undo/Redo history
   const historyRef = useRef<string[]>([]);
@@ -275,6 +1071,8 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   const [fontFamily, setFontFamily] = useState("default");
   const [fontSize, setFontSize] = useState("16px");
   const [showStyleLabels, setShowStyleLabels] = useState(true);
+  const [showBlockTypeDropdown, setShowBlockTypeDropdown] = useState(false);
+  const blockTypeDropdownRef = useRef<HTMLDivElement>(null);
   const [showLinkModal, setShowLinkModal] = useState(false);
   const [linkUrl, setLinkUrl] = useState("");
   const [showFindReplace, setShowFindReplace] = useState(false);
@@ -371,6 +1169,21 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   >(null);
   const rulerContainerRef = useRef<HTMLDivElement>(null);
 
+  // Close block type dropdown on click outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        showBlockTypeDropdown &&
+        blockTypeDropdownRef.current &&
+        !blockTypeDropdownRef.current.contains(e.target as Node)
+      ) {
+        setShowBlockTypeDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showBlockTypeDropdown]);
+
   useEffect(() => {
     activePageRef.current = activePage;
   }, [activePage]);
@@ -447,55 +1260,11 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
       ? pageRect.width / PAGE_WIDTH_PT
       : POINT_TO_PX;
     const pageCenterRelative = PAGE_CENTER_PT * pxPerPoint;
-    const pageCenterAbsolute = pageRect.left + pageCenterRelative;
 
     const legacySelector = CENTERED_STYLE_SELECTORS.join(", ");
     const elements =
       editorEl.querySelectorAll<HTMLElement>(CENTERABLE_SELECTOR);
 
-    console.log("📄 Page center calculation:", {
-      pageRectLeft: pageRect.left,
-      pageRectWidth: pageRect.width,
-      pageWidthPt: PAGE_WIDTH_PT,
-      pageCenterPt: PAGE_CENTER_PT,
-      pxPerPoint,
-      pageCenterRelative,
-      pageCenterAbsolute,
-      viewportWidth: window.innerWidth,
-    });
-
-    // Debug: Check what elements exist in the editor
-    const allParagraphs = editorEl.querySelectorAll("p");
-    const paragraphDetails = Array.from(allParagraphs).map((p) => ({
-      className: p.className,
-      classList: Array.from(p.classList),
-      tagName: p.tagName,
-      text: p.textContent?.slice(0, 30),
-      hasClass: {
-        titleContent: p.classList.contains("title-content"),
-        bookTitle: p.classList.contains("book-title"),
-        subtitle: p.classList.contains("subtitle"),
-        chapterHeading: p.classList.contains("chapter-heading"),
-        partTitle: p.classList.contains("part-title"),
-      },
-    }));
-
-    console.log("Centering Debug:", {
-      candidateCount: elements.length,
-      totalParagraphs: allParagraphs.length,
-      paragraphDetails,
-      legacySelector,
-      centerableSelector: CENTERABLE_SELECTOR,
-    });
-
-    // Log each paragraph individually for clarity
-    allParagraphs.forEach((p, i) => {
-      console.log(`Paragraph ${i}:`, {
-        className: p.className,
-        classList: Array.from(p.classList),
-        text: p.textContent?.slice(0, 50),
-      });
-    });
     elements.forEach((element) => {
       const matchesLegacy = legacySelector
         ? element.matches(legacySelector)
@@ -505,43 +1274,42 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
       const shouldAlign = matchesLegacy || isCenterAligned;
 
       if (!shouldAlign) {
-        element.style.removeProperty("--center-shift");
-        element.removeAttribute("data-ruler-center");
+        if (
+          element.hasAttribute("data-ruler-center") ||
+          element.style.getPropertyValue("--center-shift")
+        ) {
+          element.style.removeProperty("--center-shift");
+          element.removeAttribute("data-ruler-center");
+        }
         return;
       }
 
-      element.setAttribute("data-ruler-center", "true");
+      const hadCenterAttr =
+        element.getAttribute("data-ruler-center") === "true";
+      if (!hadCenterAttr) {
+        element.setAttribute("data-ruler-center", "true");
+      }
 
       // Temporarily clear the shift to get natural position
       element.style.removeProperty("--center-shift");
-
-      // Force layout recalc
       void element.offsetHeight;
 
       const rect = element.getBoundingClientRect();
-
       if (!rect.width) {
-        element.style.setProperty("--center-shift", "0px");
+        if (element.style.getPropertyValue("--center-shift") !== "0px") {
+          element.style.setProperty("--center-shift", "0px");
+        }
         return;
       }
 
-      // Element's current center position relative to the ruler container
       const elementCenterRelative = rect.left - pageRect.left + rect.width / 2;
-
-      // Align the element with the physical midpoint of the page (288pt mark)
       const shift = pageCenterRelative - elementCenterRelative;
 
-      console.log("Element:", element.className || element.tagName, {
-        rectLeft: rect.left,
-        rectWidth: rect.width,
-        pageRectLeft: pageRect.left,
-        elementCenterRelative,
-        pageCenterRelative,
-        shift,
-        computedAlign,
-        matchesLegacy,
-      });
-      element.style.setProperty("--center-shift", `${shift}px`);
+      const currentShift = element.style.getPropertyValue("--center-shift");
+      const shiftValue = `${shift}px`;
+      if (currentShift !== shiftValue) {
+        element.style.setProperty("--center-shift", shiftValue);
+      }
     });
   }, []);
 
@@ -847,130 +1615,9 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   const [stylesPanelCategory, setStylesPanelCategory] = useState<
     "standard" | "book" | "special"
   >("standard");
-  const [documentStyles, setDocumentStyles] = useState<DocumentStylesState>({
-    paragraph: {
-      fontSize: 16,
-      firstLineIndent: 32,
-      lineHeight: 1.5,
-      marginBottom: 0.5,
-      marginTop: 0,
-      textAlign: "left" as "left" | "center" | "right" | "justify",
-      fontWeight: "normal" as "normal" | "bold",
-      fontStyle: "normal" as "normal" | "italic",
-    },
-    "book-title": {
-      fontSize: TITLE_STYLE_POINT_SIZE,
-      fontWeight: "bold" as "normal" | "bold",
-      fontStyle: "normal" as "normal" | "italic",
-      textAlign: "center" as "left" | "center" | "right" | "justify",
-      marginTop: 2,
-      marginBottom: 1,
-      firstLineIndent: 0,
-    },
-    title: {
-      fontSize: 20,
-      fontWeight: "bold" as "normal" | "bold",
-      fontStyle: "normal" as "normal" | "italic",
-      textAlign: "center" as "left" | "center" | "right" | "justify",
-      marginTop: 1.5,
-      marginBottom: 0.5,
-      firstLineIndent: 0,
-    },
-    subtitle: {
-      fontSize: 18,
-      fontWeight: "normal" as "normal" | "bold",
-      fontStyle: "italic" as "normal" | "italic",
-      textAlign: "center" as "left" | "center" | "right" | "justify",
-      marginTop: 0.5,
-      marginBottom: 1,
-      firstLineIndent: 0,
-    },
-    "chapter-heading": {
-      fontSize: 26,
-      fontWeight: "bold" as "normal" | "bold",
-      fontStyle: "normal" as "normal" | "italic",
-      textAlign: "center" as "left" | "center" | "right" | "justify",
-      marginTop: 2,
-      marginBottom: 1,
-      firstLineIndent: 0,
-    },
-    "part-title": {
-      fontSize: 28,
-      fontWeight: "bold" as "normal" | "bold",
-      fontStyle: "normal" as "normal" | "italic",
-      textAlign: "center" as "left" | "center" | "right" | "justify",
-      marginTop: 3,
-      marginBottom: 1.5,
-      firstLineIndent: 0,
-    },
-    heading1: {
-      fontSize: 28,
-      fontWeight: "bold" as "normal" | "bold",
-      fontStyle: "normal" as "normal" | "italic",
-      textAlign: "left" as "left" | "center" | "right" | "justify",
-      marginTop: 1.5,
-      marginBottom: 0.8,
-      firstLineIndent: 0,
-    },
-    heading2: {
-      fontSize: 22,
-      fontWeight: "bold" as "normal" | "bold",
-      fontStyle: "normal" as "normal" | "italic",
-      textAlign: "left" as "left" | "center" | "right" | "justify",
-      marginTop: 1.2,
-      marginBottom: 0.6,
-      firstLineIndent: 0,
-    },
-    heading3: {
-      fontSize: 18,
-      fontWeight: "bold" as "normal" | "bold",
-      fontStyle: "normal" as "normal" | "italic",
-      textAlign: "left" as "left" | "center" | "right" | "justify",
-      marginTop: 1,
-      marginBottom: 0.5,
-      firstLineIndent: 0,
-    },
-    blockquote: {
-      fontSize: 16,
-      fontStyle: "italic" as "normal" | "italic",
-      fontWeight: "normal" as "normal" | "bold",
-      textAlign: "left" as "left" | "center" | "right" | "justify",
-      marginLeft: 40,
-      marginTop: 1,
-      marginBottom: 1,
-      firstLineIndent: 0,
-      borderLeftWidth: 4,
-      borderLeftColor: "#e0c392",
-    },
-    epigraph: {
-      fontSize: 14,
-      fontStyle: "italic" as "normal" | "italic",
-      fontWeight: "normal" as "normal" | "bold",
-      textAlign: "right" as "left" | "center" | "right" | "justify",
-      marginTop: 1,
-      marginBottom: 1,
-      firstLineIndent: 0,
-    },
-    dedication: {
-      fontSize: 16,
-      fontStyle: "italic" as "normal" | "italic",
-      fontWeight: "normal" as "normal" | "bold",
-      textAlign: "center" as "left" | "center" | "right" | "justify",
-      marginTop: 2,
-      marginBottom: 2,
-      firstLineIndent: 0,
-    },
-    verse: {
-      fontSize: 15,
-      fontStyle: "normal" as "normal" | "italic",
-      fontWeight: "normal" as "normal" | "bold",
-      textAlign: "left" as "left" | "center" | "right" | "justify",
-      marginLeft: 40,
-      marginTop: 0.5,
-      marginBottom: 0.5,
-      firstLineIndent: 0,
-    },
-  });
+  const [documentStyles, setDocumentStyles] = useState<DocumentStylesState>(
+    () => buildDefaultDocumentStyles()
+  );
 
   // Active style template tracking
   const [activeTemplate, setActiveTemplate] = useState<string | null>(null);
@@ -1075,11 +1722,6 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
 
   // Sync firstLineIndent prop with documentStyles AND apply directly to DOM
   useEffect(() => {
-    console.log(
-      "[CustomEditor] firstLineIndent prop changed to:",
-      firstLineIndent
-    );
-
     // Update the documentStyles state
     setDocumentStyles((prev) => ({
       ...prev,
@@ -1089,35 +1731,26 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
       },
     }));
 
-    // Also apply directly to DOM for immediate visual feedback
-    const applyIndentToDOM = () => {
-      if (editorRef.current) {
-        console.log("[CustomEditor] Applying indent to DOM:", firstLineIndent);
-        // Update CSS variable
-        editorRef.current.style.setProperty(
-          "--first-line-indent",
-          `${firstLineIndent}px`
-        );
-        // Also directly update all paragraphs for immediate effect
-        // Use setProperty with 'important' to override CSS !important rules
-        const paragraphs = editorRef.current.querySelectorAll(
-          "p:not(.screenplay-block):not(.title-content):not(.book-title):not(.subtitle):not(.chapter-heading):not(.image-paragraph)"
-        );
-        console.log("[CustomEditor] Found paragraphs:", paragraphs.length);
-        paragraphs.forEach((p) => {
-          (p as HTMLElement).style.setProperty(
-            "text-indent",
-            `${firstLineIndent}px`,
-            "important"
-          );
-        });
-      }
-    };
+    // Apply directly to DOM for immediate visual feedback
+    if (!editorRef.current) return;
 
-    applyIndentToDOM();
-    // Also try after a brief delay in case ref isn't ready
-    const timer = setTimeout(applyIndentToDOM, 0);
-    return () => clearTimeout(timer);
+    // Update CSS variable
+    editorRef.current.style.setProperty(
+      "--first-line-indent",
+      `${firstLineIndent}px`
+    );
+
+    // Directly update all standard paragraphs
+    const paragraphs = editorRef.current.querySelectorAll(
+      "p:not(.screenplay-block):not(.title-content):not(.book-title):not(.subtitle):not(.chapter-heading):not(.image-paragraph)"
+    );
+    paragraphs.forEach((p) => {
+      (p as HTMLElement).style.setProperty(
+        "text-indent",
+        `${firstLineIndent}px`,
+        "important"
+      );
+    });
   }, [firstLineIndent]);
 
   // Gap between pages in pixels
@@ -1644,21 +2277,116 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     setCanRedo(historyIndexRef.current < historyRef.current.length - 1);
   }, [onUpdate, analyzeContent, recomputePagination]);
 
+  const ensureEditorSelection = useCallback(() => {
+    if (typeof window === "undefined" || !editorRef.current) {
+      return false;
+    }
+
+    const selection = window.getSelection();
+    const hasSelectionInEditor =
+      selection &&
+      selection.rangeCount > 0 &&
+      editorRef.current.contains(selection.anchorNode);
+
+    if (hasSelectionInEditor) {
+      return true;
+    }
+
+    if (selection && lastSelectionRangeRef.current) {
+      const restoredRange = lastSelectionRangeRef.current.cloneRange();
+      selection.removeAllRanges();
+      selection.addRange(restoredRange);
+      editorRef.current.focus({ preventScroll: true });
+      lastSelectionRangeRef.current = restoredRange.cloneRange();
+      return true;
+    }
+
+    if (selection) {
+      const range = document.createRange();
+      range.selectNodeContents(editorRef.current);
+      range.collapse(false);
+      selection.removeAllRanges();
+      selection.addRange(range);
+      editorRef.current.focus({ preventScroll: true });
+      lastSelectionRangeRef.current = range.cloneRange();
+      return true;
+    }
+
+    return false;
+  }, []);
+
+  // Update format state
+  const updateFormatState = useCallback(() => {
+    setIsBold(document.queryCommandState("bold"));
+    setIsItalic(document.queryCommandState("italic"));
+    setIsUnderline(document.queryCommandState("underline"));
+
+    const selection = window.getSelection();
+    if (selection && selection.anchorNode) {
+      let node = selection.anchorNode.parentElement;
+      while (node && node !== editorRef.current) {
+        const tag = node.tagName?.toLowerCase();
+        if (
+          [
+            "p",
+            "h1",
+            "h2",
+            "h3",
+            "h4",
+            "h5",
+            "h6",
+            "blockquote",
+            "pullquote",
+            "pre",
+            "footnote",
+            "citation",
+          ].includes(tag)
+        ) {
+          setBlockType(tag);
+          break;
+        }
+        node = node.parentElement;
+      }
+    }
+  }, []);
+
   // Format text
   const formatText = useCallback(
     (command: string, value?: string) => {
-      document.execCommand(command, false, value);
+      if (!ensureEditorSelection()) {
+        console.warn(
+          `[CustomEditor] Skipped format command "${command}" – no active editor selection.`
+        );
+        return;
+      }
+
+      try {
+        document.execCommand(command, false, value);
+      } catch (error) {
+        console.error(
+          `[CustomEditor] execCommand failed for "${command}"`,
+          error
+        );
+        return;
+      }
+
       updateFormatState();
       editorRef.current?.focus();
       // Trigger input to save to history
       setTimeout(() => handleInput(), 0);
     },
-    [handleInput]
+    [ensureEditorSelection, handleInput, updateFormatState]
   );
 
   // Change block type (heading, paragraph, etc.)
   const changeBlockType = useCallback(
     (tag: string) => {
+      if (!ensureEditorSelection()) {
+        console.warn(
+          `[CustomEditor] Unable to change block type to "${tag}" – no active editor selection.`
+        );
+        return;
+      }
       // Screenplay elements use custom tags
       const screenplayElements = [
         "scene-heading",
@@ -1667,6 +2395,9 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
         "dialogue",
         "parenthetical",
         "transition",
+        "shot",
+        "lyric",
+        "beat",
       ];
 
       // Custom paragraph styles (not native HTML tags)
@@ -1681,11 +2412,19 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
         "acknowledgments",
         "copyright",
         "verse",
+        "lead-paragraph",
+        "pullquote",
+        "caption",
         "abstract",
         "keywords",
         "bibliography",
         "references",
         "appendix",
+        "footnote",
+        "citation",
+        "figure-caption",
+        "table-title",
+        "equation",
         "author-info",
         "date-info",
         "address",
@@ -1694,11 +2433,363 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
         "signature",
         "sidebar",
         "callout",
-        "lead",
+        "memo-heading",
+        "subject-line",
+        "executive-summary",
+        "front-matter",
+        "scene-break",
+        "afterword",
+        "press-lead",
+        "nut-graf",
+        "byline",
+        "dateline",
+        "fact-box",
+        "hero-headline",
+        "marketing-subhead",
+        "feature-callout",
+        "testimonial",
+        "cta-block",
+        "api-heading",
+        "code-reference",
+        "warning-note",
+        "success-note",
       ];
+
+      const nativeBlockTags = new Set([
+        "p",
+        "h1",
+        "h2",
+        "h3",
+        "h4",
+        "h5",
+        "h6",
+        "blockquote",
+        "pre",
+      ]);
 
       // Special block elements (TOC, Index, Figure)
       const specialBlockElements = ["toc", "index", "figure"];
+
+      const applyCustomParagraphStyle = (
+        styleTag: string,
+        activeSelection: Selection
+      ) => {
+        if (!editorRef.current) return;
+
+        const isParagraphLike = (node: Node | null): node is HTMLElement => {
+          return (
+            !!node &&
+            node.nodeType === Node.ELEMENT_NODE &&
+            [
+              "p",
+              "div",
+              "h1",
+              "h2",
+              "h3",
+              "h4",
+              "h5",
+              "h6",
+              "blockquote",
+              "pre",
+            ].includes(((node as HTMLElement).tagName || "").toLowerCase())
+          );
+        };
+
+        let currentBlock: Node | null = activeSelection.anchorNode;
+        while (
+          currentBlock &&
+          currentBlock !== editorRef.current &&
+          !isParagraphLike(currentBlock)
+        ) {
+          currentBlock = currentBlock.parentNode;
+        }
+
+        if (isParagraphLike(currentBlock)) {
+          let blockElement = currentBlock as HTMLElement;
+
+          const tagLower = blockElement.tagName.toLowerCase();
+          // Convert non-paragraph block elements (div, headings, blockquote, pre) to <p>
+          if (
+            tagLower === "div" ||
+            /^h[1-6]$/.test(tagLower) ||
+            tagLower === "blockquote" ||
+            tagLower === "pre"
+          ) {
+            const currentSelection = window.getSelection();
+            let cursorOffset = 0;
+            if (currentSelection && currentSelection.rangeCount > 0) {
+              const range = currentSelection.getRangeAt(0);
+              cursorOffset = range.startOffset;
+            }
+
+            const replacement = document.createElement("p");
+            replacement.innerHTML = blockElement.innerHTML;
+
+            if (!replacement.firstChild) {
+              replacement.appendChild(document.createElement("br"));
+            }
+
+            blockElement.replaceWith(replacement);
+            blockElement = replacement;
+
+            try {
+              const firstChild = replacement.firstChild;
+              if (firstChild) {
+                const newRange = document.createRange();
+                const newSelection = window.getSelection();
+                let caretTarget: ChildNode = firstChild;
+                if (
+                  caretTarget.nodeType !== Node.TEXT_NODE &&
+                  caretTarget.childNodes.length > 0
+                ) {
+                  caretTarget = caretTarget.childNodes[0];
+                }
+
+                const offset =
+                  caretTarget.nodeType === Node.TEXT_NODE
+                    ? Math.min(
+                        cursorOffset,
+                        caretTarget.textContent?.length || 0
+                      )
+                    : Math.min(cursorOffset, caretTarget.childNodes.length);
+
+                newRange.setStart(caretTarget, offset);
+                newRange.collapse(true);
+                newSelection?.removeAllRanges();
+                newSelection?.addRange(newRange);
+              }
+            } catch (e) {
+              console.warn("Could not restore cursor position:", e);
+            }
+          }
+
+          const styleMap: { [key: string]: string } = {
+            title: "title-content",
+            "book-title": "title-content book-title",
+            subtitle: "title-content subtitle",
+            "chapter-heading": "chapter-heading",
+            "part-title": "part-title",
+            epigraph: "epigraph",
+            dedication: "dedication",
+            acknowledgments: "acknowledgments",
+            copyright: "copyright",
+            verse: "verse",
+            "lead-paragraph": "lead-paragraph",
+            pullquote: "pullquote",
+            caption: "caption",
+            abstract: "abstract",
+            keywords: "keywords",
+            bibliography: "bibliography",
+            references: "references",
+            appendix: "appendix",
+            footnote: "footnote",
+            citation: "citation",
+            "figure-caption": "figure-caption",
+            "table-title": "table-title",
+            equation: "equation",
+            "author-info": "author-info",
+            "date-info": "date-info",
+            address: "address",
+            salutation: "salutation",
+            closing: "closing",
+            signature: "signature",
+            sidebar: "sidebar",
+            callout: "callout",
+            "memo-heading": "memo-heading",
+            "subject-line": "subject-line",
+            "executive-summary": "executive-summary",
+            "front-matter": "front-matter",
+            "scene-break": "scene-break",
+            afterword: "afterword",
+            "press-lead": "press-lead",
+            "nut-graf": "nut-graf",
+            byline: "byline",
+            dateline: "dateline",
+            "fact-box": "fact-box",
+            "hero-headline": "hero-headline",
+            "marketing-subhead": "marketing-subhead",
+            "feature-callout": "feature-callout",
+            testimonial: "testimonial",
+            "cta-block": "cta-block",
+            "api-heading": "api-heading",
+            "code-reference": "code-reference",
+            "warning-note": "warning-note",
+            "success-note": "success-note",
+          };
+
+          blockElement.className = styleMap[styleTag] || "";
+          [
+            "text-indent",
+            "margin-left",
+            "margin-right",
+            "padding-left",
+            "padding-right",
+            "text-align",
+            "transform",
+            "--center-shift",
+          ].forEach((prop) => blockElement.style.removeProperty(prop));
+
+          const styleKey = styleTag as keyof typeof documentStyles;
+          const isCenterAligned =
+            documentStyles[styleKey] &&
+            "textAlign" in documentStyles[styleKey] &&
+            (documentStyles[styleKey] as { textAlign?: string }).textAlign ===
+              "center";
+
+          if (
+            documentStyles[styleKey] &&
+            "textAlign" in documentStyles[styleKey]
+          ) {
+            const align = (documentStyles[styleKey] as { textAlign?: string })
+              .textAlign;
+            if (align) {
+              blockElement.style.textAlign = align;
+            }
+          }
+
+          blockElement.removeAttribute("data-block");
+          blockElement.removeAttribute("data-ruler-center");
+
+          if (isCenterAligned) {
+            centerText(blockElement);
+          }
+
+          setTimeout(() => {
+            handleInput();
+            if (isCenterAligned) {
+              alignCenteredBlocksToRuler();
+            }
+          }, 10);
+        } else {
+          const placeholders: { [key: string]: string } = {
+            title: "Section Title",
+            "book-title": "Book Title",
+            subtitle: "Subtitle",
+            "chapter-heading": "Chapter 1",
+            "part-title": "Part I",
+            epigraph: "Epigraph text...",
+            dedication: "For...",
+            acknowledgments: "I would like to thank...",
+            copyright: "© 2025",
+            verse: "Poetry line...",
+            "lead-paragraph": "Lead paragraph...",
+            pullquote: "Pull quote text...",
+            caption: "Caption text...",
+            byline: "By Jane Smith",
+            dateline: "Austin, Texas — Jan 5, 2025",
+            "press-lead": "Lead news paragraph...",
+            "nut-graf": "Nut graf context...",
+            "fact-box": "Key fact highlight...",
+            abstract: "Abstract...",
+            keywords: "Keywords: ",
+            bibliography: "Bibliography entry...",
+            references: "Reference...",
+            appendix: "Appendix content...",
+            footnote: "Footnote text...",
+            citation: "(Author, Year)",
+            "figure-caption": "Figure caption...",
+            "table-title": "Table title...",
+            equation: "Equation placeholder...",
+            "author-info": "Author Name",
+            "date-info": "Date",
+            address: "Address...",
+            salutation: "Dear...",
+            closing: "Sincerely,",
+            signature: "Name",
+            sidebar: "Sidebar content...",
+            callout: "Important note...",
+            "memo-heading": "MEMORANDUM",
+            "subject-line": "Subject: ...",
+            "executive-summary": "This executive summary...",
+            "front-matter": "Front matter note...",
+            "scene-break": "***",
+            afterword: "Afterword text...",
+            "hero-headline": "Hero headline...",
+            "marketing-subhead": "Supporting statement...",
+            "feature-callout": "Feature highlight...",
+            testimonial: '"Customer praise..."',
+            "cta-block": "Call to action...",
+            "api-heading": "Endpoint name...",
+            "code-reference": "Code sample...",
+            "warning-note": "Warning: ...",
+            "success-note": "Success note...",
+          };
+
+          const styleMap: { [key: string]: string } = {
+            title: "title-content",
+            "book-title": "title-content book-title",
+            subtitle: "title-content subtitle",
+            "chapter-heading": "chapter-heading",
+            "part-title": "part-title",
+            epigraph: "epigraph",
+            dedication: "dedication",
+            acknowledgments: "acknowledgments",
+            copyright: "copyright",
+            verse: "verse",
+            "lead-paragraph": "lead-paragraph",
+            pullquote: "pullquote",
+            caption: "caption",
+            abstract: "abstract",
+            keywords: "keywords",
+            bibliography: "bibliography",
+            references: "references",
+            appendix: "appendix",
+            footnote: "footnote",
+            citation: "citation",
+            "figure-caption": "figure-caption",
+            "table-title": "table-title",
+            equation: "equation",
+            "author-info": "author-info",
+            "date-info": "date-info",
+            address: "address",
+            salutation: "salutation",
+            closing: "closing",
+            signature: "signature",
+            sidebar: "sidebar",
+            callout: "callout",
+            "memo-heading": "memo-heading",
+            "subject-line": "subject-line",
+            "executive-summary": "executive-summary",
+            "front-matter": "front-matter",
+            "scene-break": "scene-break",
+            afterword: "afterword",
+          };
+
+          const selectedText =
+            activeSelection.toString() || placeholders[styleTag] || "Text";
+          const className = styleMap[styleTag] || "";
+
+          const styleKey = styleTag as keyof typeof documentStyles;
+          const isCenterAligned =
+            documentStyles[styleKey] &&
+            "textAlign" in documentStyles[styleKey] &&
+            (documentStyles[styleKey] as { textAlign?: string }).textAlign ===
+              "center";
+          let alignStyle = "";
+          if (
+            documentStyles[styleKey] &&
+            "textAlign" in documentStyles[styleKey]
+          ) {
+            const align = (documentStyles[styleKey] as { textAlign?: string })
+              .textAlign;
+            if (align) {
+              alignStyle = ` style="text-align: ${align}"`;
+            }
+          }
+
+          const blockHtml = `<p class="${className}"${alignStyle}>${selectedText}</p>`;
+          document.execCommand("insertHTML", false, blockHtml);
+
+          if (isCenterAligned) {
+            if (typeof window !== "undefined") {
+              window.requestAnimationFrame(() => centerText());
+            } else {
+              centerText();
+            }
+          }
+        }
+        setTimeout(() => handleInput(), 0);
+      };
 
       if (specialBlockElements.includes(tag)) {
         const selection = window.getSelection();
@@ -1796,171 +2887,114 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
         }
         setTimeout(() => handleInput(), 0);
       } else if (customParagraphStyles.includes(tag)) {
-        // Handle custom paragraph styles (title, subtitle)
         const selection = window.getSelection();
         if (!selection || !editorRef.current) return;
+        applyCustomParagraphStyle(tag, selection);
+      } else if (nativeBlockTags.has(tag)) {
+        formatText("formatBlock", tag);
 
-        // Helper to detect editable blocks (paragraphs or divs inserted by the browser)
-        const isParagraphLike = (node: Node | null): node is HTMLElement => {
-          return (
-            !!node &&
-            node.nodeType === Node.ELEMENT_NODE &&
-            ["p", "div"].includes(
-              ((node as HTMLElement).tagName || "").toLowerCase()
-            )
-          );
+        // Apply text-align from documentStyles for headings (h1, h2, h3)
+        const headingMap: { [key: string]: keyof typeof documentStyles } = {
+          h1: "heading1",
+          h2: "heading2",
+          h3: "heading3",
         };
 
-        // Get the current paragraph/block element
-        let currentBlock: Node | null = selection.anchorNode;
-        while (
-          currentBlock &&
-          currentBlock !== editorRef.current &&
-          !isParagraphLike(currentBlock)
-        ) {
-          currentBlock = currentBlock.parentNode;
-        }
-
-        if (isParagraphLike(currentBlock)) {
-          // Convert existing paragraph to styled paragraph
-          let blockElement = currentBlock as HTMLElement;
-
-          // Normalize div blocks to paragraphs so downstream CSS expectations stay intact
-          if (blockElement.tagName.toLowerCase() === "div") {
-            const replacement = document.createElement("p");
-            replacement.innerHTML = blockElement.innerHTML;
-            blockElement.replaceWith(replacement);
-            blockElement = replacement;
-          }
-
-          // Map tags to their CSS classes
-          const styleMap: { [key: string]: string } = {
-            title: "title-content",
-            "book-title": "title-content book-title",
-            subtitle: "title-content subtitle",
-            "chapter-heading": "chapter-heading",
-            "part-title": "part-title",
-            epigraph: "epigraph",
-            dedication: "dedication",
-            acknowledgments: "acknowledgments",
-            copyright: "copyright",
-            verse: "verse",
-            abstract: "abstract",
-            keywords: "keywords",
-            bibliography: "bibliography",
-            references: "references",
-            appendix: "appendix",
-            "author-info": "author-info",
-            "date-info": "date-info",
-            address: "address",
-            salutation: "salutation",
-            closing: "closing",
-            signature: "signature",
-            sidebar: "sidebar",
-            callout: "callout",
-            lead: "lead",
-          };
-
-          blockElement.className = styleMap[tag] || "";
-          [
-            "text-indent",
-            "margin-left",
-            "margin-right",
-            "padding-left",
-            "padding-right",
-            "text-align",
-            "transform",
-            "--center-shift",
-          ].forEach((prop) => blockElement.style.removeProperty(prop));
-          console.log("🎨 Applied style:", {
-            tag,
-            className: blockElement.className,
-            classList: Array.from(blockElement.classList),
-            element: blockElement,
-          });
-          blockElement.removeAttribute("data-block");
-          centerText(blockElement);
-          // Trigger handleInput to update stats panel and centering
+        if (headingMap[tag]) {
           setTimeout(() => {
-            handleInput();
-            // Manually trigger centering after style is applied
+            const selection = window.getSelection();
+            if (selection && selection.rangeCount > 0) {
+              let node: Node | null = selection.anchorNode;
+              while (
+                node &&
+                node.nodeName.toLowerCase() !== tag &&
+                node !== editorRef.current
+              ) {
+                node = node.parentNode;
+              }
+              if (node && node.nodeName.toLowerCase() === tag) {
+                const element = node as HTMLElement;
+                const styleKey = headingMap[tag];
+                const styleData = documentStyles[styleKey];
+                if (styleData && "textAlign" in styleData) {
+                  const align = (styleData as { textAlign: string }).textAlign;
+                  element.style.textAlign = align;
+
+                  // For non-centered headings, ensure centering attributes are removed
+                  if (align !== "center") {
+                    element.removeAttribute("data-ruler-center");
+                    element.style.removeProperty("--center-shift");
+                    element.style.removeProperty("transform");
+                  }
+                }
+              }
+            }
+            // Trigger re-alignment to ensure all elements are properly positioned
             alignCenteredBlocksToRuler();
-          }, 10);
-        } else {
-          // Create new styled paragraph
-          const placeholders: { [key: string]: string } = {
-            title: "Section Title",
-            "book-title": "Book Title",
-            subtitle: "Subtitle",
-            "chapter-heading": "Chapter 1",
-            "part-title": "Part I",
-            epigraph: "Epigraph text...",
-            dedication: "For...",
-            acknowledgments: "I would like to thank...",
-            copyright: "© 2025",
-            verse: "Poetry line...",
-            abstract: "Abstract...",
-            keywords: "Keywords: ",
-            bibliography: "Bibliography entry...",
-            references: "Reference...",
-            appendix: "Appendix content...",
-            "author-info": "Author Name",
-            "date-info": "Date",
-            address: "Address...",
-            salutation: "Dear...",
-            closing: "Sincerely,",
-            signature: "Name",
-            sidebar: "Sidebar content...",
-            callout: "Important note...",
-            lead: "Lead paragraph...",
-          };
-
-          const styleMap: { [key: string]: string } = {
-            title: "title-content",
-            "book-title": "title-content book-title",
-            subtitle: "title-content subtitle",
-            "chapter-heading": "chapter-heading",
-            "part-title": "part-title",
-            epigraph: "epigraph",
-            dedication: "dedication",
-            acknowledgments: "acknowledgments",
-            copyright: "copyright",
-            verse: "verse",
-            abstract: "abstract",
-            keywords: "keywords",
-            bibliography: "bibliography",
-            references: "references",
-            appendix: "appendix",
-            "author-info": "author-info",
-            "date-info": "date-info",
-            address: "address",
-            salutation: "salutation",
-            closing: "closing",
-            signature: "signature",
-            sidebar: "sidebar",
-            callout: "callout",
-            lead: "lead",
-          };
-
-          const selectedText =
-            selection.toString() || placeholders[tag] || "Text";
-          const className = styleMap[tag] || "";
-          const blockHtml = `<p class="${className}">${selectedText}</p>`;
-          document.execCommand("insertHTML", false, blockHtml);
-          if (typeof window !== "undefined") {
-            window.requestAnimationFrame(() => centerText());
-          } else {
-            centerText();
-          }
+          }, 0);
         }
-        setTimeout(() => handleInput(), 0);
+
+        if (tag === "p") {
+          setTimeout(() => {
+            const selection = window.getSelection();
+            if (!selection || selection.rangeCount === 0) {
+              return;
+            }
+
+            let node: Node | null = selection.anchorNode;
+            while (
+              node &&
+              node !== editorRef.current &&
+              node.nodeName !== "P"
+            ) {
+              node = node.parentNode;
+            }
+
+            if (!node || node.nodeName !== "P") {
+              return;
+            }
+
+            const paragraph = node as HTMLElement;
+
+            if (paragraph.className || paragraph.getAttribute("data-block")) {
+              paragraph.className = "";
+              paragraph.removeAttribute("data-block");
+            }
+
+            if (paragraph.hasAttribute("data-ruler-center")) {
+              paragraph.removeAttribute("data-ruler-center");
+              paragraph.style.removeProperty("--center-shift");
+              paragraph.style.removeProperty("transform");
+            }
+
+            [
+              "text-align",
+              "text-indent",
+              "margin-left",
+              "margin-right",
+              "padding-left",
+              "padding-right",
+            ].forEach((prop) => paragraph.style.removeProperty(prop));
+          }, 0);
+        }
       } else {
-        // Standard HTML elements use formatBlock
-        formatText("formatBlock", tag);
+        const selection = window.getSelection();
+        if (!selection || !editorRef.current) return;
+        console.warn(
+          `[CustomEditor] Unrecognized block type "${tag}". Falling back to custom paragraph handler.`
+        );
+        applyCustomParagraphStyle(tag, selection);
       }
       setBlockType(tag);
     },
-    [formatText, handleInput, alignCenteredBlocksToRuler, centerText]
+    [
+      ensureEditorSelection,
+      formatText,
+      handleInput,
+      alignCenteredBlocksToRuler,
+      centerText,
+      documentStyles,
+    ]
   );
 
   // Insert link
@@ -2830,46 +3864,20 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     [formatText, performUndo, performRedo, changeBlockType, onSave, handleInput]
   );
 
-  // Update format state
-  const updateFormatState = useCallback(() => {
-    setIsBold(document.queryCommandState("bold"));
-    setIsItalic(document.queryCommandState("italic"));
-    setIsUnderline(document.queryCommandState("underline"));
-
-    // Get current block type
-    const selection = window.getSelection();
-    if (selection && selection.anchorNode) {
-      let node = selection.anchorNode.parentElement;
-      while (node && node !== editorRef.current) {
-        const tag = node.tagName?.toLowerCase();
-        if (
-          [
-            "p",
-            "h1",
-            "h2",
-            "h3",
-            "h4",
-            "h5",
-            "h6",
-            "blockquote",
-            "pullquote",
-            "pre",
-            "footnote",
-            "citation",
-          ].includes(tag)
-        ) {
-          setBlockType(tag);
-          break;
-        }
-        node = node.parentElement;
-      }
-    }
-  }, []);
-
   // Track selection changes for toolbar
   useEffect(() => {
     const handleSelectionChange = () => {
-      if (document.activeElement === editorRef.current) {
+      if (typeof window === "undefined" || !editorRef.current) {
+        return;
+      }
+
+      const selection = window.getSelection();
+      if (
+        selection &&
+        selection.rangeCount > 0 &&
+        editorRef.current.contains(selection.anchorNode)
+      ) {
+        lastSelectionRangeRef.current = selection.getRangeAt(0).cloneRange();
         updateFormatState();
       }
     };
@@ -3419,6 +4427,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
             zIndex: 20,
             backgroundColor: "transparent",
             transform: "translateY(-10px)",
+            overflow: "visible",
           }}
         >
           <div
@@ -3427,6 +4436,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               gridTemplateColumns: "1fr auto 1fr",
               alignItems: "center",
               gap: "12px",
+              overflow: "visible",
             }}
           >
             {/* Left Toolbar Column */}
@@ -3438,9 +4448,10 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                 background: "linear-gradient(135deg, #fffaf3 0%, #fef5e7 100%)",
                 border: "1.5px solid #e0c392",
                 boxShadow: "0 4px 12px rgba(239, 132, 50, 0.12)",
-                overflow: "hidden",
                 flexShrink: 0,
                 justifySelf: "start",
+                position: "relative",
+                zIndex: 100,
               }}
             >
               <div
@@ -3450,67 +4461,237 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                   alignItems: "center",
                   gap: "4px",
                   whiteSpace: "nowrap",
+                  overflow: "visible",
                 }}
               >
-                {/* Block type dropdown */}
-                <select
-                  value={blockType}
-                  onChange={(e) => changeBlockType(e.target.value)}
-                  className="px-1.5 py-1 rounded border bg-white hover:bg-gray-50 transition-colors text-xs"
-                  title="Block Type"
+                {/* Block type dropdown - Custom stable implementation */}
+                <div
+                  ref={blockTypeDropdownRef}
+                  className="relative inline-block"
+                  style={{ position: "relative" }}
                 >
-                  <optgroup label="Basic">
-                    <option value="p">Paragraph (⌘⌥0)</option>
-                    <option value="h1">Heading 1 (⌘⌥1)</option>
-                    <option value="h2">Heading 2 (⌘⌥2)</option>
-                    <option value="h3">Heading 3 (⌘⌥3)</option>
-                    <option value="h4">Heading 4 (⌘⌥4)</option>
-                    <option value="h5">Heading 5 (⌘⌥5)</option>
-                    <option value="h6">Heading 6 (⌘⌥6)</option>
-                    <option value="blockquote">Quote (⌘⇧.)</option>
-                    <option value="pre">Code Block</option>
-                    <option value="lead">Lead Paragraph</option>
-                  </optgroup>
-                  <optgroup label="Academic">
-                    <option value="abstract">Abstract</option>
-                    <option value="keywords">Keywords</option>
-                    <option value="bibliography">Bibliography</option>
-                    <option value="references">References</option>
-                    <option value="appendix">Appendix</option>
-                    <option value="footnote">Footnote</option>
-                    <option value="citation">Citation</option>
-                  </optgroup>
-                  <optgroup label="Professional">
-                    <option value="author-info">Author Info</option>
-                    <option value="date-info">Date</option>
-                    <option value="address">Address</option>
-                    <option value="salutation">Salutation</option>
-                    <option value="closing">Closing</option>
-                    <option value="signature">Signature Line</option>
-                    <option value="sidebar">Sidebar</option>
-                    <option value="callout">Callout/Alert</option>
-                  </optgroup>
-                  <optgroup label="Book Publishing">
-                    <option value="book-title">Title</option>
-                    <option value="title">Section Title</option>
-                    <option value="subtitle">Subtitle</option>
-                    <option value="chapter-heading">Chapter Heading</option>
-                    <option value="part-title">Part Title</option>
-                    <option value="epigraph">Epigraph</option>
-                    <option value="dedication">Dedication</option>
-                    <option value="acknowledgments">Acknowledgments</option>
-                    <option value="copyright">Copyright Notice</option>
-                    <option value="verse">Verse/Poetry</option>
-                  </optgroup>
-                  <optgroup label="Screenplay">
-                    <option value="scene-heading">Scene Heading</option>
-                    <option value="action">Action</option>
-                    <option value="character">Character</option>
-                    <option value="dialogue">Dialogue</option>
-                    <option value="parenthetical">Parenthetical</option>
-                    <option value="transition">Transition</option>
-                  </optgroup>
-                </select>
+                  <button
+                    type="button"
+                    onMouseDown={(e) => {
+                      e.preventDefault(); // Prevent stealing editor focus
+                      // Save selection before opening dropdown
+                      const sel = window.getSelection();
+                      if (sel && sel.rangeCount > 0) {
+                        lastSelectionRangeRef.current = sel
+                          .getRangeAt(0)
+                          .cloneRange();
+                      }
+                      setShowBlockTypeDropdown((prev) => !prev);
+                    }}
+                    style={{
+                      padding: "4px 8px",
+                      borderRadius: "6px",
+                      border: "1.5px solid #e0c392",
+                      backgroundColor: "#fffaf3",
+                      color: BLOCK_TYPE_TEXT_COLOR,
+                      fontSize: "12px",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      minWidth: "140px",
+                      justifyContent: "space-between",
+                      transition: "all 0.15s",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = "#fef5e7";
+                      e.currentTarget.style.borderColor = "#ef8432";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = "#fffaf3";
+                      e.currentTarget.style.borderColor = "#e0c392";
+                    }}
+                    title="Block Type"
+                  >
+                    <span>
+                      {(() => {
+                        const labels: Record<string, string> = {
+                          p: "Paragraph",
+                          h1: "Heading 1",
+                          h2: "Heading 2",
+                          h3: "Heading 3",
+                          h4: "Heading 4",
+                          h5: "Heading 5",
+                          h6: "Heading 6",
+                          blockquote: "Quote",
+                          pre: "Code Block",
+                          "lead-paragraph": "Lead Paragraph",
+                          pullquote: "Pull Quote",
+                          caption: "Caption",
+                          byline: "Byline",
+                          dateline: "Dateline",
+                          "press-lead": "Press Lead",
+                          "nut-graf": "Nut Graf",
+                          "fact-box": "Fact Box",
+                          "hero-headline": "Hero Headline",
+                          "marketing-subhead": "Promo Subhead",
+                          "feature-callout": "Feature Callout",
+                          testimonial: "Testimonial",
+                          "cta-block": "CTA Block",
+                          "api-heading": "API Heading",
+                          "code-reference": "Code Reference",
+                          "warning-note": "Warning Note",
+                          "success-note": "Success Note",
+                          abstract: "Abstract",
+                          keywords: "Keywords",
+                          bibliography: "Bibliography",
+                          references: "References",
+                          appendix: "Appendix",
+                          footnote: "Footnote",
+                          citation: "Citation",
+                          "figure-caption": "Figure Caption",
+                          "table-title": "Table Title",
+                          equation: "Equation",
+                          "author-info": "Author Info",
+                          "date-info": "Date",
+                          address: "Address",
+                          salutation: "Salutation",
+                          closing: "Closing",
+                          signature: "Signature",
+                          sidebar: "Sidebar",
+                          callout: "Callout",
+                          "memo-heading": "Memo Heading",
+                          "subject-line": "Subject Line",
+                          "executive-summary": "Executive Summary",
+                          "book-title": "Title",
+                          title: "Section Title",
+                          subtitle: "Subtitle",
+                          "chapter-heading": "Chapter",
+                          "part-title": "Part Title",
+                          epigraph: "Epigraph",
+                          dedication: "Dedication",
+                          acknowledgments: "Acknowledgments",
+                          copyright: "Copyright",
+                          verse: "Verse",
+                          "front-matter": "Front Matter",
+                          "scene-break": "Scene Break",
+                          afterword: "Afterword",
+                          "scene-heading": "Scene Heading",
+                          action: "Action",
+                          character: "Character",
+                          dialogue: "Dialogue",
+                          parenthetical: "Parenthetical",
+                          transition: "Transition",
+                          shot: "Shot",
+                          lyric: "Lyric",
+                          beat: "Beat",
+                        };
+                        return labels[blockType] || blockType;
+                      })()}
+                    </span>
+                    <span style={{ fontSize: "8px", opacity: 0.6 }}>▼</span>
+                  </button>
+                  {showBlockTypeDropdown && (
+                    <div
+                      className="block-type-dropdown-menu"
+                      style={{
+                        position: "absolute",
+                        left: 0,
+                        top: "100%",
+                        marginTop: "4px",
+                        width: "240px",
+                        maxWidth: "min(300px, 90vw)",
+                        maxHeight: "min(70vh, 520px)",
+                        overflowY: "auto",
+                        overflowX: "hidden",
+                        fontSize: "12px",
+                        backgroundColor: "#fffaf3",
+                        border: "1.5px solid #e0c392",
+                        borderRadius: "10px",
+                        boxShadow: "0 10px 28px rgba(44, 62, 80, 0.18)",
+                        zIndex: 1000,
+                        color: BLOCK_TYPE_TEXT_COLOR,
+                      }}
+                    >
+                      {BLOCK_TYPE_SECTIONS.map((section) => (
+                        <React.Fragment key={section.key}>
+                          <div
+                            className="dropdown-section-label"
+                            style={{
+                              padding: "6px 12px",
+                              backgroundColor: section.background,
+                              fontWeight: 700,
+                              fontSize: "11px",
+                              textTransform: "uppercase",
+                              letterSpacing: "0.5px",
+                              borderTop: "1px solid #e0c392",
+                              borderBottom: "1px solid #e0c392",
+                              color: BLOCK_TYPE_TEXT_COLOR,
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "6px",
+                            }}
+                          >
+                            <span
+                              style={{
+                                width: "10px",
+                                height: "10px",
+                                borderRadius: "999px",
+                                backgroundColor: section.accent,
+                                display: "inline-block",
+                              }}
+                            />
+                            {section.label}
+                          </div>
+                          {section.items.map((item) => (
+                            <button
+                              key={item.value}
+                              type="button"
+                              onMouseDown={(e) => {
+                                e.preventDefault();
+                                ensureEditorSelection();
+                                changeBlockType(item.value);
+                                setShowBlockTypeDropdown(false);
+                              }}
+                              style={{
+                                width: "100%",
+                                textAlign: "left",
+                                padding: "8px 12px",
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                                backgroundColor:
+                                  blockType === item.value
+                                    ? "#fef5e7"
+                                    : "transparent",
+                                fontWeight:
+                                  blockType === item.value ? 600 : 500,
+                                color: BLOCK_TYPE_TEXT_COLOR,
+                                border: "none",
+                                cursor: "pointer",
+                                transition: "background-color 0.15s",
+                              }}
+                              onMouseEnter={(e) => {
+                                if (blockType !== item.value) {
+                                  e.currentTarget.style.backgroundColor =
+                                    "#f7e6d0";
+                                }
+                              }}
+                              onMouseLeave={(e) => {
+                                if (blockType !== item.value) {
+                                  e.currentTarget.style.backgroundColor =
+                                    "transparent";
+                                }
+                              }}
+                            >
+                              <span>{item.label}</span>
+                              {item.shortcut && (
+                                <span className="dropdown-shortcut">
+                                  {item.shortcut}
+                                </span>
+                              )}
+                            </button>
+                          ))}
+                        </React.Fragment>
+                      ))}
+                    </div>
+                  )}
+                </div>
 
                 {/* Styles Panel Button */}
                 <button
@@ -5457,130 +6638,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               <button
                 onClick={() => {
                   // Reset to defaults
-                  setDocumentStyles({
-                    paragraph: {
-                      fontSize: 16,
-                      firstLineIndent: 32,
-                      lineHeight: 1.5,
-                      marginBottom: 0.5,
-                      marginTop: 0,
-                      textAlign: "left",
-                      fontWeight: "normal",
-                      fontStyle: "normal",
-                    },
-                    "book-title": {
-                      fontSize: TITLE_STYLE_POINT_SIZE,
-                      fontWeight: "bold",
-                      fontStyle: "normal",
-                      textAlign: "center",
-                      marginTop: 2,
-                      marginBottom: 1,
-                      firstLineIndent: 0,
-                    },
-                    title: {
-                      fontSize: 24,
-                      fontWeight: "bold",
-                      fontStyle: "normal",
-                      textAlign: "center",
-                      marginTop: 1.5,
-                      marginBottom: 0.5,
-                      firstLineIndent: 0,
-                    },
-                    subtitle: {
-                      fontSize: 18,
-                      fontWeight: "normal",
-                      fontStyle: "italic",
-                      textAlign: "center",
-                      marginTop: 0.5,
-                      marginBottom: 1,
-                      firstLineIndent: 0,
-                    },
-                    "chapter-heading": {
-                      fontSize: 26,
-                      fontWeight: "bold",
-                      fontStyle: "normal",
-                      textAlign: "center",
-                      marginTop: 2,
-                      marginBottom: 1,
-                      firstLineIndent: 0,
-                    },
-                    "part-title": {
-                      fontSize: 28,
-                      fontWeight: "bold",
-                      fontStyle: "normal",
-                      textAlign: "center",
-                      marginTop: 3,
-                      marginBottom: 1.5,
-                      firstLineIndent: 0,
-                    },
-                    heading1: {
-                      fontSize: 28,
-                      fontWeight: "bold",
-                      fontStyle: "normal",
-                      textAlign: "left",
-                      marginTop: 1.5,
-                      marginBottom: 0.8,
-                      firstLineIndent: 0,
-                    },
-                    heading2: {
-                      fontSize: 22,
-                      fontWeight: "bold",
-                      fontStyle: "normal",
-                      textAlign: "left",
-                      marginTop: 1.2,
-                      marginBottom: 0.6,
-                      firstLineIndent: 0,
-                    },
-                    heading3: {
-                      fontSize: 18,
-                      fontWeight: "bold",
-                      fontStyle: "normal",
-                      textAlign: "left",
-                      marginTop: 1,
-                      marginBottom: 0.5,
-                      firstLineIndent: 0,
-                    },
-                    blockquote: {
-                      fontSize: 16,
-                      fontStyle: "italic",
-                      fontWeight: "normal",
-                      textAlign: "left",
-                      marginLeft: 40,
-                      marginTop: 1,
-                      marginBottom: 1,
-                      firstLineIndent: 0,
-                      borderLeftWidth: 4,
-                      borderLeftColor: "#e0c392",
-                    },
-                    epigraph: {
-                      fontSize: 14,
-                      fontStyle: "italic",
-                      fontWeight: "normal",
-                      textAlign: "right",
-                      marginTop: 1,
-                      marginBottom: 1,
-                      firstLineIndent: 0,
-                    },
-                    dedication: {
-                      fontSize: 16,
-                      fontStyle: "italic",
-                      fontWeight: "normal",
-                      textAlign: "center",
-                      marginTop: 2,
-                      marginBottom: 2,
-                      firstLineIndent: 0,
-                    },
-                    verse: {
-                      fontSize: 15,
-                      fontStyle: "normal",
-                      fontWeight: "normal",
-                      textAlign: "left",
-                      marginLeft: 40,
-                      marginTop: 0.5,
-                      marginBottom: 0.5,
-                      firstLineIndent: 0,
-                    },
-                  });
+                  setDocumentStyles(buildDefaultDocumentStyles());
                   setHeaderText("");
                   setFooterText("");
                   setShowPageNumbers(true);
@@ -6449,29 +7507,6 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
         />
       </div>
 
-      {isLoading && (
-        <div
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(255, 255, 255, 0.8)",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 100,
-            backdropFilter: "blur(2px)",
-          }}
-        >
-          <div className="text-center">
-            <div className="loading-spinner"></div>
-            <p className="mt-4 text-gray-600">Loading...</p>
-          </div>
-        </div>
-      )}
       {isLoading && (
         <div
           style={{

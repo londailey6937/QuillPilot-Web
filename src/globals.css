@@ -22,6 +22,24 @@
   display: none; /* Chrome, Safari and Opera */
 }
 
+/* Block type dropdown - custom stable button dropdown */
+.block-type-dropdown {
+  font-size: 12px;
+  cursor: pointer;
+  user-select: none;
+  border-color: #d1d5db;
+}
+
+.block-type-dropdown:hover {
+  background-color: #f9fafb;
+}
+
+.block-type-dropdown:focus {
+  outline: none;
+  border-color: #e0c392;
+  box-shadow: 0 0 0 2px rgba(224, 195, 146, 0.2);
+}
+
 /* Prose content styling for HTML documents with images */
 .prose-content {
   max-width: 100%;
@@ -56,17 +74,19 @@
 .prose-content h3 {
   margin: 1.5rem 0 1rem;
   font-weight: 600;
-  color: #1f2937;
 }
 
 .prose-content h1 {
   font-size: 2rem;
+  color: #111827;
 }
 .prose-content h2 {
   font-size: 1.5rem;
+  color: #ef8432;
 }
 .prose-content h3 {
   font-size: 1.25rem;
+  color: #2c3e50;
 }
 
 .prose-content ul,
@@ -800,4 +820,613 @@ p {
     color: black !important;
     text-decoration: underline !important;
   }
+}
+
+/* Custom paragraph styles - chapter-heading, part-title, etc. */
+.editor-content p.chapter-heading {
+  font-size: 26px;
+  font-weight: bold;
+  margin-top: 2em;
+  margin-bottom: 1em;
+  text-indent: 0;
+}
+
+.editor-content p.part-title {
+  font-size: 28px;
+  font-weight: bold;
+  margin-top: 3em;
+  margin-bottom: 1.5em;
+  text-indent: 0;
+}
+
+.editor-content p.title-content {
+  font-size: 20px;
+  font-weight: bold;
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  text-indent: 0;
+}
+
+.editor-content p.title-content.book-title {
+  font-size: 32px;
+  margin-top: 2em;
+  margin-bottom: 1em;
+}
+
+.editor-content p.title-content.subtitle {
+  font-size: 18px;
+  font-weight: normal;
+  font-style: italic;
+  margin-top: 0.5em;
+  margin-bottom: 1em;
+}
+
+.editor-content p.epigraph {
+  font-size: 14px;
+  font-style: italic;
+  margin-top: 1em;
+  margin-bottom: 1em;
+  text-indent: 0;
+}
+
+.editor-content p.dedication {
+  font-size: 16px;
+  font-style: italic;
+  margin-top: 2em;
+  margin-bottom: 2em;
+  text-indent: 0;
+}
+
+.editor-content p.verse {
+  font-size: 15px;
+  margin-left: 40px;
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+  text-indent: 0;
+  white-space: pre-wrap;
+}
+
+.editor-content p.lead-paragraph {
+  font-size: 18px;
+  line-height: 1.7;
+  text-indent: 0;
+  margin-bottom: 0.8em;
+  color: #111827;
+}
+
+.editor-content p.pullquote {
+  font-size: 20px;
+  font-style: italic;
+  text-align: center;
+  margin: 1.2em 2.5em;
+  padding: 0.5em 1.5em;
+  border-left: 4px solid #8b5cf6;
+  border-right: 4px solid #8b5cf6;
+  background: #fffaf3;
+  color: #111827;
+}
+
+.editor-content p.caption {
+  font-size: 13px;
+  font-style: italic;
+  text-align: center;
+  margin-top: 0.3em;
+  margin-bottom: 0.6em;
+  color: #111827;
+}
+
+/* Journalism & media styles */
+.editor-content p.byline {
+  font-size: 14px;
+  font-style: italic;
+  line-height: 1.4;
+  margin-top: 0.2em;
+  margin-bottom: 0.2em;
+  text-indent: 0;
+  color: #111827;
+}
+
+.editor-content p.dateline {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-top: 0.2em;
+  margin-bottom: 0.2em;
+  text-indent: 0;
+  color: #111827;
+}
+
+.editor-content p.press-lead {
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.6;
+  margin: 0.5em 0 0.3em;
+  padding-left: 12px;
+  text-indent: 0;
+  border-left: 4px solid #ef8432;
+  background: #fffaf3;
+  color: #111827;
+}
+
+.editor-content p.nut-graf {
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.6;
+  margin-top: 0.4em;
+  margin-bottom: 0.6em;
+  text-indent: 0;
+  color: #2c3e50;
+}
+
+.editor-content p.fact-box {
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0.5em 16px;
+  padding: 0.6em 1em;
+  text-indent: 0;
+  border-left: 4px solid #8b5cf6;
+  background: #fef5e7;
+  border-radius: 8px;
+  color: #111827;
+}
+
+/* Marketing styles */
+.editor-content p.hero-headline {
+  font-size: 26px;
+  font-weight: 700;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: 1em;
+  margin-bottom: 0.4em;
+  text-indent: 0;
+  color: #ef8432;
+}
+
+.editor-content p.marketing-subhead {
+  font-size: 18px;
+  text-align: center;
+  margin-top: 0.3em;
+  margin-bottom: 0.7em;
+  text-indent: 0;
+  color: #2c3e50;
+}
+
+.editor-content p.feature-callout {
+  font-size: 16px;
+  margin: 0.4em 0;
+  padding-left: 12px;
+  margin-left: 20px;
+  text-indent: 0;
+  border-left: 4px solid #ef8432;
+  background: #fffaf3;
+  color: #111827;
+}
+
+.editor-content p.testimonial {
+  font-size: 15px;
+  font-style: italic;
+  margin: 0.6em 0;
+  padding-left: 12px;
+  margin-left: 16px;
+  text-indent: 0;
+  border-left: 4px solid #f5d1ab;
+  background: #fffaf3;
+  color: #2c3e50;
+}
+
+.editor-content p.cta-block {
+  font-size: 16px;
+  font-weight: 700;
+  text-transform: uppercase;
+  text-align: center;
+  margin: 0.8em 0;
+  padding: 0.75em 1em;
+  text-indent: 0;
+  background: #ef8432;
+  color: #111827;
+  border-radius: 999px;
+  line-height: 1.4;
+}
+
+/* Technical documentation styles */
+.editor-content p.api-heading {
+  font-size: 15px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0.8em 0 0.2em;
+  text-indent: 0;
+  border-bottom: 1px solid #e0c392;
+  color: #111827;
+}
+
+.editor-content p.code-reference {
+  font-size: 14px;
+  font-family: "Courier Prime", "Courier New", monospace;
+  margin: 0.3em 12px 0.5em;
+  padding: 0.6em 0.75em;
+  text-indent: 0;
+  background: #f5ead9;
+  border: 1px dashed #d1d5db;
+  border-radius: 6px;
+  color: #111827;
+}
+
+.editor-content p.warning-note {
+  font-size: 15px;
+  margin: 0.4em 0;
+  padding: 0.6em 1em;
+  text-indent: 0;
+  border-left: 4px solid #f97316;
+  background: #fff7ed;
+  color: #7c2d12;
+  line-height: 1.5;
+}
+
+.editor-content p.success-note {
+  font-size: 15px;
+  margin: 0.4em 0;
+  padding: 0.6em 1em;
+  text-indent: 0;
+  border-left: 4px solid #10b981;
+  background: #ecfdf5;
+  color: #065f46;
+  line-height: 1.5;
+}
+
+/* Academic styles */
+.editor-content p.abstract {
+  font-size: 15px;
+  text-align: justify;
+  margin-top: 1em;
+  margin-bottom: 1em;
+  margin-left: 20px;
+  margin-right: 20px;
+  text-indent: 0;
+}
+
+.editor-content p.keywords {
+  font-size: 14px;
+  font-style: italic;
+  margin-top: 0.5em;
+  margin-bottom: 1em;
+  text-indent: 0;
+}
+
+.editor-content p.bibliography {
+  font-size: 14px;
+  margin-top: 0.3em;
+  margin-bottom: 0.3em;
+  margin-left: 20px;
+  text-indent: -20px;
+}
+
+.editor-content p.references {
+  font-size: 14px;
+  margin-top: 0.3em;
+  margin-bottom: 0.3em;
+  margin-left: 20px;
+  text-indent: -20px;
+}
+
+.editor-content p.appendix {
+  font-size: 15px;
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+  text-indent: 32px;
+}
+
+.editor-content p.footnote {
+  font-size: 12px;
+  margin-top: 0.2em;
+  margin-bottom: 0.2em;
+  text-indent: 0;
+}
+
+.editor-content p.citation {
+  font-size: 14px;
+  font-style: italic;
+  margin-top: 0.3em;
+  margin-bottom: 0.3em;
+  text-indent: 0;
+}
+
+.editor-content p.figure-caption {
+  font-size: 13px;
+  font-style: italic;
+  text-align: center;
+  margin-top: 0.4em;
+  margin-bottom: 0.6em;
+  color: #111827;
+}
+
+.editor-content p.table-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin-top: 0.5em;
+  margin-bottom: 0.2em;
+  text-indent: 0;
+  color: #111827;
+}
+
+.editor-content p.equation {
+  font-size: 15px;
+  font-family: "Courier Prime", "Courier New", monospace;
+  text-align: center;
+  margin: 0.5em 20px;
+  padding: 0.75em 1em;
+  border: 1px solid #e0c392;
+  border-radius: 8px;
+  background: #fffaf3;
+  color: #111827;
+}
+
+/* Professional styles */
+.editor-content p.author-info {
+  font-size: 15px;
+  margin-top: 0.5em;
+  margin-bottom: 0.3em;
+  text-indent: 0;
+}
+
+.editor-content p.date-info {
+  font-size: 15px;
+  margin-top: 0.3em;
+  margin-bottom: 0.5em;
+  text-indent: 0;
+}
+
+.editor-content p.address {
+  font-size: 15px;
+  margin-top: 0.3em;
+  margin-bottom: 0.3em;
+  text-indent: 0;
+}
+
+.editor-content p.salutation {
+  font-size: 16px;
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+  text-indent: 0;
+}
+
+.editor-content p.closing {
+  font-size: 16px;
+  margin-top: 1em;
+  margin-bottom: 0.3em;
+  text-indent: 0;
+}
+
+.editor-content p.signature {
+  font-size: 16px;
+  margin-top: 0.3em;
+  margin-bottom: 0.5em;
+  text-indent: 0;
+}
+
+.editor-content p.memo-heading {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-indent: 0;
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+  padding-bottom: 0.25em;
+  border-bottom: 2px solid #e0c392;
+  color: #111827;
+}
+
+.editor-content p.subject-line {
+  font-size: 15px;
+  font-style: italic;
+  text-indent: 0;
+  margin-top: 0.3em;
+  margin-bottom: 0.7em;
+  color: #111827;
+}
+
+.editor-content p.executive-summary {
+  font-size: 15px;
+  line-height: 1.6;
+  text-indent: 32px;
+  margin: 0.5em 0;
+  border-left: 4px solid #f97316;
+  padding-left: 12px;
+  background: #fffaf3;
+  color: #111827;
+}
+
+.editor-content p.sidebar {
+  font-size: 14px;
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+  margin-left: 20px;
+  margin-right: 20px;
+  text-indent: 0;
+  border-left: 4px solid #8b5cf6;
+  padding-left: 12px;
+  background: #fffaf3;
+  color: #111827;
+}
+
+.editor-content p.callout {
+  font-size: 15px;
+  font-weight: bold;
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+  margin-left: 20px;
+  margin-right: 20px;
+  text-indent: 0;
+  border-left: 4px solid #f97316;
+  padding-left: 12px;
+  background: #fffaf3;
+  color: #111827;
+}
+
+/* Book publishing additions */
+.editor-content p.front-matter {
+  font-size: 16px;
+  font-style: italic;
+  text-align: center;
+  margin-top: 1.2em;
+  margin-bottom: 0.8em;
+  text-indent: 0;
+  color: #111827;
+}
+
+.editor-content p.scene-break {
+  font-size: 14px;
+  text-align: center;
+  letter-spacing: 0.4em;
+  margin: 1.5em 0;
+  text-indent: 0;
+  color: #111827;
+}
+
+.editor-content p.afterword {
+  font-size: 16px;
+  font-style: italic;
+  text-indent: 32px;
+  margin-top: 1em;
+  margin-bottom: 0.8em;
+  color: #111827;
+}
+
+/* Screenplay styles */
+.editor-content p.scene-heading {
+  font-size: 16px;
+  font-weight: bold;
+  text-transform: uppercase;
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+  text-indent: 0;
+}
+
+.editor-content p.action {
+  font-size: 16px;
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+  text-indent: 0;
+}
+
+.editor-content p.character {
+  font-size: 16px;
+  font-weight: bold;
+  text-align: center;
+  margin-top: 0.5em;
+  margin-bottom: 0;
+  text-indent: 0;
+}
+
+.editor-content p.dialogue {
+  font-size: 16px;
+  text-align: center;
+  margin-top: 0;
+  margin-bottom: 0.5em;
+  margin-left: 60px;
+  margin-right: 60px;
+  text-indent: 0;
+}
+
+.editor-content p.parenthetical {
+  font-size: 14px;
+  font-style: italic;
+  text-align: center;
+  margin-top: 0;
+  margin-bottom: 0;
+  margin-left: 80px;
+  margin-right: 80px;
+  text-indent: 0;
+}
+
+.editor-content p.transition {
+  font-size: 16px;
+  font-weight: bold;
+  text-align: right;
+  text-transform: uppercase;
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+  text-indent: 0;
+}
+
+.editor-content p.screenplay-block.shot {
+  font-size: 16px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  text-indent: 0;
+  margin: 0.5em 0;
+  color: #111827;
+}
+
+.editor-content p.screenplay-block.lyric {
+  font-size: 15px;
+  font-style: italic;
+  text-align: center;
+  margin: 0.3em 50px;
+  text-indent: 0;
+  color: #111827;
+}
+
+.editor-content p.screenplay-block.beat {
+  font-size: 15px;
+  font-style: italic;
+  text-align: left;
+  margin: 0.3em 50px;
+  text-indent: 0;
+  color: #111827;
+}
+
+.editor-content blockquote {
+  font-size: 16px;
+  font-style: italic;
+  margin: 1em 40px;
+  padding-left: 16px;
+  border-left: 4px solid #e0c392;
+  color: #111827;
+}
+
+.editor-content blockquote p {
+  margin: 0.5em 0;
+  text-indent: 0;
+}
+
+/* Center alignment shift for editor content - only for center-aligned elements */
+.editor-content p.title-content,
+.editor-content p.book-title,
+.editor-content p.subtitle,
+.editor-content p.part-title,
+.editor-content p.dedication,
+.editor-content p.image-paragraph,
+.editor-content [data-ruler-center="true"] {
+  transform: translateX(var(--center-shift, 0));
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+}
+
+/* Left-aligned block styles - ensure they display as block */
+.editor-content p.chapter-heading,
+.editor-content h1,
+.editor-content h2,
+.editor-content h3 {
+  display: block !important;
+  text-align: left !important;
+  transform: none !important;
+  --center-shift: 0 !important;
+}
+
+.editor-content h1 {
+  color: #111827;
+}
+
+.editor-content h2 {
+  color: #ef8432;
+}
+
+.editor-content h3 {
+  color: #2c3e50;
 }
