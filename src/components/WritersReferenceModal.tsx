@@ -32,31 +32,32 @@ export function WritersReferenceModal({
 
   const sections = {
     overview: "Writer Mode Overview",
-    toolbar: "Editor Toolbar",
-    advancedTools: "Advanced Tools Panel",
-    aiAssistant: "AI Writing Assistant",
-    dialogue: "Dialogue Enhancer",
-    versionHistory: "Version History",
-    comments: "Comments & Annotations",
-    beatSheet: "Beat Sheet Generator",
-    povChecker: "POV Checker",
-    readability: "Readability Metrics",
-    cliche: "Cliché Detector",
-    emotion: "Emotion Tracker",
-    motif: "Motif & Symbol Tracker",
-    poetryMeter: "Poetry Meter Analyzer",
-    nonfictionOutline: "Non-Fiction Outline Generator",
-    citationManager: "Academic Citation Manager",
-    nameGenerator: "Character Name Generator",
-    worldBuilding: "World-Building Notebook",
-    researchNotes: "Writer's Notes",
-    moodBoard: "Image Mood Board",
-    productivity: "Productivity Features",
-    chapterLibrary: "Chapter Library",
-    characters: "Character Management",
-    export: "Export Options",
-    tips: "Tips & Best Practices",
-    shortcuts: "Keyboard Shortcuts",
+    toolbar: "Editor Toolbar (Colors, Templates, Formatting, Styles)",
+    advancedTools: "Advanced Tools Panel (Genre, Analysis)",
+    aiAssistant: "AI Writing Assistant (Rephrase, Enhance, Suggestions)",
+    dialogue: "Dialogue Enhancer (Speech, Conversation, Tags)",
+    versionHistory: "Version History (Drafts, Revisions, Backup)",
+    comments: "Comments & Annotations (Notes, Feedback)",
+    beatSheet: "Beat Sheet Generator (Story Structure, Plot, Scenes)",
+    povChecker: "POV Checker (Point of View, Perspective, Narrator)",
+    readability: "Readability Metrics (Grade Level, Complexity, Flesch)",
+    cliche: "Cliché Detector (Overused Phrases, Tropes)",
+    emotion: "Emotion Tracker (Feelings, Mood, Tone)",
+    motif: "Motif & Symbol Tracker (Themes, Patterns, Imagery)",
+    poetryMeter: "Poetry Meter Analyzer (Rhythm, Verse, Syllables)",
+    nonfictionOutline: "Non-Fiction Outline Generator (Structure, Chapters)",
+    citationManager:
+      "Academic Citation Manager (Bibliography, References, Sources)",
+    nameGenerator: "Character Name Generator (Fantasy, Romance, Sci-Fi)",
+    worldBuilding: "World-Building Notebook (Settings, Lore, Maps)",
+    researchNotes: "Writer's Notes (Research, Ideas)",
+    moodBoard: "Image Mood Board (Visual Inspiration, Atmosphere)",
+    productivity: "Productivity Features (Focus, Sprint, Timer, Goals)",
+    chapterLibrary: "Chapter Library (Organize, Manage, Scenes)",
+    characters: "Character Management (Profiles, Tracking, Arcs)",
+    export: "Export Options (PDF, DOCX, HTML, Save)",
+    tips: "Tips & Best Practices (Writing, Workflow)",
+    shortcuts: "Keyboard Shortcuts (Hotkeys, Commands)",
     related: "📚 Related Resources",
   };
 
@@ -642,9 +643,120 @@ export function WritersReferenceModal({
               </tbody>
             </table>
 
+            <h3>🎨 Style Colors & Templates</h3>
+            <p>
+              Customize how different text styles (headings, paragraphs, quotes)
+              appear in your document. Save your color schemes as templates to
+              reuse across projects.
+            </p>
+
+            <h4>Step-by-Step: Create & Apply a Template</h4>
+            <div
+              style={{
+                background: "#fef5e7",
+                border: "1px solid #e0c392",
+                borderRadius: "8px",
+                padding: "1rem",
+                marginBottom: "1rem",
+              }}
+            >
+              <div style={{ marginBottom: "0.75rem" }}>
+                <strong>1. Open the Color Wheel:</strong> Click the{" "}
+                <span
+                  style={{
+                    background: "#fff",
+                    padding: "2px 6px",
+                    borderRadius: "4px",
+                    border: "1px solid #d4a574",
+                  }}
+                >
+                  🎨
+                </span>{" "}
+                button in the <em>right toolbar</em> (near the format painter
+                🖌️)
+              </div>
+              <div style={{ marginBottom: "0.75rem" }}>
+                <strong>2. Select a Style Type:</strong> Click a button like
+                "Book Title", "Chapter", or "Paragraph" to choose which style to
+                customize
+              </div>
+              <div style={{ marginBottom: "0.75rem" }}>
+                <strong>3. Choose Colors:</strong> Pick text and background
+                colors from the palette, or use the color picker for custom
+                colors
+              </div>
+              <div style={{ marginBottom: "0.75rem" }}>
+                <strong>4. Repeat for Other Styles:</strong> Select each style
+                type you want to customize and set its colors
+              </div>
+              <div style={{ marginBottom: "0.75rem" }}>
+                <strong>5. Save as Template:</strong> Click "💾 Save Current
+                Styles as Template" at the bottom, enter a name (e.g., "My Book
+                Theme"), and click Save
+              </div>
+              <div style={{ marginBottom: "0" }}>
+                <strong>6. Apply to Your Document:</strong> Open the 🎨 dropdown
+                → <strong>Templates</strong> tab → click{" "}
+                <span
+                  style={{
+                    background: "#d4a574",
+                    color: "#fff",
+                    padding: "2px 8px",
+                    borderRadius: "4px",
+                    fontSize: "0.85rem",
+                  }}
+                >
+                  Apply
+                </span>{" "}
+                — all styles in your document update instantly!
+              </div>
+            </div>
+
+            <h4>What Each Style Controls</h4>
+            <table className="ref-table">
+              <thead>
+                <tr>
+                  <th>Style</th>
+                  <th>What It Affects</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Paragraph</td>
+                  <td>Normal body text throughout your document</td>
+                </tr>
+                <tr>
+                  <td>Book Title</td>
+                  <td>Large title on your title page</td>
+                </tr>
+                <tr>
+                  <td>Chapter</td>
+                  <td>Chapter headings (e.g., "Chapter 1")</td>
+                </tr>
+                <tr>
+                  <td>Subtitle</td>
+                  <td>Subtitle text below titles</td>
+                </tr>
+                <tr>
+                  <td>Heading 1/2</td>
+                  <td>Section headings within chapters</td>
+                </tr>
+                <tr>
+                  <td>Quote</td>
+                  <td>Block quotations and excerpts</td>
+                </tr>
+              </tbody>
+            </table>
+
             <div className="tip-box">
-              <strong>💡 Tip:</strong> QuillPilot maintains a 50-state undo
-              history, so don't worry about experimenting!
+              <strong>💡 Quick Access:</strong> Your saved templates also appear
+              at the top of the ⚙️ Modify Styles panel for one-click switching!
+            </div>
+
+            <div className="tip-box">
+              <strong>💡 Tip:</strong> Templates are saved to your browser and
+              persist between sessions. Create different themes for different
+              projects!
             </div>
           </div>
         );
@@ -2589,7 +2701,7 @@ export function WritersReferenceModal({
                   className="modal-search-input"
                   style={{
                     width: "100%",
-                    padding: "0.625rem 0.75rem 0.625rem 2.25rem",
+                    padding: "0.625rem 2rem 0.625rem 2.25rem",
                     border: "1px solid #e0c392",
                     borderRadius: "8px",
                     fontSize: "0.875rem",
@@ -2618,6 +2730,32 @@ export function WritersReferenceModal({
                 >
                   🔍
                 </span>
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    style={{
+                      position: "absolute",
+                      right: "0.5rem",
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      background: "#e5e7eb",
+                      border: "none",
+                      borderRadius: "50%",
+                      width: "18px",
+                      height: "18px",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: "12px",
+                      color: "#6b7280",
+                      padding: 0,
+                    }}
+                    title="Clear search"
+                  >
+                    ✕
+                  </button>
+                )}
               </div>
             </div>
 

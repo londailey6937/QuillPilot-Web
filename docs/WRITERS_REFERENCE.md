@@ -223,6 +223,34 @@ A powerful system for creative writers to mark important passages and link relat
 
 **💡 Tip**: QuillPilot maintains a 50-state undo history, so don't worry about experimenting!
 
+### 🎨 Style Colors & Templates ⭐ NEW
+
+Customize how different text styles (headings, paragraphs, quotes) appear in your document. Save your color schemes as templates to reuse across projects.
+
+#### Step-by-Step: Create & Apply a Template
+
+1. **Open the Color Wheel:** Click the **🎨** button in the _right toolbar_ (near the format painter 🖌️)
+2. **Select a Style Type:** Click a button like "Book Title", "Chapter", or "Paragraph" to choose which style to customize
+3. **Choose Colors:** Pick text and background colors from the palette, or use the color picker for custom colors
+4. **Repeat for Other Styles:** Select each style type you want to customize and set its colors
+5. **Save as Template:** Click "💾 Save Current Styles as Template" at the bottom, enter a name (e.g., "My Book Theme"), and click Save
+6. **Apply Later:** Open the 🎨 dropdown → Templates tab → click "Apply" on your saved template
+
+#### What Each Style Controls
+
+| Style       | What It Affects                      |
+| ----------- | ------------------------------------ |
+| Paragraph   | Normal body text throughout document |
+| Book Title  | Large title on your title page       |
+| Chapter     | Chapter headings (e.g., "Chapter 1") |
+| Subtitle    | Subtitle text below titles           |
+| Heading 1/2 | Section headings within chapters     |
+| Quote       | Block quotations and excerpts        |
+
+**💡 Quick Access:** Your saved templates also appear at the top of the ⚙️ Modify Styles panel for one-click switching!
+
+**💡 Tip:** Templates are saved to your browser and persist between sessions. Create different themes for different projects!
+
 ---
 
 ## Advanced Tools Panel

@@ -10,6 +10,42 @@ interface ExportPdfOptions {
   format?: "manuscript" | "standard" | "screenplay";
 }
 
+/**
+ * Detect element type from HTML classes for rich formatting
+ */
+function getElementType(
+  element: Element
+): "title" | "subtitle" | "chapter" | "quote" | "normal" {
+  const className = element.className || "";
+  const tagName = element.tagName.toLowerCase();
+
+  if (
+    className.includes("doc-title") ||
+    className.includes("book-title") ||
+    className.includes("title-content")
+  ) {
+    return "title";
+  }
+  if (className.includes("doc-subtitle") || className.includes("subtitle")) {
+    return "subtitle";
+  }
+  if (
+    className.includes("chapter-heading") ||
+    tagName === "h1" ||
+    tagName === "h2"
+  ) {
+    return "chapter";
+  }
+  if (
+    className.includes("quote") ||
+    className.includes("intense-quote") ||
+    tagName === "blockquote"
+  ) {
+    return "quote";
+  }
+  return "normal";
+}
+
 export const exportToPdf = async ({
   text,
   html,
@@ -65,20 +101,21 @@ export const exportToPdf = async ({
       ? 12
       : 11;
 
-  // Set font - Courier for manuscripts and screenplays
-  doc.setFont("courier", "normal");
+  // Set font - Times New Roman for nicer formatting (falls back to times)
+  doc.setFont("times", "normal");
   doc.setFontSize(fontSize);
 
   // Helper to add new page if needed
-  const checkPageBreak = () => {
-    if (yPosition > pageHeight - margins.bottom) {
+  const checkPageBreak = (extraSpace = 0) => {
+    if (yPosition + extraSpace > pageHeight - margins.bottom) {
       doc.addPage();
       yPosition = margins.top;
 
       // Add page number (centered at bottom for manuscript)
       if (format === "manuscript") {
         const pageNum = doc.getNumberOfPages();
-        doc.setFontSize(12);
+        doc.setFontSize(10);
+        doc.setFont("times", "normal");
         doc.text(`${pageNum}`, pageWidth / 2, pageHeight - 0.5, {
           align: "center",
         });
@@ -87,22 +124,154 @@ export const exportToPdf = async ({
     }
   };
 
-  // Title page for manuscript format
-  if (actualFormat === "manuscript") {
-    doc.setFontSize(12);
-    doc.text(fileName.toUpperCase(), margins.left, margins.top);
+  // Process rich HTML content if available
+  if (html && !isScreenplay) {
+    const parser = new DOMParser();
+    const htmlDoc = parser.parseFromString(html, "text/html");
 
-    // Word count (if available)
-    const wordCount = text.trim().split(/\s+/).length;
-    doc.text(`${wordCount} words`, pageWidth - margins.right, margins.top, {
-      align: "right",
+    // Get all block elements (paragraphs, headings, etc.)
+    const blockElements = htmlDoc.querySelectorAll(
+      "p, h1, h2, h3, h4, h5, h6, blockquote, div.quote, div.intense-quote"
+    );
+
+    let isFirstElement = true;
+
+    blockElements.forEach((element) => {
+      const elementText = element.textContent?.trim() || "";
+      if (!elementText) return;
+
+      const elementType = getElementType(element);
+
+      switch (elementType) {
+        case "title":
+          // Title: Large, bold, centered
+          if (!isFirstElement) {
+            yPosition += lineHeight;
+          }
+          checkPageBreak(0.6);
+          doc.setFont("times", "bold");
+          doc.setFontSize(24);
+
+          // Center the title
+          const titleLines = doc.splitTextToSize(
+            elementText.toUpperCase(),
+            contentWidth
+          );
+          titleLines.forEach((line: string) => {
+            checkPageBreak();
+            doc.text(line, pageWidth / 2, yPosition, { align: "center" });
+            yPosition += 0.35;
+          });
+
+          yPosition += lineHeight; // Space after title
+          doc.setFont("times", "normal");
+          doc.setFontSize(fontSize);
+          break;
+
+        case "subtitle":
+          // Subtitle: Medium, italic, centered
+          checkPageBreak(0.4);
+          doc.setFont("times", "italic");
+          doc.setFontSize(14);
+
+          const subtitleLines = doc.splitTextToSize(elementText, contentWidth);
+          subtitleLines.forEach((line: string) => {
+            checkPageBreak();
+            doc.text(line, pageWidth / 2, yPosition, { align: "center" });
+            yPosition += 0.25;
+          });
+
+          yPosition += lineHeight * 1.5; // Space after subtitle
+          doc.setFont("times", "normal");
+          doc.setFontSize(fontSize);
+          break;
+
+        case "chapter":
+          // Chapter heading: Bold, centered
+          yPosition += lineHeight * 1.5; // Space before chapter
+          checkPageBreak(0.5);
+          doc.setFont("times", "bold");
+          doc.setFontSize(16);
+
+          const chapterLines = doc.splitTextToSize(
+            elementText.toUpperCase(),
+            contentWidth
+          );
+          chapterLines.forEach((line: string) => {
+            checkPageBreak();
+            doc.text(line, pageWidth / 2, yPosition, { align: "center" });
+            yPosition += 0.3;
+          });
+
+          yPosition += lineHeight; // Space after chapter heading
+          doc.setFont("times", "normal");
+          doc.setFontSize(fontSize);
+          break;
+
+        case "quote":
+          // Quote: Indented, italic
+          checkPageBreak();
+          doc.setFont("times", "italic");
+
+          const quoteIndent = 0.5;
+          const quoteWidth = contentWidth - quoteIndent * 2;
+          const quoteLines = doc.splitTextToSize(elementText, quoteWidth);
+
+          quoteLines.forEach((line: string) => {
+            checkPageBreak();
+            doc.text(line, margins.left + quoteIndent, yPosition);
+            yPosition += lineHeight;
+          });
+
+          yPosition += lineHeight * 0.5; // Space after quote
+          doc.setFont("times", "normal");
+          break;
+
+        default:
+          // Normal paragraph: Indented first line
+          checkPageBreak();
+          doc.setFont("times", "normal");
+          doc.setFontSize(fontSize);
+
+          const indent = 0.5; // First line indent
+          const words = elementText.split(/\s+/);
+          let currentLine = "";
+          let isFirstLine = true;
+
+          for (let i = 0; i < words.length; i++) {
+            const testLine = currentLine
+              ? `${currentLine} ${words[i]}`
+              : words[i];
+            const maxWidth = contentWidth - (isFirstLine ? indent : 0);
+            const lineWidth = doc.getTextWidth(testLine);
+
+            if (lineWidth > maxWidth && currentLine !== "") {
+              checkPageBreak();
+              const xPos = margins.left + (isFirstLine ? indent : 0);
+              doc.text(currentLine, xPos, yPosition);
+              yPosition += lineHeight;
+              currentLine = words[i];
+              isFirstLine = false;
+            } else {
+              currentLine = testLine;
+            }
+          }
+
+          // Print remaining line
+          if (currentLine) {
+            checkPageBreak();
+            const xPos = margins.left + (isFirstLine ? indent : 0);
+            doc.text(currentLine, xPos, yPosition);
+            yPosition += lineHeight;
+          }
+
+          yPosition += lineHeight * 0.5; // Paragraph spacing
+      }
+
+      isFirstElement = false;
     });
-
-    yPosition = margins.top + 0.5;
-  }
-
-  // Handle screenplay format differently
-  if (actualFormat === "screenplay" && html) {
+  } else if (actualFormat === "screenplay" && html) {
+    // Handle screenplay format
     processScreenplayPdf(
       doc,
       html,
@@ -113,6 +282,23 @@ export const exportToPdf = async ({
       fontSize
     );
   } else {
+    // Fallback to plain text processing (original behavior)
+    // Title at top
+    if (actualFormat === "manuscript") {
+      doc.setFontSize(12);
+      doc.setFont("times", "bold");
+      doc.text(fileName.toUpperCase(), margins.left, margins.top);
+
+      // Word count (if available)
+      const wordCount = text.trim().split(/\s+/).length;
+      doc.setFont("times", "normal");
+      doc.text(`${wordCount} words`, pageWidth - margins.right, margins.top, {
+        align: "right",
+      });
+
+      yPosition = margins.top + 0.5;
+    }
+
     // Split text into paragraphs
     const paragraphs = text.split(/\n\n+/);
 
@@ -126,21 +312,21 @@ export const exportToPdf = async ({
       // Split paragraph into lines that fit
       const words = paragraph.trim().split(/\s+/);
       let currentLine = "";
+      let isFirstLine = true;
 
       for (let i = 0; i < words.length; i++) {
         const testLine = currentLine ? `${currentLine} ${words[i]}` : words[i];
         const lineWidth = doc.getTextWidth(testLine);
-        const maxWidth = contentWidth - (currentLine === "" ? indent : 0);
+        const maxWidth = contentWidth - (isFirstLine ? indent : 0);
 
         if (lineWidth > maxWidth && currentLine !== "") {
           // Line is full, print it
           checkPageBreak();
-          const xPos =
-            margins.left +
-            (currentLine === paragraph.trim().split(/\s+/)[0] ? indent : 0);
+          const xPos = margins.left + (isFirstLine ? indent : 0);
           doc.text(currentLine, xPos, yPosition);
           yPosition += lineHeight;
           currentLine = words[i];
+          isFirstLine = false;
         } else {
           currentLine = testLine;
         }
@@ -149,7 +335,7 @@ export const exportToPdf = async ({
       // Print remaining line
       if (currentLine) {
         checkPageBreak();
-        const xPos = margins.left + indent;
+        const xPos = margins.left + (isFirstLine ? indent : 0);
         doc.text(currentLine, xPos, yPosition);
         yPosition += lineHeight;
       }

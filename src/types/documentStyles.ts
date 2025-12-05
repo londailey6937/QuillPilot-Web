@@ -15,6 +15,15 @@ export interface BlockStyle {
   marginRight?: number;
   borderLeftWidth?: number;
   borderLeftColor?: string;
+  color?: string;
+  backgroundColor?: string;
+}
+
+export interface StyleTemplate {
+  name: string;
+  id: string;
+  createdAt: string;
+  styles: Partial<DocumentStylesState>;
 }
 
 export type ParagraphStyle = BlockStyle & { lineHeight: number };

@@ -25,7 +25,8 @@ import { ImageMoodBoard } from "./ImageMoodBoard";
 import { VersionHistory } from "./VersionHistory";
 import { CommentAnnotation } from "./CommentAnnotation";
 import { PagesSurface } from "@/components/PagesSurface";
-import { DocumentStylesState } from "../types/documentStyles";
+import { DocumentStylesState, StyleTemplate } from "../types/documentStyles";
+import { ColorWheelDropdown } from "./ColorWheelDropdown";
 import { useTheme } from "./ThemeProvider";
 
 interface CustomEditorProps {
@@ -1733,6 +1734,80 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
 
   // Active style template tracking
   const [activeTemplate, setActiveTemplate] = useState<string | null>(null);
+
+  // Saved style templates - persisted to localStorage
+  const [savedStyleTemplates, setSavedStyleTemplates] = useState<
+    StyleTemplate[]
+  >(() => {
+    try {
+      const saved = localStorage.getItem("quillpilot-style-templates");
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  // Persist templates to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        "quillpilot-style-templates",
+        JSON.stringify(savedStyleTemplates)
+      );
+    } catch (e) {
+      console.error("Failed to save style templates:", e);
+    }
+  }, [savedStyleTemplates]);
+
+  // Handle style property change from color wheel
+  const handleStylePropertyChange = useCallback(
+    (
+      styleKey: keyof DocumentStylesState,
+      property: string,
+      value: string | number
+    ) => {
+      setDocumentStyles((prev) => ({
+        ...prev,
+        [styleKey]: {
+          ...prev[styleKey],
+          [property]: value,
+        },
+      }));
+    },
+    []
+  );
+
+  // Save current styles as template
+  const handleSaveStyleTemplate = useCallback(
+    (name: string) => {
+      const newTemplate: StyleTemplate = {
+        id: `template-${Date.now()}`,
+        name,
+        createdAt: new Date().toISOString(),
+        styles: { ...documentStyles },
+      };
+      setSavedStyleTemplates((prev) => [...prev, newTemplate]);
+      setActiveTemplate(newTemplate.id);
+    },
+    [documentStyles]
+  );
+
+  // Apply a saved template
+  const handleApplyStyleTemplate = useCallback((template: StyleTemplate) => {
+    if (template.styles) {
+      setDocumentStyles((prev) => ({
+        ...prev,
+        ...template.styles,
+      }));
+      setActiveTemplate(template.id);
+    }
+  }, []);
+
+  // Delete a template
+  const handleDeleteStyleTemplate = useCallback((templateId: string) => {
+    setSavedStyleTemplates((prev) => prev.filter((t) => t.id !== templateId));
+    setActiveTemplate((prev) => (prev === templateId ? null : prev));
+  }, []);
 
   // Header/Footer state - preview panels removed, keeping export functionality
   const [showHeaderFooter] = useState(false);
@@ -4812,6 +4887,81 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
         ...style,
       }}
     >
+      {/* Dynamic style injection for documentStyles colors */}
+      <style>
+        {`
+          ${
+            documentStyles["book-title"]?.color
+              ? `.editor-content .book-title, .editor-content .doc-title { color: ${documentStyles["book-title"].color} !important; }`
+              : ""
+          }
+          ${
+            documentStyles["book-title"]?.backgroundColor
+              ? `.editor-content .book-title, .editor-content .doc-title { background-color: ${documentStyles["book-title"].backgroundColor} !important; }`
+              : ""
+          }
+          ${
+            documentStyles["chapter-heading"]?.color
+              ? `.editor-content .chapter-heading, .editor-content h1.chapter-heading { color: ${documentStyles["chapter-heading"].color} !important; }`
+              : ""
+          }
+          ${
+            documentStyles["chapter-heading"]?.backgroundColor
+              ? `.editor-content .chapter-heading, .editor-content h1.chapter-heading { background-color: ${documentStyles["chapter-heading"].backgroundColor} !important; }`
+              : ""
+          }
+          ${
+            documentStyles.subtitle?.color
+              ? `.editor-content .subtitle, .editor-content .doc-subtitle { color: ${documentStyles.subtitle.color} !important; }`
+              : ""
+          }
+          ${
+            documentStyles.subtitle?.backgroundColor
+              ? `.editor-content .subtitle, .editor-content .doc-subtitle { background-color: ${documentStyles.subtitle.backgroundColor} !important; }`
+              : ""
+          }
+          ${
+            documentStyles.paragraph?.color
+              ? `.editor-content p:not(.book-title):not(.doc-title):not(.chapter-heading):not(.subtitle):not(.doc-subtitle):not(.quote):not(.intense-quote) { color: ${documentStyles.paragraph.color} !important; }`
+              : ""
+          }
+          ${
+            documentStyles.paragraph?.backgroundColor
+              ? `.editor-content p:not(.book-title):not(.doc-title):not(.chapter-heading):not(.subtitle):not(.doc-subtitle):not(.quote):not(.intense-quote) { background-color: ${documentStyles.paragraph.backgroundColor} !important; }`
+              : ""
+          }
+          ${
+            documentStyles.heading1?.color
+              ? `.editor-content h1:not(.chapter-heading) { color: ${documentStyles.heading1.color} !important; }`
+              : ""
+          }
+          ${
+            documentStyles.heading1?.backgroundColor
+              ? `.editor-content h1:not(.chapter-heading) { background-color: ${documentStyles.heading1.backgroundColor} !important; }`
+              : ""
+          }
+          ${
+            documentStyles.heading2?.color
+              ? `.editor-content h2 { color: ${documentStyles.heading2.color} !important; }`
+              : ""
+          }
+          ${
+            documentStyles.heading2?.backgroundColor
+              ? `.editor-content h2 { background-color: ${documentStyles.heading2.backgroundColor} !important; }`
+              : ""
+          }
+          ${
+            documentStyles.blockquote?.color
+              ? `.editor-content blockquote, .editor-content .quote, .editor-content .intense-quote { color: ${documentStyles.blockquote.color} !important; }`
+              : ""
+          }
+          ${
+            documentStyles.blockquote?.backgroundColor
+              ? `.editor-content blockquote, .editor-content .quote, .editor-content .intense-quote { background-color: ${documentStyles.blockquote.backgroundColor} !important; }`
+              : ""
+          }
+        `}
+      </style>
       {/* Toolbar Row - spread to edges */}
       {showToolbarRow && (
         <div
@@ -5516,7 +5666,6 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                 background: "linear-gradient(135deg, #fffaf3 0%, #fef5e7 100%)",
                 border: "1.5px solid #e0c392",
                 boxShadow: "0 4px 12px rgba(239, 132, 50, 0.12)",
-                overflow: "hidden",
                 flexShrink: 0,
                 justifySelf: "end",
               }}
@@ -5613,6 +5762,16 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                 >
                   🖌️
                 </button>
+
+                {/* Color Wheel & Style Templates */}
+                <ColorWheelDropdown
+                  documentStyles={documentStyles}
+                  onStyleChange={handleStylePropertyChange}
+                  onApplyTemplate={handleApplyStyleTemplate}
+                  onSaveTemplate={handleSaveStyleTemplate}
+                  savedTemplates={savedStyleTemplates}
+                  onDeleteTemplate={handleDeleteStyleTemplate}
+                />
 
                 <div style={toolbarDividerStyle} aria-hidden="true" />
 
@@ -6309,6 +6468,39 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                 to expand.
               </p>
             </div>
+
+            {/* Templates Section */}
+            {savedStyleTemplates.length > 0 && (
+              <div className="p-3 border-b border-[#e0c392] bg-[#fffdf9]">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-xs font-medium text-[#6b4423]">
+                    📋 Saved Templates:
+                  </label>
+                  {activeTemplate && (
+                    <span className="text-[10px] text-[#6b7280]">
+                      Active:{" "}
+                      {savedStyleTemplates.find((t) => t.id === activeTemplate)
+                        ?.name || "Custom"}
+                    </span>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  {savedStyleTemplates.map((template) => (
+                    <button
+                      key={template.id}
+                      onClick={() => handleApplyStyleTemplate(template)}
+                      className={`px-2 py-1 text-xs rounded transition-colors ${
+                        activeTemplate === template.id
+                          ? "bg-[#ef8432] text-white"
+                          : "bg-[#f5ead9] hover:bg-[#eddcc5] text-[#6b4423]"
+                      }`}
+                    >
+                      {template.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="overflow-y-auto flex-1">
               {/* Accordion Sections for each category */}

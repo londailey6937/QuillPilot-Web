@@ -1713,6 +1713,7 @@ export const ChapterCheckerV2: React.FC = () => {
 
       await exportToPdf({
         text: currentChapterText,
+        html: chapterData.editorHtml ?? chapterData.html ?? null,
         fileName: fileName || "manuscript",
         analysis: fallbackAnalysis,
         includeAnalysis: true,
