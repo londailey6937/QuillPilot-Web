@@ -20,10 +20,12 @@ interface PagesSurfaceProps {
   isFreeMode: boolean;
   spacingIndicators: React.ReactNode;
   visualSuggestions: React.ReactNode;
+  bookmarkIndicators: React.ReactNode;
   isEditable: boolean;
   onEditorInput: React.FormEventHandler<HTMLDivElement>;
   onEditorPaste: React.ClipboardEventHandler<HTMLDivElement>;
   onEditorKeyDown: React.KeyboardEventHandler<HTMLDivElement>;
+  onEditorBeforeInput?: (e: InputEvent) => void;
   editorClassName?: string;
   leftMargin: number;
   rightMargin: number;
@@ -41,8 +43,15 @@ interface PagesSurfaceProps {
   pageWidthPx: number;
   pageHeightPx: number;
   inchInPx: number;
+  headerReservedPx: number;
+  footerReservedPx: number;
   rulerBackgroundLeftOverhang: number;
   rulerBackgroundRightOverhang: number;
+  headerText: string;
+  footerText: string;
+  headerAlign: "left" | "center" | "right" | "justify";
+  footerAlign: "left" | "center" | "right" | "justify";
+  pageNumberPosition: "header" | "footer";
 }
 
 export const PagesSurface: React.FC<PagesSurfaceProps> = ({
@@ -62,10 +71,12 @@ export const PagesSurface: React.FC<PagesSurfaceProps> = ({
   isFreeMode,
   spacingIndicators,
   visualSuggestions,
+  bookmarkIndicators,
   isEditable,
   onEditorInput,
   onEditorPaste,
   onEditorKeyDown,
+  onEditorBeforeInput,
   editorClassName,
   leftMargin,
   rightMargin,
@@ -80,14 +91,31 @@ export const PagesSurface: React.FC<PagesSurfaceProps> = ({
   pageWidthPx,
   pageHeightPx,
   inchInPx,
+  headerReservedPx,
+  footerReservedPx,
   rulerBackgroundLeftOverhang,
   rulerBackgroundRightOverhang,
+  headerText,
+  footerText,
+  headerAlign,
+  footerAlign,
+  pageNumberPosition,
 }) => {
   const shouldShowLegendFallback =
     !showRuler &&
     showStyleLabels &&
     (showSpacingIndicators || showVisualSuggestions) &&
     !(!isFreeMode && focusMode);
+
+  // Attach beforeinput listener
+  React.useEffect(() => {
+    const editor = editorRef.current;
+    if (!editor || !onEditorBeforeInput) return;
+
+    const handler = (e: Event) => onEditorBeforeInput(e as InputEvent);
+    editor.addEventListener("beforeinput", handler);
+    return () => editor.removeEventListener("beforeinput", handler);
+  }, [editorRef, onEditorBeforeInput]);
 
   return (
     <div
@@ -122,8 +150,9 @@ export const PagesSurface: React.FC<PagesSurfaceProps> = ({
             maxWidth: "100%",
             paddingTop: "0px",
             paddingBottom: "16px",
-            display: "grid",
-            gridTemplateColumns: "1fr",
+            display: "flex",
+            flexDirection: "column",
+            gap: "0px",
           }}
         >
           {!showToolbarRow && !focusMode && analysisLegendElement && (
@@ -415,6 +444,7 @@ export const PagesSurface: React.FC<PagesSurfaceProps> = ({
           >
             {spacingIndicators}
             {visualSuggestions}
+            {bookmarkIndicators}
 
             <div
               ref={editorRef}
@@ -427,17 +457,17 @@ export const PagesSurface: React.FC<PagesSurfaceProps> = ({
               }`}
               style={{
                 width: "100%",
-                minHeight: `${pageHeightPx}px`,
-                paddingLeft: `${leftMargin}px`,
-                paddingRight: `${rightMargin}px`,
-                paddingTop: `${inchInPx}px`,
-                paddingBottom: `${inchInPx}px`,
                 boxSizing: "border-box",
                 backgroundColor: "#ffffff",
                 caretColor: "#2c3e50",
                 cursor: isEditable ? "text" : "default",
                 position: "relative",
                 zIndex: 5,
+                minHeight: `${pageHeightPx}px`,
+                paddingLeft: `${leftMargin}px`,
+                paddingRight: `${rightMargin}px`,
+                paddingTop: `${headerReservedPx}px`,
+                paddingBottom: `${footerReservedPx}px`,
                 boxShadow:
                   "0 14px 32px rgba(44, 62, 80, 0.16), 0 2px 6px rgba(44, 62, 80, 0.08)",
                 borderRadius: "2px",
@@ -454,61 +484,97 @@ export const PagesSurface: React.FC<PagesSurfaceProps> = ({
                     position: "absolute",
                     left: 0,
                     right: 0,
-                    top: `${(i + 1) * pageHeightPx}px`,
+                    top: `${(i + 1) * pageHeightPx - footerReservedPx}px`,
                     height: "1px",
                     borderTop: "1px dashed #e0c392",
                     pointerEvents: "none",
                     zIndex: 10,
                   }}
-                >
-                  <div
-                    style={{
-                      position: "absolute",
-                      right: "8px",
-                      top: "-20px",
-                      fontSize: "10px",
-                      color: "#9ca3af",
-                      backgroundColor: "#ffffff",
-                      padding: "2px 8px",
-                      borderRadius: "4px",
-                    }}
-                  >
-                    End of page {i + 1}
-                  </div>
-                </div>
+                />
               ))}
 
-            {!showHeaderFooter &&
-              showPageNumbers &&
+            {/* Header and Footer display - visible when showStyleLabels is true */}
+            {showStyleLabels &&
               Array.from({ length: pageCount }, (_, pageIndex) => {
                 const isEvenPage = pageIndex % 2 === 0;
-                const alignment = facingPages
+                const pageNumAlignment = facingPages
                   ? isEvenPage
                     ? "left"
                     : "right"
                   : "center";
 
+                // Build header content
+                const headerContent: React.ReactNode[] = [];
+                if (headerText) {
+                  const headerLines = headerText.split("\n");
+                  headerLines.forEach((line, idx) => {
+                    headerContent.push(
+                      <div key={`header-line-${idx}`}>{line}</div>
+                    );
+                  });
+                }
+                // Don't show page number on first page
+                if (
+                  showPageNumbers &&
+                  pageNumberPosition === "header" &&
+                  pageIndex > 0
+                ) {
+                  headerContent.push(
+                    <span
+                      key="header-page"
+                      style={{
+                        position: "absolute",
+                        left: pageNumAlignment === "left" ? "0" : "auto",
+                        right: pageNumAlignment === "right" ? "0" : "auto",
+                        ...(pageNumAlignment === "center" && {
+                          left: "50%",
+                          transform: "translateX(-50%)",
+                        }),
+                      }}
+                    >
+                      {pageIndex + 1}
+                    </span>
+                  );
+                }
+
+                // Build footer content
+                const footerContent: React.ReactNode[] = [];
+                if (footerText) {
+                  const footerLines = footerText.split("\n");
+                  footerLines.forEach((line, idx) => {
+                    footerContent.push(
+                      <div key={`footer-line-${idx}`}>{line}</div>
+                    );
+                  });
+                }
+                // Don't show page number on first page
+                if (
+                  showPageNumbers &&
+                  pageNumberPosition === "footer" &&
+                  pageIndex > 0
+                ) {
+                  footerContent.push(
+                    <span
+                      key="footer-page"
+                      style={{
+                        position: "absolute",
+                        left: pageNumAlignment === "left" ? "0" : "auto",
+                        right: pageNumAlignment === "right" ? "0" : "auto",
+                        ...(pageNumAlignment === "center" && {
+                          left: "50%",
+                          transform: "translateX(-50%)",
+                        }),
+                      }}
+                    >
+                      {pageIndex + 1}
+                    </span>
+                  );
+                }
+
                 return (
-                  <div
-                    key={`footer-${pageIndex}`}
-                    style={{
-                      position: "absolute",
-                      left: `${leftMargin}px`,
-                      right: `${rightMargin}px`,
-                      top: `${
-                        (pageIndex + 1) * pageHeightPx - inchInPx * 0.6
-                      }px`,
-                      textAlign: alignment as "left" | "center" | "right",
-                      fontSize: "11px",
-                      color: "#6b7280",
-                      pointerEvents: "none",
-                      zIndex: 5,
-                      paddingLeft: alignment === "left" ? "8px" : "0",
-                      paddingRight: alignment === "right" ? "8px" : "0",
-                    }}
-                  >
-                    {pageIndex + 1}
-                  </div>
+                  <React.Fragment key={`header-footer-${pageIndex}`}>
+                    {/* Header and footer text hidden in editor, shown only in export */}
+                  </React.Fragment>
                 );
               })}
           </div>

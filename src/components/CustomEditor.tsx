@@ -77,6 +77,10 @@ interface CustomEditorProps {
 const INCH_IN_PX = 96;
 const PAGE_WIDTH_PX = INCH_IN_PX * 8;
 const PAGE_HEIGHT_PX = INCH_IN_PX * 11; // 11 inches for US Letter
+// Header area: 0.4" for text + 0.25" for separator = 0.75" from top
+const HEADER_RESERVED_PX = INCH_IN_PX * 0.75;
+// Footer area: 0.2" for footer text + 0.2" for separator = starts at 0.8" from bottom
+const FOOTER_RESERVED_PX = INCH_IN_PX * 0.85;
 const RULER_BACKGROUND_LEFT_OVERHANG = 0;
 const RULER_BACKGROUND_RIGHT_OVERHANG = 0;
 const POINT_TO_PX = 96 / 72;
@@ -1635,80 +1639,65 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     updatePageSnippets(pages);
   }, [updatePageSnippets]);
 
-  const jumpToPage = useCallback(
-    (pageIndex: number, options?: { suppressSelectionSync?: boolean }) => {
-      if (pageCount <= 0) {
-        setActivePage(0);
-        return;
+  const insertPageBreakAtCursor = useCallback(() => {
+    if (typeof window === "undefined" || !editorRef.current) return false;
+
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) return false;
+
+    const range = selection.getRangeAt(0);
+    if (!editorRef.current.contains(range.commonAncestorContainer))
+      return false;
+
+    const breakEl = document.createElement("div");
+    breakEl.className = "page-break";
+    range.collapse(true);
+    range.insertNode(breakEl);
+
+    // Move cursor after the break
+    const afterRange = document.createRange();
+    afterRange.setStartAfter(breakEl);
+    afterRange.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(afterRange);
+
+    return true;
+  }, []);
+
+  // Prevent typing in footer zones - auto insert page break
+  const handleBeforeInput = useCallback(
+    (e: InputEvent) => {
+      if (!editorRef.current || e.inputType === "insertParagraph") return;
+
+      const selection = window.getSelection();
+      if (!selection || selection.rangeCount === 0) return;
+
+      const range = selection.getRangeAt(0);
+      const rect = range.getBoundingClientRect();
+      if (!rect || rect.height === 0) return;
+
+      const editorRect = editorRef.current.getBoundingClientRect();
+      const caretY = rect.bottom - editorRect.top;
+
+      // Check which page we're on
+      const pageIndex = Math.floor(caretY / PAGE_HEIGHT_PX);
+      const pageBottom = (pageIndex + 1) * PAGE_HEIGHT_PX - FOOTER_RESERVED_PX;
+
+      // If we're within 5px of footer, insert page break
+      if (caretY >= pageBottom - 5) {
+        e.preventDefault();
+        if (insertPageBreakAtCursor()) {
+          // Re-insert the character after the break
+          setTimeout(() => {
+            if (e.data) {
+              document.execCommand("insertText", false, e.data);
+            }
+          }, 0);
+        }
       }
-
-      const target = Math.min(Math.max(pageIndex, 0), pageCount - 1);
-
-      if (options?.suppressSelectionSync) {
-        selectionSyncLockRef.current = true;
-        window.setTimeout(() => {
-          selectionSyncLockRef.current = false;
-        }, 200);
-      }
-
-      // scrollShellRef is the actual scrollable container (wrapperRef has overflow:hidden)
-      if (scrollShellRef.current) {
-        scrollShellRef.current.scrollTo({
-          top: target * PAGE_HEIGHT_PX,
-          behavior: "smooth",
-        });
-      }
-
-      setActivePage(target);
     },
-    [pageCount]
+    [insertPageBreakAtCursor]
   );
-
-  useEffect(() => {
-    setActivePage((prev) =>
-      Math.min(Math.max(prev, 0), Math.max(0, pageCount - 1))
-    );
-  }, [pageCount]);
-
-  useEffect(() => {
-    if (!showThumbnailRail) {
-      setFooterAlignmentOffset(0);
-      return;
-    }
-
-    const computeOffset = () => {
-      if (!pageRailRef.current || !wrapperRef.current) {
-        setFooterAlignmentOffset(0);
-        return;
-      }
-
-      const railRect = pageRailRef.current.getBoundingClientRect();
-      const wrapperRect = wrapperRef.current.getBoundingClientRect();
-      const diff = Math.round(wrapperRect.bottom - railRect.bottom);
-      setFooterAlignmentOffset(diff > 0 ? diff : 0);
-    };
-
-    computeOffset();
-    window.addEventListener("resize", computeOffset);
-
-    const observers: ResizeObserver[] = [];
-    if (typeof ResizeObserver !== "undefined") {
-      const attachObserver = (element: Element | null) => {
-        if (!element) return;
-        const observer = new ResizeObserver(() => computeOffset());
-        observer.observe(element);
-        observers.push(observer);
-      };
-
-      attachObserver(pageRailRef.current);
-      attachObserver(wrapperRef.current);
-    }
-
-    return () => {
-      window.removeEventListener("resize", computeOffset);
-      observers.forEach((observer) => observer.disconnect());
-    };
-  }, [showThumbnailRail, pageCount]);
 
   // Format Painter state
   const [formatPainterActive, setFormatPainterActive] = useState(false);
@@ -1727,7 +1716,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   const [showStylesPanel, setShowStylesPanel] = useState(false);
   const [expandedStylesSections, setExpandedStylesSections] = useState<
     Set<string>
-  >(new Set(["basic"]));
+  >(new Set());
   const [documentStyles, setDocumentStyles] = useState<DocumentStylesState>(
     () => buildDefaultDocumentStyles()
   );
@@ -1811,8 +1800,12 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
 
   // Header/Footer state - preview panels removed, keeping export functionality
   const [showHeaderFooter] = useState(false);
-  const [headerText, setHeaderText] = useState("");
-  const [footerText, setFooterText] = useState("");
+  const [headerText, setHeaderText] = useState(
+    "Lon Dailey — Manuscript Draft\nProject: Winterlight\nUpdated: January 2026"
+  );
+  const [footerText, setFooterText] = useState(
+    "Confidential — Do Not Distribute\nPage 7"
+  );
   const [showPageNumbers, setShowPageNumbers] = useState(true);
   const [pageNumberPosition, setPageNumberPosition] = useState<
     "header" | "footer"
@@ -2120,6 +2113,29 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     setCanUndo(historyIndexRef.current > 0);
     setCanRedo(false);
   }, []);
+
+  // Double-click handler for removing page breaks
+  useEffect(() => {
+    if (!editorRef.current) return;
+
+    const handleDoubleClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.classList.contains("page-break")) {
+        e.preventDefault();
+        e.stopPropagation();
+        target.remove();
+        if (editorRef.current) {
+          saveToHistory(editorRef.current.innerHTML);
+          recomputePagination();
+        }
+      }
+    };
+
+    editorRef.current.addEventListener("dblclick", handleDoubleClick);
+    return () => {
+      editorRef.current?.removeEventListener("dblclick", handleDoubleClick);
+    };
+  }, [saveToHistory, recomputePagination]);
 
   // Handle content changes
   const handleInput = useCallback(() => {
@@ -4513,6 +4529,30 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     setSprintTimeRemaining(0);
   }, []);
 
+  const jumpToPage = useCallback(
+    (page: number, options?: { suppressSelectionSync?: boolean }) => {
+      if (!scrollShellRef.current) return;
+
+      const maxPage = Math.max(0, pageCount - 1);
+      const targetPage = Math.max(0, Math.min(page, maxPage));
+
+      if (options?.suppressSelectionSync) {
+        selectionSyncLockRef.current = true;
+        window.setTimeout(() => {
+          selectionSyncLockRef.current = false;
+        }, 300);
+      }
+
+      scrollShellRef.current.scrollTo({
+        top: targetPage * PAGE_HEIGHT_PX,
+        behavior: "smooth",
+      });
+
+      setActivePage(targetPage);
+    },
+    [pageCount]
+  );
+
   // Scroll to top function
   const scrollToTop = useCallback(() => {
     jumpToPage(0, { suppressSelectionSync: true });
@@ -4809,6 +4849,96 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   ) : null;
   const spacingIndicators = renderIndicators();
   const visualSuggestions = renderSuggestions();
+
+  // Render bookmark indicators
+  const renderBookmarkIndicators = () => {
+    if (
+      !editorRef.current ||
+      !pagesContainerRef.current ||
+      !showStyleLabels ||
+      bookmarks.length === 0
+    ) {
+      return null;
+    }
+
+    const editorContent = editorRef.current.innerText;
+    const editorOffset = editorRef.current.offsetTop;
+    const indicators: JSX.Element[] = [];
+
+    bookmarks.forEach((bookmark) => {
+      // Find the position of the bookmarked text in the editor
+      const textIndex = editorContent.indexOf(bookmark.selectedText);
+      if (textIndex === -1) return;
+
+      // Create a temporary range to find the element containing this text
+      const walker = document.createTreeWalker(
+        editorRef.current!,
+        NodeFilter.SHOW_TEXT,
+        null
+      );
+
+      let charCount = 0;
+      let targetNode: Node | null = null;
+      let nodeStartOffset = 0;
+
+      while (walker.nextNode()) {
+        const node = walker.currentNode;
+        const nodeLength = node.textContent?.length || 0;
+
+        if (charCount + nodeLength >= textIndex) {
+          targetNode = node;
+          nodeStartOffset = textIndex - charCount;
+          break;
+        }
+        charCount += nodeLength;
+      }
+
+      if (!targetNode || !targetNode.parentElement) return;
+
+      // Get the element containing the bookmark
+      const element = targetNode.parentElement.closest(
+        "p, div, h1, h2, h3"
+      ) as HTMLElement;
+      if (!element) return;
+
+      // Calculate position
+      const rect = element.getBoundingClientRect();
+      const containerRect = pagesContainerRef.current!.getBoundingClientRect();
+
+      const top = rect.top - containerRect.top + editorOffset;
+      const left = -24; // Position in left margin
+
+      indicators.push(
+        <div
+          key={bookmark.id}
+          style={{
+            position: "absolute",
+            left: `${left}px`,
+            top: `${top}px`,
+            width: "20px",
+            height: "20px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: "14px",
+            cursor: "pointer",
+            zIndex: 8,
+            pointerEvents: "auto",
+          }}
+          onClick={() => jumpToBookmark(bookmark)}
+          title={bookmark.name}
+        >
+          <span style={{ filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.3))" }}>
+            🔖
+          </span>
+        </div>
+      );
+    });
+
+    return indicators;
+  };
+
+  const bookmarkIndicators = renderBookmarkIndicators();
 
   // Ruler drag start handler
   const handleRulerDragStart = useCallback(
@@ -5706,9 +5836,9 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                 {/* Bookmarks & Cross-References */}
                 <button
                   onClick={openBookmarkModal}
-                  className={`px-2 py-1 rounded transition-colors text-xs ${
+                  className={`px-2 py-1 rounded transition-colors text-xs border border-[#e0c392] ${
                     bookmarks.length > 0
-                      ? "bg-[#f7e6d0] text-[#ef8432] border border-[#ef8432]"
+                      ? "bg-[#f7e6d0] text-[#ef8432]"
                       : "bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50]"
                   }`}
                   title="Add Bookmark"
@@ -5717,9 +5847,9 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                 </button>
                 <button
                   onClick={openCrossRefModal}
-                  className={`px-2 py-1 rounded transition-colors text-xs ${
+                  className={`px-2 py-1 rounded transition-colors text-xs border border-[#e0c392] ${
                     crossReferences.length > 0
-                      ? "bg-[#f7e6d0] text-[#ef8432] border border-[#ef8432]"
+                      ? "bg-[#f7e6d0] text-[#ef8432]"
                       : "bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50]"
                   }`}
                   title="Add Cross-Reference"
@@ -5728,9 +5858,9 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                 </button>
                 <button
                   onClick={() => setShowBookmarksPanel(!showBookmarksPanel)}
-                  className={`px-2 py-1 rounded transition-colors text-xs ${
+                  className={`px-2 py-1 rounded transition-colors text-xs border border-[#e0c392] ${
                     showBookmarksPanel
-                      ? "bg-[#f7e6d0] text-[#ef8432] border border-[#ef8432]"
+                      ? "bg-[#f7e6d0] text-[#ef8432]"
                       : "bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50]"
                   }`}
                   title={`View Bookmarks & References (${
@@ -5772,6 +5902,19 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                   savedTemplates={savedStyleTemplates}
                   onDeleteTemplate={handleDeleteStyleTemplate}
                 />
+
+                {/* Page Break */}
+                <button
+                  onClick={() => {
+                    if (insertPageBreakAtCursor()) {
+                      handleInput();
+                    }
+                  }}
+                  className="px-2 py-1 rounded transition-colors text-xs bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50]"
+                  title="Insert Page Break - Start new page here"
+                >
+                  📄
+                </button>
 
                 <div style={toolbarDividerStyle} aria-hidden="true" />
 
@@ -6078,26 +6221,42 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
 
       {/* Bookmark Modal */}
       {showBookmarkModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100]">
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100]"
+          onClick={() => {
+            setShowBookmarkModal(false);
+            setNewBookmarkName("");
+            setSelectedTextForBookmark("");
+          }}
+        >
           <div
             className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full mx-4"
-            style={{ border: "2px solid #fbbf24" }}
+            style={{ border: "2px solid #e0c392" }}
+            onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <span>🔖</span> Add Bookmark
-            </h3>
+            <div className="p-3 bg-gradient-to-r from-[#fef5e7] to-[#fff7ed] -m-6 mb-4 rounded-t-lg border-b border-[#e0c392]">
+              <h3
+                className="text-lg font-semibold flex items-center gap-2"
+                style={{ color: "#92400e" }}
+              >
+                <span>🔖</span> Add Bookmark
+              </h3>
+            </div>
             {selectedTextForBookmark ? (
               <div className="mb-4 p-3 bg-amber-50 rounded border border-amber-200">
                 <div className="text-xs text-amber-700 mb-1">
                   Selected text:
                 </div>
-                <div className="text-sm text-[#111827] italic">
+                <div className="text-sm italic" style={{ color: "#78716c" }}>
                   "{selectedTextForBookmark.substring(0, 100)}
                   {selectedTextForBookmark.length > 100 ? "..." : ""}"
                 </div>
               </div>
             ) : (
-              <div className="mb-4 p-3 bg-gray-50 rounded border border-gray-200 text-sm text-[#111827] italic">
+              <div
+                className="mb-4 p-3 bg-gray-50 rounded border border-gray-200 text-sm italic"
+                style={{ color: "#78716c" }}
+              >
                 No text selected. Select text in the editor first to bookmark a
                 specific passage.
               </div>
@@ -6120,7 +6279,9 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               }}
             />
             <div className="flex items-center gap-3 mb-4">
-              <label className="text-sm text-[#111827]">Color:</label>
+              <label className="text-sm" style={{ color: "#92400e" }}>
+                Color:
+              </label>
               <div className="flex gap-2">
                 {[
                   "#fbbf24",
@@ -6143,21 +6304,23 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                 ))}
               </div>
             </div>
-            <div className="flex gap-2 justify-end">
-              <button
-                onClick={() => {
-                  setShowBookmarkModal(false);
-                  setNewBookmarkName("");
-                  setSelectedTextForBookmark("");
-                }}
-                className="px-4 py-2 rounded hover:bg-gray-100 transition-colors"
-              >
-                Cancel
-              </button>
+            <div
+              className="text-xs mb-4 p-2 bg-amber-50 rounded"
+              style={{ color: "#92400e" }}
+            >
+              💡 To remove a bookmark: Open the 📋 panel and hover over the
+              bookmark to see the delete button.
+            </div>
+            <div className="flex justify-end">
               <button
                 onClick={addBookmark}
                 disabled={!newBookmarkName.trim() || !selectedTextForBookmark}
-                className="px-4 py-2 bg-amber-500 text-white rounded hover:bg-amber-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{
+                  backgroundColor: "#3a332b",
+                  color: "#fef5e7",
+                  border: "1px solid #e0c392",
+                }}
               >
                 Add Bookmark
               </button>
@@ -6311,138 +6474,170 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
 
       {/* Bookmarks & Cross-References Panel */}
       {showBookmarksPanel && (
-        <div
-          className="fixed right-4 top-20 bg-white rounded-lg shadow-2xl z-[90] overflow-hidden"
-          style={{
-            width: "320px",
-            maxHeight: "70vh",
-            border: "2px solid #e0c392",
-          }}
-        >
-          <div className="p-3 bg-gradient-to-r from-[#fef5e7] to-[#fff7ed] border-b flex items-center justify-between">
-            <h3 className="font-semibold text-[#2c3e50]">
-              📋 Bookmarks & References
-            </h3>
-            <button
-              onClick={() => setShowBookmarksPanel(false)}
-              className="text-[#111827] hover:text-[#ef8432] text-lg"
-            >
-              ×
-            </button>
-          </div>
+        <>
+          {/* Click outside to close */}
           <div
-            className="overflow-y-auto"
-            style={{ maxHeight: "calc(70vh - 50px)" }}
+            className="fixed inset-0 z-[89]"
+            onClick={() => setShowBookmarksPanel(false)}
+          />
+          <div
+            className="fixed right-4 top-20 bg-white rounded-lg shadow-2xl z-[90] overflow-hidden"
+            style={{
+              width: "320px",
+              maxHeight: "70vh",
+              border: "2px solid #e0c392",
+            }}
+            onClick={(e) => e.stopPropagation()}
           >
-            {/* Bookmarks Section */}
-            <div className="p-3 border-b">
-              <div className="flex items-center gap-2 mb-2">
-                <span>🔖</span>
-                <span className="font-medium text-sm text-[#111827]">
-                  Bookmarks ({bookmarks.length})
-                </span>
-              </div>
-              {bookmarks.length === 0 ? (
-                <div className="text-xs text-[#111827] italic py-2">
-                  No bookmarks yet. Select text and click 🔖 to add one.
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {bookmarks.map((bookmark) => (
-                    <div
-                      key={bookmark.id}
-                      className="p-2 rounded border hover:bg-gray-50 cursor-pointer group"
-                      style={{ borderLeft: `4px solid ${bookmark.color}` }}
-                      onClick={() => jumpToBookmark(bookmark)}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium text-sm">
-                          {bookmark.name}
-                        </span>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            deleteBookmark(bookmark.id);
-                          }}
-                          className="text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity text-xs"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                      <div className="text-xs text-[#111827] mt-1 truncate italic">
-                        "{bookmark.selectedText.substring(0, 60)}
-                        {bookmark.selectedText.length > 60 ? "..." : ""}"
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+            <div className="p-3 bg-gradient-to-r from-[#fef5e7] to-[#fff7ed] border-b border-[#e0c392]">
+              <h3
+                className="font-semibold flex items-center gap-2"
+                style={{ color: "#92400e" }}
+              >
+                <span>📋</span> <span>Bookmarks & References</span>
+              </h3>
             </div>
-
-            {/* Cross-References Section */}
-            <div className="p-3">
-              <div className="flex items-center gap-2 mb-2">
-                <span>🔗</span>
-                <span className="font-medium text-sm text-[#111827]">
-                  Cross-References ({crossReferences.length})
-                </span>
-              </div>
-              {crossReferences.length === 0 ? (
-                <div className="text-xs text-[#111827] italic py-2">
-                  No cross-references yet. Link related scenes or foreshadowing
-                  elements.
+            <div
+              className="overflow-y-auto bg-white"
+              style={{ maxHeight: "calc(70vh - 50px)" }}
+            >
+              {/* Bookmarks Section */}
+              <div className="p-3 border-b border-[#e0c392]">
+                <div className="flex items-center gap-2 mb-2">
+                  <span>🔖</span>
+                  <span
+                    className="font-medium text-sm"
+                    style={{ color: "#92400e" }}
+                  >
+                    Bookmarks ({bookmarks.length})
+                  </span>
                 </div>
-              ) : (
-                <div className="space-y-2">
-                  {crossReferences.map((crossRef) => {
-                    const targetBookmark = bookmarks.find(
-                      (b) => b.id === crossRef.targetBookmarkId
-                    );
-                    return (
+                {bookmarks.length === 0 ? (
+                  <div
+                    className="text-xs italic py-2"
+                    style={{ color: "#78716c" }}
+                  >
+                    No bookmarks yet. Select text and click 🔖 to add one.
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {bookmarks.map((bookmark) => (
                       <div
-                        key={crossRef.id}
-                        className="p-2 rounded border border-purple-200 bg-purple-50 group"
+                        key={bookmark.id}
+                        className="p-2 rounded border hover:bg-gray-50 cursor-pointer group"
+                        style={{ borderLeft: `4px solid ${bookmark.color}` }}
+                        onClick={() => jumpToBookmark(bookmark)}
                       >
                         <div className="flex items-center justify-between">
-                          <span className="font-medium text-sm text-purple-800">
-                            {crossRef.name}
+                          <span
+                            className="font-medium text-sm"
+                            style={{ color: "#92400e" }}
+                          >
+                            {bookmark.name}
                           </span>
                           <button
-                            onClick={() => deleteCrossReference(crossRef.id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteBookmark(bookmark.id);
+                            }}
                             className="text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity text-xs"
                           >
                             ✕
                           </button>
                         </div>
-                        <div className="text-xs text-[#111827] mt-1 italic">
-                          "{crossRef.sourceText.substring(0, 40)}
-                          {crossRef.sourceText.length > 40 ? "..." : ""}"
+                        <div
+                          className="text-xs mt-1 truncate italic"
+                          style={{ color: "#78716c" }}
+                        >
+                          "{bookmark.selectedText.substring(0, 60)}
+                          {bookmark.selectedText.length > 60 ? "..." : ""}"
                         </div>
-                        {targetBookmark && (
-                          <div
-                            className="text-xs mt-2 flex items-center gap-1 text-amber-700 cursor-pointer hover:underline"
-                            onClick={() => jumpToBookmark(targetBookmark)}
-                          >
-                            <span>→</span>
-                            <span style={{ color: targetBookmark.color }}>
-                              🔖
-                            </span>
-                            <span>{targetBookmark.name}</span>
-                          </div>
-                        )}
-                        {crossRef.note && (
-                          <div className="text-xs text-[#111827] mt-1 bg-white rounded px-2 py-1">
-                            {crossRef.note}
-                          </div>
-                        )}
                       </div>
-                    );
-                  })}
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Cross-References Section */}
+              <div className="p-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <span>🔗</span>
+                  <span
+                    className="font-medium text-sm"
+                    style={{ color: "#92400e" }}
+                  >
+                    Cross-References ({crossReferences.length})
+                  </span>
                 </div>
-              )}
+                {crossReferences.length === 0 ? (
+                  <div
+                    className="text-xs italic py-2"
+                    style={{ color: "#78716c" }}
+                  >
+                    No cross-references yet. Link related scenes or
+                    foreshadowing elements.
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {crossReferences.map((crossRef) => {
+                      const targetBookmark = bookmarks.find(
+                        (b) => b.id === crossRef.targetBookmarkId
+                      );
+                      return (
+                        <div
+                          key={crossRef.id}
+                          className="p-2 rounded border border-purple-200 bg-purple-50 group"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span
+                              className="font-medium text-sm"
+                              style={{ color: "#92400e" }}
+                            >
+                              {crossRef.name}
+                            </span>
+                            <button
+                              onClick={() => deleteCrossReference(crossRef.id)}
+                              className="text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity text-xs"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                          <div
+                            className="text-xs mt-1 italic"
+                            style={{ color: "#78716c" }}
+                          >
+                            "{crossRef.sourceText.substring(0, 40)}
+                            {crossRef.sourceText.length > 40 ? "..." : ""}"
+                          </div>
+                          {targetBookmark && (
+                            <div
+                              className="text-xs mt-2 flex items-center gap-1 text-amber-700 cursor-pointer hover:underline"
+                              onClick={() => jumpToBookmark(targetBookmark)}
+                            >
+                              <span>→</span>
+                              <span style={{ color: targetBookmark.color }}>
+                                🔖
+                              </span>
+                              <span>{targetBookmark.name}</span>
+                            </div>
+                          )}
+                          {crossRef.note && (
+                            <div
+                              className="text-xs mt-1 bg-white rounded px-2 py-1"
+                              style={{ color: "#78716c" }}
+                            >
+                              {crossRef.note}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
+        </>
       )}
 
       {/* Styles Panel Modal */}
@@ -6905,7 +7100,10 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                 >
                   <div className="flex items-center gap-2">
                     <span className="text-sm">📄</span>
-                    <span className="font-semibold text-sm text-[#111827]">
+                    <span
+                      className="font-semibold text-sm"
+                      style={{ color: stylesPanelSectionHeadingColor }}
+                    >
                       Header & Footer
                     </span>
                   </div>
@@ -6919,19 +7117,25 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                     <div className="p-2 border rounded bg-white space-y-2">
                       <div className="grid grid-cols-2 gap-2">
                         <div>
-                          <label className="block text-xs text-[#111827]">
-                            Header
+                          <label
+                            className="block text-xs mb-1"
+                            style={{ color: "rgb(245,166,36)" }}
+                          >
+                            Header (multiline)
                           </label>
-                          <input
-                            type="text"
+                          <textarea
                             value={headerText}
                             onChange={(e) => setHeaderText(e.target.value)}
-                            placeholder="Header text"
-                            className="w-full px-2 py-1 border rounded text-xs focus:ring-1 focus:ring-[#ef8432]"
+                            placeholder="Line 1\nLine 2\nLine 3"
+                            rows={3}
+                            className="w-full px-2 py-1 border rounded text-xs focus:ring-1 focus:ring-[#ef8432] resize-none"
                           />
                         </div>
                         <div>
-                          <label className="block text-xs text-[#111827]">
+                          <label
+                            className="block text-xs"
+                            style={{ color: "rgb(245,166,36)" }}
+                          >
                             Align
                           </label>
                           <select
@@ -6956,19 +7160,25 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                       </div>
                       <div className="grid grid-cols-2 gap-2">
                         <div>
-                          <label className="block text-xs text-[#111827]">
-                            Footer
+                          <label
+                            className="block text-xs mb-1"
+                            style={{ color: "rgb(245,166,36)" }}
+                          >
+                            Footer (multiline)
                           </label>
-                          <input
-                            type="text"
+                          <textarea
                             value={footerText}
                             onChange={(e) => setFooterText(e.target.value)}
-                            placeholder="Footer text"
-                            className="w-full px-2 py-1 border rounded text-xs focus:ring-1 focus:ring-[#ef8432]"
+                            placeholder="Line 1\nLine 2"
+                            rows={2}
+                            className="w-full px-2 py-1 border rounded text-xs focus:ring-1 focus:ring-[#ef8432] resize-none"
                           />
                         </div>
                         <div>
-                          <label className="block text-xs text-[#111827]">
+                          <label
+                            className="block text-xs"
+                            style={{ color: "rgb(245,166,36)" }}
+                          >
                             Align
                           </label>
                           <select
@@ -7001,7 +7211,9 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                             }
                             className="w-3 h-3 rounded border-gray-300 text-[#ef8432] focus:ring-[#ef8432]"
                           />
-                          <span className="text-[#111827]">Page #s</span>
+                          <span style={{ color: "rgb(245,166,36)" }}>
+                            Page #s
+                          </span>
                         </label>
                         {showPageNumbers && (
                           <>
@@ -7029,7 +7241,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                                 }
                                 className="w-3 h-3 rounded border-gray-300 text-[#ef8432] focus:ring-[#ef8432]"
                               />
-                              <span className="text-[#111827]">
+                              <span style={{ color: "rgb(245,166,36)" }}>
                                 Facing Pages
                               </span>
                             </label>
@@ -7909,10 +8121,12 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           isFreeMode={isFreeMode}
           spacingIndicators={spacingIndicators}
           visualSuggestions={visualSuggestions}
+          bookmarkIndicators={bookmarkIndicators}
           isEditable={isEditable}
           onEditorInput={handleInput}
           onEditorPaste={handlePaste}
           onEditorKeyDown={handleKeyDown}
+          onEditorBeforeInput={handleBeforeInput}
           editorClassName={className}
           leftMargin={leftMargin}
           rightMargin={rightMargin}
@@ -7927,8 +8141,15 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           pageWidthPx={PAGE_WIDTH_PX}
           pageHeightPx={PAGE_HEIGHT_PX}
           inchInPx={INCH_IN_PX}
+          headerReservedPx={HEADER_RESERVED_PX}
+          footerReservedPx={FOOTER_RESERVED_PX}
           rulerBackgroundLeftOverhang={RULER_BACKGROUND_LEFT_OVERHANG}
           rulerBackgroundRightOverhang={RULER_BACKGROUND_RIGHT_OVERHANG}
+          headerText={headerText}
+          footerText={footerText}
+          headerAlign={headerAlign}
+          footerAlign={footerAlign}
+          pageNumberPosition={pageNumberPosition}
         />
       </div>
 

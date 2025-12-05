@@ -129,14 +129,21 @@ export const exportToPdf = async ({
     const parser = new DOMParser();
     const htmlDoc = parser.parseFromString(html, "text/html");
 
-    // Get all block elements (paragraphs, headings, etc.)
+    // Get all block elements (paragraphs, headings, page breaks, etc.)
     const blockElements = htmlDoc.querySelectorAll(
-      "p, h1, h2, h3, h4, h5, h6, blockquote, div.quote, div.intense-quote"
+      "p, h1, h2, h3, h4, h5, h6, blockquote, div.quote, div.intense-quote, div.page-break, hr.page-break"
     );
 
     let isFirstElement = true;
 
     blockElements.forEach((element) => {
+      // Handle page breaks (div or hr with page-break class)
+      if (element.classList.contains("page-break")) {
+        doc.addPage();
+        yPosition = margins.top;
+        return;
+      }
+
       const elementText = element.textContent?.trim() || "";
       if (!elementText) return;
 

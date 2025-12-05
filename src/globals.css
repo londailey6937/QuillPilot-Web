@@ -880,6 +880,71 @@ p {
   text-indent: 0;
 }
 
+/* Page Break element */
+.editor-content .page-break {
+  display: block;
+  width: 100%;
+  min-height: 20px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  position: relative;
+  page-break-after: always;
+  break-after: page;
+  cursor: pointer;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    transparent calc(50% - 1px),
+    #e0c392 calc(50% - 1px),
+    #e0c392 calc(50% + 1px),
+    transparent calc(50% + 1px),
+    transparent 100%
+  );
+  background-size: 12px 100%;
+  background-repeat: repeat-x;
+}
+
+.editor-content .page-break::after {
+  content: "📄 Page Break (double-click to remove)";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  background: #fffaf3;
+  padding: 2px 12px;
+  font-size: 10px;
+  color: rgb(245, 166, 36);
+  border-radius: 4px;
+  border: 1px solid #e0c392;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.editor-content .page-break[data-auto-break="true"] {
+  cursor: default;
+}
+
+.editor-content .page-break[data-auto-break="true"]::after {
+  display: none;
+}
+
+.editor-content .page-break:hover::after {
+  background: #fef5e7;
+  border-color: rgb(245, 166, 36);
+}
+
+@media print {
+  .editor-content .page-break {
+    background: none;
+    min-height: 0;
+    height: 0 !important;
+  }
+  .editor-content .page-break::after {
+    display: none;
+  }
+}
+
 .editor-content p.part-title {
   font-size: 28px;
   font-weight: bold;

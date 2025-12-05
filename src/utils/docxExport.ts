@@ -132,8 +132,10 @@ export const exportToDocx = async ({
   const hasMultipleHeadings = headingMatches.length >= 3;
 
   // Auto-detect TOC: include if placeholder exists or if there are 3+ headings
-  const shouldIncludeToc =
-    includeToc ?? (hasTocPlaceholder || hasMultipleHeadings);
+  // DISABLED: TOC generation removed per user request
+  const shouldIncludeToc = false;
+  // const shouldIncludeToc =
+  //   includeToc ?? (hasTocPlaceholder || hasMultipleHeadings);
 
   // Convert HTML to DOCX paragraphs
   const paragraphs: Paragraph[] = [];
@@ -553,13 +555,19 @@ export const exportToDocx = async ({
 
     // Header text
     if (headerText) {
-      children.push(
-        new TextRun({
-          text: headerText,
-          size: 20,
-          color: "6b7280",
-        })
-      );
+      const headerLines = headerText.split("\n");
+      headerLines.forEach((line, idx) => {
+        if (idx > 0) {
+          children.push(new TextRun({ break: 1 }));
+        }
+        children.push(
+          new TextRun({
+            text: line,
+            size: 20,
+            color: "6b7280",
+          })
+        );
+      });
     }
 
     // Page number on right
@@ -621,13 +629,19 @@ export const exportToDocx = async ({
 
     // Footer text
     if (footerText) {
-      children.push(
-        new TextRun({
-          text: footerText,
-          size: 20,
-          color: "6b7280",
-        })
-      );
+      const footerLines = footerText.split("\n");
+      footerLines.forEach((line, idx) => {
+        if (idx > 0) {
+          children.push(new TextRun({ break: 1 }));
+        }
+        children.push(
+          new TextRun({
+            text: line,
+            size: 20,
+            color: "6b7280",
+          })
+        );
+      });
     }
 
     // Page number on right
@@ -1394,6 +1408,15 @@ async function convertNodeToParagraphs(
       new Paragraph({
         children: [new TextRun({ text: "", break: 1 })],
         spacing: { after: 0 },
+      }),
+    ];
+  }
+
+  // Handle page breaks (div.page-break or hr.page-break)
+  if (className.includes("page-break")) {
+    return [
+      new Paragraph({
+        children: [new PageBreak()],
       }),
     ];
   }

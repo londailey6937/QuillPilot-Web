@@ -121,13 +121,13 @@ export function ColorWheelDropdown({
     // Delay to avoid immediate close on open click
     const timeoutId = setTimeout(() => {
       document.addEventListener("mousedown", handleClickOutside);
-    }, 0);
+    }, 10);
 
     return () => {
       clearTimeout(timeoutId);
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, []);
+  }, [isOpen]);
 
   const currentStyle =
     documentStyles[selectedStyle as keyof DocumentStylesState];
