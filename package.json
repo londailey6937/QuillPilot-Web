@@ -4,7 +4,7 @@
   "description": "AI-Powered Writing and Analysis Tool",
   "type": "module",
   "engines": {
-    "node": ">=20.0.0"
+    "node": "22.x"
   },
   "scripts": {
     "dev": "vite",

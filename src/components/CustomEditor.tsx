@@ -89,6 +89,40 @@ const PAGE_CENTER_PT = PAGE_WIDTH_PT / 2; // 288pt (page midpoint)
 const TITLE_STYLE_POINT_SIZE = 20;
 const BLOCK_TYPE_TEXT_COLOR = palette.heading;
 
+const PREVIEW_BASE_PAGE_WIDTH_PX = 490;
+const PREVIEW_BASE_WIDTH_PX = 520;
+const PREVIEW_SAFE_MARGIN_PX = 12;
+const PREVIEW_HEADER_HEIGHT_PX = 44;
+const PREVIEW_HINT_HEIGHT_PX = 36;
+const PREVIEW_PADDING_HEIGHT_PX = 24;
+const PREVIEW_BASE_PAGE_HEIGHT_PX = Math.round(
+  PREVIEW_BASE_PAGE_WIDTH_PX * (PAGE_HEIGHT_PX / PAGE_WIDTH_PX)
+);
+const PREVIEW_BASE_HEIGHT_PX =
+  PREVIEW_BASE_PAGE_HEIGHT_PX +
+  PREVIEW_HEADER_HEIGHT_PX +
+  PREVIEW_HINT_HEIGHT_PX +
+  PREVIEW_PADDING_HEIGHT_PX;
+
+const computePreviewDimensions = (viewportHeight?: number) => {
+  const availableHeight =
+    typeof viewportHeight === "number"
+      ? viewportHeight - PREVIEW_SAFE_MARGIN_PX * 2
+      : null;
+  const baseHeight = PREVIEW_BASE_HEIGHT_PX;
+  const scale =
+    availableHeight && availableHeight > 0
+      ? Math.min(1, availableHeight / baseHeight)
+      : 1;
+
+  return {
+    previewWidth: Math.round(PREVIEW_BASE_WIDTH_PX * scale),
+    pageWidth: Math.round(PREVIEW_BASE_PAGE_WIDTH_PX * scale),
+    previewHeight: Math.round(baseHeight * scale),
+    scale,
+  };
+};
+
 interface BlockTypeMenuItem {
   value: string;
   label: string;
@@ -1279,6 +1313,20 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   const showThumbnailRail = viewMode === "writer" && !isFreeMode;
   const activePageRef = useRef(0);
   const selectionSyncLockRef = useRef(false);
+
+  // Page preview hover state
+  const [previewPageIndex, setPreviewPageIndex] = useState<number | null>(null);
+  const [previewPosition, setPreviewPosition] = useState({ top: 0, left: 0 });
+  const [previewDimensions, setPreviewDimensions] = useState(() =>
+    computePreviewDimensions(
+      typeof window !== "undefined" ? window.innerHeight : undefined
+    )
+  );
+  const previewScale =
+    previewDimensions.pageWidth > 0
+      ? previewDimensions.pageWidth / PREVIEW_BASE_PAGE_WIDTH_PX
+      : 1;
+  const previewTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Ruler dragging state
   const [rulerDragging, setRulerDragging] = useState<
@@ -7423,6 +7471,50 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                     onClick={() =>
                       jumpToPage(index, { suppressSelectionSync: true })
                     }
+                    onMouseEnter={(e) => {
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      previewTimeoutRef.current = setTimeout(() => {
+                        const dims = computePreviewDimensions(
+                          typeof window !== "undefined"
+                            ? window.innerHeight
+                            : undefined
+                        );
+                        setPreviewDimensions(dims);
+                        setPreviewPageIndex(index);
+                        const previewHeight = dims.previewHeight;
+                        const previewWidth = dims.previewWidth;
+                        let top = PREVIEW_SAFE_MARGIN_PX;
+                        let left = rect.right + 20;
+
+                        if (
+                          typeof window !== "undefined" &&
+                          top + previewHeight >
+                            window.innerHeight - PREVIEW_SAFE_MARGIN_PX
+                        ) {
+                          top = Math.max(
+                            PREVIEW_SAFE_MARGIN_PX,
+                            window.innerHeight -
+                              previewHeight -
+                              PREVIEW_SAFE_MARGIN_PX
+                          );
+                        }
+
+                        if (
+                          typeof window !== "undefined" &&
+                          left + previewWidth > window.innerWidth - 20
+                        ) {
+                          left = rect.left - previewWidth - 20;
+                        }
+                        setPreviewPosition({ top, left });
+                      }, 600); // 600ms delay before showing preview
+                    }}
+                    onMouseLeave={() => {
+                      if (previewTimeoutRef.current) {
+                        clearTimeout(previewTimeoutRef.current);
+                        previewTimeoutRef.current = null;
+                      }
+                      setPreviewPageIndex(null);
+                    }}
                     className="text-left focus-visible:ring-2 focus-visible:ring-[#ef8432]"
                     style={{
                       border: isActive
@@ -7478,6 +7570,266 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               })}
             </div>
           </aside>
+        )}
+
+        {/* Page Preview Popup - Shows actual page content scaled down */}
+        {previewPageIndex !== null && pagesContainerRef.current && (
+          <div
+            style={{
+              position: "fixed",
+              top: previewPosition.top,
+              left: previewPosition.left,
+              width: `${previewDimensions.previewWidth}px`,
+              height: `${previewDimensions.previewHeight}px`,
+              maxHeight: `${previewDimensions.previewHeight}px`,
+              backgroundColor: "#f5f0e8",
+              borderRadius: "16px",
+              border: "2px solid #ef8432",
+              boxShadow:
+                "0 24px 48px rgba(44, 62, 80, 0.3), 0 8px 16px rgba(239, 132, 50, 0.15)",
+              zIndex: 1000,
+              overflow: "auto",
+              animation: "fadeIn 0.2s ease-out",
+            }}
+          >
+            {/* Preview Header */}
+            <div
+              style={{
+                background: "linear-gradient(135deg, #fef5e7, #fff7ed)",
+                padding: `${Math.max(
+                  8,
+                  Math.round(10 * previewScale)
+                )}px ${Math.max(12, Math.round(16 * previewScale))}px`,
+                minHeight: `${Math.max(
+                  32,
+                  Math.round(PREVIEW_HEADER_HEIGHT_PX * previewScale)
+                )}px`,
+                borderBottom: "1px solid #e0c392",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                position: "sticky",
+                top: 0,
+                zIndex: 10,
+              }}
+            >
+              <span
+                style={{ fontSize: "14px", fontWeight: 600, color: "#92400e" }}
+              >
+                Page {previewPageIndex + 1} of {pageCount}
+              </span>
+              <span
+                style={{ fontSize: "11px", color: "#6b7280", fontWeight: 500 }}
+              >
+                Full Page Preview
+              </span>
+            </div>
+
+            {/* Full Page Preview - Scaled clone of actual page */}
+            <div
+              style={{
+                padding: `${Math.max(
+                  8,
+                  Math.round((PREVIEW_PADDING_HEIGHT_PX / 2) * previewScale)
+                )}px`,
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "flex-start",
+                backgroundColor: "#e8e0d0",
+              }}
+            >
+              <div
+                style={{
+                  width: `${previewDimensions.pageWidth}px`,
+                  height: `${Math.round(
+                    previewDimensions.pageWidth *
+                      (PAGE_HEIGHT_PX / PAGE_WIDTH_PX)
+                  )}px`,
+                  position: "relative",
+                  overflow: "hidden",
+                  borderRadius: "4px",
+                  boxShadow:
+                    "0 4px 16px rgba(0,0,0,0.2), 0 2px 4px rgba(0,0,0,0.1)",
+                  backgroundColor: "#ffffff",
+                  flexShrink: 0,
+                }}
+              >
+                {/* Header */}
+                <div
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: `${Math.round(
+                      (HEADER_RESERVED_PX * previewDimensions.pageWidth) /
+                        PAGE_WIDTH_PX
+                    )}px`,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent:
+                      headerAlign === "center"
+                        ? "center"
+                        : headerAlign === "right"
+                        ? "flex-end"
+                        : "flex-start",
+                    padding: `0 ${Math.max(
+                      20,
+                      Math.round(46 * previewScale)
+                    )}px`,
+                    fontSize: "8px",
+                    color: "#78716c",
+                    borderBottom: "1px solid #e8e0d0",
+                    backgroundColor: "#fafaf8",
+                    zIndex: 2,
+                  }}
+                >
+                  <div
+                    style={{ whiteSpace: "pre-wrap", textAlign: headerAlign }}
+                  >
+                    {headerText || "Header"}
+                    {showPageNumbers &&
+                      pageNumberPosition === "header" &&
+                      previewPageIndex > 0 && (
+                        <span style={{ marginLeft: headerText ? "8px" : 0 }}>
+                          {previewPageIndex + 1}
+                        </span>
+                      )}
+                  </div>
+                </div>
+
+                {/* Page content area - extracts full content for this page */}
+                <div
+                  style={{
+                    position: "absolute",
+                    top: `${Math.round(
+                      (HEADER_RESERVED_PX * previewDimensions.pageWidth) /
+                        PAGE_WIDTH_PX
+                    )}px`,
+                    left: 0,
+                    right: 0,
+                    bottom: `${Math.round(
+                      (FOOTER_RESERVED_PX * previewDimensions.pageWidth) /
+                        PAGE_WIDTH_PX
+                    )}px`,
+                    overflow: "hidden",
+                    padding: `8px ${Math.round(
+                      (leftMargin * previewDimensions.pageWidth) / PAGE_WIDTH_PX
+                    )}px`,
+                    fontSize: "7px",
+                    lineHeight: 1.4,
+                    color: "#374151",
+                    fontFamily: "Georgia, 'Times New Roman', serif",
+                    whiteSpace: "pre-wrap",
+                  }}
+                >
+                  {(() => {
+                    const editor = editorRef.current;
+                    if (!editor) return "No content";
+
+                    const wrapperRect =
+                      wrapperRef.current?.getBoundingClientRect();
+                    const scrollOffset = wrapperRef.current?.scrollTop ?? 0;
+                    const blocks = Array.from(
+                      editor.querySelectorAll<HTMLElement>(
+                        "p, div, h1, h2, h3, h4, h5, h6, blockquote, ul, ol, li, pre"
+                      )
+                    ).filter(
+                      (block) =>
+                        block.innerText && block.innerText.trim().length
+                    );
+
+                    let pageContent = "";
+
+                    blocks.forEach((block) => {
+                      const text = block.innerText || "";
+                      if (!text.trim()) return;
+
+                      const rect = block.getBoundingClientRect();
+                      const relativeMid =
+                        rect.top -
+                        (wrapperRect?.top ?? 0) +
+                        scrollOffset +
+                        rect.height / 2;
+
+                      const bucketIndex = Math.min(
+                        Math.max(Math.floor(relativeMid / PAGE_HEIGHT_PX), 0),
+                        pageCount - 1
+                      );
+
+                      if (bucketIndex === previewPageIndex) {
+                        pageContent += `${text}\n\n`;
+                      }
+                    });
+
+                    return pageContent.trim() || "No content on this page.";
+                  })()}
+                </div>
+
+                {/* Footer */}
+                <div
+                  style={{
+                    position: "absolute",
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    height: `${Math.round(
+                      (FOOTER_RESERVED_PX * previewDimensions.pageWidth) /
+                        PAGE_WIDTH_PX
+                    )}px`,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent:
+                      footerAlign === "center"
+                        ? "center"
+                        : footerAlign === "right"
+                        ? "flex-end"
+                        : "flex-start",
+                    padding: `0 ${Math.max(
+                      20,
+                      Math.round(46 * previewScale)
+                    )}px`,
+                    fontSize: "8px",
+                    color: "#78716c",
+                    borderTop: "1px solid #e8e0d0",
+                    backgroundColor: "#fafaf8",
+                    zIndex: 2,
+                  }}
+                >
+                  <div
+                    style={{ whiteSpace: "pre-wrap", textAlign: footerAlign }}
+                  >
+                    {footerText || `Page ${previewPageIndex + 1}`}
+                    {showPageNumbers &&
+                      pageNumberPosition === "footer" &&
+                      previewPageIndex > 0 &&
+                      !footerText && <span>{previewPageIndex + 1}</span>}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Click to navigate hint */}
+            <div
+              style={{
+                background: "linear-gradient(135deg, #fef5e7, #fff7ed)",
+                padding: `${Math.max(
+                  6,
+                  Math.round(8 * previewScale)
+                )}px ${Math.max(12, Math.round(16 * previewScale))}px`,
+                minHeight: `${Math.max(
+                  24,
+                  Math.round(PREVIEW_HINT_HEIGHT_PX * previewScale)
+                )}px`,
+                borderTop: "1px solid #e0c392",
+                textAlign: "center",
+              }}
+            >
+              <span style={{ fontSize: "11px", color: "#78716c" }}>
+                Click thumbnail to jump to this page
+              </span>
+            </div>
+          </div>
         )}
 
         {/* Advanced Tools Rail - Right Side */}
