@@ -533,6 +533,7 @@ export const ChapterCheckerV2: React.FC = () => {
   const [leftMargin, setLeftMargin] = useState(48); // pixels
   const [rightMargin, setRightMargin] = useState(48); // pixels
   const [firstLineIndent, setFirstLineIndent] = useState(32); // pixels - 4 spaces
+  const [editorPageCount, setEditorPageCount] = useState(1); // Actual page count from editor
   const [isNavigationOpen, setIsNavigationOpen] = useState(false);
   const [highlightedConceptId, setHighlightedConceptId] = useState<
     string | null
@@ -558,6 +559,36 @@ export const ChapterCheckerV2: React.FC = () => {
   const bumpDocumentInstanceKey = useCallback(() => {
     setDocumentInstanceKey((prev) => prev + 1);
   }, []);
+  const handleClearDocument = useCallback(() => {
+    const blankHtml = "<p><br></p>";
+
+    setChapterData({
+      html: blankHtml,
+      plainText: "",
+      originalPlainText: "",
+      isHybridDocx: false,
+      imageCount: 0,
+      editorHtml: blankHtml,
+    });
+    setChapterText("");
+    setAnalysis(null);
+    setFileName("");
+    setFileType("");
+    setError("");
+    setGeneralConcepts([]);
+    setSelectedDomain("none");
+    setDetectedDomain(null);
+    setCustomDomainName("");
+    setCustomConcepts([]);
+    setIsTemplateMode(false);
+    setPendingAutosave(null);
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("quillpilot_autosave");
+      localStorage.removeItem("quillpilot_autosave_skip");
+    }
+
+    bumpDocumentInstanceKey();
+  }, [bumpDocumentInstanceKey]);
   const [characterMappings, setCharacterMappings] = useState<
     CharacterMapping[]
   >([]);
@@ -2168,7 +2199,8 @@ export const ChapterCheckerV2: React.FC = () => {
                     </span>
                     <span style={{ color: "#9ca3af" }}>•</span>
                     <span style={{ fontWeight: 500 }}>
-                      {Math.ceil(wordCount / 250).toLocaleString()} pages
+                      {editorPageCount.toLocaleString()} page
+                      {editorPageCount !== 1 ? "s" : ""}
                     </span>
                     <span style={{ color: "#9ca3af" }}>•</span>
                     <span style={{ fontWeight: 500 }}>
@@ -2813,19 +2845,15 @@ export const ChapterCheckerV2: React.FC = () => {
 
                           {viewMode === "writer" && (
                             <button
-                              onClick={() => {
-                                const confirm = window.confirm(
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                const confirmClear = window.confirm(
                                   "🗑️ Clear Document\n\nThis will clear your current document and start fresh. Continue?"
                                 );
-                                if (confirm) {
-                                  setChapterData(null);
-                                  setAnalysis(null);
-                                  setFileName("");
-                                  setError("");
-                                  setGeneralConcepts([]);
-                                  setSelectedDomain("none");
-                                  setCustomDomainName("");
-                                  bumpDocumentInstanceKey();
+                                if (confirmClear) {
+                                  handleClearDocument();
                                 }
                               }}
                               disabled={isAnalyzing}
@@ -3305,6 +3333,7 @@ export const ChapterCheckerV2: React.FC = () => {
                         </>
                       }
                       onOpenChapterLibrary={() => setIsChapterLibraryOpen(true)}
+                      onPageCountChange={setEditorPageCount}
                     />
                   </div>
                 </div>

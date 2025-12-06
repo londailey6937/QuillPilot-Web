@@ -4,6 +4,7 @@ export type FontStyleOption = "normal" | "italic";
 
 export interface BlockStyle {
   fontSize: number;
+  fontFamily?: string;
   fontWeight: FontWeightOption;
   fontStyle: FontStyleOption;
   textAlign: TextAlignOption;

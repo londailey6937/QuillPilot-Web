@@ -81,15 +81,17 @@ interface CustomEditorProps {
   documentTools?: React.ReactNode;
   // Saved chapters hook for toolbar placeholder actions
   onOpenChapterLibrary?: () => void;
+  // Callback when page count changes
+  onPageCountChange?: (count: number) => void;
 }
 
 const INCH_IN_PX = 96;
 const PAGE_WIDTH_PX = INCH_IN_PX * 8;
 const PAGE_HEIGHT_PX = INCH_IN_PX * 11; // 11 inches for US Letter
-// Header area: 0.4" for text + 0.25" for separator = 0.75" from top
-const HEADER_RESERVED_PX = INCH_IN_PX * 0.75;
-// Footer area: 0.2" for footer text + 0.2" for separator = starts at 0.8" from bottom
-const FOOTER_RESERVED_PX = INCH_IN_PX * 0.85;
+// Header area: 1 inch from top for header text
+const HEADER_RESERVED_PX = INCH_IN_PX * 1;
+// Footer area: 1 inch from bottom for footer text and page number
+const FOOTER_RESERVED_PX = INCH_IN_PX * 1;
 const RULER_BACKGROUND_LEFT_OVERHANG = 0;
 const RULER_BACKGROUND_RIGHT_OVERHANG = 0;
 const POINT_TO_PX = 96 / 72;
@@ -375,6 +377,7 @@ const FONT_FAMILY_OPTIONS = [
 const buildDefaultDocumentStyles = (): DocumentStylesState => ({
   paragraph: {
     fontSize: 16,
+    fontFamily: undefined, // Uses default
     firstLineIndent: 32,
     lineHeight: 1.5,
     marginBottom: 0.5,
@@ -1180,6 +1183,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   onHeaderFooterChange,
   documentTools,
   onOpenChapterLibrary,
+  onPageCountChange,
 }) => {
   const editorRef = useRef<HTMLDivElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -1321,6 +1325,15 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   const [activePage, setActivePage] = useState(0);
   const showThumbnailRail = viewMode === "writer" && !isFreeMode;
   const activePageRef = useRef(0);
+
+  // Handle page count changes - update local state and notify parent
+  const handlePageCountChange = useCallback(
+    (count: number) => {
+      setPageCount(count);
+      onPageCountChange?.(count);
+    },
+    [onPageCountChange]
+  );
 
   // True pagination mode (always enabled - uses PaginatedEditor)
   const paginatedEditorRef = useRef<PaginatedEditorRef>(null);
@@ -1745,17 +1758,35 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     setPageCount(pages);
 
     updatePageSnippets(pages);
+
+    // Sync content to paginated editor ONLY if content differs
+    // This prevents destroying the selection when content is already in sync
+    if (paginatedEditorRef.current) {
+      const currentPaginatedContent = paginatedEditorRef.current.getContent();
+      const editorContent = editorRef.current.innerHTML;
+      // Only sync if content is actually different
+      if (currentPaginatedContent !== editorContent) {
+        paginatedEditorRef.current.setContent(editorContent);
+      }
+    }
   }, [updatePageSnippets]);
 
   const insertPageBreakAtCursor = useCallback(() => {
-    if (typeof window === "undefined" || !editorRef.current) return false;
+    if (typeof window === "undefined") return false;
 
     const selection = window.getSelection();
     if (!selection || selection.rangeCount === 0) return false;
 
     const range = selection.getRangeAt(0);
-    if (!editorRef.current.contains(range.commonAncestorContainer))
-      return false;
+
+    // Check if selection is in the paginated editor
+    const pageElements =
+      paginatedEditorRef.current?.getPageContentElements() || [];
+    const isInPaginatedEditor = pageElements.some((el) =>
+      el.contains(range.commonAncestorContainer)
+    );
+
+    if (!isInPaginatedEditor) return false;
 
     const breakEl = document.createElement("div");
     breakEl.className = "page-break";
@@ -1768,6 +1799,13 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     afterRange.collapse(true);
     selection.removeAllRanges();
     selection.addRange(afterRange);
+
+    // Sync to editorRef
+    setTimeout(() => {
+      if (paginatedEditorRef.current && editorRef.current) {
+        editorRef.current.innerHTML = paginatedEditorRef.current.getContent();
+      }
+    }, 50);
 
     return true;
   }, []);
@@ -1912,7 +1950,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     "Lon Dailey — Manuscript Draft\nProject: Winterlight\nUpdated: January 2026"
   );
   const [footerText, setFooterText] = useState(
-    "Confidential — Do Not Distribute\nPage 7"
+    "Confidential — Do Not Distribute"
   );
   const [showPageNumbers, setShowPageNumbers] = useState(true);
   const [pageNumberPosition, setPageNumberPosition] = useState<
@@ -2194,6 +2232,212 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     });
   }, []);
 
+  // DOM-based indicator rendering for paginated editor
+  useEffect(() => {
+    // Use a timeout to let the DOM update after repagination
+    const timeoutId = setTimeout(() => {
+      // console.log("[Indicators] useEffect triggered", {
+      //   showSpacingIndicators,
+      //   showStyleLabels,
+      //   showVisualSuggestions,
+      //   focusMode,
+      //   isFreeMode,
+      //   pageCount,
+      // });
+      // console.log("[Indicators] Analysis data:", {
+      //   spacingCount: analysis.spacing.length,
+      //   visualsCount: analysis.visuals.length,
+      //   spacingFirst5: analysis.spacing.slice(0, 5),
+      //   visualsFirst5: analysis.visuals.slice(0, 5),
+      // });
+
+      // Clean up existing indicators
+      const existingIndicators = document.querySelectorAll(
+        ".style-indicator-dot"
+      );
+      existingIndicators.forEach((el) => el.remove());
+
+      if (!showSpacingIndicators || !showStyleLabels) {
+        // console.log(
+        //   "[Indicators] Early return - showSpacingIndicators:",
+        //   showSpacingIndicators,
+        //   "showStyleLabels:",
+        //   showStyleLabels
+        // );
+        return;
+      }
+      if (!isFreeMode && focusMode) {
+        // console.log(
+        //   "[Indicators] Early return - focus mode enabled in paid mode"
+        // );
+        return;
+      }
+
+      const pageElements =
+        paginatedEditorRef.current?.getPageContentElements() || [];
+      // console.log("[Indicators] Page elements count:", pageElements.length);
+      if (pageElements.length === 0) return;
+
+      // Build a lookup by normalized text content (first 100 chars)
+      const getTextKey = (text: string) =>
+        text.trim().substring(0, 100).toLowerCase();
+
+      // For spacing analysis, we check each paragraph in the DOM
+      // We'll do a simple per-paragraph analysis rather than relying on indices
+      let dotsAdded = 0;
+
+      pageElements.forEach((pageEl, pageIdx) => {
+        const pageDiv = pageEl.parentElement;
+        if (!pageDiv) {
+          // console.log("[Indicators] No pageDiv for page", pageIdx);
+          return;
+        }
+
+        const paragraphs = Array.from(pageEl.querySelectorAll("p, div"));
+        // if (pageIdx === 0) {
+        //   console.log(
+        //     "[Indicators] Page 0 first para text:",
+        //     paragraphs[0]?.textContent?.substring(0, 50)
+        //   );
+        // }
+
+        paragraphs.forEach((para) => {
+          const paraEl = para as HTMLElement;
+          const text = paraEl.textContent || "";
+          const wordCount = text
+            .split(/\s+/)
+            .filter((w) => w.trim().length > 0).length;
+          const paraTop = paraEl.offsetTop;
+
+          // Skip very short paragraphs
+          if (wordCount < 5) return;
+
+          let hasOrangeDot = false;
+          let hasPurpleDot = false;
+
+          // Check for long paragraph (>150 words) - show orange dot
+          if (wordCount > 150) {
+            const dot = document.createElement("div");
+            dot.className = "style-indicator-dot";
+            dot.title = `Long paragraph · ${wordCount} words - consider breaking up`;
+            dot.style.cssText = `
+              position: absolute;
+              top: ${paraTop + 4}px;
+              left: 4px;
+              width: 8px;
+              height: 8px;
+              border-radius: 50%;
+              background-color: #f97316;
+              box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+              pointer-events: auto;
+              z-index: 20;
+            `;
+            pageDiv.appendChild(dot);
+            dotsAdded++;
+            hasOrangeDot = true;
+          }
+
+          // Check for passive voice - simple pattern matching
+          const passivePatterns = [
+            /\b(was|were|is|are|been|being|be)\s+\w+ed\b/gi,
+            /\b(was|were|is|are|been|being|be)\s+\w+en\b/gi,
+          ];
+          let passiveCount = 0;
+          passivePatterns.forEach((pattern) => {
+            const matches = text.match(pattern);
+            if (matches) passiveCount += matches.length;
+          });
+
+          if (passiveCount > 0) {
+            const dot = document.createElement("div");
+            dot.className = "style-indicator-dot";
+            dot.title = `Passive voice detected (${passiveCount}×) - consider active voice`;
+            dot.style.cssText = `
+              position: absolute;
+              top: ${paraTop + 4}px;
+              left: ${hasOrangeDot ? "16px" : "4px"};
+              width: 8px;
+              height: 8px;
+              border-radius: 50%;
+              background-color: #8b5cf6;
+              box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+              pointer-events: auto;
+              z-index: 20;
+            `;
+            pageDiv.appendChild(dot);
+            dotsAdded++;
+            hasPurpleDot = true;
+          }
+
+          // Check for visual/sensory suggestions if enabled
+          if (showVisualSuggestions) {
+            // Simple heuristic: check if paragraph lacks sensory/descriptive words
+            const sensoryWords = [
+              /\b(saw|see|seen|looked|glanced|stared|watched|observed|noticed)\b/gi,
+              /\b(heard|listened|sound|noise|voice|whisper|shout|echo)\b/gi,
+              /\b(felt|touch|warm|cold|soft|rough|smooth|texture)\b/gi,
+              /\b(smell|scent|odor|aroma|fragrance|stench)\b/gi,
+              /\b(taste|flavor|sweet|bitter|sour|salty)\b/gi,
+              /\b(color|red|blue|green|yellow|bright|dark|pale|vivid)\b/gi,
+            ];
+
+            let hasSensoryWords = false;
+            for (const pattern of sensoryWords) {
+              if (pattern.test(text)) {
+                hasSensoryWords = true;
+                break;
+              }
+            }
+
+            // Only suggest if paragraph is narrative (has action verbs) but lacks sensory detail
+            const hasActionVerbs =
+              /\b(walked|ran|moved|went|came|turned|opened|closed|grabbed|threw|hit|kicked)\b/gi.test(
+                text
+              );
+
+            if (!hasSensoryWords && hasActionVerbs && wordCount > 30) {
+              const dot = document.createElement("div");
+              dot.className = "style-indicator-dot";
+              dot.title =
+                "Consider adding sensory details (sight, sound, smell, touch, taste)";
+              dot.style.cssText = `
+                position: absolute;
+                top: ${paraTop + 4}px;
+                right: 4px;
+                width: 8px;
+                height: 8px;
+                border-radius: 50%;
+                background-color: #eab308;
+                box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+                pointer-events: auto;
+                z-index: 20;
+              `;
+              pageDiv.appendChild(dot);
+              dotsAdded++;
+            }
+          }
+        });
+      });
+
+      // console.log("[Indicators] Total dots added:", dotsAdded);
+    }, 500); // Wait 500ms for DOM to settle after repagination
+
+    // Cleanup on unmount or when deps change
+    return () => {
+      clearTimeout(timeoutId);
+      const indicators = document.querySelectorAll(".style-indicator-dot");
+      indicators.forEach((el) => el.remove());
+    };
+  }, [
+    analysis,
+    showSpacingIndicators,
+    showVisualSuggestions,
+    showStyleLabels,
+    focusMode,
+    isFreeMode,
+    pageCount,
+  ]);
+
   // Save to history
   const saveToHistory = useCallback((html: string) => {
     if (isUndoRedoRef.current) {
@@ -2248,6 +2492,15 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   // Handle content changes
   const handleInput = useCallback(() => {
     if (!editorRef.current) return;
+
+    // First, sync content from paginated editor to editorRef if paginated editor has content
+    // This ensures we capture any changes made directly in the paginated editor
+    if (paginatedEditorRef.current) {
+      const paginatedContent = paginatedEditorRef.current.getContent();
+      if (paginatedContent) {
+        editorRef.current.innerHTML = paginatedContent;
+      }
+    }
 
     const html = editorRef.current.innerHTML;
     const text = editorRef.current.innerText;
@@ -2594,30 +2847,74 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   }, [onUpdate, analyzeContent, recomputePagination]);
 
   const ensureEditorSelection = useCallback(() => {
-    if (typeof window === "undefined" || !editorRef.current) {
+    if (typeof window === "undefined") {
       return false;
     }
 
     const selection = window.getSelection();
-    const hasSelectionInEditor =
-      selection &&
-      selection.rangeCount > 0 &&
-      editorRef.current.contains(selection.anchorNode);
+    if (!selection) {
+      return false;
+    }
 
-    if (hasSelectionInEditor) {
+    // Check if selection is in the paginated editor
+    const pageElements =
+      paginatedEditorRef.current?.getPageContentElements() || [];
+    const scrollContainer = paginatedEditorRef.current?.getScrollContainer();
+    const isInPaginatedEditor =
+      scrollContainer?.contains(selection.anchorNode) ||
+      pageElements.some((el) => el.contains(selection.anchorNode));
+
+    // Check if selection is in the hidden editorRef
+    const isInEditorRef = editorRef.current?.contains(selection.anchorNode);
+
+    if (selection.rangeCount > 0 && (isInPaginatedEditor || isInEditorRef)) {
       return true;
     }
 
-    if (selection && lastSelectionRangeRef.current) {
-      const restoredRange = lastSelectionRangeRef.current.cloneRange();
+    // Try to restore from saved selection
+    if (lastSelectionRangeRef.current) {
+      try {
+        const restoredRange = lastSelectionRangeRef.current.cloneRange();
+        selection.removeAllRanges();
+        selection.addRange(restoredRange);
+
+        // Focus the appropriate container based on where the saved selection was
+        const savedRangeContainer = restoredRange.commonAncestorContainer;
+        const savedInPaginated = pageElements.some((el) =>
+          el.contains(savedRangeContainer)
+        );
+
+        if (savedInPaginated && pageElements.length > 0) {
+          // Find which page contains the selection and focus it
+          for (const pageEl of pageElements) {
+            if (pageEl.contains(savedRangeContainer)) {
+              (pageEl as HTMLElement).focus({ preventScroll: true });
+              break;
+            }
+          }
+        } else if (editorRef.current) {
+          editorRef.current.focus({ preventScroll: true });
+        }
+
+        lastSelectionRangeRef.current = restoredRange.cloneRange();
+        return true;
+      } catch (e) {
+        console.warn("[ensureEditorSelection] Failed to restore selection:", e);
+      }
+    }
+
+    // Fallback: create a new selection at the end of the first page or editor
+    if (pageElements.length > 0) {
+      const firstPage = pageElements[0] as HTMLElement;
+      const range = document.createRange();
+      range.selectNodeContents(firstPage);
+      range.collapse(false);
       selection.removeAllRanges();
-      selection.addRange(restoredRange);
-      editorRef.current.focus({ preventScroll: true });
-      lastSelectionRangeRef.current = restoredRange.cloneRange();
+      selection.addRange(range);
+      firstPage.focus({ preventScroll: true });
+      lastSelectionRangeRef.current = range.cloneRange();
       return true;
-    }
-
-    if (selection) {
+    } else if (editorRef.current) {
       const range = document.createRange();
       range.selectNodeContents(editorRef.current);
       range.collapse(false);
@@ -2688,34 +2985,213 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   // Format text
   const formatText = useCallback(
     (command: string, value?: string) => {
-      if (!ensureEditorSelection()) {
+      console.log(
+        `[formatText] Called with command: ${command}, value: ${value}`
+      );
+
+      // Check if there's a selection in the paginated editor
+      let selection = window.getSelection();
+
+      // If no selection or selection is outside editor, try to restore from lastSelectionRangeRef
+      const scrollContainer = paginatedEditorRef.current?.getScrollContainer();
+      const pageElements =
+        paginatedEditorRef.current?.getPageContentElements() || [];
+
+      let isInPaginatedEditor =
+        selection &&
+        selection.rangeCount > 0 &&
+        (scrollContainer?.contains(selection.anchorNode) ||
+          pageElements.some((el) => el.contains(selection!.anchorNode)));
+
+      // If selection is not in paginated editor, try restoring from saved range
+      if (!isInPaginatedEditor && lastSelectionRangeRef.current) {
+        console.log(
+          `[formatText] Restoring selection from lastSelectionRangeRef`
+        );
+        try {
+          selection = window.getSelection();
+          if (selection) {
+            selection.removeAllRanges();
+            selection.addRange(lastSelectionRangeRef.current.cloneRange());
+          }
+          // Re-check if selection is now in paginated editor
+          isInPaginatedEditor =
+            selection &&
+            selection.rangeCount > 0 &&
+            (scrollContainer?.contains(selection.anchorNode) ||
+              pageElements.some((el) => el.contains(selection!.anchorNode)));
+        } catch (e) {
+          console.warn(`[formatText] Failed to restore selection:`, e);
+        }
+      }
+
+      if (!selection || selection.rangeCount === 0) {
         console.warn(
-          `[CustomEditor] Skipped format command "${command}" – no active editor selection.`
+          `[CustomEditor] Skipped format command "${command}" – no selection.`
         );
         return;
       }
 
+      // Paragraph-level commands (justify) work with just a caret, not a text selection
+      const isParagraphCommand =
+        command.startsWith("justify") ||
+        command === "insertUnorderedList" ||
+        command === "insertOrderedList";
+
+      console.log(
+        `[formatText] Selection found, collapsed: ${selection.isCollapsed}, isParagraphCommand: ${isParagraphCommand}`,
+        selection.toString().substring(0, 50)
+      );
+
+      console.log(
+        `[formatText] isInPaginatedEditor: ${isInPaginatedEditor}, scrollContainer exists: ${!!scrollContainer}, pageElements: ${
+          pageElements.length
+        }`
+      );
+
+      if (!isInPaginatedEditor) {
+        // Fall back to old behavior with editorRef
+        if (!ensureEditorSelection()) {
+          console.warn(
+            `[CustomEditor] Skipped format command "${command}" – no active editor selection.`
+          );
+          return;
+        }
+      }
+
+      // Tell PaginatedEditor to skip the next repagination (triggered by onInput from execCommand)
+      // This preserves the selection
+      paginatedEditorRef.current?.setSkipNextRepagination(true);
+
       try {
-        document.execCommand(command, false, value);
+        console.log(
+          `[formatText] Executing document.execCommand("${command}")`
+        );
+        const result = document.execCommand(command, false, value);
+        console.log(`[formatText] execCommand result: ${result}`);
       } catch (error) {
         console.error(
           `[CustomEditor] execCommand failed for "${command}"`,
           error
         );
+        // Reset the skip flag on error
+        paginatedEditorRef.current?.setSkipNextRepagination(false);
         return;
       }
 
       updateFormatState();
-      editorRef.current?.focus();
-      // Trigger input to save to history
-      setTimeout(() => handleInput(), 0);
+
+      // Sync changes from paginated editor to editorRef
+      // Don't call full handleInput() - just sync content and notify parent
+      // This avoids recomputePagination which would destroy the selection
+      if (
+        isInPaginatedEditor &&
+        paginatedEditorRef.current &&
+        editorRef.current
+      ) {
+        // Save current selection before syncing
+        const currentSelection = window.getSelection();
+        let savedRange: Range | null = null;
+        if (currentSelection && currentSelection.rangeCount > 0) {
+          savedRange = currentSelection.getRangeAt(0).cloneRange();
+        }
+
+        const content = paginatedEditorRef.current.getContent();
+        console.log(`[formatText] Syncing content, length: ${content.length}`);
+        editorRef.current.innerHTML = content;
+        const text = editorRef.current.innerText;
+
+        // Notify parent
+        onUpdate?.({ html: content, text });
+
+        // Debounced save to history
+        if (saveTimeoutRef.current) {
+          clearTimeout(saveTimeoutRef.current);
+        }
+        saveTimeoutRef.current = setTimeout(() => {
+          saveToHistory(content);
+        }, 500);
+
+        // Immediately try to focus (before requestAnimationFrame)
+        console.log(`[formatText] About to restore focus`);
+
+        // Restore selection and focus using requestAnimationFrame to ensure DOM is settled
+        requestAnimationFrame(() => {
+          console.log(
+            `[formatText] In requestAnimationFrame, savedRange exists: ${!!savedRange}`
+          );
+          if (savedRange) {
+            try {
+              const sel = window.getSelection();
+              if (sel) {
+                sel.removeAllRanges();
+                sel.addRange(savedRange);
+                console.log(`[formatText] Restored selection range`);
+              }
+              // Also ensure focus is on the editor element containing the selection
+              const anchorElement = savedRange.startContainer.parentElement;
+              if (anchorElement) {
+                const editableParent = anchorElement.closest(
+                  '[contenteditable="true"]'
+                );
+                if (editableParent instanceof HTMLElement) {
+                  editableParent.focus();
+                  console.log(`[formatText] Focused editableParent`);
+                } else {
+                  paginatedEditorRef.current?.focus();
+                  console.log(
+                    `[formatText] Focused paginatedEditorRef (no editableParent)`
+                  );
+                }
+              } else {
+                paginatedEditorRef.current?.focus();
+                console.log(
+                  `[formatText] Focused paginatedEditorRef (no anchorElement)`
+                );
+              }
+            } catch (e) {
+              // If selection restoration fails, just focus the editor
+              console.log(
+                `[formatText] Error restoring selection, focusing editor`,
+                e
+              );
+              paginatedEditorRef.current?.focus();
+            }
+          } else {
+            // No saved range, just focus
+            console.log(
+              `[formatText] No savedRange, focusing paginatedEditorRef`
+            );
+            paginatedEditorRef.current?.focus();
+          }
+        });
+      } else {
+        handleInput();
+      }
     },
-    [ensureEditorSelection, handleInput, updateFormatState]
+    [
+      ensureEditorSelection,
+      handleInput,
+      updateFormatState,
+      onUpdate,
+      saveToHistory,
+    ]
   );
 
   const replaceFontTagsWithStyledSpans = useCallback(
     (faces: string[], cssFamily: string): HTMLSpanElement[] => {
-      const editorElement = editorRef.current;
+      // Look for font elements in paginated editor first, then fallback to editorRef
+      let editorElement: HTMLElement | null = null;
+      const scrollContainer = scrollShellRef.current;
+      if (
+        scrollContainer &&
+        scrollContainer.querySelectorAll("font[face]").length > 0
+      ) {
+        editorElement = scrollContainer as HTMLElement;
+      } else {
+        editorElement = editorRef.current;
+      }
+
       if (!editorElement || faces.length === 0) {
         return [];
       }
@@ -2749,6 +3225,16 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           fontNode.parentNode?.replaceChild(fragment, fontNode);
         }
       });
+
+      // Sync content back to editorRef if we modified paginated editor
+      if (
+        scrollContainer &&
+        editorElement === scrollContainer &&
+        paginatedEditorRef.current &&
+        editorRef.current
+      ) {
+        editorRef.current.innerHTML = paginatedEditorRef.current.getContent();
+      }
 
       return createdSpans;
     },
@@ -2876,7 +3362,21 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
         styleTag: string,
         activeSelection: Selection
       ) => {
-        if (!editorRef.current) return;
+        console.log(
+          `[applyCustomParagraphStyle] Called with styleTag: ${styleTag}`
+        );
+
+        // Get paginated editor page elements - these are the actual editable containers
+        const pageElements =
+          paginatedEditorRef.current?.getPageContentElements() || [];
+
+        // We need either editorRef OR paginated pages to work with
+        if (!editorRef.current && pageElements.length === 0) {
+          console.log(
+            `[applyCustomParagraphStyle] No editor container available, returning early`
+          );
+          return;
+        }
 
         const styleMap: { [key: string]: string } = {
           paragraph: "", // Empty class = reset to normal paragraph
@@ -2961,15 +3461,50 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
         const range = activeSelection.getRangeAt(0);
         const selectedText = range.toString().trim();
 
+        console.log(
+          `[applyCustomParagraphStyle] styleTag: ${styleTag}, selectedText: "${selectedText}", pageElements count: ${pageElements.length}`
+        );
+        console.log(
+          `[applyCustomParagraphStyle] anchorNode:`,
+          activeSelection.anchorNode
+        );
+        console.log(
+          `[applyCustomParagraphStyle] anchorNode tagName:`,
+          (activeSelection.anchorNode as HTMLElement)?.tagName ||
+            activeSelection.anchorNode?.parentElement?.tagName
+        );
+
+        // Helper to check if we've reached a boundary (editorRef or any page element)
+        const isEditorBoundary = (node: Node | null): boolean => {
+          if (!node) return false;
+          if (node === editorRef.current) return true;
+          return pageElements.some((el) => el === node);
+        };
+
         // Find the containing block element
         let currentBlock: Node | null = activeSelection.anchorNode;
+        let loopCount = 0;
         while (
           currentBlock &&
-          currentBlock !== editorRef.current &&
+          !isEditorBoundary(currentBlock) &&
           !isParagraphLike(currentBlock)
         ) {
+          loopCount++;
+          console.log(
+            `[applyCustomParagraphStyle] loop ${loopCount}, currentBlock:`,
+            currentBlock,
+            `tagName:`,
+            (currentBlock as HTMLElement)?.tagName
+          );
           currentBlock = currentBlock.parentNode;
         }
+
+        console.log(
+          `[applyCustomParagraphStyle] Final currentBlock:`,
+          currentBlock,
+          `isParagraphLike:`,
+          isParagraphLike(currentBlock)
+        );
 
         if (isParagraphLike(currentBlock)) {
           const blockElement = currentBlock as HTMLElement;
@@ -3233,7 +3768,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
 
           // Walk up from startContainer
           let node: Node | null = range.startContainer;
-          while (node && node !== editorRef.current) {
+          while (node && !isEditorBoundary(node)) {
             if (node.nodeType === Node.ELEMENT_NODE) {
               const el = node as HTMLElement;
               const tag = el.tagName.toLowerCase();
@@ -3354,7 +3889,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
             const placeholder = placeholders[styleTag] || "Text";
 
             // Only insert if editor is empty to avoid destroying content
-            if (!editorRef.current.textContent?.trim()) {
+            if (editorRef.current && !editorRef.current.textContent?.trim()) {
               const styleKey = styleTag as keyof typeof documentStyles;
               let alignStyle = "";
               if (
@@ -3472,17 +4007,32 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
         }
         setTimeout(() => handleInput(), 0);
       } else if (customParagraphStyles.includes(tag)) {
+        console.log(`[changeBlockType] Custom paragraph style: ${tag}`);
+        // Ensure we have a valid selection (restore if needed)
+        const selectionRestored = ensureEditorSelection();
+        console.log(
+          `[changeBlockType] ensureEditorSelection returned: ${selectionRestored}`
+        );
+        if (!selectionRestored) {
+          console.warn(
+            `[CustomEditor] Unable to apply custom style "${tag}" – no active editor selection.`
+          );
+          return;
+        }
         const selection = window.getSelection();
-        if (!selection || !editorRef.current) return;
+        if (!selection || selection.rangeCount === 0) return;
         applyCustomParagraphStyle(tag, selection);
       } else if (nativeBlockTags.has(tag)) {
         formatText("formatBlock", tag);
 
-        // Apply text-align from documentStyles for headings (h1, h2, h3)
+        // Apply text-align from documentStyles for headings (h1-h6)
         const headingMap: { [key: string]: keyof typeof documentStyles } = {
           h1: "heading1",
           h2: "heading2",
           h3: "heading3",
+          h4: "heading3", // h4, h5, h6 inherit from heading3 styles
+          h5: "heading3",
+          h6: "heading3",
         };
 
         if (headingMap[tag]) {
@@ -3661,72 +4211,78 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
 
   // Jump to bookmark text in editor
   const jumpToBookmark = useCallback((bookmark: Bookmark) => {
-    if (!editorRef.current) return;
-
     const searchText = bookmark.selectedText;
-    const editorContent = editorRef.current.innerHTML;
-    const textContent = editorRef.current.textContent || "";
-    const index = textContent.indexOf(searchText);
+    if (!searchText) return;
 
-    if (index === -1) return;
+    // Search in the paginated editor pages
+    const pageElements =
+      paginatedEditorRef.current?.getPageContentElements() || [];
 
-    // Find and select the text
-    const selection = window.getSelection();
-    if (!selection) return;
+    for (let pageIdx = 0; pageIdx < pageElements.length; pageIdx++) {
+      const pageEl = pageElements[pageIdx];
+      const pageText = pageEl.textContent || "";
+      const index = pageText.indexOf(searchText);
 
-    const walker = document.createTreeWalker(
-      editorRef.current,
-      NodeFilter.SHOW_TEXT,
-      null
-    );
+      if (index !== -1) {
+        // Found! Jump to this page
+        paginatedEditorRef.current?.goToPage(pageIdx);
 
-    let currentPos = 0;
-    let node: Text | null = null;
+        // Find and select the text within this page
+        const selection = window.getSelection();
+        if (!selection) return;
 
-    while ((node = walker.nextNode() as Text)) {
-      const nodeLength = node.textContent?.length || 0;
-      if (currentPos + nodeLength > index) {
-        const range = document.createRange();
-        const startOffset = index - currentPos;
-        range.setStart(node, startOffset);
+        const walker = document.createTreeWalker(
+          pageEl,
+          NodeFilter.SHOW_TEXT,
+          null
+        );
 
-        // Find end of selection
-        let endNode = node;
-        let endOffset = startOffset + searchText.length;
-        let remaining = searchText.length;
+        let currentPos = 0;
+        let node: Text | null = null;
 
-        if (startOffset + remaining <= nodeLength) {
-          endOffset = startOffset + remaining;
-        } else {
-          remaining -= nodeLength - startOffset;
-          while ((endNode = walker.nextNode() as Text) && remaining > 0) {
-            const endNodeLength = endNode.textContent?.length || 0;
-            if (remaining <= endNodeLength) {
-              endOffset = remaining;
-              break;
+        while ((node = walker.nextNode() as Text)) {
+          const nodeLength = node.textContent?.length || 0;
+          if (currentPos + nodeLength > index) {
+            const range = document.createRange();
+            const startOffset = index - currentPos;
+            range.setStart(node, startOffset);
+
+            // Find end of selection
+            let endNode = node;
+            let endOffset = startOffset + searchText.length;
+            let remaining = searchText.length;
+
+            if (startOffset + remaining <= nodeLength) {
+              endOffset = startOffset + remaining;
+            } else {
+              remaining -= nodeLength - startOffset;
+              while ((endNode = walker.nextNode() as Text) && remaining > 0) {
+                const endNodeLength = endNode.textContent?.length || 0;
+                if (remaining <= endNodeLength) {
+                  endOffset = remaining;
+                  break;
+                }
+                remaining -= endNodeLength;
+              }
             }
-            remaining -= endNodeLength;
-          }
-        }
 
-        if (endNode) {
-          range.setEnd(endNode, endOffset);
-          selection.removeAllRanges();
-          selection.addRange(range);
+            if (endNode) {
+              range.setEnd(endNode, endOffset);
+              selection.removeAllRanges();
+              selection.addRange(range);
 
-          // Scroll into view
-          const rect = range.getBoundingClientRect();
-          const editorRect = editorRef.current.getBoundingClientRect();
-          if (rect.top < editorRect.top || rect.bottom > editorRect.bottom) {
-            node.parentElement?.scrollIntoView({
-              behavior: "smooth",
-              block: "center",
-            });
+              // Scroll the element into view
+              node.parentElement?.scrollIntoView({
+                behavior: "smooth",
+                block: "center",
+              });
+            }
+            break;
           }
+          currentPos += nodeLength;
         }
         break;
       }
-      currentPos += nodeLength;
     }
 
     setShowBookmarksPanel(false);
@@ -3792,7 +4348,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
 
   // Format Painter - Apply copied formatting to selection
   const applyFormat = useCallback(() => {
-    if (!copiedFormat || !editorRef.current) return;
+    if (!copiedFormat) return;
 
     const selection = window.getSelection();
     if (!selection || selection.rangeCount === 0) {
@@ -3836,12 +4392,19 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     selection.addRange(newRange);
 
     setFormatPainterActive(false);
-    setTimeout(() => handleInput(), 0);
+
+    // Sync changes to editorRef
+    setTimeout(() => {
+      if (paginatedEditorRef.current && editorRef.current) {
+        editorRef.current.innerHTML = paginatedEditorRef.current.getContent();
+        handleInput();
+      }
+    }, 50);
   }, [copiedFormat, handleInput]);
 
   // Handle click when Format Painter is active
   useEffect(() => {
-    if (!formatPainterActive || !editorRef.current) return;
+    if (!formatPainterActive) return;
 
     const handleMouseUp = () => {
       // Small delay to let selection complete
@@ -3850,9 +4413,10 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
       }, 10);
     };
 
-    editorRef.current.addEventListener("mouseup", handleMouseUp);
+    // Listen to document for mouse up (works for both editors)
+    document.addEventListener("mouseup", handleMouseUp);
     return () => {
-      editorRef.current?.removeEventListener("mouseup", handleMouseUp);
+      document.removeEventListener("mouseup", handleMouseUp);
     };
   }, [formatPainterActive, applyFormat]);
 
@@ -3905,6 +4469,9 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   const findInText = useCallback(() => {
     if (!findText) return;
 
+    // Focus the paginated editor to search within visible content
+    paginatedEditorRef.current?.focus();
+
     // Use native window.find for better reliability in contentEditable
     // Arguments: aString, aCaseSensitive, aBackwards, aWrapAround, aWholeWord, aSearchInFrames, aShowDialog
     const found = (window as any).find(
@@ -3918,128 +4485,99 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     );
 
     if (found) {
-      // Ensure editor has focus so the selection is visible
-      editorRef.current?.focus();
       // Update match index for UI (approximate)
       setCurrentMatchIndex((prev) => prev + 1);
     } else {
-      // Try resetting selection to start and search again (in case wrap didn't work as expected)
-      const selection = window.getSelection();
-      if (selection) {
-        selection.collapse(editorRef.current, 0);
-        const foundRetry = (window as any).find(
-          findText,
-          false,
-          false,
-          true,
-          false,
-          false,
-          false
-        );
-        if (foundRetry) {
-          editorRef.current?.focus();
-          setCurrentMatchIndex(0);
-          return;
-        }
+      // Try resetting selection to start and search again
+      paginatedEditorRef.current?.scrollToTop();
+      paginatedEditorRef.current?.focus();
+
+      const foundRetry = (window as any).find(
+        findText,
+        false,
+        false,
+        true,
+        false,
+        false,
+        false
+      );
+      if (foundRetry) {
+        setCurrentMatchIndex(0);
+        return;
       }
       alert("Text not found");
     }
   }, [findText]);
 
   const replaceOne = useCallback(() => {
-    if (!editorRef.current || !findText) return;
+    if (!findText) return;
 
-    const matches = findMatches.length > 0 ? findMatches : findAllMatches();
-    if (matches.length === 0) return;
-
-    const safeIndex =
-      currentMatchIndex === -1
-        ? 0
-        : Math.min(currentMatchIndex, matches.length - 1);
-    const match = matches[safeIndex];
-
-    // Ensure map is available
-    if (!textMapRef.current) {
-      const { text, map } = extractTextWithMap(editorRef.current);
-      textMapRef.current = { fullText: text, map };
-    }
-
-    const { map } = textMapRef.current;
-
-    // Find start node
-    const startNodeEntry = map.find(
-      (n) => n.start <= match.start && n.end > match.start
-    );
-    // Find end node
-    const endNodeEntry = map.find(
-      (n) => n.start < match.end && n.end >= match.end
-    );
-
-    if (!startNodeEntry || !endNodeEntry) {
-      setFindMatches([]);
-      setCurrentMatchIndex(-1);
+    // Get current selection - should be from the Find operation
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
+      // No selection - try finding first
+      findInText();
       return;
     }
 
-    const range = document.createRange();
-    range.setStart(startNodeEntry.node, match.start - startNodeEntry.start);
-    range.setEnd(endNodeEntry.node, match.end - endNodeEntry.start);
+    // Check if selection matches the find text
+    const selectedText = selection.toString();
+    if (selectedText.toLowerCase() !== findText.toLowerCase()) {
+      // Selection doesn't match, find next
+      findInText();
+      return;
+    }
 
+    // Replace the selection with the replace text
+    const range = selection.getRangeAt(0);
     range.deleteContents();
     range.insertNode(document.createTextNode(replaceText));
+    selection.collapseToEnd();
 
+    // Update state
     setFindMatches([]);
     setCurrentMatchIndex(-1);
-    handleInput();
-  }, [
-    editorRef,
-    findText,
-    replaceText,
-    findMatches,
-    currentMatchIndex,
-    findAllMatches,
-    handleInput,
-  ]);
+
+    // Sync changes - get content from paginated editor and update editorRef
+    if (paginatedEditorRef.current && editorRef.current) {
+      const newContent = paginatedEditorRef.current.getContent();
+      editorRef.current.innerHTML = newContent;
+      handleInput();
+    }
+
+    // Find next occurrence
+    setTimeout(() => findInText(), 100);
+  }, [findText, replaceText, findInText, handleInput]);
 
   // Replace all occurrences
   const replaceInText = useCallback(() => {
-    if (!editorRef.current || !findText) return;
+    if (!findText) return;
 
-    const { text, map } = extractTextWithMap(editorRef.current);
-    const content = text.toLowerCase();
-    const search = findText.toLowerCase();
-    const matches: TextMatch[] = [];
+    // Get content from paginated editor
+    const content = paginatedEditorRef.current?.getContent() || "";
+    if (!content) return;
 
-    let index = 0;
-    while (index < content.length) {
-      const foundAt = content.indexOf(search, index);
-      if (foundAt === -1) break;
-      matches.push({ start: foundAt, end: foundAt + findText.length });
-      index = foundAt + findText.length;
+    // Simple string replace (case insensitive)
+    const regex = new RegExp(
+      findText.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+      "gi"
+    );
+    const newContent = content.replace(regex, replaceText);
+
+    // Update the paginated editor
+    if (paginatedEditorRef.current) {
+      paginatedEditorRef.current.setContent(newContent);
     }
 
-    // Process matches in reverse order to preserve indices
-    [...matches].reverse().forEach((match) => {
-      const startNodeEntry = map.find(
-        (n) => n.start <= match.start && n.end > match.start
-      );
-      const endNodeEntry = map.find(
-        (n) => n.start < match.end && n.end >= match.end
-      );
-
-      if (startNodeEntry && endNodeEntry) {
-        const range = document.createRange();
-        range.setStart(startNodeEntry.node, match.start - startNodeEntry.start);
-        range.setEnd(endNodeEntry.node, match.end - endNodeEntry.start);
-        range.deleteContents();
-        range.insertNode(document.createTextNode(replaceText));
-      }
-    });
+    // Sync to editorRef
+    if (editorRef.current) {
+      editorRef.current.innerHTML = newContent;
+    }
 
     setFindMatches([]);
     setCurrentMatchIndex(-1);
     handleInput();
-  }, [editorRef, findText, replaceText, handleInput]);
+  }, [findText, replaceText, handleInput]);
 
   useEffect(() => {
     if (!findText) {
@@ -4071,18 +4609,24 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   const handleImageUpload = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
-      if (!file || !editorRef.current) return;
+      if (!file) return;
 
       const reader = new FileReader();
       reader.onload = (event) => {
         const imgHtml = `<p><img src="${event.target?.result}" style="max-width: 100%; height: auto; display: block; margin: 1rem 0;" /></p>`;
 
-        // Focus editor and insert
-        editorRef.current?.focus();
-        document.execCommand("insertHTML", false, imgHtml);
+        // Focus paginated editor and insert using execCommand
+        paginatedEditorRef.current?.focus();
+        paginatedEditorRef.current?.execCommand("insertHTML", imgHtml);
 
-        // Trigger input to save to history
-        setTimeout(() => handleInput(), 0);
+        // Sync changes back to editorRef
+        setTimeout(() => {
+          if (paginatedEditorRef.current && editorRef.current) {
+            editorRef.current.innerHTML =
+              paginatedEditorRef.current.getContent();
+            handleInput();
+          }
+        }, 100);
       };
       reader.readAsDataURL(file);
 
@@ -4194,7 +4738,14 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
         const cleanHtml = sanitizeClipboardHtml(html);
         if (cleanHtml.trim().length > 0) {
           document.execCommand("insertHTML", false, cleanHtml);
-          setTimeout(() => handleInput(), 0);
+          // Sync changes to editorRef if paste happened in paginated editor
+          setTimeout(() => {
+            if (paginatedEditorRef.current && editorRef.current) {
+              editorRef.current.innerHTML =
+                paginatedEditorRef.current.getContent();
+            }
+            handleInput();
+          }, 0);
           return;
         }
       }
@@ -4232,7 +4783,14 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
         selection.removeAllRanges();
         selection.addRange(range);
 
-        setTimeout(() => handleInput(), 0);
+        // Sync changes to editorRef if paste happened in paginated editor
+        setTimeout(() => {
+          if (paginatedEditorRef.current && editorRef.current) {
+            editorRef.current.innerHTML =
+              paginatedEditorRef.current.getContent();
+          }
+          handleInput();
+        }, 0);
         return;
       }
 
@@ -4248,7 +4806,14 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           reader.onload = (event) => {
             const imgHtml = `<p><img src="${event.target?.result}" style="max-width: 100%; height: auto; display: block; margin: 1rem 0;" /></p>`;
             document.execCommand("insertHTML", false, imgHtml);
-            setTimeout(() => handleInput(), 0);
+            // Sync changes to editorRef if paste happened in paginated editor
+            setTimeout(() => {
+              if (paginatedEditorRef.current && editorRef.current) {
+                editorRef.current.innerHTML =
+                  paginatedEditorRef.current.getContent();
+              }
+              handleInput();
+            }, 0);
           };
           reader.readAsDataURL(blob);
           return;
@@ -4274,9 +4839,18 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
       // Handle Enter key - reset title/heading styles to paragraph after Enter
       if (e.key === "Enter" && !e.shiftKey && !modKey) {
         const selection = window.getSelection();
+        const scrollContainer = scrollShellRef.current;
         if (selection && selection.anchorNode) {
           let node = selection.anchorNode.parentElement;
-          while (node && node !== editorRef.current) {
+          // Check if we're in paginated editor or the hidden editorRef
+          const isInPaginatedEditor = scrollContainer?.contains(
+            selection.anchorNode
+          );
+          const rootElement = isInPaginatedEditor
+            ? scrollContainer
+            : editorRef.current;
+
+          while (node && node !== rootElement) {
             const tag = node.tagName?.toLowerCase();
             const className = node.className || "";
             // Check for heading or special title elements
@@ -4326,6 +4900,15 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                         if (pElement) {
                           pElement.className = "";
                         }
+                      }
+                      // Sync back to editorRef if we're in paginated editor
+                      if (
+                        isInPaginatedEditor &&
+                        paginatedEditorRef.current &&
+                        editorRef.current
+                      ) {
+                        editorRef.current.innerHTML =
+                          paginatedEditorRef.current.getContent();
                       }
                       handleInput();
                     }
@@ -4456,17 +5039,31 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   // Track selection changes for toolbar
   useEffect(() => {
     const handleSelectionChange = () => {
-      if (typeof window === "undefined" || !editorRef.current) {
+      if (typeof window === "undefined") {
         return;
       }
 
       const selection = window.getSelection();
-      if (
-        selection &&
-        selection.rangeCount > 0 &&
-        editorRef.current.contains(selection.anchorNode)
-      ) {
+      if (!selection || selection.rangeCount === 0) return;
+
+      // Check if selection is in paginated editor
+      const scrollContainer = paginatedEditorRef.current?.getScrollContainer();
+      const pageElements =
+        paginatedEditorRef.current?.getPageContentElements() || [];
+      const isInPaginatedEditor =
+        scrollContainer?.contains(selection.anchorNode) ||
+        pageElements.some((el) => el.contains(selection.anchorNode));
+
+      // Check if selection is in hidden editorRef
+      const isInEditorRef = editorRef.current?.contains(selection.anchorNode);
+
+      console.log(
+        `[selectionchange] isInPaginatedEditor: ${isInPaginatedEditor}, isInEditorRef: ${isInEditorRef}, collapsed: ${selection.isCollapsed}`
+      );
+
+      if (isInPaginatedEditor || isInEditorRef) {
         lastSelectionRangeRef.current = selection.getRangeAt(0).cloneRange();
+        console.log(`[selectionchange] Saved selection range`);
         updateFormatState();
       }
     };
@@ -4666,25 +5263,44 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
 
   // Scroll to top function
   const scrollToTop = useCallback(() => {
-    jumpToPage(0, { suppressSelectionSync: true });
-  }, [jumpToPage]);
+    // Use PaginatedEditor's scrollToTop
+    if (paginatedEditorRef.current) {
+      paginatedEditorRef.current.scrollToTop();
+    }
+  }, []);
 
   // Render spacing indicators - small colored dots inside the left margin
   const renderIndicators = () => {
-    if (
-      !editorRef.current ||
-      !pagesContainerRef.current ||
-      !showSpacingIndicators ||
-      !showStyleLabels
-    )
-      return null;
+    if (!showSpacingIndicators || !showStyleLabels) return null;
     // In free mode, always show indicators. In paid mode, respect focus mode toggle.
     if (!isFreeMode && focusMode) return null;
 
-    const paragraphs = Array.from(editorRef.current.querySelectorAll("p, div"));
+    // Get page content elements from PaginatedEditor
+    const pageElements =
+      paginatedEditorRef.current?.getPageContentElements() || [];
+    const pagesContainer = paginatedEditorRef.current?.getPagesContainer();
 
-    // Get the editor's offset from the pages container
-    const editorOffset = editorRef.current.offsetTop;
+    if (pageElements.length === 0 || !pagesContainer) return null;
+
+    // Collect all paragraphs across all pages with their positions
+    const allParagraphs: { element: HTMLElement; top: number }[] = [];
+
+    pageElements.forEach((pageEl) => {
+      const paragraphs = Array.from(pageEl.querySelectorAll("p, div"));
+      // Get the page div (parent of the content div)
+      const pageDiv = pageEl.parentElement;
+      if (!pageDiv) return;
+
+      // Position of this page relative to the pagesContainer
+      const pageTop = pageDiv.offsetTop;
+
+      paragraphs.forEach((para) => {
+        const paraEl = para as HTMLElement;
+        // Position: pageTop + pageEl content offset + paragraph offset within content
+        const paraTop = pageTop + pageEl.offsetTop + paraEl.offsetTop;
+        allParagraphs.push({ element: paraEl, top: paraTop });
+      });
+    });
 
     // Only show dots for paragraphs that need attention:
     // - Orange: Long paragraphs (>150 words)
@@ -4692,12 +5308,8 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     const indicators: React.ReactNode[] = [];
 
     analysis.spacing.forEach((item, idx) => {
-      const para = paragraphs[item.index] as HTMLElement;
-      if (!para) return;
-
-      // Calculate position relative to pages container
-      // para.offsetTop is relative to the editor, so add editor's offset
-      const paraTop = para.offsetTop + editorOffset;
+      const paraData = allParagraphs[item.index];
+      if (!paraData) return;
 
       // Show orange dot for long paragraphs
       if (item.tone === "extended") {
@@ -4706,7 +5318,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
             key={`long-${idx}`}
             className="absolute pointer-events-none z-20"
             style={{
-              top: `${paraTop + 4}px`,
+              top: `${paraData.top + 4}px`,
               left: "12px",
             }}
             title={`Long paragraph · ${item.wordCount} words - consider breaking up`}
@@ -4731,7 +5343,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
             key={`passive-${idx}`}
             className="absolute pointer-events-none z-20"
             style={{
-              top: `${paraTop + 4}px`,
+              top: `${paraData.top + 4}px`,
               left: item.tone === "extended" ? "24px" : "12px", // offset if also long
             }}
             title={`Passive voice detected (${item.passiveCount}× ) - consider active voice`}
@@ -4768,30 +5380,40 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
 
   // Render visual suggestions - small yellow dots inside the right margin
   const renderSuggestions = () => {
-    if (
-      !editorRef.current ||
-      !pagesContainerRef.current ||
-      !showVisualSuggestions ||
-      !showStyleLabels
-    ) {
-      return null;
-    }
+    if (!showVisualSuggestions || !showStyleLabels) return null;
     // In free mode, always show suggestions. In paid mode, respect focus mode toggle.
-    if (!isFreeMode && focusMode) {
-      return null;
-    }
+    if (!isFreeMode && focusMode) return null;
 
-    const paragraphs = Array.from(editorRef.current.querySelectorAll("p, div"));
+    // Get page content elements from PaginatedEditor
+    const pageElements =
+      paginatedEditorRef.current?.getPageContentElements() || [];
+    const pagesContainer = paginatedEditorRef.current?.getPagesContainer();
 
-    // Get the editor's offset from the pages container
-    const editorOffset = editorRef.current.offsetTop;
+    if (pageElements.length === 0 || !pagesContainer) return null;
+
+    // Collect all paragraphs across all pages with their positions
+    const allParagraphs: { element: HTMLElement; top: number }[] = [];
+
+    pageElements.forEach((pageEl) => {
+      const paragraphs = Array.from(pageEl.querySelectorAll("p, div"));
+      // Get the page div (parent of the content div)
+      const pageDiv = pageEl.parentElement;
+      if (!pageDiv) return;
+
+      // Position of this page relative to the pagesContainer
+      const pageTop = pageDiv.offsetTop;
+
+      paragraphs.forEach((para) => {
+        const paraEl = para as HTMLElement;
+        // Position: pageTop + pageEl content offset + paragraph offset within content
+        const paraTop = pageTop + pageEl.offsetTop + paraEl.offsetTop;
+        allParagraphs.push({ element: paraEl, top: paraTop });
+      });
+    });
 
     return analysis.visuals.map((item, idx) => {
-      const para = paragraphs[item.index] as HTMLElement;
-      if (!para) return null;
-
-      // Calculate position relative to pages container
-      const paraTop = para.offsetTop + editorOffset;
+      const paraData = allParagraphs[item.index];
+      if (!paraData) return null;
 
       // Combine all suggestions into a tooltip
       const tooltipText = item.suggestions
@@ -4803,7 +5425,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           key={`visual-${idx}`}
           className="absolute pointer-events-none z-20"
           style={{
-            top: `${paraTop + 4}px`,
+            top: `${paraData.top + 4}px`,
             right: "12px",
           }}
           title={tooltipText}
@@ -5067,72 +5689,72 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
         {`
           ${
             documentStyles["book-title"]?.color
-              ? `.editor-content .book-title, .editor-content .doc-title { color: ${documentStyles["book-title"].color} !important; }`
+              ? `.custom-editor-container .paginated-page-content .book-title, .custom-editor-container .paginated-page-content .doc-title { color: ${documentStyles["book-title"].color} !important; }`
               : ""
           }
           ${
             documentStyles["book-title"]?.backgroundColor
-              ? `.editor-content .book-title, .editor-content .doc-title { background-color: ${documentStyles["book-title"].backgroundColor} !important; }`
+              ? `.custom-editor-container .paginated-page-content .book-title, .custom-editor-container .paginated-page-content .doc-title { background-color: ${documentStyles["book-title"].backgroundColor} !important; }`
               : ""
           }
           ${
             documentStyles["chapter-heading"]?.color
-              ? `.editor-content .chapter-heading, .editor-content h1.chapter-heading { color: ${documentStyles["chapter-heading"].color} !important; }`
+              ? `.custom-editor-container .paginated-page-content .chapter-heading, .custom-editor-container .paginated-page-content h1.chapter-heading { color: ${documentStyles["chapter-heading"].color} !important; }`
               : ""
           }
           ${
             documentStyles["chapter-heading"]?.backgroundColor
-              ? `.editor-content .chapter-heading, .editor-content h1.chapter-heading { background-color: ${documentStyles["chapter-heading"].backgroundColor} !important; }`
+              ? `.custom-editor-container .paginated-page-content .chapter-heading, .custom-editor-container .paginated-page-content h1.chapter-heading { background-color: ${documentStyles["chapter-heading"].backgroundColor} !important; }`
               : ""
           }
           ${
             documentStyles.subtitle?.color
-              ? `.editor-content .subtitle, .editor-content .doc-subtitle { color: ${documentStyles.subtitle.color} !important; }`
+              ? `.custom-editor-container .paginated-page-content .subtitle, .custom-editor-container .paginated-page-content .doc-subtitle { color: ${documentStyles.subtitle.color} !important; }`
               : ""
           }
           ${
             documentStyles.subtitle?.backgroundColor
-              ? `.editor-content .subtitle, .editor-content .doc-subtitle { background-color: ${documentStyles.subtitle.backgroundColor} !important; }`
+              ? `.custom-editor-container .paginated-page-content .subtitle, .custom-editor-container .paginated-page-content .doc-subtitle { background-color: ${documentStyles.subtitle.backgroundColor} !important; }`
               : ""
           }
           ${
             documentStyles.paragraph?.color
-              ? `.editor-content p:not(.book-title):not(.doc-title):not(.chapter-heading):not(.subtitle):not(.doc-subtitle):not(.quote):not(.intense-quote) { color: ${documentStyles.paragraph.color} !important; }`
+              ? `.custom-editor-container .paginated-page-content p:not(.book-title):not(.doc-title):not(.chapter-heading):not(.subtitle):not(.doc-subtitle):not(.quote):not(.intense-quote) { color: ${documentStyles.paragraph.color} !important; }`
               : ""
           }
           ${
             documentStyles.paragraph?.backgroundColor
-              ? `.editor-content p:not(.book-title):not(.doc-title):not(.chapter-heading):not(.subtitle):not(.doc-subtitle):not(.quote):not(.intense-quote) { background-color: ${documentStyles.paragraph.backgroundColor} !important; }`
+              ? `.custom-editor-container .paginated-page-content p:not(.book-title):not(.doc-title):not(.chapter-heading):not(.subtitle):not(.doc-subtitle):not(.quote):not(.intense-quote) { background-color: ${documentStyles.paragraph.backgroundColor} !important; }`
               : ""
           }
           ${
             documentStyles.heading1?.color
-              ? `.editor-content h1:not(.chapter-heading) { color: ${documentStyles.heading1.color} !important; }`
+              ? `.custom-editor-container .paginated-page-content h1:not(.chapter-heading) { color: ${documentStyles.heading1.color} !important; }`
               : ""
           }
           ${
             documentStyles.heading1?.backgroundColor
-              ? `.editor-content h1:not(.chapter-heading) { background-color: ${documentStyles.heading1.backgroundColor} !important; }`
+              ? `.custom-editor-container .paginated-page-content h1:not(.chapter-heading) { background-color: ${documentStyles.heading1.backgroundColor} !important; }`
               : ""
           }
           ${
             documentStyles.heading2?.color
-              ? `.editor-content h2 { color: ${documentStyles.heading2.color} !important; }`
+              ? `.custom-editor-container .paginated-page-content h2 { color: ${documentStyles.heading2.color} !important; }`
               : ""
           }
           ${
             documentStyles.heading2?.backgroundColor
-              ? `.editor-content h2 { background-color: ${documentStyles.heading2.backgroundColor} !important; }`
+              ? `.custom-editor-container .paginated-page-content h2 { background-color: ${documentStyles.heading2.backgroundColor} !important; }`
               : ""
           }
           ${
             documentStyles.blockquote?.color
-              ? `.editor-content blockquote, .editor-content .quote, .editor-content .intense-quote { color: ${documentStyles.blockquote.color} !important; }`
+              ? `.custom-editor-container .paginated-page-content blockquote, .custom-editor-container .paginated-page-content .quote, .custom-editor-container .paginated-page-content .intense-quote { color: ${documentStyles.blockquote.color} !important; }`
               : ""
           }
           ${
             documentStyles.blockquote?.backgroundColor
-              ? `.editor-content blockquote, .editor-content .quote, .editor-content .intense-quote { background-color: ${documentStyles.blockquote.backgroundColor} !important; }`
+              ? `.custom-editor-container .paginated-page-content blockquote, .custom-editor-container .paginated-page-content .quote, .custom-editor-container .paginated-page-content .intense-quote { background-color: ${documentStyles.blockquote.backgroundColor} !important; }`
               : ""
           }
         `}
@@ -5147,7 +5769,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
             padding: "6px 12px",
             position: "sticky",
             top: 0,
-            zIndex: 20,
+            zIndex: 100,
             backgroundColor: "transparent",
             transform: "translateY(-10px)",
             overflow: "visible",
@@ -5326,10 +5948,14 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                         boxShadow: "0 10px 28px rgba(44, 62, 80, 0.18)",
                         zIndex: 1000,
                         color: "#111827",
+                        padding: 0,
                       }}
                     >
-                      {BLOCK_TYPE_SECTIONS.map((section) => (
-                        <React.Fragment key={section.key}>
+                      {BLOCK_TYPE_SECTIONS.map((section, sectionIndex) => (
+                        <div
+                          key={section.key}
+                          style={{ margin: 0, padding: 0 }}
+                        >
                           <button
                             type="button"
                             className="dropdown-section-label"
@@ -5342,16 +5968,22 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                               fontSize: "11px",
                               textTransform: "uppercase",
                               letterSpacing: "0.5px",
-                              borderTop: "1px solid #e0c392",
-                              borderBottom: "1px solid #e0c392",
+                              border: "none",
+                              borderTop:
+                                sectionIndex === 0
+                                  ? "none"
+                                  : "1px solid #e0c392",
                               color: "#111827",
                               display: "flex",
                               alignItems: "center",
                               justifyContent: "space-between",
                               gap: "6px",
-                              border: "none",
                               cursor: "pointer",
                               transition: "background-color 0.15s",
+                              margin: 0,
+                              outline: "none",
+                              borderRadius:
+                                sectionIndex === 0 ? "8px 8px 0 0" : "0",
                             }}
                             onMouseEnter={(e) => {
                               e.currentTarget.style.backgroundColor = "#eddcc5";
@@ -5393,6 +6025,9 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                                 type="button"
                                 onMouseDown={(e) => {
                                   e.preventDefault();
+                                  console.log(
+                                    `[Dropdown] Clicked on style: ${item.value}`
+                                  );
                                   ensureEditorSelection();
                                   changeBlockType(item.value);
                                   setShowBlockTypeDropdown(false);
@@ -5441,7 +6076,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                                 )}
                               </button>
                             ))}
-                        </React.Fragment>
+                        </div>
                       ))}
                     </div>
                   )}
@@ -5462,13 +6097,29 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                   style={{ maxWidth: "120px" }}
                   onMouseDown={() => {
                     // Capture selection BEFORE the select steals focus
-                    // This fires before the select's mousedown
-                    if (editorRef.current) {
-                      const selection = window.getSelection();
-                      if (
-                        selection &&
-                        selection.rangeCount > 0 &&
-                        editorRef.current.contains(selection.anchorNode)
+                    // Check paginated editor first, then editorRef
+                    const scrollContainer =
+                      paginatedEditorRef.current?.getScrollContainer();
+                    const pageElements =
+                      paginatedEditorRef.current?.getPageContentElements() ||
+                      [];
+                    const selection = window.getSelection();
+                    if (
+                      selection &&
+                      selection.rangeCount > 0 &&
+                      !selection.isCollapsed
+                    ) {
+                      const isInPaginated =
+                        scrollContainer?.contains(selection.anchorNode) ||
+                        pageElements.some((el) =>
+                          el.contains(selection.anchorNode)
+                        );
+                      if (isInPaginated) {
+                        lastSelectionRangeRef.current = selection
+                          .getRangeAt(0)
+                          .cloneRange();
+                      } else if (
+                        editorRef.current?.contains(selection.anchorNode)
                       ) {
                         lastSelectionRangeRef.current = selection
                           .getRangeAt(0)
@@ -5489,72 +6140,142 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
 
                       setFontFamily(selectedOption.value);
 
-                      // Restore selection from snapshot captured on wrapper mousedown
-                      if (
-                        !lastSelectionRangeRef.current ||
-                        !editorRef.current
-                      ) {
+                      // Restore selection from snapshot
+                      if (!lastSelectionRangeRef.current) {
                         return;
                       }
 
-                      // Focus editor and restore selection BEFORE applying format
-                      editorRef.current.focus({ preventScroll: true });
+                      // Restore selection BEFORE applying format
                       const selection = window.getSelection();
-                      if (selection) {
-                        selection.removeAllRanges();
-                        selection.addRange(
-                          lastSelectionRangeRef.current.cloneRange()
-                        );
-                      }
+                      if (!selection || selection.rangeCount === 0) return;
 
-                      // Apply formatting - this creates <font> tags
-                      formatText("fontName", selectedOption.commandValue);
-
-                      // Replace font tags with spans and track them
-                      const newSpans = replaceFontTagsWithStyledSpans(
-                        selectedOption.matchFaces,
-                        selectedOption.cssFamily
+                      selection.removeAllRanges();
+                      selection.addRange(
+                        lastSelectionRangeRef.current.cloneRange()
                       );
 
-                      // Restore selection using the newly created spans (like font size does)
-                      requestAnimationFrame(() => {
-                        editorRef.current?.focus();
+                      const range = selection.getRangeAt(0);
+                      if (range.collapsed) return;
 
-                        if (newSpans.length > 0) {
-                          try {
-                            const newSelection = window.getSelection();
-                            if (newSelection) {
-                              const newRange = document.createRange();
-                              const firstSpan = newSpans[0];
-                              const lastSpan = newSpans[newSpans.length - 1];
+                      // Create marker nodes to track selection boundaries
+                      const startMarker = document.createElement("span");
+                      startMarker.id = "selection-start-marker-font";
+                      startMarker.style.display = "none";
+                      const endMarker = document.createElement("span");
+                      endMarker.id = "selection-end-marker-font";
+                      endMarker.style.display = "none";
 
-                              // Select from the start of the first span to the end of the last
-                              newRange.setStart(
-                                firstSpan.firstChild || firstSpan,
-                                0
-                              );
-                              const lastNode = lastSpan.lastChild || lastSpan;
-                              const endOffset =
-                                lastNode.nodeType === Node.TEXT_NODE
-                                  ? (lastNode as Text).length
-                                  : lastSpan.childNodes.length;
-                              newRange.setEnd(lastNode, endOffset);
+                      // Insert markers at selection boundaries
+                      const rangeClone = range.cloneRange();
+                      rangeClone.collapse(false);
+                      rangeClone.insertNode(endMarker);
+                      rangeClone.setStart(
+                        range.startContainer,
+                        range.startOffset
+                      );
+                      rangeClone.collapse(true);
+                      rangeClone.insertNode(startMarker);
 
-                              newSelection.removeAllRanges();
-                              newSelection.addRange(newRange);
+                      // Recreate selection between markers
+                      const newRange = document.createRange();
+                      newRange.setStartAfter(startMarker);
+                      newRange.setEndBefore(endMarker);
+                      selection.removeAllRanges();
+                      selection.addRange(newRange);
 
-                              // Update the stored selection
-                              lastSelectionRangeRef.current =
-                                newRange.cloneRange();
-                            }
-                          } catch (err) {
-                            console.warn(
-                              "Could not restore selection after font change",
-                              err
-                            );
+                      // Ensure the paginated editor retains focus for execCommand
+                      paginatedEditorRef.current?.focus();
+
+                      // Skip repagination to preserve selection
+                      paginatedEditorRef.current?.setSkipNextRepagination(true);
+
+                      // Apply formatting - this creates <font face="..."> tags
+                      document.execCommand(
+                        "fontName",
+                        false,
+                        selectedOption.commandValue
+                      );
+
+                      // Immediately replace font tags with styled spans
+                      const fontNodes = document.querySelectorAll("font[face]");
+                      fontNodes.forEach((fontNode) => {
+                        const faceAttr = fontNode.getAttribute("face");
+                        if (!faceAttr) return;
+
+                        const normalizedFace = normalizeFontName(faceAttr);
+                        const normalizedTargets = new Set(
+                          selectedOption.matchFaces.map((face: string) =>
+                            normalizeFontName(face)
+                          )
+                        );
+
+                        if (!normalizedTargets.has(normalizedFace)) return;
+
+                        if (
+                          selectedOption.cssFamily &&
+                          selectedOption.cssFamily.trim().length > 0
+                        ) {
+                          const span = document.createElement("span");
+                          span.style.fontFamily = selectedOption.cssFamily;
+                          while (fontNode.firstChild) {
+                            span.appendChild(fontNode.firstChild);
                           }
+                          fontNode.parentNode?.replaceChild(span, fontNode);
                         }
                       });
+
+                      // Restore selection using markers and then clean up
+                      setTimeout(() => {
+                        const start = document.getElementById(
+                          "selection-start-marker-font"
+                        );
+                        const end = document.getElementById(
+                          "selection-end-marker-font"
+                        );
+
+                        if (start && end && paginatedEditorRef.current) {
+                          try {
+                            const restoreRange = document.createRange();
+                            restoreRange.setStartAfter(start);
+                            restoreRange.setEndBefore(end);
+
+                            const sel = window.getSelection();
+                            if (sel) {
+                              sel.removeAllRanges();
+                              sel.addRange(restoreRange);
+                              lastSelectionRangeRef.current =
+                                restoreRange.cloneRange();
+                            }
+                          } catch (e) {
+                            console.warn("Could not restore selection:", e);
+                          }
+
+                          // Clean up markers
+                          start.remove();
+                          end.remove();
+                        }
+
+                        const paginatedEditor = paginatedEditorRef.current;
+                        const inlineEditor = editorRef.current;
+
+                        if (paginatedEditor && inlineEditor) {
+                          const content = paginatedEditor.getContent();
+                          inlineEditor.innerHTML = content;
+                          onUpdate?.({
+                            html: content,
+                            text: inlineEditor.innerText,
+                          });
+                          if (saveTimeoutRef.current) {
+                            clearTimeout(saveTimeoutRef.current);
+                          }
+                          saveTimeoutRef.current = setTimeout(() => {
+                            saveToHistory(content);
+                          }, 500);
+
+                          paginatedEditor.setSkipNextRepagination(false);
+                          paginatedEditor.focus();
+                        }
+                      }, 50);
                     }}
                     className="w-full px-1.5 py-1 pr-6 rounded border border-[#e0c392] hover:border-[#ef8432] transition-colors text-xs text-[#2a2421]"
                     title="Font Family"
@@ -5565,6 +6286,9 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                       WebkitAppearance: "none",
                       MozAppearance: "none",
                       lineHeight: "1.2",
+                      paddingRight: "24px",
+                      backgroundImage: "none",
+                      cursor: "pointer",
                     }}
                   >
                     {FONT_FAMILY_OPTIONS.map((option) => (
@@ -5576,6 +6300,10 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                   <span
                     aria-hidden="true"
                     className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-[#2a2421]"
+                    style={{
+                      zIndex: 1,
+                      userSelect: "none",
+                    }}
                   >
                     ▼
                   </span>
@@ -5583,68 +6311,124 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
 
                 {/* Font Size Controls */}
                 <button
+                  type="button"
                   onMouseDown={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
 
                     const selection = window.getSelection();
-                    if (!selection || selection.rangeCount === 0) return;
+                    if (
+                      !selection ||
+                      selection.rangeCount === 0 ||
+                      selection.isCollapsed
+                    )
+                      return;
+
+                    // Capture the selected text before any DOM changes
+                    const selectedText = selection.toString();
+                    const range = selection.getRangeAt(0);
+
+                    // Create marker nodes to track selection boundaries
+                    const startMarker = document.createElement("span");
+                    startMarker.id = "selection-start-marker-temp";
+                    startMarker.style.display = "none";
+                    const endMarker = document.createElement("span");
+                    endMarker.id = "selection-end-marker-temp";
+                    endMarker.style.display = "none";
+
+                    // Insert markers at selection boundaries
+                    const rangeClone = range.cloneRange();
+                    rangeClone.collapse(false);
+                    rangeClone.insertNode(endMarker);
+                    rangeClone.setStart(
+                      range.startContainer,
+                      range.startOffset
+                    );
+                    rangeClone.collapse(true);
+                    rangeClone.insertNode(startMarker);
+
+                    // Recreate selection between markers
+                    const newRange = document.createRange();
+                    newRange.setStartAfter(startMarker);
+                    newRange.setEndBefore(endMarker);
+                    selection.removeAllRanges();
+                    selection.addRange(newRange);
 
                     const currentSize = parseInt(fontSize) || 16;
                     const newSize = Math.max(8, currentSize - 1);
                     setFontSize(`${newSize}px`);
 
+                    // Skip repagination to preserve selection
+                    paginatedEditorRef.current?.setSkipNextRepagination(true);
+
                     // Apply inline style for precise control
                     document.execCommand("fontSize", false, "7");
 
-                    // Replace font elements with spans and track them
+                    // Find and replace font elements with spans
                     const fontElements =
-                      editorRef.current?.querySelectorAll('font[size="7"]');
-                    const newSpans: HTMLSpanElement[] = [];
+                      document.querySelectorAll('font[size="7"]');
 
-                    fontElements?.forEach((el) => {
+                    fontElements.forEach((el) => {
                       const span = document.createElement("span");
                       span.style.fontSize = `${newSize}px`;
                       while (el.firstChild) {
                         span.appendChild(el.firstChild);
                       }
                       el.parentNode?.replaceChild(span, el);
-                      newSpans.push(span);
                     });
 
-                    // Restore focus and selection immediately
-                    requestAnimationFrame(() => {
-                      editorRef.current?.focus();
+                    // Restore selection using markers and then clean up
+                    setTimeout(() => {
+                      const start = document.getElementById(
+                        "selection-start-marker-temp"
+                      );
+                      const end = document.getElementById(
+                        "selection-end-marker-temp"
+                      );
 
-                      // Re-select all the content in the new spans
-                      if (newSpans.length > 0) {
+                      if (start && end && paginatedEditorRef.current) {
                         try {
-                          const newSelection = window.getSelection();
-                          if (newSelection) {
-                            const newRange = document.createRange();
-                            const firstSpan = newSpans[0];
-                            const lastSpan = newSpans[newSpans.length - 1];
+                          const restoreRange = document.createRange();
+                          restoreRange.setStartAfter(start);
+                          restoreRange.setEndBefore(end);
 
-                            // Select from the start of the first span to the end of the last
-                            newRange.setStart(
-                              firstSpan.firstChild || firstSpan,
-                              0
-                            );
-                            const lastNode = lastSpan.lastChild || lastSpan;
-                            const endOffset =
-                              lastNode.nodeType === Node.TEXT_NODE
-                                ? (lastNode as Text).length
-                                : lastSpan.childNodes.length;
-                            newRange.setEnd(lastNode, endOffset);
-
-                            newSelection.removeAllRanges();
-                            newSelection.addRange(newRange);
+                          const sel = window.getSelection();
+                          if (sel) {
+                            sel.removeAllRanges();
+                            sel.addRange(restoreRange);
+                            lastSelectionRangeRef.current =
+                              restoreRange.cloneRange();
                           }
-                        } catch (err) {
-                          console.warn("Could not restore selection", err);
+                        } catch (e) {
+                          console.warn("Could not restore selection:", e);
                         }
+
+                        // Clean up markers
+                        start.remove();
+                        end.remove();
                       }
-                    });
+
+                      // Sync content and update history
+                      if (paginatedEditorRef.current && editorRef.current) {
+                        const content = paginatedEditorRef.current.getContent();
+                        editorRef.current.innerHTML = content;
+                        onUpdate?.({
+                          html: content,
+                          text: editorRef.current.innerText,
+                        });
+                        if (saveTimeoutRef.current) {
+                          clearTimeout(saveTimeoutRef.current);
+                        }
+                        saveTimeoutRef.current = setTimeout(() => {
+                          saveToHistory(content);
+                        }, 500);
+
+                        paginatedEditorRef.current?.setSkipNextRepagination(
+                          false
+                        );
+                        paginatedEditorRef.current?.focus();
+                      }
+                    }, 50);
                   }}
                   className={`px-1.5 py-1 rounded transition-colors text-xs font-bold ${toolbarInactiveButtonClass}`}
                   title="Decrease Font Size"
@@ -5658,68 +6442,124 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                   {parseInt(fontSize) || 16}
                 </span>
                 <button
+                  type="button"
                   onMouseDown={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
 
                     const selection = window.getSelection();
-                    if (!selection || selection.rangeCount === 0) return;
+                    if (
+                      !selection ||
+                      selection.rangeCount === 0 ||
+                      selection.isCollapsed
+                    )
+                      return;
+
+                    // Capture the selected text before any DOM changes
+                    const selectedText = selection.toString();
+                    const range = selection.getRangeAt(0);
+
+                    // Create marker nodes to track selection boundaries
+                    const startMarker = document.createElement("span");
+                    startMarker.id = "selection-start-marker-temp";
+                    startMarker.style.display = "none";
+                    const endMarker = document.createElement("span");
+                    endMarker.id = "selection-end-marker-temp";
+                    endMarker.style.display = "none";
+
+                    // Insert markers at selection boundaries
+                    const rangeClone = range.cloneRange();
+                    rangeClone.collapse(false);
+                    rangeClone.insertNode(endMarker);
+                    rangeClone.setStart(
+                      range.startContainer,
+                      range.startOffset
+                    );
+                    rangeClone.collapse(true);
+                    rangeClone.insertNode(startMarker);
+
+                    // Recreate selection between markers
+                    const newRange = document.createRange();
+                    newRange.setStartAfter(startMarker);
+                    newRange.setEndBefore(endMarker);
+                    selection.removeAllRanges();
+                    selection.addRange(newRange);
 
                     const currentSize = parseInt(fontSize) || 16;
                     const newSize = Math.min(72, currentSize + 1);
                     setFontSize(`${newSize}px`);
 
+                    // Skip repagination to preserve selection
+                    paginatedEditorRef.current?.setSkipNextRepagination(true);
+
                     // Apply inline style for precise control
                     document.execCommand("fontSize", false, "7");
 
-                    // Replace font elements with spans and track them
+                    // Find and replace font elements with spans
                     const fontElements =
-                      editorRef.current?.querySelectorAll('font[size="7"]');
-                    const newSpans: HTMLSpanElement[] = [];
+                      document.querySelectorAll('font[size="7"]');
 
-                    fontElements?.forEach((el) => {
+                    fontElements.forEach((el) => {
                       const span = document.createElement("span");
                       span.style.fontSize = `${newSize}px`;
                       while (el.firstChild) {
                         span.appendChild(el.firstChild);
                       }
                       el.parentNode?.replaceChild(span, el);
-                      newSpans.push(span);
                     });
 
-                    // Restore focus and selection immediately
-                    requestAnimationFrame(() => {
-                      editorRef.current?.focus();
+                    // Restore selection using markers and then clean up
+                    setTimeout(() => {
+                      const start = document.getElementById(
+                        "selection-start-marker-temp"
+                      );
+                      const end = document.getElementById(
+                        "selection-end-marker-temp"
+                      );
 
-                      // Re-select all the content in the new spans
-                      if (newSpans.length > 0) {
+                      if (start && end && paginatedEditorRef.current) {
                         try {
-                          const newSelection = window.getSelection();
-                          if (newSelection) {
-                            const newRange = document.createRange();
-                            const firstSpan = newSpans[0];
-                            const lastSpan = newSpans[newSpans.length - 1];
+                          const restoreRange = document.createRange();
+                          restoreRange.setStartAfter(start);
+                          restoreRange.setEndBefore(end);
 
-                            // Select from the start of the first span to the end of the last
-                            newRange.setStart(
-                              firstSpan.firstChild || firstSpan,
-                              0
-                            );
-                            const lastNode = lastSpan.lastChild || lastSpan;
-                            const endOffset =
-                              lastNode.nodeType === Node.TEXT_NODE
-                                ? (lastNode as Text).length
-                                : lastSpan.childNodes.length;
-                            newRange.setEnd(lastNode, endOffset);
-
-                            newSelection.removeAllRanges();
-                            newSelection.addRange(newRange);
+                          const sel = window.getSelection();
+                          if (sel) {
+                            sel.removeAllRanges();
+                            sel.addRange(restoreRange);
+                            lastSelectionRangeRef.current =
+                              restoreRange.cloneRange();
                           }
-                        } catch (err) {
-                          console.warn("Could not restore selection", err);
+                        } catch (e) {
+                          console.warn("Could not restore selection:", e);
                         }
+
+                        // Clean up markers
+                        start.remove();
+                        end.remove();
                       }
-                    });
+
+                      // Sync content and update history
+                      if (paginatedEditorRef.current && editorRef.current) {
+                        const content = paginatedEditorRef.current.getContent();
+                        editorRef.current.innerHTML = content;
+                        onUpdate?.({
+                          html: content,
+                          text: editorRef.current.innerText,
+                        });
+                        if (saveTimeoutRef.current) {
+                          clearTimeout(saveTimeoutRef.current);
+                        }
+                        saveTimeoutRef.current = setTimeout(() => {
+                          saveToHistory(content);
+                        }, 500);
+
+                        paginatedEditorRef.current?.setSkipNextRepagination(
+                          false
+                        );
+                        paginatedEditorRef.current?.focus();
+                      }
+                    }, 50);
                   }}
                   className={`px-1.5 py-1 rounded transition-colors text-xs font-bold ${toolbarInactiveButtonClass}`}
                   title="Increase Font Size"
@@ -7425,6 +8265,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           backgroundColor: "#eddcc5",
           marginTop:
             viewMode === "writer" && !showFindReplace ? "-12px" : "0px",
+          overflow: "hidden",
         }}
       >
         {/* Page Rail - absolutely positioned to not affect centering */}
@@ -7435,7 +8276,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
             style={{
               position: "absolute",
               left: "8px",
-              top: "8px",
+              top: "28px",
               bottom: "8px",
               width: "220px",
               zIndex: 10,
@@ -7551,15 +8392,20 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                       <div
                         style={{
                           position: "absolute",
-                          inset: "8px",
-                          fontSize: "10px",
-                          lineHeight: 1.25,
+                          inset: "6px",
+                          fontSize: "9px",
+                          lineHeight: 1.3,
                           color: "#374151",
                           overflow: "hidden",
                           textOverflow: "ellipsis",
+                          whiteSpace: "pre-wrap",
+                          wordBreak: "break-word",
                         }}
                       >
-                        {snippet || "Start writing to fill this page."}
+                        {snippet
+                          ? snippet.substring(0, 200) +
+                            (snippet.length > 200 ? "..." : "")
+                          : "Start writing to fill this page."}
                       </div>
                     </div>
                   </button>
@@ -7836,7 +8682,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
             style={{
               position: "absolute",
               right: "8px",
-              top: "8px",
+              top: "28px",
               bottom: "8px",
               width: "220px",
               zIndex: 10,
@@ -7848,6 +8694,9 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               padding: "16px 12px",
               paddingBottom: "16px",
               overflowY: "auto",
+              overflowX: "hidden",
+              scrollbarWidth: "none",
+              msOverflowStyle: "none",
             }}
           >
             <div className="flex items-center justify-between mb-3">
@@ -8457,9 +9306,27 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           ref={paginatedEditorRef}
           initialContent={editorRef.current?.innerHTML || ""}
           onChange={(newContent) => {
+            // Sync back to editorRef for formatting commands
+            if (editorRef.current) {
+              editorRef.current.innerHTML = newContent.html;
+            }
             onUpdate?.({ html: newContent.html, text: newContent.text });
+            // Update history
+            if (saveTimeoutRef.current) {
+              clearTimeout(saveTimeoutRef.current);
+            }
+            saveTimeoutRef.current = setTimeout(() => {
+              saveToHistory(newContent.html);
+            }, 500);
+            // Update analysis
+            if (analysisTimeoutRef.current) {
+              clearTimeout(analysisTimeoutRef.current);
+            }
+            analysisTimeoutRef.current = setTimeout(() => {
+              analyzeContent(newContent.text);
+            }, 300);
           }}
-          onPageCountChange={setPageCount}
+          onPageCountChange={handlePageCountChange}
           isEditable={isEditable}
           pageWidthPx={PAGE_WIDTH_PX}
           pageHeightPx={PAGE_HEIGHT_PX}
@@ -8481,6 +9348,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           activePage={activePage}
           onActivePageChange={setActivePage}
           onPageSnippetsChange={setPageSnippets}
+          onScroll={(scrollTop) => setShowBackToTop(scrollTop > 300)}
         />
       </div>
 
@@ -8573,27 +9441,56 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           <AIWritingAssistant
             selectedText={window.getSelection()?.toString() || ""}
             onInsertText={(text) => {
-              if (editorRef.current) {
-                const selection = window.getSelection();
-                if (
-                  selection &&
-                  selection.rangeCount > 0 &&
-                  !selection.isCollapsed
-                ) {
-                  const range = selection.getRangeAt(0);
-                  if (
-                    editorRef.current.contains(range.commonAncestorContainer)
-                  ) {
-                    range.deleteContents();
-                    range.insertNode(document.createTextNode(text));
-                    selection.collapseToEnd();
-                    handleInput();
-                    return;
+              // Try to insert at current selection in paginated editor
+              const selection = window.getSelection();
+              const scrollContainer = scrollShellRef.current;
+
+              if (
+                selection &&
+                selection.rangeCount > 0 &&
+                !selection.isCollapsed
+              ) {
+                const range = selection.getRangeAt(0);
+                // Check if selection is in paginated editor
+                if (scrollContainer?.contains(range.commonAncestorContainer)) {
+                  range.deleteContents();
+                  range.insertNode(document.createTextNode(text));
+                  selection.collapseToEnd();
+                  // Sync back to editorRef
+                  if (paginatedEditorRef.current && editorRef.current) {
+                    editorRef.current.innerHTML =
+                      paginatedEditorRef.current.getContent();
                   }
+                  handleInput();
+                  return;
                 }
-                const textNode = document.createTextNode(text);
+                // Fallback to editorRef
+                if (
+                  editorRef.current?.contains(range.commonAncestorContainer)
+                ) {
+                  range.deleteContents();
+                  range.insertNode(document.createTextNode(text));
+                  selection.collapseToEnd();
+                  handleInput();
+                  return;
+                }
+              }
+
+              // If no selection, append to the end via paginated editor
+              if (paginatedEditorRef.current) {
+                paginatedEditorRef.current.focus();
+                paginatedEditorRef.current.execCommand(
+                  "insertHTML",
+                  "<br>" + text
+                );
+                if (editorRef.current) {
+                  editorRef.current.innerHTML =
+                    paginatedEditorRef.current.getContent();
+                }
+                handleInput();
+              } else if (editorRef.current) {
                 editorRef.current.appendChild(document.createElement("br"));
-                editorRef.current.appendChild(textNode);
+                editorRef.current.appendChild(document.createTextNode(text));
                 handleInput();
               }
             }}

@@ -55,7 +55,12 @@ export interface PaginatedEditorRef {
   focus: () => void;
   getPageCount: () => number;
   goToPage: (pageIndex: number) => void;
+  scrollToTop: () => void;
   execCommand: (command: string, value?: string) => void;
+  getPageContentElements: () => HTMLDivElement[];
+  getScrollContainer: () => HTMLDivElement | null;
+  getPagesContainer: () => HTMLDivElement | null;
+  setSkipNextRepagination: (skip: boolean) => void;
 }
 
 export interface PaginatedEditorProps {
@@ -95,6 +100,10 @@ export interface PaginatedEditorProps {
   onPageSnippetsChange?: (snippets: string[]) => void;
   // Jump to page callback
   onJumpToPage?: (pageIndex: number) => void;
+  // Scroll callback
+  onScroll?: (scrollTop: number) => void;
+  // Overlay content (for indicators)
+  overlayContent?: React.ReactNode;
 }
 
 // ============================================================================
@@ -185,6 +194,11 @@ function splitFormattedText(
 ): [Element, Element | null] {
   const clone1 = element.cloneNode(false) as Element;
   const clone2 = element.cloneNode(false) as Element;
+
+  // Mark clone2 as a continuation (no first-line indent)
+  if (clone2 instanceof HTMLElement) {
+    clone2.classList.add("paragraph-continuation");
+  }
 
   let wordCount = 0;
   let foundSplit = false;
@@ -303,6 +317,10 @@ export const PaginatedEditor = forwardRef<
       activePage,
       onActivePageChange,
       onPageSnippetsChange,
+      // Scroll
+      onScroll,
+      // Overlay content
+      overlayContent,
     },
     ref
   ) => {
@@ -312,6 +330,7 @@ export const PaginatedEditor = forwardRef<
 
     const measureRef = useRef<HTMLDivElement>(null);
     const pagesContainerRef = useRef<HTMLDivElement>(null);
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
     const rulerContainerRef = useRef<HTMLDivElement>(null);
     const pageRefs = useRef<Map<number, HTMLDivElement>>(new Map());
     const repaginateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -332,15 +351,23 @@ export const PaginatedEditor = forwardRef<
     // Sync with external activePage prop (for thumbnail rail clicks)
     // Using a ref to track if we should skip the sync to prevent loops
     const skipSyncRef = useRef(false);
+    const internalChangeRef = useRef(false);
+    // Timeout-based skip - stores timestamp until which to skip repagination
+    const skipUntilRef = useRef<number>(0);
     useEffect(() => {
       if (skipSyncRef.current) {
         skipSyncRef.current = false;
         return;
       }
+      // Don't scroll if the change was from internal focus
+      if (internalChangeRef.current) {
+        internalChangeRef.current = false;
+        return;
+      }
       if (activePage !== undefined && activePage !== activePageIndex) {
         skipSyncRef.current = true;
         setActivePageIndex(activePage);
-        // Scroll to the page
+        // Scroll to the page (only for external changes like thumbnail click)
         const pageRef = pageRefs.current.get(pages[activePage]?.id);
         if (pageRef) {
           pageRef.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -592,10 +619,13 @@ export const PaginatedEditor = forwardRef<
         let remaining = fullHtml;
         let pageId = 1;
 
+        // Use slightly reduced height to account for measurement variance
+        const safeContentHeight = contentHeight - 4;
+
         while (remaining.trim()) {
           const [fitting, leftover] = splitContentAtHeight(
             remaining,
-            contentHeight
+            safeContentHeight
           );
 
           console.log(
@@ -645,12 +675,12 @@ export const PaginatedEditor = forwardRef<
         // Generate page snippets for thumbnail rail
         if (onPageSnippetsChange) {
           const snippets = newPages.map((page) => {
-            // Extract text from HTML and get first ~50 chars
+            // Extract text from HTML and get first ~150 chars
             const temp = document.createElement("div");
             temp.innerHTML = page.content;
             const text = temp.textContent || "";
             return (
-              text.substring(0, 50).trim() + (text.length > 50 ? "..." : "")
+              text.substring(0, 150).trim() + (text.length > 150 ? "..." : "")
             );
           });
           onPageSnippetsChange(snippets);
@@ -697,6 +727,18 @@ export const PaginatedEditor = forwardRef<
     }, [pages]);
 
     const handleInput = useCallback(() => {
+      // Skip repagination if within skip window (e.g., during formatting operations)
+      // Use timestamp-based check to skip multiple rapid onInput events
+      if (Date.now() < skipUntilRef.current) {
+        // Still within skip window - notify parent but don't repaginate
+        const fullHtml = collectAllContent();
+        onChange?.({
+          html: fullHtml,
+          text: fullHtml.replace(/<[^>]*>/g, ""),
+        });
+        return;
+      }
+
       // Clear any pending repagination
       if (repaginateTimeoutRef.current) {
         clearTimeout(repaginateTimeoutRef.current);
@@ -880,8 +922,12 @@ export const PaginatedEditor = forwardRef<
           }
         },
         focus: () => {
-          const firstPage = pageRefs.current.get(pages[0]?.id);
-          if (firstPage) firstPage.focus();
+          // Focus the active page, or the first page if no active page
+          const activePageId = pages[activePageIndex]?.id || pages[0]?.id;
+          const targetPage = pageRefs.current.get(activePageId);
+          if (targetPage) {
+            targetPage.focus();
+          }
         },
         getPageCount: () => pages.length,
         goToPage: (pageIndex: number) => {
@@ -892,16 +938,45 @@ export const PaginatedEditor = forwardRef<
             pageRef.scrollIntoView({ behavior: "smooth", block: "start" });
           }
         },
+        scrollToTop: () => {
+          if (scrollContainerRef.current) {
+            scrollContainerRef.current.scrollTo({ top: 0, behavior: "smooth" });
+          }
+        },
         execCommand: (command: string, value?: string) => {
-          document.execCommand(command, false, value);
+          // For insertHTML, use the correct signature
+          if (command === "insertHTML" && value) {
+            document.execCommand(command, false, value);
+          } else {
+            document.execCommand(command, false, value);
+          }
           // Trigger repagination after formatting
           setTimeout(() => {
             const fullHtml = collectAllContent();
+            onChange?.({
+              html: fullHtml,
+              text: fullHtml.replace(/<[^>]*>/g, ""),
+            });
             repaginate(fullHtml, true);
           }, 0);
         },
+        getPageContentElements: () => {
+          const elements: HTMLDivElement[] = [];
+          pages.forEach((page) => {
+            const ref = pageRefs.current.get(page.id);
+            if (ref) elements.push(ref);
+          });
+          return elements;
+        },
+        getScrollContainer: () => scrollContainerRef.current,
+        getPagesContainer: () => pagesContainerRef.current,
+        setSkipNextRepagination: (skip: boolean) => {
+          // When skip is true, set a 100ms window to skip repagination
+          // When skip is false, clear the window immediately
+          skipUntilRef.current = skip ? Date.now() + 100 : 0;
+        },
       }),
-      [collectAllContent, repaginate, pages]
+      [collectAllContent, repaginate, pages, activePageIndex]
     );
 
     // ========================================================================
@@ -1027,26 +1102,130 @@ export const PaginatedEditor = forwardRef<
           left: 0,
           right: 0,
           bottom: 0,
-          padding: "24px",
-          overflowY: "auto",
-          overflowX: "hidden",
+          overflow: "hidden", // Don't scroll the outer container
         }}
       >
         {/* Inline styles for first-line indent and document styles */}
-        <style key={`indent-style-${firstLineIndent}`}>
+        <style
+          key={`indent-style-${firstLineIndent}-${JSON.stringify(
+            documentStyles || {}
+          )}`}
+        >
           {`
             .paginated-page-content {
               text-indent: ${firstLineIndent}px !important;
             }
             .paginated-page-content p,
-            .paginated-page-content div {
+            .paginated-page-content div:not(ul):not(ol) {
               text-indent: ${firstLineIndent}px !important;
               margin-bottom: 1em;
               margin-top: 0;
             }
+            /* List styles - don't apply text-indent and ensure bullets/numbers show */
+            .paginated-page-content ul,
+            .paginated-page-content ol {
+              text-indent: 0 !important;
+              margin-left: 1.5em;
+              padding-left: 1em;
+              margin-bottom: 1em;
+              margin-top: 0;
+              list-style-position: outside;
+            }
+            .paginated-page-content ul {
+              list-style-type: disc !important;
+            }
+            .paginated-page-content ol {
+              list-style-type: decimal !important;
+            }
+            .paginated-page-content li {
+              text-indent: 0 !important;
+              margin-bottom: 0.25em;
+              display: list-item !important;
+            }
+            /* Centered lists - use inside bullets so they center with text */
+            .paginated-page-content ul[style*="text-align: center"],
+            .paginated-page-content ol[style*="text-align: center"],
+            .paginated-page-content ul[style*="text-align:center"],
+            .paginated-page-content ol[style*="text-align:center"],
+            .paginated-page-content ul[align="center"],
+            .paginated-page-content ol[align="center"],
+            .paginated-page-content [style*="text-align: center"] ul,
+            .paginated-page-content [style*="text-align:center"] ul,
+            .paginated-page-content [align="center"] ul,
+            .paginated-page-content div[align="center"] ul,
+            .paginated-page-content [style*="text-align: center"] ol,
+            .paginated-page-content [style*="text-align:center"] ol,
+            .paginated-page-content [align="center"] ol,
+            .paginated-page-content div[align="center"] ol {
+              list-style-position: inside !important;
+              margin-left: 0 !important;
+              padding-left: 0 !important;
+              text-align: center !important;
+            }
+            .paginated-page-content ul[style*="text-align: center"] li,
+            .paginated-page-content ol[style*="text-align: center"] li,
+            .paginated-page-content ul[style*="text-align:center"] li,
+            .paginated-page-content ol[style*="text-align:center"] li,
+            .paginated-page-content ul[align="center"] li,
+            .paginated-page-content ol[align="center"] li,
+            .paginated-page-content [style*="text-align: center"] li,
+            .paginated-page-content [style*="text-align:center"] li,
+            .paginated-page-content [align="center"] li,
+            .paginated-page-content div[align="center"] li {
+              text-align: center !important;
+            }
+            /* Right-aligned lists */
+            .paginated-page-content ul[style*="text-align: right"],
+            .paginated-page-content ol[style*="text-align: right"],
+            .paginated-page-content ul[style*="text-align:right"],
+            .paginated-page-content ol[style*="text-align:right"],
+            .paginated-page-content ul[align="right"],
+            .paginated-page-content ol[align="right"],
+            .paginated-page-content [style*="text-align: right"] ul,
+            .paginated-page-content [style*="text-align:right"] ul,
+            .paginated-page-content [align="right"] ul,
+            .paginated-page-content div[align="right"] ul,
+            .paginated-page-content [style*="text-align: right"] ol,
+            .paginated-page-content [style*="text-align:right"] ol,
+            .paginated-page-content [align="right"] ol,
+            .paginated-page-content div[align="right"] ol {
+              list-style-position: inside !important;
+              margin-left: 0 !important;
+              padding-left: 0 !important;
+              text-align: right !important;
+            }
+            .paginated-page-content [style*="text-align: right"] li,
+            .paginated-page-content [style*="text-align:right"] li,
+            .paginated-page-content [align="right"] li,
+            .paginated-page-content div[align="right"] li {
+              text-align: right !important;
+            }
+            /* Don't apply text-indent to centered or right-aligned text */
+            .paginated-page-content p[style*="text-align: center"],
+            .paginated-page-content div[style*="text-align: center"],
+            .paginated-page-content p[style*="text-align:center"],
+            .paginated-page-content div[style*="text-align:center"],
+            .paginated-page-content p[align="center"],
+            .paginated-page-content div[align="center"],
+            .paginated-page-content [style*="text-align: center"] p,
+            .paginated-page-content [style*="text-align: center"] div,
+            .paginated-page-content p[style*="text-align: right"],
+            .paginated-page-content div[style*="text-align: right"],
+            .paginated-page-content p[style*="text-align:right"],
+            .paginated-page-content div[style*="text-align:right"],
+            .paginated-page-content p[align="right"],
+            .paginated-page-content div[align="right"] {
+              text-indent: 0 !important;
+            }
+            .paginated-page-content .paragraph-continuation,
+            .paginated-page-content p.paragraph-continuation,
+            .paginated-page-content div.paragraph-continuation {
+              text-indent: 0 !important;
+            }
             .paginated-page-content:focus {
               outline: none;
             }
+            /* Book Title styles */
             ${
               documentStyles?.["book-title"]?.color
                 ? `.paginated-page-content .book-title, .paginated-page-content .doc-title { color: ${documentStyles["book-title"].color} !important; }`
@@ -1058,6 +1237,56 @@ export const PaginatedEditor = forwardRef<
                 : ""
             }
             ${
+              documentStyles?.["book-title"]?.fontSize
+                ? `.paginated-page-content .book-title, .paginated-page-content .doc-title { font-size: ${documentStyles["book-title"].fontSize}pt !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.["book-title"]?.fontFamily
+                ? `.paginated-page-content .book-title, .paginated-page-content .doc-title { font-family: ${documentStyles["book-title"].fontFamily} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.["book-title"]?.fontWeight
+                ? `.paginated-page-content .book-title, .paginated-page-content .doc-title { font-weight: ${documentStyles["book-title"].fontWeight} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.["book-title"]?.fontStyle
+                ? `.paginated-page-content .book-title, .paginated-page-content .doc-title { font-style: ${documentStyles["book-title"].fontStyle} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.["book-title"]?.textAlign
+                ? `.paginated-page-content .book-title, .paginated-page-content .doc-title { text-align: ${documentStyles["book-title"].textAlign} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.["book-title"]?.marginTop
+                ? `.paginated-page-content .book-title, .paginated-page-content .doc-title { margin-top: ${documentStyles["book-title"].marginTop}em !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.["book-title"]?.marginBottom
+                ? `.paginated-page-content .book-title, .paginated-page-content .doc-title { margin-bottom: ${documentStyles["book-title"].marginBottom}em !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.["book-title"]?.lineHeight
+                ? `.paginated-page-content .book-title, .paginated-page-content .doc-title { line-height: ${documentStyles["book-title"].lineHeight} !important; }`
+                : ""
+            }
+            /* Book title and doc-title must have text-indent: 0 to center properly with ruler margins */
+            .paginated-page-content .book-title,
+            .paginated-page-content .doc-title,
+            .paginated-page-content h1.book-title,
+            .paginated-page-content h1.doc-title,
+            .paginated-page-content p.book-title,
+            .paginated-page-content p.doc-title {
+              text-indent: 0 !important;
+            }
+            /* Chapter Heading styles */
+            ${
               documentStyles?.["chapter-heading"]?.color
                 ? `.paginated-page-content .chapter-heading, .paginated-page-content h1.chapter-heading { color: ${documentStyles["chapter-heading"].color} !important; }`
                 : ""
@@ -1067,6 +1296,53 @@ export const PaginatedEditor = forwardRef<
                 ? `.paginated-page-content .chapter-heading, .paginated-page-content h1.chapter-heading { background-color: ${documentStyles["chapter-heading"].backgroundColor} !important; }`
                 : ""
             }
+            ${
+              documentStyles?.["chapter-heading"]?.fontSize
+                ? `.paginated-page-content .chapter-heading, .paginated-page-content h1.chapter-heading { font-size: ${documentStyles["chapter-heading"].fontSize}pt !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.["chapter-heading"]?.fontFamily
+                ? `.paginated-page-content .chapter-heading, .paginated-page-content h1.chapter-heading { font-family: ${documentStyles["chapter-heading"].fontFamily} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.["chapter-heading"]?.fontWeight
+                ? `.paginated-page-content .chapter-heading, .paginated-page-content h1.chapter-heading { font-weight: ${documentStyles["chapter-heading"].fontWeight} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.["chapter-heading"]?.fontStyle
+                ? `.paginated-page-content .chapter-heading, .paginated-page-content h1.chapter-heading { font-style: ${documentStyles["chapter-heading"].fontStyle} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.["chapter-heading"]?.textAlign
+                ? `.paginated-page-content .chapter-heading, .paginated-page-content h1.chapter-heading { text-align: ${documentStyles["chapter-heading"].textAlign} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.["chapter-heading"]?.marginTop
+                ? `.paginated-page-content .chapter-heading, .paginated-page-content h1.chapter-heading { margin-top: ${documentStyles["chapter-heading"].marginTop}em !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.["chapter-heading"]?.marginBottom
+                ? `.paginated-page-content .chapter-heading, .paginated-page-content h1.chapter-heading { margin-bottom: ${documentStyles["chapter-heading"].marginBottom}em !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.["chapter-heading"]?.lineHeight
+                ? `.paginated-page-content .chapter-heading, .paginated-page-content h1.chapter-heading { line-height: ${documentStyles["chapter-heading"].lineHeight} !important; }`
+                : ""
+            }
+            /* Chapter heading must have text-indent: 0 to center properly with ruler margins */
+            .paginated-page-content .chapter-heading,
+            .paginated-page-content h1.chapter-heading,
+            .paginated-page-content p.chapter-heading {
+              text-indent: 0 !important;
+            }
+            /* Subtitle styles */
             ${
               documentStyles?.subtitle?.color
                 ? `.paginated-page-content .subtitle, .paginated-page-content .doc-subtitle { color: ${documentStyles.subtitle.color} !important; }`
@@ -1078,13 +1354,1159 @@ export const PaginatedEditor = forwardRef<
                 : ""
             }
             ${
+              documentStyles?.subtitle?.fontSize
+                ? `.paginated-page-content .subtitle, .paginated-page-content .doc-subtitle { font-size: ${documentStyles.subtitle.fontSize}pt !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.subtitle?.fontFamily
+                ? `.paginated-page-content .subtitle, .paginated-page-content .doc-subtitle { font-family: ${documentStyles.subtitle.fontFamily} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.subtitle?.fontWeight
+                ? `.paginated-page-content .subtitle, .paginated-page-content .doc-subtitle { font-weight: ${documentStyles.subtitle.fontWeight} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.subtitle?.fontStyle
+                ? `.paginated-page-content .subtitle, .paginated-page-content .doc-subtitle { font-style: ${documentStyles.subtitle.fontStyle} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.subtitle?.textAlign
+                ? `.paginated-page-content .subtitle, .paginated-page-content .doc-subtitle { text-align: ${documentStyles.subtitle.textAlign} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.subtitle?.marginTop
+                ? `.paginated-page-content .subtitle, .paginated-page-content .doc-subtitle { margin-top: ${documentStyles.subtitle.marginTop}em !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.subtitle?.marginBottom
+                ? `.paginated-page-content .subtitle, .paginated-page-content .doc-subtitle { margin-bottom: ${documentStyles.subtitle.marginBottom}em !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.subtitle?.lineHeight
+                ? `.paginated-page-content .subtitle, .paginated-page-content .doc-subtitle { line-height: ${documentStyles.subtitle.lineHeight} !important; }`
+                : ""
+            }
+            /* Subtitle must have text-indent: 0 to center properly with ruler margins */
+            .paginated-page-content .subtitle,
+            .paginated-page-content .doc-subtitle,
+            .paginated-page-content p.subtitle,
+            .paginated-page-content p.doc-subtitle {
+              text-indent: 0 !important;
+            }
+            /* Paragraph styles */
+            ${
               documentStyles?.paragraph?.color
-                ? `.paginated-page-content p:not(.book-title):not(.doc-title):not(.chapter-heading):not(.subtitle):not(.doc-subtitle):not(.quote):not(.intense-quote) { color: ${documentStyles.paragraph.color} !important; }`
+                ? `.paginated-page-content p:not(.book-title):not(.doc-title):not(.chapter-heading):not(.subtitle):not(.doc-subtitle):not(.quote):not(.intense-quote):not(.lead-paragraph):not(.pullquote) { color: ${documentStyles.paragraph.color} !important; }`
                 : ""
             }
             ${
               documentStyles?.paragraph?.backgroundColor
-                ? `.paginated-page-content p:not(.book-title):not(.doc-title):not(.chapter-heading):not(.subtitle):not(.doc-subtitle):not(.quote):not(.intense-quote) { background-color: ${documentStyles.paragraph.backgroundColor} !important; }`
+                ? `.paginated-page-content p:not(.book-title):not(.doc-title):not(.chapter-heading):not(.subtitle):not(.doc-subtitle):not(.quote):not(.intense-quote):not(.lead-paragraph):not(.pullquote) { background-color: ${documentStyles.paragraph.backgroundColor} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.paragraph?.fontWeight
+                ? `.paginated-page-content p:not(.book-title):not(.doc-title):not(.chapter-heading):not(.subtitle):not(.doc-subtitle):not(.quote):not(.intense-quote):not(.lead-paragraph):not(.pullquote) { font-weight: ${documentStyles.paragraph.fontWeight} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.paragraph?.fontStyle
+                ? `.paginated-page-content p:not(.book-title):not(.doc-title):not(.chapter-heading):not(.subtitle):not(.doc-subtitle):not(.quote):not(.intense-quote):not(.lead-paragraph):not(.pullquote) { font-style: ${documentStyles.paragraph.fontStyle} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.paragraph?.lineHeight
+                ? `.paginated-page-content p:not(.book-title):not(.doc-title):not(.chapter-heading):not(.subtitle):not(.doc-subtitle):not(.quote):not(.intense-quote):not(.lead-paragraph):not(.pullquote) { line-height: ${documentStyles.paragraph.lineHeight} !important; }`
+                : ""
+            }
+            /* Heading 1 styles */
+            ${
+              documentStyles?.heading1?.color
+                ? `.paginated-page-content h1:not(.chapter-heading):not(.doc-title):not(.book-title) { color: ${documentStyles.heading1.color} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.heading1?.backgroundColor
+                ? `.paginated-page-content h1:not(.chapter-heading):not(.doc-title):not(.book-title) { background-color: ${documentStyles.heading1.backgroundColor} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.heading1?.fontSize
+                ? `.paginated-page-content h1:not(.chapter-heading):not(.doc-title):not(.book-title) { font-size: ${documentStyles.heading1.fontSize}pt !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.heading1?.fontFamily
+                ? `.paginated-page-content h1:not(.chapter-heading):not(.doc-title):not(.book-title) { font-family: ${documentStyles.heading1.fontFamily} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.heading1?.fontWeight
+                ? `.paginated-page-content h1:not(.chapter-heading):not(.doc-title):not(.book-title) { font-weight: ${documentStyles.heading1.fontWeight} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.heading1?.fontStyle
+                ? `.paginated-page-content h1:not(.chapter-heading):not(.doc-title):not(.book-title) { font-style: ${documentStyles.heading1.fontStyle} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.heading1?.textAlign
+                ? `.paginated-page-content h1:not(.chapter-heading):not(.doc-title):not(.book-title) { text-align: ${documentStyles.heading1.textAlign} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.heading1?.marginTop
+                ? `.paginated-page-content h1:not(.chapter-heading):not(.doc-title):not(.book-title) { margin-top: ${documentStyles.heading1.marginTop}em !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.heading1?.marginBottom
+                ? `.paginated-page-content h1:not(.chapter-heading):not(.doc-title):not(.book-title) { margin-bottom: ${documentStyles.heading1.marginBottom}em !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.heading1?.lineHeight
+                ? `.paginated-page-content h1:not(.chapter-heading):not(.doc-title):not(.book-title) { line-height: ${documentStyles.heading1.lineHeight} !important; }`
+                : ""
+            }
+            /* Heading 2 styles */
+            ${
+              documentStyles?.heading2?.color
+                ? `.paginated-page-content h2 { color: ${documentStyles.heading2.color} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.heading2?.backgroundColor
+                ? `.paginated-page-content h2 { background-color: ${documentStyles.heading2.backgroundColor} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.heading2?.fontSize
+                ? `.paginated-page-content h2 { font-size: ${documentStyles.heading2.fontSize}pt !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.heading2?.fontFamily
+                ? `.paginated-page-content h2 { font-family: ${documentStyles.heading2.fontFamily} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.heading2?.fontWeight
+                ? `.paginated-page-content h2 { font-weight: ${documentStyles.heading2.fontWeight} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.heading2?.fontStyle
+                ? `.paginated-page-content h2 { font-style: ${documentStyles.heading2.fontStyle} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.heading2?.textAlign
+                ? `.paginated-page-content h2 { text-align: ${documentStyles.heading2.textAlign} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.heading2?.marginTop
+                ? `.paginated-page-content h2 { margin-top: ${documentStyles.heading2.marginTop}em !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.heading2?.marginBottom
+                ? `.paginated-page-content h2 { margin-bottom: ${documentStyles.heading2.marginBottom}em !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.heading2?.lineHeight
+                ? `.paginated-page-content h2 { line-height: ${documentStyles.heading2.lineHeight} !important; }`
+                : ""
+            }
+            /* Heading 3 styles */
+            ${
+              documentStyles?.heading3?.color
+                ? `.paginated-page-content h3 { color: ${documentStyles.heading3.color} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.heading3?.backgroundColor
+                ? `.paginated-page-content h3 { background-color: ${documentStyles.heading3.backgroundColor} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.heading3?.fontSize
+                ? `.paginated-page-content h3 { font-size: ${documentStyles.heading3.fontSize}pt !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.heading3?.fontFamily
+                ? `.paginated-page-content h3 { font-family: ${documentStyles.heading3.fontFamily} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.heading3?.fontWeight
+                ? `.paginated-page-content h3 { font-weight: ${documentStyles.heading3.fontWeight} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.heading3?.fontStyle
+                ? `.paginated-page-content h3 { font-style: ${documentStyles.heading3.fontStyle} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.heading3?.textAlign
+                ? `.paginated-page-content h3 { text-align: ${documentStyles.heading3.textAlign} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.heading3?.marginTop
+                ? `.paginated-page-content h3 { margin-top: ${documentStyles.heading3.marginTop}em !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.heading3?.marginBottom
+                ? `.paginated-page-content h3 { margin-bottom: ${documentStyles.heading3.marginBottom}em !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.heading3?.lineHeight
+                ? `.paginated-page-content h3 { line-height: ${documentStyles.heading3.lineHeight} !important; }`
+                : ""
+            }
+            /* Blockquote styles */
+            ${
+              documentStyles?.blockquote?.color
+                ? `.paginated-page-content blockquote, .paginated-page-content .quote, .paginated-page-content .intense-quote { color: ${documentStyles.blockquote.color} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.blockquote?.backgroundColor
+                ? `.paginated-page-content blockquote, .paginated-page-content .quote, .paginated-page-content .intense-quote { background-color: ${documentStyles.blockquote.backgroundColor} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.blockquote?.fontSize
+                ? `.paginated-page-content blockquote, .paginated-page-content .quote, .paginated-page-content .intense-quote { font-size: ${documentStyles.blockquote.fontSize}pt !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.blockquote?.fontFamily
+                ? `.paginated-page-content blockquote, .paginated-page-content .quote, .paginated-page-content .intense-quote { font-family: ${documentStyles.blockquote.fontFamily} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.blockquote?.fontWeight
+                ? `.paginated-page-content blockquote, .paginated-page-content .quote, .paginated-page-content .intense-quote { font-weight: ${documentStyles.blockquote.fontWeight} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.blockquote?.fontStyle
+                ? `.paginated-page-content blockquote, .paginated-page-content .quote, .paginated-page-content .intense-quote { font-style: ${documentStyles.blockquote.fontStyle} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.blockquote?.textAlign
+                ? `.paginated-page-content blockquote, .paginated-page-content .quote, .paginated-page-content .intense-quote { text-align: ${documentStyles.blockquote.textAlign} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.blockquote?.marginTop
+                ? `.paginated-page-content blockquote, .paginated-page-content .quote, .paginated-page-content .intense-quote { margin-top: ${documentStyles.blockquote.marginTop}em !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.blockquote?.marginBottom
+                ? `.paginated-page-content blockquote, .paginated-page-content .quote, .paginated-page-content .intense-quote { margin-bottom: ${documentStyles.blockquote.marginBottom}em !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.blockquote?.marginLeft
+                ? `.paginated-page-content blockquote, .paginated-page-content .quote, .paginated-page-content .intense-quote { margin-left: ${documentStyles.blockquote.marginLeft}px !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.blockquote?.marginRight
+                ? `.paginated-page-content blockquote, .paginated-page-content .quote, .paginated-page-content .intense-quote { margin-right: ${documentStyles.blockquote.marginRight}px !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.blockquote?.borderLeftWidth
+                ? `.paginated-page-content blockquote, .paginated-page-content .quote, .paginated-page-content .intense-quote { border-left-width: ${documentStyles.blockquote.borderLeftWidth}px !important; border-left-style: solid !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.blockquote?.borderLeftColor
+                ? `.paginated-page-content blockquote, .paginated-page-content .quote, .paginated-page-content .intense-quote { border-left-color: ${documentStyles.blockquote.borderLeftColor} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.blockquote?.lineHeight
+                ? `.paginated-page-content blockquote, .paginated-page-content .quote, .paginated-page-content .intense-quote { line-height: ${documentStyles.blockquote.lineHeight} !important; }`
+                : ""
+            }
+            /* Lead Paragraph styles */
+            ${
+              documentStyles?.["lead-paragraph"]?.color
+                ? `.paginated-page-content .lead-paragraph { color: ${documentStyles["lead-paragraph"].color} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.["lead-paragraph"]?.backgroundColor
+                ? `.paginated-page-content .lead-paragraph { background-color: ${documentStyles["lead-paragraph"].backgroundColor} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.["lead-paragraph"]?.fontSize
+                ? `.paginated-page-content .lead-paragraph { font-size: ${documentStyles["lead-paragraph"].fontSize}pt !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.["lead-paragraph"]?.fontFamily
+                ? `.paginated-page-content .lead-paragraph { font-family: ${documentStyles["lead-paragraph"].fontFamily} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.["lead-paragraph"]?.fontWeight
+                ? `.paginated-page-content .lead-paragraph { font-weight: ${documentStyles["lead-paragraph"].fontWeight} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.["lead-paragraph"]?.fontStyle
+                ? `.paginated-page-content .lead-paragraph { font-style: ${documentStyles["lead-paragraph"].fontStyle} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.["lead-paragraph"]?.textAlign
+                ? `.paginated-page-content .lead-paragraph { text-align: ${documentStyles["lead-paragraph"].textAlign} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.["lead-paragraph"]?.lineHeight
+                ? `.paginated-page-content .lead-paragraph { line-height: ${documentStyles["lead-paragraph"].lineHeight} !important; }`
+                : ""
+            }
+            /* Pullquote styles */
+            ${
+              documentStyles?.pullquote?.color
+                ? `.paginated-page-content .pullquote { color: ${documentStyles.pullquote.color} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.pullquote?.backgroundColor
+                ? `.paginated-page-content .pullquote { background-color: ${documentStyles.pullquote.backgroundColor} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.pullquote?.fontSize
+                ? `.paginated-page-content .pullquote { font-size: ${documentStyles.pullquote.fontSize}pt !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.pullquote?.fontFamily
+                ? `.paginated-page-content .pullquote { font-family: ${documentStyles.pullquote.fontFamily} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.pullquote?.fontWeight
+                ? `.paginated-page-content .pullquote { font-weight: ${documentStyles.pullquote.fontWeight} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.pullquote?.fontStyle
+                ? `.paginated-page-content .pullquote { font-style: ${documentStyles.pullquote.fontStyle} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.pullquote?.textAlign
+                ? `.paginated-page-content .pullquote { text-align: ${documentStyles.pullquote.textAlign} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.pullquote?.lineHeight
+                ? `.paginated-page-content .pullquote { line-height: ${documentStyles.pullquote.lineHeight} !important; }`
+                : ""
+            }
+            /* Heading 4 styles */
+            ${
+              documentStyles?.heading3?.color
+                ? `.paginated-page-content h4 { color: ${documentStyles.heading3.color} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.heading3?.backgroundColor
+                ? `.paginated-page-content h4 { background-color: ${documentStyles.heading3.backgroundColor} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.heading3?.fontSize
+                ? `.paginated-page-content h4 { font-size: ${Math.max(
+                    10,
+                    (documentStyles.heading3.fontSize || 14) - 2
+                  )}pt !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.heading3?.fontFamily
+                ? `.paginated-page-content h4 { font-family: ${documentStyles.heading3.fontFamily} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.heading3?.fontWeight
+                ? `.paginated-page-content h4 { font-weight: ${documentStyles.heading3.fontWeight} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.heading3?.fontStyle
+                ? `.paginated-page-content h4 { font-style: ${documentStyles.heading3.fontStyle} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.heading3?.textAlign
+                ? `.paginated-page-content h4 { text-align: ${documentStyles.heading3.textAlign} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.heading3?.marginTop
+                ? `.paginated-page-content h4 { margin-top: ${documentStyles.heading3.marginTop}em !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.heading3?.marginBottom
+                ? `.paginated-page-content h4 { margin-bottom: ${documentStyles.heading3.marginBottom}em !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.heading3?.lineHeight
+                ? `.paginated-page-content h4 { line-height: ${documentStyles.heading3.lineHeight} !important; }`
+                : ""
+            }
+            /* Heading 5 styles */
+            ${
+              documentStyles?.heading3?.color
+                ? `.paginated-page-content h5 { color: ${documentStyles.heading3.color} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.heading3?.backgroundColor
+                ? `.paginated-page-content h5 { background-color: ${documentStyles.heading3.backgroundColor} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.heading3?.fontSize
+                ? `.paginated-page-content h5 { font-size: ${Math.max(
+                    10,
+                    (documentStyles.heading3.fontSize || 14) - 3
+                  )}pt !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.heading3?.fontFamily
+                ? `.paginated-page-content h5 { font-family: ${documentStyles.heading3.fontFamily} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.heading3?.fontWeight
+                ? `.paginated-page-content h5 { font-weight: ${documentStyles.heading3.fontWeight} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.heading3?.fontStyle
+                ? `.paginated-page-content h5 { font-style: ${documentStyles.heading3.fontStyle} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.heading3?.textAlign
+                ? `.paginated-page-content h5 { text-align: ${documentStyles.heading3.textAlign} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.heading3?.marginTop
+                ? `.paginated-page-content h5 { margin-top: ${documentStyles.heading3.marginTop}em !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.heading3?.marginBottom
+                ? `.paginated-page-content h5 { margin-bottom: ${documentStyles.heading3.marginBottom}em !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.heading3?.lineHeight
+                ? `.paginated-page-content h5 { line-height: ${documentStyles.heading3.lineHeight} !important; }`
+                : ""
+            }
+            /* Heading 6 styles */
+            ${
+              documentStyles?.heading3?.color
+                ? `.paginated-page-content h6 { color: ${documentStyles.heading3.color} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.heading3?.backgroundColor
+                ? `.paginated-page-content h6 { background-color: ${documentStyles.heading3.backgroundColor} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.heading3?.fontSize
+                ? `.paginated-page-content h6 { font-size: ${Math.max(
+                    10,
+                    (documentStyles.heading3.fontSize || 14) - 4
+                  )}pt !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.heading3?.fontFamily
+                ? `.paginated-page-content h6 { font-family: ${documentStyles.heading3.fontFamily} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.heading3?.fontWeight
+                ? `.paginated-page-content h6 { font-weight: ${documentStyles.heading3.fontWeight} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.heading3?.fontStyle
+                ? `.paginated-page-content h6 { font-style: ${documentStyles.heading3.fontStyle} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.heading3?.textAlign
+                ? `.paginated-page-content h6 { text-align: ${documentStyles.heading3.textAlign} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.heading3?.marginTop
+                ? `.paginated-page-content h6 { margin-top: ${documentStyles.heading3.marginTop}em !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.heading3?.marginBottom
+                ? `.paginated-page-content h6 { margin-bottom: ${documentStyles.heading3.marginBottom}em !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.heading3?.lineHeight
+                ? `.paginated-page-content h6 { line-height: ${documentStyles.heading3.lineHeight} !important; }`
+                : ""
+            }
+            /* Caption styles */
+            ${
+              documentStyles?.caption?.color
+                ? `.paginated-page-content .caption { color: ${documentStyles.caption.color} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.caption?.backgroundColor
+                ? `.paginated-page-content .caption { background-color: ${documentStyles.caption.backgroundColor} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.caption?.fontSize
+                ? `.paginated-page-content .caption { font-size: ${documentStyles.caption.fontSize}pt !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.caption?.fontFamily
+                ? `.paginated-page-content .caption { font-family: ${documentStyles.caption.fontFamily} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.caption?.fontWeight
+                ? `.paginated-page-content .caption { font-weight: ${documentStyles.caption.fontWeight} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.caption?.fontStyle
+                ? `.paginated-page-content .caption { font-style: ${documentStyles.caption.fontStyle} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.caption?.textAlign
+                ? `.paginated-page-content .caption { text-align: ${documentStyles.caption.textAlign} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.caption?.lineHeight
+                ? `.paginated-page-content .caption { line-height: ${documentStyles.caption.lineHeight} !important; }`
+                : ""
+            }
+            /* Abstract styles */
+            ${
+              documentStyles?.abstract?.color
+                ? `.paginated-page-content .abstract { color: ${documentStyles.abstract.color} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.abstract?.backgroundColor
+                ? `.paginated-page-content .abstract { background-color: ${documentStyles.abstract.backgroundColor} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.abstract?.fontSize
+                ? `.paginated-page-content .abstract { font-size: ${documentStyles.abstract.fontSize}pt !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.abstract?.fontFamily
+                ? `.paginated-page-content .abstract { font-family: ${documentStyles.abstract.fontFamily} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.abstract?.fontWeight
+                ? `.paginated-page-content .abstract { font-weight: ${documentStyles.abstract.fontWeight} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.abstract?.fontStyle
+                ? `.paginated-page-content .abstract { font-style: ${documentStyles.abstract.fontStyle} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.abstract?.textAlign
+                ? `.paginated-page-content .abstract { text-align: ${documentStyles.abstract.textAlign} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.abstract?.lineHeight
+                ? `.paginated-page-content .abstract { line-height: ${documentStyles.abstract.lineHeight} !important; }`
+                : ""
+            }
+            /* Epigraph styles */
+            ${
+              documentStyles?.epigraph?.color
+                ? `.paginated-page-content .epigraph { color: ${documentStyles.epigraph.color} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.epigraph?.backgroundColor
+                ? `.paginated-page-content .epigraph { background-color: ${documentStyles.epigraph.backgroundColor} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.epigraph?.fontSize
+                ? `.paginated-page-content .epigraph { font-size: ${documentStyles.epigraph.fontSize}pt !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.epigraph?.fontFamily
+                ? `.paginated-page-content .epigraph { font-family: ${documentStyles.epigraph.fontFamily} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.epigraph?.fontWeight
+                ? `.paginated-page-content .epigraph { font-weight: ${documentStyles.epigraph.fontWeight} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.epigraph?.fontStyle
+                ? `.paginated-page-content .epigraph { font-style: ${documentStyles.epigraph.fontStyle} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.epigraph?.textAlign
+                ? `.paginated-page-content .epigraph { text-align: ${documentStyles.epigraph.textAlign} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.epigraph?.lineHeight
+                ? `.paginated-page-content .epigraph { line-height: ${documentStyles.epigraph.lineHeight} !important; }`
+                : ""
+            }
+            /* Dedication styles */
+            ${
+              documentStyles?.dedication?.color
+                ? `.paginated-page-content .dedication { color: ${documentStyles.dedication.color} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.dedication?.backgroundColor
+                ? `.paginated-page-content .dedication { background-color: ${documentStyles.dedication.backgroundColor} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.dedication?.fontSize
+                ? `.paginated-page-content .dedication { font-size: ${documentStyles.dedication.fontSize}pt !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.dedication?.fontFamily
+                ? `.paginated-page-content .dedication { font-family: ${documentStyles.dedication.fontFamily} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.dedication?.fontWeight
+                ? `.paginated-page-content .dedication { font-weight: ${documentStyles.dedication.fontWeight} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.dedication?.fontStyle
+                ? `.paginated-page-content .dedication { font-style: ${documentStyles.dedication.fontStyle} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.dedication?.textAlign
+                ? `.paginated-page-content .dedication { text-align: ${documentStyles.dedication.textAlign} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.dedication?.lineHeight
+                ? `.paginated-page-content .dedication { line-height: ${documentStyles.dedication.lineHeight} !important; }`
+                : ""
+            }
+            /* Verse styles */
+            ${
+              documentStyles?.verse?.color
+                ? `.paginated-page-content .verse { color: ${documentStyles.verse.color} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.verse?.backgroundColor
+                ? `.paginated-page-content .verse { background-color: ${documentStyles.verse.backgroundColor} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.verse?.fontSize
+                ? `.paginated-page-content .verse { font-size: ${documentStyles.verse.fontSize}pt !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.verse?.fontFamily
+                ? `.paginated-page-content .verse { font-family: ${documentStyles.verse.fontFamily} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.verse?.fontWeight
+                ? `.paginated-page-content .verse { font-weight: ${documentStyles.verse.fontWeight} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.verse?.fontStyle
+                ? `.paginated-page-content .verse { font-style: ${documentStyles.verse.fontStyle} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.verse?.textAlign
+                ? `.paginated-page-content .verse { text-align: ${documentStyles.verse.textAlign} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.verse?.lineHeight
+                ? `.paginated-page-content .verse { line-height: ${documentStyles.verse.lineHeight} !important; }`
+                : ""
+            }
+            /* Sidebar styles */
+            ${
+              documentStyles?.sidebar?.color
+                ? `.paginated-page-content .sidebar { color: ${documentStyles.sidebar.color} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.sidebar?.backgroundColor
+                ? `.paginated-page-content .sidebar { background-color: ${documentStyles.sidebar.backgroundColor} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.sidebar?.fontSize
+                ? `.paginated-page-content .sidebar { font-size: ${documentStyles.sidebar.fontSize}pt !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.sidebar?.fontFamily
+                ? `.paginated-page-content .sidebar { font-family: ${documentStyles.sidebar.fontFamily} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.sidebar?.fontWeight
+                ? `.paginated-page-content .sidebar { font-weight: ${documentStyles.sidebar.fontWeight} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.sidebar?.fontStyle
+                ? `.paginated-page-content .sidebar { font-style: ${documentStyles.sidebar.fontStyle} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.sidebar?.textAlign
+                ? `.paginated-page-content .sidebar { text-align: ${documentStyles.sidebar.textAlign} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.sidebar?.lineHeight
+                ? `.paginated-page-content .sidebar { line-height: ${documentStyles.sidebar.lineHeight} !important; }`
+                : ""
+            }
+            /* Callout styles */
+            ${
+              documentStyles?.callout?.color
+                ? `.paginated-page-content .callout { color: ${documentStyles.callout.color} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.callout?.backgroundColor
+                ? `.paginated-page-content .callout { background-color: ${documentStyles.callout.backgroundColor} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.callout?.fontSize
+                ? `.paginated-page-content .callout { font-size: ${documentStyles.callout.fontSize}pt !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.callout?.fontFamily
+                ? `.paginated-page-content .callout { font-family: ${documentStyles.callout.fontFamily} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.callout?.fontWeight
+                ? `.paginated-page-content .callout { font-weight: ${documentStyles.callout.fontWeight} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.callout?.fontStyle
+                ? `.paginated-page-content .callout { font-style: ${documentStyles.callout.fontStyle} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.callout?.textAlign
+                ? `.paginated-page-content .callout { text-align: ${documentStyles.callout.textAlign} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.callout?.lineHeight
+                ? `.paginated-page-content .callout { line-height: ${documentStyles.callout.lineHeight} !important; }`
+                : ""
+            }
+            /* Footnote styles */
+            ${
+              documentStyles?.footnote?.color
+                ? `.paginated-page-content .footnote { color: ${documentStyles.footnote.color} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.footnote?.backgroundColor
+                ? `.paginated-page-content .footnote { background-color: ${documentStyles.footnote.backgroundColor} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.footnote?.fontSize
+                ? `.paginated-page-content .footnote { font-size: ${documentStyles.footnote.fontSize}pt !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.footnote?.fontFamily
+                ? `.paginated-page-content .footnote { font-family: ${documentStyles.footnote.fontFamily} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.footnote?.fontWeight
+                ? `.paginated-page-content .footnote { font-weight: ${documentStyles.footnote.fontWeight} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.footnote?.fontStyle
+                ? `.paginated-page-content .footnote { font-style: ${documentStyles.footnote.fontStyle} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.footnote?.textAlign
+                ? `.paginated-page-content .footnote { text-align: ${documentStyles.footnote.textAlign} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.footnote?.lineHeight
+                ? `.paginated-page-content .footnote { line-height: ${documentStyles.footnote.lineHeight} !important; }`
+                : ""
+            }
+            /* Citation styles */
+            ${
+              documentStyles?.citation?.color
+                ? `.paginated-page-content .citation { color: ${documentStyles.citation.color} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.citation?.backgroundColor
+                ? `.paginated-page-content .citation { background-color: ${documentStyles.citation.backgroundColor} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.citation?.fontSize
+                ? `.paginated-page-content .citation { font-size: ${documentStyles.citation.fontSize}pt !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.citation?.fontFamily
+                ? `.paginated-page-content .citation { font-family: ${documentStyles.citation.fontFamily} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.citation?.fontWeight
+                ? `.paginated-page-content .citation { font-weight: ${documentStyles.citation.fontWeight} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.citation?.fontStyle
+                ? `.paginated-page-content .citation { font-style: ${documentStyles.citation.fontStyle} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.citation?.textAlign
+                ? `.paginated-page-content .citation { text-align: ${documentStyles.citation.textAlign} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.citation?.lineHeight
+                ? `.paginated-page-content .citation { line-height: ${documentStyles.citation.lineHeight} !important; }`
+                : ""
+            }
+            /* Bibliography styles */
+            ${
+              documentStyles?.bibliography?.color
+                ? `.paginated-page-content .bibliography { color: ${documentStyles.bibliography.color} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.bibliography?.backgroundColor
+                ? `.paginated-page-content .bibliography { background-color: ${documentStyles.bibliography.backgroundColor} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.bibliography?.fontSize
+                ? `.paginated-page-content .bibliography { font-size: ${documentStyles.bibliography.fontSize}pt !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.bibliography?.fontFamily
+                ? `.paginated-page-content .bibliography { font-family: ${documentStyles.bibliography.fontFamily} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.bibliography?.fontWeight
+                ? `.paginated-page-content .bibliography { font-weight: ${documentStyles.bibliography.fontWeight} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.bibliography?.fontStyle
+                ? `.paginated-page-content .bibliography { font-style: ${documentStyles.bibliography.fontStyle} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.bibliography?.textAlign
+                ? `.paginated-page-content .bibliography { text-align: ${documentStyles.bibliography.textAlign} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.bibliography?.lineHeight
+                ? `.paginated-page-content .bibliography { line-height: ${documentStyles.bibliography.lineHeight} !important; }`
+                : ""
+            }
+            /* Author Info styles */
+            ${
+              documentStyles?.["author-info"]?.color
+                ? `.paginated-page-content .author-info { color: ${documentStyles["author-info"].color} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.["author-info"]?.backgroundColor
+                ? `.paginated-page-content .author-info { background-color: ${documentStyles["author-info"].backgroundColor} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.["author-info"]?.fontSize
+                ? `.paginated-page-content .author-info { font-size: ${documentStyles["author-info"].fontSize}pt !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.["author-info"]?.fontFamily
+                ? `.paginated-page-content .author-info { font-family: ${documentStyles["author-info"].fontFamily} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.["author-info"]?.fontWeight
+                ? `.paginated-page-content .author-info { font-weight: ${documentStyles["author-info"].fontWeight} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.["author-info"]?.fontStyle
+                ? `.paginated-page-content .author-info { font-style: ${documentStyles["author-info"].fontStyle} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.["author-info"]?.textAlign
+                ? `.paginated-page-content .author-info { text-align: ${documentStyles["author-info"].textAlign} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.["author-info"]?.lineHeight
+                ? `.paginated-page-content .author-info { line-height: ${documentStyles["author-info"].lineHeight} !important; }`
+                : ""
+            }
+            /* Address styles */
+            ${
+              documentStyles?.address?.color
+                ? `.paginated-page-content .address { color: ${documentStyles.address.color} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.address?.backgroundColor
+                ? `.paginated-page-content .address { background-color: ${documentStyles.address.backgroundColor} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.address?.fontSize
+                ? `.paginated-page-content .address { font-size: ${documentStyles.address.fontSize}pt !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.address?.fontFamily
+                ? `.paginated-page-content .address { font-family: ${documentStyles.address.fontFamily} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.address?.fontWeight
+                ? `.paginated-page-content .address { font-weight: ${documentStyles.address.fontWeight} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.address?.fontStyle
+                ? `.paginated-page-content .address { font-style: ${documentStyles.address.fontStyle} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.address?.textAlign
+                ? `.paginated-page-content .address { text-align: ${documentStyles.address.textAlign} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.address?.lineHeight
+                ? `.paginated-page-content .address { line-height: ${documentStyles.address.lineHeight} !important; }`
+                : ""
+            }
+            /* Salutation styles */
+            ${
+              documentStyles?.salutation?.color
+                ? `.paginated-page-content .salutation { color: ${documentStyles.salutation.color} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.salutation?.backgroundColor
+                ? `.paginated-page-content .salutation { background-color: ${documentStyles.salutation.backgroundColor} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.salutation?.fontSize
+                ? `.paginated-page-content .salutation { font-size: ${documentStyles.salutation.fontSize}pt !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.salutation?.fontFamily
+                ? `.paginated-page-content .salutation { font-family: ${documentStyles.salutation.fontFamily} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.salutation?.fontWeight
+                ? `.paginated-page-content .salutation { font-weight: ${documentStyles.salutation.fontWeight} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.salutation?.fontStyle
+                ? `.paginated-page-content .salutation { font-style: ${documentStyles.salutation.fontStyle} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.salutation?.textAlign
+                ? `.paginated-page-content .salutation { text-align: ${documentStyles.salutation.textAlign} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.salutation?.lineHeight
+                ? `.paginated-page-content .salutation { line-height: ${documentStyles.salutation.lineHeight} !important; }`
+                : ""
+            }
+            /* Closing styles */
+            ${
+              documentStyles?.closing?.color
+                ? `.paginated-page-content .closing { color: ${documentStyles.closing.color} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.closing?.backgroundColor
+                ? `.paginated-page-content .closing { background-color: ${documentStyles.closing.backgroundColor} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.closing?.fontSize
+                ? `.paginated-page-content .closing { font-size: ${documentStyles.closing.fontSize}pt !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.closing?.fontFamily
+                ? `.paginated-page-content .closing { font-family: ${documentStyles.closing.fontFamily} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.closing?.fontWeight
+                ? `.paginated-page-content .closing { font-weight: ${documentStyles.closing.fontWeight} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.closing?.fontStyle
+                ? `.paginated-page-content .closing { font-style: ${documentStyles.closing.fontStyle} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.closing?.textAlign
+                ? `.paginated-page-content .closing { text-align: ${documentStyles.closing.textAlign} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.closing?.lineHeight
+                ? `.paginated-page-content .closing { line-height: ${documentStyles.closing.lineHeight} !important; }`
+                : ""
+            }
+            /* Signature styles */
+            ${
+              documentStyles?.signature?.color
+                ? `.paginated-page-content .signature { color: ${documentStyles.signature.color} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.signature?.backgroundColor
+                ? `.paginated-page-content .signature { background-color: ${documentStyles.signature.backgroundColor} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.signature?.fontSize
+                ? `.paginated-page-content .signature { font-size: ${documentStyles.signature.fontSize}pt !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.signature?.fontFamily
+                ? `.paginated-page-content .signature { font-family: ${documentStyles.signature.fontFamily} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.signature?.fontWeight
+                ? `.paginated-page-content .signature { font-weight: ${documentStyles.signature.fontWeight} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.signature?.fontStyle
+                ? `.paginated-page-content .signature { font-style: ${documentStyles.signature.fontStyle} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.signature?.textAlign
+                ? `.paginated-page-content .signature { text-align: ${documentStyles.signature.textAlign} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.signature?.lineHeight
+                ? `.paginated-page-content .signature { line-height: ${documentStyles.signature.lineHeight} !important; }`
                 : ""
             }
           `}
@@ -1093,6 +2515,7 @@ export const PaginatedEditor = forwardRef<
         {/* Hidden measurement div */}
         <div
           ref={measureRef}
+          className="paginated-page-content editor-content"
           aria-hidden="true"
           style={{
             position: "absolute",
@@ -1101,30 +2524,33 @@ export const PaginatedEditor = forwardRef<
             fontSize: `${fontSize}px`,
             lineHeight: lineHeight,
             fontFamily: fontFamily,
+            textIndent: `${firstLineIndent}px`,
           }}
         />
 
-        {/* Ruler */}
+        {/* Ruler - Fixed at top */}
         {showRuler && (
           <div
             style={{
-              position: "sticky",
-              top: 0,
+              flexShrink: 0,
               zIndex: 20,
-              width: `${pageWidthPx}px`,
-              marginBottom: "8px",
+              width: "100%",
+              display: "flex",
+              justifyContent: "center",
               backgroundColor: "#eddcc5",
-              paddingTop: "4px",
+              paddingTop: "8px",
+              paddingBottom: "0px",
+              boxSizing: "border-box",
             }}
           >
             <div
               style={{
                 position: "relative",
-                width: "100%",
+                width: `${pageWidthPx}px`,
                 height: "24px",
                 display: "flex",
                 alignItems: "flex-end",
-                marginBottom: "2px",
+                boxSizing: "border-box",
               }}
             >
               {/* Ruler background */}
@@ -1137,9 +2563,9 @@ export const PaginatedEditor = forwardRef<
                   left: 0,
                   right: 0,
                   backgroundColor: "#fffaf3",
-                  borderRadius: "4px",
-                  border: "1px solid #e0c392",
-                  boxShadow: "0 4px 12px rgba(44, 62, 80, 0.12)",
+                  borderRadius: "0",
+                  border: "none",
+                  borderBottom: "1px solid #e0c392",
                   pointerEvents: "none",
                   zIndex: 0,
                 }}
@@ -1161,7 +2587,8 @@ export const PaginatedEditor = forwardRef<
                     key={inch}
                     style={{
                       position: "absolute",
-                      left: `${(inch / 8) * 100}%`,
+                      left: inch === 8 ? "auto" : `${(inch / 8) * 100}%`,
+                      right: inch === 8 ? "0" : "auto",
                       bottom: 0,
                       width: "1px",
                       height: inch === 0 || inch === 8 ? "16px" : "12px",
@@ -1190,13 +2617,14 @@ export const PaginatedEditor = forwardRef<
                     key={`label-${inch}`}
                     style={{
                       position: "absolute",
-                      left: `${(inch / 8) * 100}%`,
+                      left: inch === 8 ? "auto" : `${(inch / 8) * 100}%`,
+                      right: inch === 8 ? "0" : "auto",
                       top: "0px",
                       transform:
                         inch === 0
                           ? "translateX(0)"
                           : inch === 8
-                          ? "translateX(-100%)"
+                          ? "translateX(0)"
                           : "translateX(-50%)",
                       fontSize: "9px",
                       fontWeight: 600,
@@ -1294,155 +2722,152 @@ export const PaginatedEditor = forwardRef<
           </div>
         )}
 
-        {/* Pages */}
+        {/* Scrollable Pages Container */}
         <div
-          ref={pagesContainerRef}
-          className="paginated-pages-stack"
+          ref={scrollContainerRef}
+          onScroll={(e) => {
+            const target = e.target as HTMLDivElement;
+            onScroll?.(target.scrollTop);
+          }}
+          className="hide-scrollbar"
           style={{
+            flex: 1,
+            overflowY: "auto",
+            overflowX: "hidden",
+            width: "100%",
             display: "flex",
             flexDirection: "column",
-            gap: "24px",
             alignItems: "center",
+            paddingTop: showRuler ? "0px" : "24px",
+            paddingBottom: "24px",
+            scrollbarWidth: "none",
+            msOverflowStyle: "none",
           }}
         >
-          {pages.map((page, index) => (
-            <div
-              key={page.id}
-              className="paginated-page"
-              style={{
-                width: `${pageWidthPx}px`,
-                height: `${pageHeightPx}px`,
-                backgroundColor: "#ffffff",
-                boxShadow:
-                  activePageIndex === index
-                    ? "0 0 0 3px #3b82f6, 0 8px 32px rgba(0, 0, 0, 0.2)"
-                    : "0 4px 20px rgba(0, 0, 0, 0.15)",
-                position: "relative",
-                overflow: "hidden",
-                transition: "box-shadow 0.15s ease",
-              }}
-            >
-              {/* Header */}
-              {headerText && (
+          {/* Pages */}
+          <div
+            ref={pagesContainerRef}
+            className="paginated-pages-stack"
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "24px",
+              alignItems: "center",
+              position: "relative",
+            }}
+          >
+            {pages.map((page, index) => (
+              <div
+                key={page.id}
+                className="paginated-page"
+                style={{
+                  width: `${pageWidthPx}px`,
+                  height: `${pageHeightPx}px`,
+                  backgroundColor: "#ffffff",
+                  boxShadow:
+                    activePageIndex === index
+                      ? "0 0 0 3px #3b82f6, 0 8px 32px rgba(0, 0, 0, 0.2)"
+                      : "0 4px 20px rgba(0, 0, 0, 0.15)",
+                  position: "relative",
+                  overflow: "hidden",
+                  transition: "box-shadow 0.15s ease",
+                }}
+              >
+                {/* Header */}
+                {headerText && (
+                  <>
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: `${marginTop / 3}px`,
+                        left: `${marginLeft}px`,
+                        right: `${marginRight}px`,
+                        fontSize: "11px",
+                        color: "#666",
+                        textAlign: "left",
+                        display: "flex",
+                        justifyContent: "space-between",
+                      }}
+                    >
+                      <span>{headerText}</span>
+                      {showPageNumbers &&
+                        pageNumberPosition === "header" &&
+                        index > 0 && <span>{index + 1}</span>}
+                    </div>
+                  </>
+                )}
+
+                {/* Content */}
+                <div
+                  ref={(el) => {
+                    if (el) {
+                      pageRefs.current.set(page.id, el);
+                    } else {
+                      pageRefs.current.delete(page.id);
+                    }
+                  }}
+                  className="paginated-page-content editor-content"
+                  contentEditable={isEditable}
+                  suppressContentEditableWarning
+                  onInput={() => handleInput()}
+                  onKeyDown={(e) => handleKeyDown(e, index)}
+                  onPaste={(e) => handlePaste(e)}
+                  onFocus={() => {
+                    internalChangeRef.current = true;
+                    setActivePageIndex(index);
+                  }}
+                  dangerouslySetInnerHTML={{ __html: page.content }}
+                  style={contentStyle}
+                />
+
+                {/* Footer / Page number */}
                 <div
                   style={{
                     position: "absolute",
-                    top: `${marginTop / 3}px`,
+                    bottom: `${marginBottom / 3}px`,
                     left: `${marginLeft}px`,
                     right: `${marginRight}px`,
                     fontSize: "11px",
                     color: "#666",
-                    textAlign: "center",
+                    textAlign: "left",
+                    display: "flex",
+                    justifyContent: "space-between",
                   }}
                 >
-                  {headerText}
+                  <span>{footerText}</span>
                   {showPageNumbers &&
-                    pageNumberPosition === "header" &&
-                    index > 0 && (
-                      <span style={{ marginLeft: "16px" }}>{index + 1}</span>
-                    )}
+                    pageNumberPosition === "footer" &&
+                    index > 0 && <span>Page {index + 1}</span>}
                 </div>
-              )}
 
-              {/* Content */}
-              <div
-                ref={(el) => {
-                  if (el) {
-                    pageRefs.current.set(page.id, el);
-                  } else {
-                    pageRefs.current.delete(page.id);
-                  }
-                }}
-                className="paginated-page-content"
-                contentEditable={isEditable}
-                suppressContentEditableWarning
-                onInput={() => handleInput()}
-                onKeyDown={(e) => handleKeyDown(e, index)}
-                onPaste={(e) => handlePaste(e)}
-                onFocus={() => setActivePageIndex(index)}
-                dangerouslySetInnerHTML={{ __html: page.content }}
-                style={contentStyle}
-              />
-
-              {/* Footer / Page number */}
-              <div
-                style={{
-                  position: "absolute",
-                  bottom: `${marginBottom / 3}px`,
-                  left: `${marginLeft}px`,
-                  right: `${marginRight}px`,
-                  fontSize: "11px",
-                  color: "#666",
-                  textAlign: "center",
-                }}
-              >
-                {footerText}
-                {showPageNumbers &&
-                  pageNumberPosition === "footer" &&
-                  index > 0 && <span>{index + 1}</span>}
+                {/* Page edge shadow for depth */}
+                <div
+                  style={{
+                    position: "absolute",
+                    right: 0,
+                    top: 0,
+                    bottom: 0,
+                    width: "4px",
+                    background:
+                      "linear-gradient(to right, transparent, rgba(0,0,0,0.05))",
+                    pointerEvents: "none",
+                  }}
+                />
+                <div
+                  style={{
+                    position: "absolute",
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    height: "4px",
+                    background:
+                      "linear-gradient(to bottom, transparent, rgba(0,0,0,0.05))",
+                    pointerEvents: "none",
+                  }}
+                />
               </div>
-
-              {/* Page edge shadow for depth */}
-              <div
-                style={{
-                  position: "absolute",
-                  right: 0,
-                  top: 0,
-                  bottom: 0,
-                  width: "4px",
-                  background:
-                    "linear-gradient(to right, transparent, rgba(0,0,0,0.05))",
-                  pointerEvents: "none",
-                }}
-              />
-              <div
-                style={{
-                  position: "absolute",
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  height: "4px",
-                  background:
-                    "linear-gradient(to bottom, transparent, rgba(0,0,0,0.05))",
-                  pointerEvents: "none",
-                }}
-              />
-            </div>
-          ))}
-        </div>
-
-        {/* Status bar */}
-        <div
-          style={{
-            position: "fixed",
-            bottom: "16px",
-            left: "50%",
-            transform: "translateX(-50%)",
-            backgroundColor: "rgba(30, 41, 59, 0.95)",
-            color: "#fff",
-            padding: "10px 20px",
-            borderRadius: "8px",
-            fontSize: "13px",
-            display: "flex",
-            gap: "16px",
-            alignItems: "center",
-            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.3)",
-            zIndex: 100,
-          }}
-        >
-          <span style={{ fontWeight: 500 }}>
-            Page {activePageIndex + 1} of {pages.length}
-          </span>
-          <span style={{ opacity: 0.5 }}>|</span>
-          <span style={{ opacity: 0.8 }}>
-            {
-              collectAllContent()
-                .replace(/<[^>]*>/g, "")
-                .split(/\s+/)
-                .filter((w) => w.length > 0).length
-            }{" "}
-            words
-          </span>
+            ))}
+          </div>
         </div>
       </div>
     );

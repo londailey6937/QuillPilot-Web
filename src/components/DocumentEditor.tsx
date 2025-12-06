@@ -18,6 +18,7 @@ interface DocumentEditorProps {
   searchText?: string | null;
   onTextChange: (text: string) => void;
   onContentChange?: (content: { plainText: string; html: string }) => void;
+  onPageCountChange?: (count: number) => void;
   showSpacingIndicators?: boolean;
   showVisualSuggestions?: boolean;
   highlightPosition: number | null;
@@ -63,6 +64,7 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
   htmlContent,
   onTextChange,
   onContentChange,
+  onPageCountChange,
   showSpacingIndicators,
   showVisualSuggestions,
   highlightPosition,
@@ -109,6 +111,7 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
       <CustomEditor
         content={startContent}
         onUpdate={handleUpdate}
+        onPageCountChange={onPageCountChange}
         onSave={onSave}
         isEditable={!readOnly}
         showSpacingIndicators={showSpacingIndicators}
