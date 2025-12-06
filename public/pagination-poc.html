@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pagination Engine - Proof of Concept</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        background: #e5e5e5;
+        min-height: 100vh;
+      }
+
+      .container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 24px;
+        gap: 24px;
+      }
+
+      .header {
+        text-align: center;
+        padding: 16px;
+        background: #1e293b;
+        color: white;
+        width: 100%;
+      }
+
+      .header h1 {
+        font-size: 20px;
+        font-weight: 600;
+      }
+
+      .header p {
+        font-size: 14px;
+        opacity: 0.8;
+        margin-top: 4px;
+      }
+
+      /* Page dimensions - US Letter at 96 DPI */
+      :root {
+        --page-width: 816px; /* 8.5" */
+        --page-height: 1056px; /* 11" */
+        --margin-top: 96px; /* 1" */
+        --margin-bottom: 96px; /* 1" */
+        --margin-left: 96px; /* 1" */
+        --margin-right: 96px; /* 1" */
+        --content-width: calc(
+          var(--page-width) - var(--margin-left) - var(--margin-right)
+        );
+        --content-height: calc(
+          var(--page-height) - var(--margin-top) - var(--margin-bottom)
+        );
+      }
+
+      .pages-container {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+        align-items: center;
+      }
+
+      .page {
+        width: var(--page-width);
+        height: var(--page-height);
+        background: #ffffff;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .page-content {
+        position: absolute;
+        top: var(--margin-top);
+        left: var(--margin-left);
+        width: var(--content-width);
+        height: var(--content-height);
+        overflow: hidden;
+        outline: none;
+        font-family: Georgia, serif;
+        font-size: 16px;
+        line-height: 1.6;
+        color: #333;
+      }
+
+      .page-content p {
+        margin-bottom: 1em;
+        text-indent: 0.5in;
+      }
+
+      .page-content p:first-child {
+        text-indent: 0;
+      }
+
+      .page-number {
+        position: absolute;
+        bottom: calc(var(--margin-bottom) / 2);
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 12px;
+        color: #666;
+      }
+
+      .page.active::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: #3b82f6;
+      }
+
+      /* Hidden measurement div */
+      #measure {
+        position: absolute;
+        visibility: hidden;
+        width: var(--content-width);
+        font-family: Georgia, serif;
+        font-size: 16px;
+        line-height: 1.6;
+      }
+
+      #measure p {
+        margin-bottom: 1em;
+        text-indent: 0.5in;
+      }
+
+      .status-bar {
+        position: fixed;
+        bottom: 16px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0, 0, 0, 0.85);
+        color: white;
+        padding: 8px 20px;
+        border-radius: 8px;
+        font-size: 13px;
+        display: flex;
+        gap: 16px;
+        align-items: center;
+      }
+
+      .status-bar .divider {
+        width: 1px;
+        height: 16px;
+        background: rgba(255, 255, 255, 0.3);
+      }
+
+      .toolbar {
+        display: flex;
+        gap: 8px;
+        padding: 12px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      .toolbar button {
+        padding: 8px 16px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        background: white;
+        cursor: pointer;
+        font-size: 14px;
+        transition: all 0.2s;
+      }
+
+      .toolbar button:hover {
+        background: #f5f5f5;
+        border-color: #999;
+      }
+
+      .toolbar button.active {
+        background: #3b82f6;
+        color: white;
+        border-color: #3b82f6;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h1>Custom Pagination Engine - Proof of Concept</h1>
+      <p>Type in the pages below. Content automatically flows to new pages.</p>
+    </div>
+
+    <div class="container">
+      <div class="toolbar">
+        <button onclick="addLoremIpsum()">Add Lorem Ipsum</button>
+        <button onclick="clearAll()">Clear All</button>
+        <button onclick="exportContent()">Export HTML</button>
+      </div>
+
+      <div id="pages-container" class="pages-container">
+        <!-- Pages will be added dynamically -->
+      </div>
+    </div>
+
+    <!-- Hidden measurement div -->
+    <div id="measure"></div>
+
+    <div class="status-bar">
+      <span id="page-status">Page 1 of 1</span>
+      <div class="divider"></div>
+      <span id="word-count">0 words</span>
+      <div class="divider"></div>
+      <span>Custom Pagination Engine POC</span>
+    </div>
+
+    <script>
+      // Page dimensions
+      const PAGE_WIDTH = 816;
+      const PAGE_HEIGHT = 1056;
+      const MARGIN_TOP = 96;
+      const MARGIN_BOTTOM = 96;
+      const MARGIN_LEFT = 96;
+      const MARGIN_RIGHT = 96;
+      const CONTENT_HEIGHT = PAGE_HEIGHT - MARGIN_TOP - MARGIN_BOTTOM;
+
+      // State
+      let pages = [];
+      let activePageIndex = 0;
+      let isRepaginating = false;
+
+      // DOM references
+      const pagesContainer = document.getElementById("pages-container");
+      const measureDiv = document.getElementById("measure");
+      const pageStatus = document.getElementById("page-status");
+      const wordCount = document.getElementById("word-count");
+
+      /**
+       * Measure content height
+       */
+      function measureHeight(html) {
+        measureDiv.innerHTML = html;
+        return measureDiv.scrollHeight;
+      }
+
+      /**
+       * Split content at a target height
+       */
+      function splitAtHeight(html, maxHeight) {
+        const temp = document.createElement("div");
+        temp.innerHTML = html;
+
+        const fitting = [];
+        const remaining = [];
+        let foundSplit = false;
+
+        const children = Array.from(temp.childNodes);
+
+        for (const node of children) {
+          if (foundSplit) {
+            remaining.push(node.cloneNode(true));
+            continue;
+          }
+
+          // Build test HTML
+          const testFitting = [...fitting, node.cloneNode(true)];
+          const testHtml = testFitting
+            .map((n) =>
+              n.nodeType === Node.ELEMENT_NODE ? n.outerHTML : n.textContent
+            )
+            .join("");
+
+          if (measureHeight(testHtml) <= maxHeight) {
+            fitting.push(node.cloneNode(true));
+          } else {
+            // Try to split paragraph
+            if (
+              node.nodeType === Node.ELEMENT_NODE &&
+              (node.tagName === "P" || node.tagName === "DIV")
+            ) {
+              const text = node.textContent || "";
+              const words = text.split(/\s+/);
+
+              // Binary search for split point
+              let low = 0,
+                high = words.length,
+                best = 0;
+
+              while (low < high) {
+                const mid = Math.floor((low + high + 1) / 2);
+                const testText = words.slice(0, mid).join(" ");
+                const testNode = node.cloneNode(false);
+                testNode.textContent = testText;
+
+                const currentHtml =
+                  fitting
+                    .map((n) =>
+                      n.nodeType === Node.ELEMENT_NODE
+                        ? n.outerHTML
+                        : n.textContent
+                    )
+                    .join("") + testNode.outerHTML;
+
+                if (measureHeight(currentHtml) <= maxHeight) {
+                  best = mid;
+                  low = mid;
+                } else {
+                  high = mid - 1;
+                }
+              }
+
+              if (best > 0) {
+                const fittingNode = node.cloneNode(false);
+                fittingNode.textContent = words.slice(0, best).join(" ");
+                fitting.push(fittingNode);
+
+                if (best < words.length) {
+                  const remainingNode = node.cloneNode(false);
+                  remainingNode.textContent = words.slice(best).join(" ");
+                  remaining.push(remainingNode);
+                }
+              } else {
+                remaining.push(node.cloneNode(true));
+              }
+            } else {
+              remaining.push(node.cloneNode(true));
+            }
+            foundSplit = true;
+          }
+        }
+
+        const fittingHtml = fitting
+          .map((n) =>
+            n.nodeType === Node.ELEMENT_NODE ? n.outerHTML : n.textContent
+          )
+          .join("");
+
+        const remainingHtml = remaining
+          .map((n) =>
+            n.nodeType === Node.ELEMENT_NODE ? n.outerHTML : n.textContent
+          )
+          .join("");
+
+        return [fittingHtml, remainingHtml];
+      }
+
+      /**
+       * Create a page element
+       */
+      function createPage(pageNum, content) {
+        const page = document.createElement("div");
+        page.className = "page";
+        page.dataset.page = pageNum;
+
+        page.innerHTML = `
+        <div class="page-content" contenteditable="true">${content}</div>
+        <div class="page-number">${pageNum}</div>
+      `;
+
+        const contentDiv = page.querySelector(".page-content");
+
+        contentDiv.addEventListener("input", () => handleInput(pageNum - 1));
+        contentDiv.addEventListener("keydown", (e) =>
+          handleKeyDown(e, pageNum - 1)
+        );
+        contentDiv.addEventListener("focus", () => setActivePage(pageNum - 1));
+
+        return page;
+      }
+
+      /**
+       * Set active page
+       */
+      function setActivePage(index) {
+        activePageIndex = index;
+        document.querySelectorAll(".page").forEach((p, i) => {
+          p.classList.toggle("active", i === index);
+        });
+        updateStatus();
+      }
+
+      /**
+       * Update status bar
+       */
+      function updateStatus() {
+        pageStatus.textContent = `Page ${activePageIndex + 1} of ${
+          pages.length
+        }`;
+
+        // Count words
+        const allText = pages.map((p) => p.content).join(" ");
+        const words = allText
+          .replace(/<[^>]*>/g, "")
+          .trim()
+          .split(/\s+/)
+          .filter((w) => w.length > 0);
+        wordCount.textContent = `${words.length} words`;
+      }
+
+      /**
+       * Repaginate all content
+       */
+      function repaginate(fullHtml) {
+        if (isRepaginating) return;
+        isRepaginating = true;
+
+        const newPages = [];
+        let remaining = fullHtml;
+        let pageNum = 1;
+
+        while (remaining.trim()) {
+          const [fitting, leftover] = splitAtHeight(remaining, CONTENT_HEIGHT);
+
+          if (!fitting.trim() && leftover.trim()) {
+            // Force content onto page
+            const forceSplit = leftover.indexOf("</p>");
+            if (forceSplit > -1) {
+              newPages.push({ content: leftover.substring(0, forceSplit + 4) });
+              remaining = leftover.substring(forceSplit + 4);
+            } else {
+              newPages.push({ content: leftover });
+              break;
+            }
+          } else {
+            newPages.push({ content: fitting });
+            remaining = leftover;
+          }
+
+          pageNum++;
+          if (pageNum > 50) break; // Safety limit
+        }
+
+        if (newPages.length === 0) {
+          newPages.push({ content: "" });
+        }
+
+        pages = newPages;
+        renderPages();
+        isRepaginating = false;
+      }
+
+      /**
+       * Render all pages
+       */
+      function renderPages() {
+        // Save cursor position
+        const selection = window.getSelection();
+        let savedOffset = 0;
+        let savedPageIndex = activePageIndex;
+
+        if (selection && selection.rangeCount > 0) {
+          const range = selection.getRangeAt(0);
+          savedOffset = range.startOffset;
+        }
+
+        // Clear and rebuild
+        pagesContainer.innerHTML = "";
+
+        pages.forEach((page, i) => {
+          const pageEl = createPage(i + 1, page.content);
+          pagesContainer.appendChild(pageEl);
+        });
+
+        // Restore focus
+        const pageElements = pagesContainer.querySelectorAll(".page-content");
+        if (pageElements[savedPageIndex]) {
+          pageElements[savedPageIndex].focus();
+
+          // Try to restore cursor position
+          try {
+            const range = document.createRange();
+            const textNode = pageElements[savedPageIndex].firstChild;
+            if (textNode) {
+              const offset = Math.min(
+                savedOffset,
+                textNode.textContent?.length || 0
+              );
+              range.setStart(textNode, offset);
+              range.collapse(true);
+              selection.removeAllRanges();
+              selection.addRange(range);
+            }
+          } catch (e) {
+            // Cursor restoration failed, that's ok
+          }
+        }
+
+        setActivePage(savedPageIndex);
+      }
+
+      /**
+       * Handle input on a page
+       */
+      function handleInput(pageIndex) {
+        // Collect all content
+        const contentDivs = pagesContainer.querySelectorAll(".page-content");
+        const allHtml = Array.from(contentDivs)
+          .map((div) => div.innerHTML)
+          .join("");
+
+        // Debounce repagination
+        clearTimeout(window.repaginateTimeout);
+        window.repaginateTimeout = setTimeout(() => {
+          repaginate(allHtml);
+        }, 100);
+      }
+
+      /**
+       * Handle keydown for page navigation
+       */
+      function handleKeyDown(e, pageIndex) {
+        const selection = window.getSelection();
+        if (!selection || selection.rangeCount === 0) return;
+
+        const pageContent =
+          pagesContainer.querySelectorAll(".page-content")[pageIndex];
+        if (!pageContent) return;
+
+        // Check cursor position
+        const range = selection.getRangeAt(0);
+        const isAtStart = range.startOffset === 0;
+        const isAtEnd =
+          range.endOffset === (range.endContainer.textContent?.length || 0);
+
+        if (
+          (e.key === "ArrowUp" ||
+            e.key === "ArrowLeft" ||
+            e.key === "Backspace") &&
+          isAtStart &&
+          pageIndex > 0
+        ) {
+          if (e.key === "Backspace") {
+            // Merge with previous page
+            e.preventDefault();
+            handleInput(pageIndex);
+          }
+        }
+
+        if (
+          (e.key === "ArrowDown" || e.key === "ArrowRight") &&
+          isAtEnd &&
+          pageIndex < pages.length - 1
+        ) {
+          e.preventDefault();
+          const nextPage =
+            pagesContainer.querySelectorAll(".page-content")[pageIndex + 1];
+          if (nextPage) {
+            nextPage.focus();
+            setActivePage(pageIndex + 1);
+          }
+        }
+      }
+
+      /**
+       * Add lorem ipsum text
+       */
+      function addLoremIpsum() {
+        const lorem = `
+        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+        <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+        <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.</p>
+        <p>Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt.</p>
+        <p>Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem.</p>
+      `;
+
+        const currentContent = pages.map((p) => p.content).join("");
+        repaginate(currentContent + lorem);
+      }
+
+      /**
+       * Clear all content
+       */
+      function clearAll() {
+        repaginate("");
+      }
+
+      /**
+       * Export content as HTML
+       */
+      function exportContent() {
+        const allHtml = pages.map((p) => p.content).join("");
+        console.log("Exported HTML:", allHtml);
+
+        // Create download
+        const blob = new Blob(
+          [
+            `<!DOCTYPE html><html><head><style>body{font-family:Georgia,serif;max-width:6.5in;margin:1in auto;line-height:1.6;}p{text-indent:0.5in;margin-bottom:1em;}</style></head><body>${allHtml}</body></html>`,
+          ],
+          { type: "text/html" }
+        );
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "document.html";
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+
+      // Initialize with empty page
+      repaginate("<p></p>");
+    </script>
+  </body>
+</html>

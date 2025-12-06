@@ -1454,7 +1454,7 @@ async function convertNodeToParagraphs(
     // or we can just use centered italic paragraph
     const runs = buildRunsFromInlineElement(element, {
       ...combinedStyle,
-      italic: true,
+      italics: true,
     });
     return [
       new Paragraph({
@@ -1464,7 +1464,7 @@ async function convertNodeToParagraphs(
             : ([
                 createTextRun(element.textContent || "", {
                   ...combinedStyle,
-                  italic: true,
+                  italics: true,
                 }),
               ].filter(Boolean) as TextRun[]),
         alignment: AlignmentType.CENTER,

@@ -1,4 +1,10 @@
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, {
+  useEffect,
+  useRef,
+  useState,
+  useCallback,
+  useMemo,
+} from "react";
 import { creamPalette as palette } from "../styles/palette";
 import {
   analyzeParagraphSpacing,
@@ -24,7 +30,10 @@ import { ResearchNotesPanel } from "./ResearchNotesPanel";
 import { ImageMoodBoard } from "./ImageMoodBoard";
 import { VersionHistory } from "./VersionHistory";
 import { CommentAnnotation } from "./CommentAnnotation";
-import { PagesSurface } from "@/components/PagesSurface";
+import {
+  PaginatedEditor,
+  PaginatedEditorRef,
+} from "@/components/PaginatedEditor";
 import { DocumentStylesState, StyleTemplate } from "../types/documentStyles";
 import { ColorWheelDropdown } from "./ColorWheelDropdown";
 import { useTheme } from "./ThemeProvider";
@@ -1199,7 +1208,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   );
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
   const { theme } = useTheme();
   const isDarkMode = theme === "dark";
@@ -1312,7 +1321,61 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   const [activePage, setActivePage] = useState(0);
   const showThumbnailRail = viewMode === "writer" && !isFreeMode;
   const activePageRef = useRef(0);
+
+  // True pagination mode (always enabled - uses PaginatedEditor)
+  const paginatedEditorRef = useRef<PaginatedEditorRef>(null);
   const selectionSyncLockRef = useRef(false);
+
+  // Internal margin state for True Pagination mode (when parent doesn't manage state)
+  const [internalLeftMargin, setInternalLeftMargin] = useState(leftMargin);
+  const [internalRightMargin, setInternalRightMargin] = useState(rightMargin);
+  const [internalFirstLineIndent, setInternalFirstLineIndent] =
+    useState(firstLineIndent);
+
+  // Use internal state when no external callback provided
+  const effectiveLeftMargin = onLeftMarginChange
+    ? leftMargin
+    : internalLeftMargin;
+  const effectiveRightMargin = onRightMarginChange
+    ? rightMargin
+    : internalRightMargin;
+  const effectiveFirstLineIndent = onFirstLineIndentChange
+    ? firstLineIndent
+    : internalFirstLineIndent;
+
+  // Callbacks that update internal state or call parent callback
+  const handleLeftMarginChange = useCallback(
+    (value: number) => {
+      if (onLeftMarginChange) {
+        onLeftMarginChange(value);
+      } else {
+        setInternalLeftMargin(value);
+      }
+    },
+    [onLeftMarginChange]
+  );
+
+  const handleRightMarginChange = useCallback(
+    (value: number) => {
+      if (onRightMarginChange) {
+        onRightMarginChange(value);
+      } else {
+        setInternalRightMargin(value);
+      }
+    },
+    [onRightMarginChange]
+  );
+
+  const handleFirstLineIndentChange = useCallback(
+    (value: number) => {
+      if (onFirstLineIndentChange) {
+        onFirstLineIndentChange(value);
+      } else {
+        setInternalFirstLineIndent(value);
+      }
+    },
+    [onFirstLineIndentChange]
+  );
 
   // Page preview hover state
   const [previewPageIndex, setPreviewPageIndex] = useState<number | null>(null);
@@ -1328,10 +1391,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
       : 1;
   const previewTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Ruler dragging state
-  const [rulerDragging, setRulerDragging] = useState<
-    "left" | "right" | "indent" | null
-  >(null);
+  // Ruler container ref (used for alignment calculations)
   const rulerContainerRef = useRef<HTMLDivElement>(null);
 
   // Close block type dropdown on click outside
@@ -2224,71 +2284,66 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
 
   // Initialize content (only on mount)
   useEffect(() => {
-    if (editorRef.current && content) {
+    console.log(
+      "[CustomEditor] Init effect running, content length:",
+      content?.length
+    );
+
+    if (content) {
       const isHtml = /<[^>]+>/.test(content);
 
-      // Show loading state initially
-      setIsLoading(true);
-
-      // Use requestAnimationFrame to allow UI to update (show spinner)
+      // Use requestAnimationFrame to allow PaginatedEditor to mount
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
-          if (!editorRef.current) return;
-
+          let htmlContent: string;
           if (isHtml) {
-            editorRef.current.innerHTML = content;
-            console.log(
-              "[CustomEditor] Set HTML content, first 500 chars:",
-              content.substring(0, 500)
-            );
-            console.log(
-              "[CustomEditor] Editor DOM structure:",
-              editorRef.current.firstChild
-            );
+            htmlContent = content;
           } else {
-            editorRef.current.innerHTML = content
+            htmlContent = content
               .split("\n\n")
               .map((para) => `<p>${para.replace(/\n/g, "<br>")}</p>`)
               .join("");
           }
 
-          recomputePagination();
+          // Update PaginatedEditor with the content
+          if (paginatedEditorRef.current) {
+            paginatedEditorRef.current.setContent(htmlContent);
+          } else {
+            // Retry after a short delay if ref not ready
+            setTimeout(() => {
+              if (paginatedEditorRef.current) {
+                paginatedEditorRef.current.setContent(htmlContent);
+              }
+            }, 100);
+          }
 
           // Initialize history with initial content
-          const html = editorRef.current.innerHTML;
-          historyRef.current = [html];
+          historyRef.current = [htmlContent];
           historyIndexRef.current = 0;
           setCanUndo(false);
           setCanRedo(false);
 
-          // Defer analysis to avoid blocking
+          // Defer analysis to avoid blocking UI
           setTimeout(() => {
-            if (!editorRef.current) return;
-            const text = editorRef.current.innerText;
+            const editorContent =
+              paginatedEditorRef.current?.getContent() || "";
+            const tempDiv = document.createElement("div");
+            tempDiv.innerHTML = editorContent;
+            const text = tempDiv.innerText;
             analyzeContent(text);
-            setIsLoading(false);
           }, 100);
         });
       });
-    } else if (editorRef.current && !content) {
-      // Initialize empty editor with a paragraph
-      editorRef.current.innerHTML = `<p><br></p>`;
-      recomputePagination();
-
-      // Place cursor in the paragraph
-      const range = document.createRange();
-      const sel = window.getSelection();
-      const firstP = editorRef.current.querySelector("p");
-      if (firstP) {
-        range.setStart(firstP, 0);
-        range.collapse(true);
-        sel?.removeAllRanges();
-        sel?.addRange(range);
-      }
-
-      setIsLoading(false);
     } else {
-      setIsLoading(false);
+      // Initialize empty editor with a paragraph
+      const emptyContent = `<p><br></p>`;
+
+      // Update PaginatedEditor with empty content after mount
+      requestAnimationFrame(() => {
+        if (paginatedEditorRef.current) {
+          paginatedEditorRef.current.setContent(emptyContent);
+        }
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only on mount - content is captured from closure
@@ -2477,6 +2532,11 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     isUndoRedoRef.current = true;
     editorRef.current.innerHTML = html;
 
+    // Sync to PaginatedEditor
+    if (paginatedEditorRef.current) {
+      paginatedEditorRef.current.setContent(html);
+    }
+
     const text = editorRef.current.innerText;
     onUpdate?.({ html, text });
     analyzeContent(text);
@@ -2510,6 +2570,11 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
 
     isUndoRedoRef.current = true;
     editorRef.current.innerHTML = html;
+
+    // Sync to PaginatedEditor
+    if (paginatedEditorRef.current) {
+      paginatedEditorRef.current.setContent(html);
+    }
 
     const text = editorRef.current.innerText;
     onUpdate?.({ html, text });
@@ -4579,8 +4644,6 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
 
   const jumpToPage = useCallback(
     (page: number, options?: { suppressSelectionSync?: boolean }) => {
-      if (!scrollShellRef.current) return;
-
       const maxPage = Math.max(0, pageCount - 1);
       const targetPage = Math.max(0, Math.min(page, maxPage));
 
@@ -4591,10 +4654,10 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
         }, 300);
       }
 
-      scrollShellRef.current.scrollTo({
-        top: targetPage * PAGE_HEIGHT_PX,
-        behavior: "smooth",
-      });
+      // Use PaginatedEditor's goToPage method
+      if (paginatedEditorRef.current) {
+        paginatedEditorRef.current.goToPage(targetPage);
+      }
 
       setActivePage(targetPage);
     },
@@ -4987,72 +5050,6 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   };
 
   const bookmarkIndicators = renderBookmarkIndicators();
-
-  // Ruler drag start handler
-  const handleRulerDragStart = useCallback(
-    (type: "left" | "right" | "indent", e: React.MouseEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      setRulerDragging(type);
-    },
-    []
-  );
-
-  // Ruler drag effect
-  useEffect(() => {
-    if (!rulerDragging) return;
-
-    const handleMouseMove = (e: MouseEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-
-      if (!rulerContainerRef.current) return;
-
-      const rect = rulerContainerRef.current.getBoundingClientRect();
-      const relativeX = Math.max(0, e.clientX - rect.left);
-      const maxWidth = Math.min(rect.width, PAGE_WIDTH_PX);
-      const constrainedX = Math.max(0, Math.min(relativeX, maxWidth));
-
-      if (rulerDragging === "left") {
-        const newLeft = Math.max(0, Math.min(constrainedX, 200));
-        onLeftMarginChange?.(newLeft);
-      } else if (rulerDragging === "right") {
-        const fromRight = maxWidth - constrainedX;
-        onRightMarginChange?.(Math.max(0, Math.min(fromRight, 200)));
-      } else if (rulerDragging === "indent") {
-        const rawAbsolutePos = Math.max(
-          leftMargin,
-          Math.min(constrainedX, maxWidth - rightMargin)
-        );
-        const relativeIndent = rawAbsolutePos - leftMargin;
-        const snappedIndent = Math.round(relativeIndent / 24) * 24;
-        const newIndent = Math.max(
-          0,
-          Math.min(snappedIndent, maxWidth - rightMargin - leftMargin)
-        );
-        onFirstLineIndentChange?.(newIndent);
-      }
-    };
-
-    const handleMouseUp = () => {
-      setRulerDragging(null);
-    };
-
-    document.addEventListener("mousemove", handleMouseMove, true);
-    document.addEventListener("mouseup", handleMouseUp, true);
-
-    return () => {
-      document.removeEventListener("mousemove", handleMouseMove, true);
-      document.removeEventListener("mouseup", handleMouseUp, true);
-    };
-  }, [
-    rulerDragging,
-    leftMargin,
-    rightMargin,
-    onLeftMarginChange,
-    onRightMarginChange,
-    onFirstLineIndentChange,
-  ]);
 
   return (
     <div
@@ -8456,52 +8453,34 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           </aside>
         )}
 
-        <PagesSurface
-          wrapperRef={wrapperRef}
-          scrollShellRef={scrollShellRef}
-          pagesContainerRef={pagesContainerRef}
-          editorRef={editorRef}
-          rulerFrameRef={rulerFrameRef}
-          rulerContainerRef={rulerContainerRef}
-          analysisLegendElement={analysisLegendElement}
-          showToolbarRow={showToolbarRow}
-          focusMode={focusMode}
-          showRuler={showRuler}
-          showSpacingIndicators={showSpacingIndicators}
-          showVisualSuggestions={showVisualSuggestions}
-          showStyleLabels={showStyleLabels}
-          isFreeMode={isFreeMode}
-          spacingIndicators={spacingIndicators}
-          visualSuggestions={visualSuggestions}
-          bookmarkIndicators={bookmarkIndicators}
+        <PaginatedEditor
+          ref={paginatedEditorRef}
+          initialContent={editorRef.current?.innerHTML || ""}
+          onChange={(newContent) => {
+            onUpdate?.({ html: newContent.html, text: newContent.text });
+          }}
+          onPageCountChange={setPageCount}
           isEditable={isEditable}
-          onEditorInput={handleInput}
-          onEditorPaste={handlePaste}
-          onEditorKeyDown={handleKeyDown}
-          onEditorBeforeInput={handleBeforeInput}
-          editorClassName={className}
-          leftMargin={leftMargin}
-          rightMargin={rightMargin}
-          firstLineIndent={firstLineIndent}
-          documentStyles={documentStyles}
-          rulerDragging={rulerDragging}
-          onRulerDragStart={handleRulerDragStart}
-          pageCount={pageCount}
-          showHeaderFooter={showHeaderFooter}
-          showPageNumbers={showPageNumbers}
-          facingPages={facingPages}
           pageWidthPx={PAGE_WIDTH_PX}
           pageHeightPx={PAGE_HEIGHT_PX}
-          inchInPx={INCH_IN_PX}
-          headerReservedPx={HEADER_RESERVED_PX}
-          footerReservedPx={FOOTER_RESERVED_PX}
-          rulerBackgroundLeftOverhang={RULER_BACKGROUND_LEFT_OVERHANG}
-          rulerBackgroundRightOverhang={RULER_BACKGROUND_RIGHT_OVERHANG}
+          marginTop={HEADER_RESERVED_PX}
+          marginBottom={FOOTER_RESERVED_PX}
+          marginLeft={effectiveLeftMargin}
+          marginRight={effectiveRightMargin}
+          firstLineIndent={effectiveFirstLineIndent}
           headerText={headerText}
           footerText={footerText}
-          headerAlign={headerAlign}
-          footerAlign={footerAlign}
+          showPageNumbers={showPageNumbers}
           pageNumberPosition={pageNumberPosition}
+          showRuler={showRuler}
+          onLeftMarginChange={handleLeftMarginChange}
+          onRightMarginChange={handleRightMarginChange}
+          onFirstLineIndentChange={handleFirstLineIndentChange}
+          documentStyles={documentStyles}
+          showStyleLabels={showStyleLabels}
+          activePage={activePage}
+          onActivePageChange={setActivePage}
+          onPageSnippetsChange={setPageSnippets}
         />
       </div>
 
@@ -8513,13 +8492,12 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
             left: 0,
             right: 0,
             bottom: 0,
-            backgroundColor: "rgba(255, 255, 255, 0.8)",
+            backgroundColor: "#eddcc5", // Match writer-stage tan background
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
             zIndex: 100,
-            backdropFilter: "blur(2px)",
           }}
         >
           <div className="editor-spinner"></div>
