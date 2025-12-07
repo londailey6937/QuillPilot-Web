@@ -8395,15 +8395,25 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
 
       {/* Cross-Reference Modal */}
       {showCrossRefModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100]">
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100]"
+          onClick={() => {
+            setShowCrossRefModal(false);
+            setNewCrossRefName("");
+            setNewCrossRefTarget("");
+            setNewCrossRefNote("");
+            setSelectedTextForBookmark("");
+          }}
+        >
           <div
             className="bg-[#fffaf3] p-6 rounded-lg shadow-xl max-w-md w-full mx-4"
-            style={{ border: "2px solid #c4b5fd" }}
+            style={{ border: "2px solid #e0c392" }}
+            onClick={(e) => e.stopPropagation()}
           >
-            <div className="p-3 bg-gradient-to-r from-[#f3e8ff] to-[#faf5ff] -m-6 mb-4 rounded-t-lg border-b border-[#c4b5fd]">
+            <div className="p-3 bg-gradient-to-r from-[#fef5e7] to-[#fff7ed] -m-6 mb-4 rounded-t-lg border-b border-[#e0c392]">
               <h3
                 className="text-lg font-semibold flex items-center gap-2"
-                style={{ color: "#7c3aed" }}
+                style={{ color: "#92400e" }}
               >
                 <span>🔗</span> Add Cross-Reference
               </h3>
@@ -8413,8 +8423,8 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               related elements)
             </p>
             {selectedTextForBookmark ? (
-              <div className="mb-4 p-3 bg-purple-50 rounded border border-purple-200">
-                <div className="text-xs mb-1" style={{ color: "#7c3aed" }}>
+              <div className="mb-4 p-3 bg-[#fef5e7] rounded border border-[#e0c392]">
+                <div className="text-xs mb-1" style={{ color: "#92400e" }}>
                   Source text:
                 </div>
                 <div className="text-sm italic" style={{ color: "#78716c" }}>
@@ -8424,7 +8434,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               </div>
             ) : (
               <div
-                className="mb-4 p-3 bg-gray-50 rounded border border-gray-200 text-sm italic"
+                className="mb-4 p-3 bg-[#f5ead9] rounded border border-[#e0c392] text-sm italic"
                 style={{ color: "#78716c" }}
               >
                 No text selected. Select text to mark as a reference point.
@@ -8435,23 +8445,23 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               value={newCrossRefName}
               onChange={(e) => setNewCrossRefName(e.target.value)}
               placeholder="Reference name (e.g., 'Foreshadows ending')"
-              className="w-full px-3 py-2 border border-[#e0c392] rounded mb-3 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
-              style={{ color: "#3a332b" }}
+              className="w-full px-3 py-2 border border-[#e0c392] rounded mb-3 focus:outline-none focus:ring-2 focus:ring-[#ef8432] bg-white"
+              style={{ color: "#2c3e50" }}
               autoFocus
             />
             {bookmarks.length > 0 ? (
               <div className="mb-3">
                 <label
                   className="block text-sm mb-1"
-                  style={{ color: "#7c3aed" }}
+                  style={{ color: "#92400e" }}
                 >
                   Links to bookmark:
                 </label>
                 <select
                   value={newCrossRefTarget}
                   onChange={(e) => setNewCrossRefTarget(e.target.value)}
-                  className="w-full px-3 py-2 border border-[#e0c392] rounded focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
-                  style={{ color: "#3a332b" }}
+                  className="w-full px-3 py-2 border border-[#e0c392] rounded focus:outline-none focus:ring-2 focus:ring-[#ef8432] bg-white"
+                  style={{ color: "#2c3e50" }}
                 >
                   <option value="">Select a bookmark...</option>
                   {bookmarks.map((bm) => (
@@ -8473,7 +8483,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                     setShowBookmarkModal(true);
                   }}
                   className="text-xs px-3 py-1.5 rounded hover:opacity-90 transition-colors"
-                  style={{ backgroundColor: "#d97706", color: "#fef5e7" }}
+                  style={{ backgroundColor: "#ef8432", color: "#fef5e7" }}
                 >
                   🔖 Create a Bookmark First
                 </button>
@@ -8483,8 +8493,8 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               value={newCrossRefNote}
               onChange={(e) => setNewCrossRefNote(e.target.value)}
               placeholder="Notes (optional) - e.g., 'This scene connects to...'"
-              className="w-full px-3 py-2 border border-[#e0c392] rounded mb-4 focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none bg-white"
-              style={{ color: "#3a332b" }}
+              className="w-full px-3 py-2 border border-[#e0c392] rounded mb-4 focus:outline-none focus:ring-2 focus:ring-[#ef8432] resize-none bg-white"
+              style={{ color: "#2c3e50" }}
               rows={2}
             />
             <div className="flex gap-2 justify-end">
@@ -8496,8 +8506,8 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                   setNewCrossRefNote("");
                   setSelectedTextForBookmark("");
                 }}
-                className="px-4 py-2 rounded hover:bg-gray-100 transition-colors"
-                style={{ color: "#6b7280" }}
+                className="px-4 py-2 rounded transition-colors"
+                style={{ color: "#6b7280", backgroundColor: "#f5ead9" }}
               >
                 Cancel
               </button>
@@ -8510,9 +8520,9 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                 }
                 className="px-4 py-2 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{
-                  backgroundColor: "#7c3aed",
+                  backgroundColor: "#ef8432",
                   color: "#fef5e7",
-                  border: "1px solid #c4b5fd",
+                  border: "1px solid #e0c392",
                 }}
                 title={
                   !selectedTextForBookmark
@@ -8531,24 +8541,29 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
             {(!selectedTextForBookmark ||
               !newCrossRefName.trim() ||
               !newCrossRefTarget) && (
-              <div className="mt-3 pt-3 border-t text-xs text-[#111827]">
+              <div
+                className="mt-3 pt-3 border-t border-[#e0c392] text-xs"
+                style={{ color: "#2c3e50" }}
+              >
                 <strong>To add a reference:</strong>
                 <ul className="mt-1 ml-4 list-disc space-y-0.5">
                   {!selectedTextForBookmark && (
-                    <li className="text-red-500">Select text in the editor</li>
+                    <li style={{ color: "#ef4444" }}>
+                      Select text in the editor
+                    </li>
                   )}
                   {!newCrossRefName.trim() && (
-                    <li className="text-red-500">
+                    <li style={{ color: "#ef4444" }}>
                       Enter a reference name above
                     </li>
                   )}
                   {bookmarks.length === 0 && (
-                    <li className="text-red-500">
+                    <li style={{ color: "#ef4444" }}>
                       Create a bookmark first (🔖 button)
                     </li>
                   )}
                   {bookmarks.length > 0 && !newCrossRefTarget && (
-                    <li className="text-red-500">
+                    <li style={{ color: "#ef4444" }}>
                       Select a bookmark to link to
                     </li>
                   )}
