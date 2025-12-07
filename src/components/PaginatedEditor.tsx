@@ -104,6 +104,10 @@ export interface PaginatedEditorProps {
   onScroll?: (scrollTop: number) => void;
   // Overlay content (for indicators)
   overlayContent?: React.ReactNode;
+  // External keyboard handler for shortcuts like Cmd+Z
+  onExternalKeyDown?: (e: React.KeyboardEvent) => void;
+  // Callback when a page break is removed by double-clicking
+  onPageBreakRemove?: () => void;
 }
 
 // ============================================================================
@@ -153,6 +157,138 @@ function htmlToNodes(html: string): Node[] {
   const temp = document.createElement("div");
   temp.innerHTML = html;
   return Array.from(temp.childNodes);
+}
+
+/**
+ * Split HTML content at page breaks.
+ * Returns an array of HTML strings, each representing content for one "section"
+ * that should start on a new page.
+ *
+ * Logic: Find all .page-break elements, split content before/after each one.
+ * The page-break element itself is removed (it's just a marker).
+ */
+function splitAtPageBreaks(html: string): string[] {
+  const temp = document.createElement("div");
+  temp.innerHTML = html;
+
+  const sections: string[] = [];
+  let currentSection: Node[] = [];
+
+  // Recursively process nodes, looking for page-break at any level
+  const processNode = (node: Node): boolean => {
+    // Check if this node IS a page-break
+    if (node.nodeType === Node.ELEMENT_NODE) {
+      const el = node as Element;
+      if (el.classList?.contains("page-break")) {
+        // Found a page break - flush current section and start new one
+        if (currentSection.length > 0) {
+          const wrapper = document.createElement("div");
+          currentSection.forEach((n) => wrapper.appendChild(n.cloneNode(true)));
+          sections.push(wrapper.innerHTML);
+          currentSection = [];
+        }
+        return true; // Signal that we handled this node
+      }
+
+      // Check if this element CONTAINS a page-break
+      const nestedBreak = el.querySelector(".page-break");
+      if (nestedBreak) {
+        // We need to split this element
+        const beforeNodes: Node[] = [];
+        const afterNodes: Node[] = [];
+        let foundBreak = false;
+
+        for (const child of Array.from(el.childNodes)) {
+          if ((child as Element).classList?.contains("page-break")) {
+            foundBreak = true;
+            continue; // Skip the page-break itself
+          }
+
+          // Check if child contains the break
+          if (!foundBreak && child.nodeType === Node.ELEMENT_NODE) {
+            const childEl = child as Element;
+            if (childEl.querySelector(".page-break")) {
+              // Recursively handle - this child contains the break
+              // For simplicity, treat content before break as "before"
+              // This is a simplification; for deeply nested, we split at parent level
+              foundBreak = true;
+              // Add everything before this child to beforeNodes
+              // The child itself needs recursive handling - skip for now, add to after
+              afterNodes.push(child.cloneNode(true));
+              continue;
+            }
+          }
+
+          if (!foundBreak) {
+            beforeNodes.push(child.cloneNode(true));
+          } else {
+            afterNodes.push(child.cloneNode(true));
+          }
+        }
+
+        // Create "before" version of this element
+        if (beforeNodes.length > 0) {
+          const beforeEl = el.cloneNode(false) as Element;
+          beforeNodes.forEach((n) => beforeEl.appendChild(n));
+          currentSection.push(beforeEl);
+        }
+
+        // Flush the current section (before page break)
+        if (currentSection.length > 0) {
+          const wrapper = document.createElement("div");
+          currentSection.forEach((n) => wrapper.appendChild(n.cloneNode(true)));
+          sections.push(wrapper.innerHTML);
+          currentSection = [];
+        }
+
+        // Create "after" version of this element for next section
+        if (afterNodes.length > 0) {
+          const afterEl = el.cloneNode(false) as Element;
+          // Remove page-break from after nodes
+          afterNodes.forEach((n) => {
+            if ((n as Element).classList?.contains("page-break")) return;
+            const cleaned = n.cloneNode(true) as Element;
+            if (
+              cleaned.nodeType === Node.ELEMENT_NODE &&
+              cleaned.querySelectorAll
+            ) {
+              const nestedBreaks = cleaned.querySelectorAll(".page-break");
+              nestedBreaks.forEach((pb) => pb.remove());
+            }
+            afterEl.appendChild(cleaned);
+          });
+          if (afterEl.childNodes.length > 0) {
+            currentSection.push(afterEl);
+          }
+        }
+
+        return true;
+      }
+    }
+
+    // No page-break in this node, add to current section
+    currentSection.push(node.cloneNode(true));
+    return false;
+  };
+
+  // Process all top-level nodes
+  for (const node of Array.from(temp.childNodes)) {
+    processNode(node);
+  }
+
+  // Don't forget the last section
+  if (currentSection.length > 0) {
+    const wrapper = document.createElement("div");
+    currentSection.forEach((n) => wrapper.appendChild(n.cloneNode(true)));
+    sections.push(wrapper.innerHTML);
+  }
+
+  // If no sections (empty or no breaks), return original
+  if (sections.length === 0) {
+    return [html];
+  }
+
+  return sections;
 }
 
 /**
@@ -321,6 +457,10 @@ export const PaginatedEditor = forwardRef<
       onScroll,
       // Overlay content
       overlayContent,
+      // External keyboard handler
+      onExternalKeyDown,
+      // Page break removal callback
+      onPageBreakRemove,
     },
     ref
   ) => {
@@ -400,6 +540,8 @@ export const PaginatedEditor = forwardRef<
 
     const splitContentAtHeight = useCallback(
       (html: string, maxHeight: number): [string, string] => {
+        // Note: Page breaks are already handled by splitAtPageBreaks()
+        // This function only handles height-based splitting
         const nodes = htmlToNodes(html);
         if (nodes.length === 0) return [html, ""];
 
@@ -592,9 +734,7 @@ export const PaginatedEditor = forwardRef<
       (fullHtml: string, preserveCursor = true) => {
         console.log(
           "[PaginatedEditor] repaginate called, html length:",
-          fullHtml.length,
-          "first 200 chars:",
-          fullHtml.substring(0, 200)
+          fullHtml.length
         );
 
         if (isRepaginatingRef.current) {
@@ -615,46 +755,64 @@ export const PaginatedEditor = forwardRef<
         // Save cursor before repagination
         const savedCursor = preserveCursor ? saveCursorPosition() : null;
 
+        // STEP 1: Split content at manual page breaks first
+        // This gives us sections that MUST start on new pages
+        const sections = splitAtPageBreaks(fullHtml);
+        console.log(
+          "[PaginatedEditor] Found",
+          sections.length,
+          "sections after page breaks"
+        );
+
         const newPages: PageData[] = [];
-        let remaining = fullHtml;
         let pageId = 1;
 
         // Use slightly reduced height to account for measurement variance
         const safeContentHeight = contentHeight - 4;
 
-        while (remaining.trim()) {
-          const [fitting, leftover] = splitContentAtHeight(
-            remaining,
-            safeContentHeight
-          );
+        // STEP 2: For each section, paginate it (may span multiple pages if long)
+        for (const section of sections) {
+          let remaining = section;
 
-          console.log(
-            "[PaginatedEditor] Page",
-            pageId,
-            "fitting length:",
-            fitting.length,
-            "leftover length:",
-            leftover.length
-          );
+          // Each section MUST start on a new page (that's what page-break means)
+          // So we don't merge with previous page's content
 
-          if (!fitting.trim() && leftover.trim()) {
-            // Force content onto page to prevent infinite loop
-            const closeTagIndex = leftover.indexOf("</");
-            const endIndex =
-              closeTagIndex > -1
-                ? closeTagIndex +
-                  leftover.substring(closeTagIndex).indexOf(">") +
-                  1
-                : leftover.length;
-            const forcedContent = leftover.substring(0, endIndex) || leftover;
-            newPages.push({ id: pageId, content: forcedContent });
-            remaining = leftover.substring(forcedContent.length);
-          } else {
-            newPages.push({ id: pageId, content: fitting });
-            remaining = leftover;
+          while (remaining.trim()) {
+            const [fitting, leftover] = splitContentAtHeight(
+              remaining,
+              safeContentHeight
+            );
+
+            console.log(
+              "[PaginatedEditor] Page",
+              pageId,
+              "fitting length:",
+              fitting.length,
+              "leftover length:",
+              leftover.length
+            );
+
+            if (!fitting.trim() && leftover.trim()) {
+              // Force content onto page to prevent infinite loop
+              const closeTagIndex = leftover.indexOf("</");
+              const endIndex =
+                closeTagIndex > -1
+                  ? closeTagIndex +
+                    leftover.substring(closeTagIndex).indexOf(">") +
+                    1
+                  : leftover.length;
+              const forcedContent = leftover.substring(0, endIndex) || leftover;
+              newPages.push({ id: pageId, content: forcedContent });
+              remaining = leftover.substring(forcedContent.length);
+            } else {
+              newPages.push({ id: pageId, content: fitting });
+              remaining = leftover;
+            }
+
+            pageId++;
+            if (pageId > MAX_PAGES) break;
           }
 
-          pageId++;
           if (pageId > MAX_PAGES) break;
         }
 
@@ -662,12 +820,7 @@ export const PaginatedEditor = forwardRef<
           newPages.push({ id: 1, content: "" });
         }
 
-        console.log(
-          "[PaginatedEditor] Setting",
-          newPages.length,
-          "pages. First page content length:",
-          newPages[0]?.content.length
-        );
+        console.log("[PaginatedEditor] Setting", newPages.length, "pages");
 
         setPages(newPages);
         onPageCountChange?.(newPages.length);
@@ -760,6 +913,53 @@ export const PaginatedEditor = forwardRef<
 
     const handleKeyDown = useCallback(
       (e: React.KeyboardEvent, pageIndex: number) => {
+        const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
+        const modKey = isMac ? e.metaKey : e.ctrlKey;
+
+        console.log(
+          "[PaginatedEditor handleKeyDown]",
+          e.key,
+          "modKey:",
+          modKey,
+          "metaKey:",
+          e.metaKey,
+          "ctrlKey:",
+          e.ctrlKey
+        );
+
+        // Handle Cmd/Ctrl+Z (undo) and Cmd/Ctrl+Shift+Z or Cmd/Ctrl+Y (redo) FIRST
+        // This must happen before any other key handling to prevent browser default
+        if (
+          modKey &&
+          (e.key === "z" || e.key === "Z" || e.key === "y" || e.key === "Y")
+        ) {
+          console.log(
+            "[PaginatedEditor] Undo/Redo key detected, calling onExternalKeyDown"
+          );
+          e.preventDefault();
+          e.stopPropagation();
+          if (onExternalKeyDown) {
+            onExternalKeyDown(e);
+          } else {
+            console.log(
+              "[PaginatedEditor] WARNING: onExternalKeyDown is not defined!"
+            );
+          }
+          return;
+        }
+
+        // Handle other Cmd/Ctrl shortcuts (B, I, U, etc.)
+        if (modKey && !e.altKey) {
+          const key = e.key.toLowerCase();
+          if (["b", "i", "u", "k", "s", "f"].includes(key)) {
+            e.preventDefault();
+            if (onExternalKeyDown) {
+              onExternalKeyDown(e);
+            }
+            return;
+          }
+        }
+
         const pageRef = pageRefs.current.get(pages[pageIndex]?.id);
         if (!pageRef) return;
 
@@ -854,9 +1054,21 @@ export const PaginatedEditor = forwardRef<
           return;
         }
 
-        // All other key events - let default behavior handle (normal arrow navigation within page)
+        // Handle Tab key for indentation - insert 4 spaces
+        if (e.key === "Tab") {
+          e.preventDefault();
+          document.execCommand("insertHTML", false, "\u00A0\u00A0\u00A0\u00A0"); // 4 non-breaking spaces
+          return;
+        }
+
+        // Pass any other keys with modifiers to external handler
+        const isMacCheck = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
+        const hasModifier = isMacCheck ? e.metaKey : e.ctrlKey;
+        if (hasModifier && onExternalKeyDown) {
+          onExternalKeyDown(e);
+        }
       },
-      [pages]
+      [pages, onExternalKeyDown]
     );
 
     const handlePaste = useCallback(
@@ -2815,6 +3027,16 @@ export const PaginatedEditor = forwardRef<
                   onFocus={() => {
                     internalChangeRef.current = true;
                     setActivePageIndex(index);
+                  }}
+                  onDoubleClick={(e) => {
+                    const target = e.target as HTMLElement;
+                    if (target.classList.contains("page-break")) {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      target.remove();
+                      handleInput();
+                      onPageBreakRemove?.();
+                    }
                   }}
                   dangerouslySetInnerHTML={{ __html: page.content }}
                   style={contentStyle}

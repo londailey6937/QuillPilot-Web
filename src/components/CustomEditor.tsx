@@ -2441,7 +2441,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   // Save to history
   const saveToHistory = useCallback((html: string) => {
     if (isUndoRedoRef.current) {
-      isUndoRedoRef.current = false;
+      // Don't reset immediately - let it stay true until all async operations complete
       return;
     }
 
@@ -2506,12 +2506,15 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     const text = editorRef.current.innerText;
 
     // Debounce save to history to prevent performance issues
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
+    // Skip if we're in an undo/redo operation
+    if (!isUndoRedoRef.current) {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+      saveTimeoutRef.current = setTimeout(() => {
+        saveToHistory(html);
+      }, 500);
     }
-    saveTimeoutRef.current = setTimeout(() => {
-      saveToHistory(html);
-    }, 500);
 
     // Notify parent immediately so stats/UI stay in sync
     onUpdate?.({ html, text });
@@ -2774,7 +2777,29 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
 
   // Undo function
   const performUndo = useCallback(() => {
-    if (!editorRef.current || historyIndexRef.current <= 0) return;
+    console.log(
+      "[performUndo] Called! historyIndex:",
+      historyIndexRef.current,
+      "historyLength:",
+      historyRef.current.length,
+      "paginatedEditorRef.current:",
+      paginatedEditorRef.current
+    );
+
+    if (!paginatedEditorRef.current || historyIndexRef.current <= 0) {
+      console.log(
+        "[performUndo] Early return - paginatedEditorRef:",
+        !!paginatedEditorRef.current,
+        "historyIndex:",
+        historyIndexRef.current
+      );
+      return;
+    }
+
+    console.log(
+      "[performUndo] Proceeding with undo, decrementing index from",
+      historyIndexRef.current
+    );
 
     // Save current scroll position
     const scrollTop = wrapperRef.current?.scrollTop || 0;
@@ -2783,14 +2808,13 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     const html = historyRef.current[historyIndexRef.current];
 
     isUndoRedoRef.current = true;
-    editorRef.current.innerHTML = html;
 
-    // Sync to PaginatedEditor
-    if (paginatedEditorRef.current) {
-      paginatedEditorRef.current.setContent(html);
-    }
+    // Restore content to PaginatedEditor
+    paginatedEditorRef.current.setContent(html);
 
-    const text = editorRef.current.innerText;
+    const text = paginatedEditorRef.current
+      .getContent()
+      .replace(/<[^>]*>/g, "");
     onUpdate?.({ html, text });
     analyzeContent(text);
     recomputePagination();
@@ -2802,6 +2826,11 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
       }
     });
 
+    // Reset the flag after a delay to ensure all async operations complete
+    setTimeout(() => {
+      isUndoRedoRef.current = false;
+    }, 100);
+
     // Update button states
     setCanUndo(historyIndexRef.current > 0);
     setCanRedo(historyIndexRef.current < historyRef.current.length - 1);
@@ -2810,7 +2839,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   // Redo function
   const performRedo = useCallback(() => {
     if (
-      !editorRef.current ||
+      !paginatedEditorRef.current ||
       historyIndexRef.current >= historyRef.current.length - 1
     )
       return;
@@ -2822,14 +2851,13 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     const html = historyRef.current[historyIndexRef.current];
 
     isUndoRedoRef.current = true;
-    editorRef.current.innerHTML = html;
 
-    // Sync to PaginatedEditor
-    if (paginatedEditorRef.current) {
-      paginatedEditorRef.current.setContent(html);
-    }
+    // Restore content to PaginatedEditor
+    paginatedEditorRef.current.setContent(html);
 
-    const text = editorRef.current.innerText;
+    const text = paginatedEditorRef.current
+      .getContent()
+      .replace(/<[^>]*>/g, "");
     onUpdate?.({ html, text });
     analyzeContent(text);
     recomputePagination();
@@ -2840,6 +2868,11 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
         wrapperRef.current.scrollTop = scrollTop;
       }
     });
+
+    // Reset the flag after a delay to ensure all async operations complete
+    setTimeout(() => {
+      isUndoRedoRef.current = false;
+    }, 100);
 
     // Update button states
     setCanUndo(historyIndexRef.current > 0);
@@ -4826,6 +4859,15 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   // Handle keyboard shortcuts
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
+      console.log(
+        "[CustomEditor handleKeyDown] Called with key:",
+        e.key,
+        "metaKey:",
+        e.metaKey,
+        "ctrlKey:",
+        e.ctrlKey
+      );
+
       const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
       const modKey = isMac ? e.metaKey : e.ctrlKey;
 
@@ -9311,13 +9353,15 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               editorRef.current.innerHTML = newContent.html;
             }
             onUpdate?.({ html: newContent.html, text: newContent.text });
-            // Update history
-            if (saveTimeoutRef.current) {
-              clearTimeout(saveTimeoutRef.current);
+            // Update history - but skip during undo/redo operations
+            if (!isUndoRedoRef.current) {
+              if (saveTimeoutRef.current) {
+                clearTimeout(saveTimeoutRef.current);
+              }
+              saveTimeoutRef.current = setTimeout(() => {
+                saveToHistory(newContent.html);
+              }, 500);
             }
-            saveTimeoutRef.current = setTimeout(() => {
-              saveToHistory(newContent.html);
-            }, 500);
             // Update analysis
             if (analysisTimeoutRef.current) {
               clearTimeout(analysisTimeoutRef.current);
@@ -9349,6 +9393,15 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           onActivePageChange={setActivePage}
           onPageSnippetsChange={setPageSnippets}
           onScroll={(scrollTop) => setShowBackToTop(scrollTop > 300)}
+          onExternalKeyDown={handleKeyDown}
+          onPageBreakRemove={() => {
+            // Sync content from paginated editor to editorRef
+            if (paginatedEditorRef.current && editorRef.current) {
+              editorRef.current.innerHTML =
+                paginatedEditorRef.current.getContent();
+              handleInput();
+            }
+          }}
         />
       </div>
 

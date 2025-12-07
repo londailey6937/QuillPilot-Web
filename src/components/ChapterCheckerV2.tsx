@@ -2849,12 +2849,7 @@ export const ChapterCheckerV2: React.FC = () => {
                               onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
-                                const confirmClear = window.confirm(
-                                  "🗑️ Clear Document\n\nThis will clear your current document and start fresh. Continue?"
-                                );
-                                if (confirmClear) {
-                                  handleClearDocument();
-                                }
+                                handleClearDocument();
                               }}
                               disabled={isAnalyzing}
                               style={{
