@@ -1185,7 +1185,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   onOpenChapterLibrary,
   onPageCountChange,
 }) => {
-  const editorRef = useRef<HTMLDivElement>(null);
+  const editorRef = useRef<HTMLDivElement>(null); // Currently unused - needs refactoring to work with PaginatedEditor
   const wrapperRef = useRef<HTMLDivElement>(null);
   const scrollShellRef = useRef<HTMLDivElement>(null);
   const pagesContainerRef = useRef<HTMLDivElement>(null);
@@ -1231,15 +1231,30 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   const [blockType, setBlockType] = useState("p");
   const [fontFamily, setFontFamily] = useState("default");
   const [fontSize, setFontSize] = useState("16px");
-  const [showStyleLabels, setShowStyleLabels] = useState(true);
+  const [showStyleLabels, setShowStyleLabels] = useState(false);
   const [showBlockTypeDropdown, setShowBlockTypeDropdown] = useState(false);
+  const [showFontSizeDropdown, setShowFontSizeDropdown] = useState(false);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set()
   );
   const blockTypeDropdownRef = useRef<HTMLDivElement>(null);
+  const fontSizeDropdownRef = useRef<HTMLDivElement>(null);
   const [showLinkModal, setShowLinkModal] = useState(false);
   const [linkUrl, setLinkUrl] = useState("");
   const [showFindReplace, setShowFindReplace] = useState(false);
+
+  // Column layout state
+  const [showColumnDropdown, setShowColumnDropdown] = useState(false);
+  const columnDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Image float toolbar state
+  const [selectedImage, setSelectedImage] = useState<HTMLImageElement | null>(
+    null
+  );
+  const [imageToolbarPosition, setImageToolbarPosition] = useState({
+    top: 0,
+    left: 0,
+  });
 
   // Bookmarks and Cross-References
   interface Bookmark {
@@ -1421,6 +1436,163 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showBlockTypeDropdown]);
+
+  // Close font size dropdown on click outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        showFontSizeDropdown &&
+        fontSizeDropdownRef.current &&
+        !fontSizeDropdownRef.current.contains(e.target as Node)
+      ) {
+        setShowFontSizeDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showFontSizeDropdown]);
+
+  // Close column dropdown on click outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        showColumnDropdown &&
+        columnDropdownRef.current &&
+        !columnDropdownRef.current.contains(e.target as Node)
+      ) {
+        setShowColumnDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showColumnDropdown]);
+
+  // Image resize state
+  const [isResizing, setIsResizing] = useState(false);
+  const [resizeStart, setResizeStart] = useState({
+    x: 0,
+    y: 0,
+    width: 0,
+    height: 0,
+  });
+  const [resizeHandle, setResizeHandle] = useState<string>("");
+  const forceImmediateSaveRef = useRef(false);
+
+  // Image click handler for float toolbar
+  useEffect(() => {
+    const handleImageClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+
+      // Check if clicked on an image
+      if (target.tagName === "IMG") {
+        const img = target as HTMLImageElement;
+        const rect = img.getBoundingClientRect();
+
+        // Position toolbar above the image
+        setImageToolbarPosition({
+          top: rect.top - 50,
+          left: rect.left + rect.width / 2,
+        });
+        setSelectedImage(img);
+
+        // Add selection outline to the image
+        img.style.outline = "2px solid #8b6914";
+        img.style.outlineOffset = "2px";
+
+        e.preventDefault();
+        e.stopPropagation();
+      } else if (
+        selectedImage &&
+        !target.closest(".image-float-toolbar") &&
+        !target.closest(".image-resize-handle")
+      ) {
+        // Clicked outside image and toolbar - deselect
+        selectedImage.style.outline = "";
+        selectedImage.style.outlineOffset = "";
+        setSelectedImage(null);
+      }
+    };
+
+    document.addEventListener("click", handleImageClick, true);
+    return () => document.removeEventListener("click", handleImageClick, true);
+  }, [selectedImage]);
+
+  // Handle image resizing
+  useEffect(() => {
+    if (!isResizing || !selectedImage) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!selectedImage) return;
+
+      const deltaX = e.clientX - resizeStart.x;
+      const deltaY = e.clientY - resizeStart.y;
+
+      let newWidth = resizeStart.width;
+      let newHeight = resizeStart.height;
+      const aspectRatio = resizeStart.width / resizeStart.height;
+
+      // Calculate new dimensions based on which handle is being dragged
+      if (resizeHandle.includes("e")) {
+        newWidth = Math.max(50, resizeStart.width + deltaX);
+      }
+      if (resizeHandle.includes("w")) {
+        newWidth = Math.max(50, resizeStart.width - deltaX);
+      }
+      if (resizeHandle.includes("s")) {
+        newHeight = Math.max(50, resizeStart.height + deltaY);
+      }
+      if (resizeHandle.includes("n")) {
+        newHeight = Math.max(50, resizeStart.height - deltaY);
+      }
+
+      // For corner handles, maintain aspect ratio
+      if (resizeHandle.length === 2) {
+        if (Math.abs(deltaX) > Math.abs(deltaY)) {
+          newHeight = newWidth / aspectRatio;
+        } else {
+          newWidth = newHeight * aspectRatio;
+        }
+      }
+
+      selectedImage.style.width = `${newWidth}px`;
+      selectedImage.style.height = `${newHeight}px`;
+      selectedImage.style.maxWidth = "none";
+
+      // Update toolbar position
+      const rect = selectedImage.getBoundingClientRect();
+      setImageToolbarPosition({
+        top: rect.top - 50,
+        left: rect.left + rect.width / 2,
+      });
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+      setResizeHandle("");
+
+      // Sync content from paginated editor and trigger input to save
+      if (paginatedEditorRef.current && editorRef.current) {
+        const content = paginatedEditorRef.current.getContent();
+        if (content) {
+          editorRef.current.innerHTML = content;
+          // Set flag to force immediate save (checked in handleInput)
+          forceImmediateSaveRef.current = true;
+          // Dispatch input event to trigger handleInput and save to history
+          editorRef.current.dispatchEvent(
+            new Event("input", { bubbles: true })
+          );
+        }
+      }
+    };
+
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
+
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [isResizing, selectedImage, resizeStart, resizeHandle]);
 
   useEffect(() => {
     activePageRef.current = activePage;
@@ -1799,13 +1971,6 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     afterRange.collapse(true);
     selection.removeAllRanges();
     selection.addRange(afterRange);
-
-    // Sync to editorRef
-    setTimeout(() => {
-      if (paginatedEditorRef.current && editorRef.current) {
-        editorRef.current.innerHTML = paginatedEditorRef.current.getContent();
-      }
-    }, 50);
 
     return true;
   }, []);
@@ -2438,6 +2603,31 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     pageCount,
   ]);
 
+  // Pilcrow markers feature - cleanup only
+  // The pilcrow/middot feature has been disabled because it conflicts with
+  // contentEditable behavior and causes cursor jumping on Enter key.
+  // This effect just cleans up any leftover DOM elements from previous implementations.
+  useEffect(() => {
+    // Clean up any leftover pilcrow DOM elements from previous implementations
+    document.querySelectorAll(".pilcrow-marker").forEach((el) => el.remove());
+    document.querySelectorAll(".space-dot").forEach((span) => {
+      const text = span.getAttribute("data-original") || span.textContent || "";
+      if (span.parentNode) {
+        const textNode = document.createTextNode(text === "·" ? " " : text);
+        span.parentNode.replaceChild(textNode, span);
+      }
+    });
+    document
+      .querySelectorAll(".show-spaces")
+      .forEach((el) => el.classList.remove("show-spaces"));
+
+    // Remove any pilcrow style element
+    const styleEl = document.getElementById("pilcrow-style");
+    if (styleEl) {
+      styleEl.remove();
+    }
+  }, []);
+
   // Save to history
   const saveToHistory = useCallback((html: string) => {
     if (isUndoRedoRef.current) {
@@ -2467,27 +2657,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   }, []);
 
   // Double-click handler for removing page breaks
-  useEffect(() => {
-    if (!editorRef.current) return;
-
-    const handleDoubleClick = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (target.classList.contains("page-break")) {
-        e.preventDefault();
-        e.stopPropagation();
-        target.remove();
-        if (editorRef.current) {
-          saveToHistory(editorRef.current.innerHTML);
-          recomputePagination();
-        }
-      }
-    };
-
-    editorRef.current.addEventListener("dblclick", handleDoubleClick);
-    return () => {
-      editorRef.current?.removeEventListener("dblclick", handleDoubleClick);
-    };
-  }, [saveToHistory, recomputePagination]);
+  // Page break double-click removal is now handled by PaginatedEditor's onPageBreakRemove callback
 
   // Handle content changes
   const handleInput = useCallback(() => {
@@ -2508,12 +2678,21 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     // Debounce save to history to prevent performance issues
     // Skip if we're in an undo/redo operation
     if (!isUndoRedoRef.current) {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
-      saveTimeoutRef.current = setTimeout(() => {
+      // Check if we need immediate save (e.g., after image resize)
+      if (forceImmediateSaveRef.current) {
+        forceImmediateSaveRef.current = false;
+        if (saveTimeoutRef.current) {
+          clearTimeout(saveTimeoutRef.current);
+        }
         saveToHistory(html);
-      }, 500);
+      } else {
+        if (saveTimeoutRef.current) {
+          clearTimeout(saveTimeoutRef.current);
+        }
+        saveTimeoutRef.current = setTimeout(() => {
+          saveToHistory(html);
+        }, 500);
+      }
     }
 
     // Notify parent immediately so stats/UI stay in sync
@@ -2529,6 +2708,37 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     }, 300);
     recomputePagination();
   }, [onUpdate, saveToHistory, analyzeContent, recomputePagination]);
+
+  // Insert column layout at cursor
+  const insertColumnLayout = useCallback(
+    (numColumns: number) => {
+      // Create column container HTML with side-by-side editable areas
+      let columnsHtml = `<div class="column-container" contenteditable="false" style="display: flex; gap: 20px; margin: 1rem 0; padding: 10px; border: 1px dashed #e0c392; border-radius: 4px; background: #fffef8;">`;
+
+      for (let i = 0; i < numColumns; i++) {
+        columnsHtml += `<div class="column-content" contenteditable="true" style="flex: 1; min-width: 0; padding: 10px; border: 1px solid #e8dcc8; border-radius: 4px; background: white; min-height: 100px;"><p>Column ${
+          i + 1
+        } content...</p></div>`;
+      }
+
+      columnsHtml += `</div><p><br></p>`;
+
+      // Focus paginated editor and insert
+      paginatedEditorRef.current?.focus();
+      paginatedEditorRef.current?.execCommand("insertHTML", columnsHtml);
+
+      // Sync changes back to editorRef
+      setTimeout(() => {
+        if (paginatedEditorRef.current && editorRef.current) {
+          editorRef.current.innerHTML = paginatedEditorRef.current.getContent();
+          handleInput();
+        }
+      }, 100);
+
+      setShowColumnDropdown(false);
+    },
+    [handleInput]
+  );
 
   useEffect(() => {
     return () => {
@@ -2988,30 +3198,119 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
 
     const selection = window.getSelection();
     if (selection && selection.anchorNode) {
-      let node = selection.anchorNode.parentElement;
-      while (node && node !== editorRef.current) {
+      let node: HTMLElement | null =
+        selection.anchorNode.nodeType === Node.TEXT_NODE
+          ? selection.anchorNode.parentElement
+          : (selection.anchorNode as HTMLElement);
+
+      // List of custom style classes to detect
+      const customStyleClasses = [
+        "book-title",
+        "doc-title",
+        "chapter-heading",
+        "subtitle",
+        "doc-subtitle",
+        "lead-paragraph",
+        "pullquote",
+        "quote",
+        "intense-quote",
+        "caption",
+        "byline",
+        "dateline",
+        "press-lead",
+        "nut-graf",
+        "fact-box",
+        "hero-headline",
+        "marketing-subhead",
+        "feature-callout",
+        "testimonial",
+        "cta-block",
+        "api-heading",
+        "code-reference",
+        "warning-note",
+        "success-note",
+        "abstract",
+        "keywords",
+        "bibliography",
+        "references",
+        "appendix",
+        "footnote",
+        "citation",
+        "figure-caption",
+        "table-title",
+        "equation",
+        "author-info",
+        "date-info",
+        "address",
+        "salutation",
+        "closing",
+        "signature",
+        "sidebar",
+        "callout",
+        "memo-heading",
+        "subject-line",
+        "executive-summary",
+        "part-title",
+        "epigraph",
+        "dedication",
+        "acknowledgments",
+        "copyright",
+        "verse",
+        "front-matter",
+        "scene-break",
+        "afterword",
+        "scene-heading",
+        "action",
+        "character",
+        "dialogue",
+        "parenthetical",
+        "transition",
+        "shot",
+        "lyric",
+        "beat",
+      ];
+
+      // Check for screenplay blocks first (they use data-block attribute)
+      while (node && !node.classList?.contains("paginated-page-content")) {
+        // Check for screenplay block
+        if (node.classList?.contains("screenplay-block")) {
+          const blockType = node.getAttribute("data-block");
+          if (blockType) {
+            setBlockType(blockType);
+            return;
+          }
+        }
+
+        // Check for custom style classes
+        for (const styleClass of customStyleClasses) {
+          if (node.classList?.contains(styleClass)) {
+            setBlockType(styleClass);
+            return;
+          }
+        }
+
+        // Check for basic HTML tags
         const tag = node.tagName?.toLowerCase();
         if (
-          [
-            "p",
-            "h1",
-            "h2",
-            "h3",
-            "h4",
-            "h5",
-            "h6",
-            "blockquote",
-            "pullquote",
-            "pre",
-            "footnote",
-            "citation",
-          ].includes(tag)
+          ["h1", "h2", "h3", "h4", "h5", "h6", "blockquote", "pre"].includes(
+            tag
+          )
         ) {
           setBlockType(tag);
-          break;
+          return;
         }
+
+        // For paragraph, only set if no custom class found
+        if (tag === "p" && !node.className) {
+          setBlockType("p");
+          return;
+        }
+
         node = node.parentElement;
       }
+
+      // Default to paragraph if nothing found
+      setBlockType("p");
     }
   }, []);
 
@@ -4630,12 +4929,93 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   // Text alignment
   const alignText = useCallback(
     (alignment: string) => {
-      formatText(
-        `justify${alignment.charAt(0).toUpperCase() + alignment.slice(1)}`
-      );
-      setTextAlign(alignment);
+      const selection = window.getSelection();
+      if (!selection || selection.rangeCount === 0) {
+        return;
+      }
+
+      // Save the current selection range
+      const savedRange = selection.getRangeAt(0).cloneRange();
+      const savedAnchorNode = selection.anchorNode;
+      const savedAnchorOffset = selection.anchorOffset;
+
+      // Check if we're in an image-containing element
+      let node = selection.anchorNode;
+      let parentElement: HTMLElement | null = null;
+
+      // Traverse up to find the containing paragraph or div
+      while (
+        node &&
+        node !== paginatedEditorRef.current?.getScrollContainer()
+      ) {
+        if (node.nodeType === Node.ELEMENT_NODE) {
+          const element = node as HTMLElement;
+          // Check if this element or any child contains an image
+          if (element.querySelector("img") || element.tagName === "IMG") {
+            parentElement = element.closest("p, div") as HTMLElement;
+            break;
+          }
+        }
+        node = node.parentNode;
+      }
+
+      // If we found an image container, apply text-align style directly
+      if (parentElement) {
+        parentElement.style.textAlign = alignment;
+
+        // Also update image margin for proper centering
+        const img = parentElement.querySelector("img");
+        if (img instanceof HTMLElement) {
+          if (alignment === "center") {
+            img.style.margin = "1rem auto";
+            img.style.display = "block";
+          } else if (alignment === "left") {
+            img.style.margin = "1rem 0";
+            img.style.display = "block";
+          } else if (alignment === "right") {
+            img.style.marginLeft = "auto";
+            img.style.marginRight = "0";
+            img.style.display = "block";
+          }
+        }
+
+        // Don't call handleInput - just update the content and notify parent
+        if (paginatedEditorRef.current) {
+          const html = paginatedEditorRef.current.getContent();
+          const text = html.replace(/<[^>]*>/g, "");
+          onUpdate?.({ html, text });
+
+          // Restore selection after a brief delay
+          setTimeout(() => {
+            try {
+              const newSelection = window.getSelection();
+              if (
+                newSelection &&
+                savedAnchorNode &&
+                document.contains(savedAnchorNode)
+              ) {
+                newSelection.removeAllRanges();
+                const newRange = document.createRange();
+                newRange.setStart(savedAnchorNode, savedAnchorOffset);
+                newRange.collapse(true);
+                newSelection.addRange(newRange);
+              }
+            } catch (e) {
+              console.warn("[alignText] Could not restore selection:", e);
+            }
+          }, 10);
+        }
+
+        setTextAlign(alignment);
+      } else {
+        // Standard text alignment using execCommand
+        formatText(
+          `justify${alignment.charAt(0).toUpperCase() + alignment.slice(1)}`
+        );
+        setTextAlign(alignment);
+      }
     },
-    [formatText]
+    [formatText, handleInput]
   );
 
   // Insert image
@@ -4646,7 +5026,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
 
       const reader = new FileReader();
       reader.onload = (event) => {
-        const imgHtml = `<p><img src="${event.target?.result}" style="max-width: 100%; height: auto; display: block; margin: 1rem 0;" /></p>`;
+        const imgHtml = `<p style="text-align: center;"><img src="${event.target?.result}" style="max-width: 100%; height: auto; display: block; margin: 1rem auto;" /></p>`;
 
         // Focus paginated editor and insert using execCommand
         paginatedEditorRef.current?.focus();
@@ -4880,6 +5260,8 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
 
       // Handle Enter key - reset title/heading styles to paragraph after Enter
       if (e.key === "Enter" && !e.shiftKey && !modKey) {
+        // Pilcrow markers are now handled via CSS pseudo-elements, so no DOM manipulation needed
+
         const selection = window.getSelection();
         const scrollContainer = scrollShellRef.current;
         if (selection && selection.anchorNode) {
@@ -5895,7 +6277,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                     <span>
                       {(() => {
                         const labels: Record<string, string> = {
-                          p: "Styles",
+                          p: "Paragraph",
                           h1: "Heading 1",
                           h2: "Heading 2",
                           h3: "Heading 3",
@@ -6477,12 +6859,175 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                 >
                   A-
                 </button>
-                <span
-                  className="px-1 py-1 text-xs text-[#2c3e50] min-w-[32px] text-center"
-                  title="Current Font Size"
+                <div
+                  ref={fontSizeDropdownRef}
+                  className="relative inline-block"
+                  style={{ position: "relative" }}
                 >
-                  {parseInt(fontSize) || 16}
-                </span>
+                  <button
+                    type="button"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      snapshotCurrentSelection();
+                      setShowFontSizeDropdown((prev) => !prev);
+                    }}
+                    className="px-1.5 py-1 text-xs text-[#2c3e50] min-w-[40px] text-center rounded border border-[#e0c392] hover:border-[#ef8432] hover:bg-[#fef5e7] transition-colors cursor-pointer flex items-center justify-center gap-1"
+                    title="Font Size"
+                  >
+                    <span>{parseInt(fontSize) || 16}</span>
+                    <span style={{ fontSize: "8px", opacity: 0.6 }}>▼</span>
+                  </button>
+                  {showFontSizeDropdown && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        left: "50%",
+                        transform: "translateX(-50%)",
+                        top: "100%",
+                        marginTop: "4px",
+                        width: "80px",
+                        maxHeight: "200px",
+                        overflowY: "auto",
+                        backgroundColor: "#fffaf3",
+                        border: "1.5px solid #e0c392",
+                        borderRadius: "8px",
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                        zIndex: 1000,
+                      }}
+                    >
+                      {[
+                        8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 32,
+                        36, 48, 72,
+                      ].map((size) => (
+                        <button
+                          key={size}
+                          type="button"
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+
+                            const selection = window.getSelection();
+                            if (
+                              !selection ||
+                              selection.rangeCount === 0 ||
+                              selection.isCollapsed
+                            ) {
+                              // No selection - just update the state for new text
+                              setFontSize(`${size}px`);
+                              setShowFontSizeDropdown(false);
+                              return;
+                            }
+
+                            // Apply font size to selection
+                            const range = selection.getRangeAt(0);
+                            const startMarker = document.createElement("span");
+                            startMarker.id = "selection-start-marker-temp";
+                            startMarker.style.display = "none";
+                            const endMarker = document.createElement("span");
+                            endMarker.id = "selection-end-marker-temp";
+                            endMarker.style.display = "none";
+
+                            const rangeClone = range.cloneRange();
+                            rangeClone.collapse(false);
+                            rangeClone.insertNode(endMarker);
+                            rangeClone.setStart(
+                              range.startContainer,
+                              range.startOffset
+                            );
+                            rangeClone.collapse(true);
+                            rangeClone.insertNode(startMarker);
+
+                            const newRange = document.createRange();
+                            newRange.setStartAfter(startMarker);
+                            newRange.setEndBefore(endMarker);
+                            selection.removeAllRanges();
+                            selection.addRange(newRange);
+
+                            setFontSize(`${size}px`);
+                            paginatedEditorRef.current?.setSkipNextRepagination(
+                              true
+                            );
+
+                            document.execCommand("fontSize", false, "7");
+
+                            const fontElements =
+                              document.querySelectorAll('font[size="7"]');
+                            fontElements.forEach((el) => {
+                              const span = document.createElement("span");
+                              span.style.fontSize = `${size}px`;
+                              while (el.firstChild) {
+                                span.appendChild(el.firstChild);
+                              }
+                              el.parentNode?.replaceChild(span, el);
+                            });
+
+                            // Clean up markers
+                            setTimeout(() => {
+                              const start = document.getElementById(
+                                "selection-start-marker-temp"
+                              );
+                              const end = document.getElementById(
+                                "selection-end-marker-temp"
+                              );
+                              if (start) start.remove();
+                              if (end) end.remove();
+
+                              if (
+                                paginatedEditorRef.current &&
+                                editorRef.current
+                              ) {
+                                const content =
+                                  paginatedEditorRef.current.getContent();
+                                editorRef.current.innerHTML = content;
+                                onUpdate?.({
+                                  html: content,
+                                  text: editorRef.current.innerText,
+                                });
+                                paginatedEditorRef.current?.setSkipNextRepagination(
+                                  false
+                                );
+                                paginatedEditorRef.current?.focus();
+                              }
+                            }, 50);
+
+                            setShowFontSizeDropdown(false);
+                          }}
+                          style={{
+                            display: "block",
+                            width: "100%",
+                            padding: "6px 12px",
+                            textAlign: "center",
+                            fontSize: "12px",
+                            color:
+                              parseInt(fontSize) === size
+                                ? "#ef8432"
+                                : "#2c3e50",
+                            fontWeight:
+                              parseInt(fontSize) === size ? "bold" : "normal",
+                            backgroundColor:
+                              parseInt(fontSize) === size
+                                ? "#fef5e7"
+                                : "transparent",
+                            border: "none",
+                            cursor: "pointer",
+                            transition: "background-color 0.15s",
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = "#fef5e7";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor =
+                              parseInt(fontSize) === size
+                                ? "#fef5e7"
+                                : "transparent";
+                          }}
+                        >
+                          {size}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
                 <button
                   type="button"
                   onMouseDown={(e) => {
@@ -6757,6 +7302,28 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                 >
                   1.
                 </button>
+                <button
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    document.execCommand("outdent", false);
+                    handleInput();
+                  }}
+                  className="px-2 py-1 rounded bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50] transition-colors text-xs"
+                  title="Decrease Indent (Outdent)"
+                >
+                  ⇤
+                </button>
+                <button
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    document.execCommand("indent", false);
+                    handleInput();
+                  }}
+                  className="px-2 py-1 rounded bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50] transition-colors text-xs"
+                  title="Increase Indent"
+                >
+                  ⇥
+                </button>
 
                 <div style={toolbarDividerStyle} aria-hidden="true" />
 
@@ -6808,6 +7375,216 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                     className="hidden"
                   />
                 </label>
+
+                {/* Column Layout Dropdown */}
+                <div
+                  ref={columnDropdownRef}
+                  style={{ position: "relative", display: "inline-block" }}
+                >
+                  <button
+                    onClick={() => setShowColumnDropdown(!showColumnDropdown)}
+                    className={`px-2 py-1 rounded transition-colors text-xs ${
+                      showColumnDropdown
+                        ? "bg-[#f7e6d0] text-[#ef8432] border border-[#ef8432]"
+                        : "bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50]"
+                    }`}
+                    title="Insert Columns - Side-by-side text areas"
+                  >
+                    ▥
+                  </button>
+                  {showColumnDropdown && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: "100%",
+                        left: 0,
+                        marginTop: "4px",
+                        backgroundColor: "#fffaf3",
+                        border: "1.5px solid #e0c392",
+                        borderRadius: "8px",
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                        padding: "8px",
+                        zIndex: 1000,
+                        minWidth: "180px",
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontSize: "11px",
+                          color: "#666",
+                          marginBottom: "8px",
+                          fontWeight: 600,
+                        }}
+                      >
+                        Insert Column Layout
+                      </div>
+                      <button
+                        onClick={() => insertColumnLayout(2)}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                          width: "100%",
+                          padding: "6px 10px",
+                          marginBottom: "4px",
+                          backgroundColor: "#fef5e7",
+                          border: "1px solid #e0c392",
+                          borderRadius: "4px",
+                          cursor: "pointer",
+                          fontSize: "12px",
+                          textAlign: "left",
+                        }}
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.backgroundColor = "#f7e6d0")
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.backgroundColor = "#fef5e7")
+                        }
+                      >
+                        <span style={{ display: "flex", gap: "2px" }}>
+                          <span
+                            style={{
+                              width: "20px",
+                              height: "16px",
+                              backgroundColor: "#e0c392",
+                              borderRadius: "2px",
+                            }}
+                          ></span>
+                          <span
+                            style={{
+                              width: "20px",
+                              height: "16px",
+                              backgroundColor: "#e0c392",
+                              borderRadius: "2px",
+                            }}
+                          ></span>
+                        </span>
+                        2 Columns
+                      </button>
+                      <button
+                        onClick={() => insertColumnLayout(3)}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                          width: "100%",
+                          padding: "6px 10px",
+                          marginBottom: "4px",
+                          backgroundColor: "#fef5e7",
+                          border: "1px solid #e0c392",
+                          borderRadius: "4px",
+                          cursor: "pointer",
+                          fontSize: "12px",
+                          textAlign: "left",
+                        }}
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.backgroundColor = "#f7e6d0")
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.backgroundColor = "#fef5e7")
+                        }
+                      >
+                        <span style={{ display: "flex", gap: "2px" }}>
+                          <span
+                            style={{
+                              width: "14px",
+                              height: "16px",
+                              backgroundColor: "#e0c392",
+                              borderRadius: "2px",
+                            }}
+                          ></span>
+                          <span
+                            style={{
+                              width: "14px",
+                              height: "16px",
+                              backgroundColor: "#e0c392",
+                              borderRadius: "2px",
+                            }}
+                          ></span>
+                          <span
+                            style={{
+                              width: "14px",
+                              height: "16px",
+                              backgroundColor: "#e0c392",
+                              borderRadius: "2px",
+                            }}
+                          ></span>
+                        </span>
+                        3 Columns
+                      </button>
+                      <button
+                        onClick={() => insertColumnLayout(4)}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                          width: "100%",
+                          padding: "6px 10px",
+                          backgroundColor: "#fef5e7",
+                          border: "1px solid #e0c392",
+                          borderRadius: "4px",
+                          cursor: "pointer",
+                          fontSize: "12px",
+                          textAlign: "left",
+                        }}
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.backgroundColor = "#f7e6d0")
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.backgroundColor = "#fef5e7")
+                        }
+                      >
+                        <span style={{ display: "flex", gap: "2px" }}>
+                          <span
+                            style={{
+                              width: "10px",
+                              height: "16px",
+                              backgroundColor: "#e0c392",
+                              borderRadius: "2px",
+                            }}
+                          ></span>
+                          <span
+                            style={{
+                              width: "10px",
+                              height: "16px",
+                              backgroundColor: "#e0c392",
+                              borderRadius: "2px",
+                            }}
+                          ></span>
+                          <span
+                            style={{
+                              width: "10px",
+                              height: "16px",
+                              backgroundColor: "#e0c392",
+                              borderRadius: "2px",
+                            }}
+                          ></span>
+                          <span
+                            style={{
+                              width: "10px",
+                              height: "16px",
+                              backgroundColor: "#e0c392",
+                              borderRadius: "2px",
+                            }}
+                          ></span>
+                        </span>
+                        4 Columns
+                      </button>
+                      <div
+                        style={{
+                          fontSize: "10px",
+                          color: "#888",
+                          marginTop: "8px",
+                          lineHeight: 1.3,
+                        }}
+                      >
+                        Each column is independently editable. Click inside a
+                        column to type.
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 <button
                   onClick={copyFormat}
                   className={`px-2 py-1 rounded transition-colors text-xs ${
@@ -9395,12 +10172,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           onScroll={(scrollTop) => setShowBackToTop(scrollTop > 300)}
           onExternalKeyDown={handleKeyDown}
           onPageBreakRemove={() => {
-            // Sync content from paginated editor to editorRef
-            if (paginatedEditorRef.current && editorRef.current) {
-              editorRef.current.innerHTML =
-                paginatedEditorRef.current.getContent();
-              handleInput();
-            }
+            handleInput();
           }}
         />
       </div>
@@ -9680,6 +10452,413 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           onOpenHelp={() => onOpenHelp?.("comments")}
         />
       )}
+
+      {/* Image Float Toolbar */}
+      {selectedImage && (
+        <div
+          className="image-float-toolbar"
+          style={{
+            position: "fixed",
+            top: `${imageToolbarPosition.top}px`,
+            left: `${imageToolbarPosition.left}px`,
+            transform: "translateX(-50%)",
+            zIndex: 10000,
+            backgroundColor: "#fffaf3",
+            border: "1.5px solid #e0c392",
+            borderRadius: "8px",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
+            padding: "6px 8px",
+            display: "flex",
+            gap: "4px",
+            alignItems: "center",
+          }}
+        >
+          <button
+            onClick={() => {
+              if (selectedImage) {
+                // For float to work, image must be at the START of content that wraps
+                const parent = selectedImage.parentElement;
+
+                if (
+                  parent &&
+                  parent.tagName === "P" &&
+                  parent.childNodes.length === 1
+                ) {
+                  // Image is alone in a <p> - need to merge with next paragraph
+                  const nextSibling = parent.nextElementSibling;
+                  if (
+                    nextSibling &&
+                    (nextSibling.tagName === "P" ||
+                      nextSibling.tagName === "DIV")
+                  ) {
+                    // Insert image at the start of the next paragraph
+                    nextSibling.insertBefore(
+                      selectedImage,
+                      nextSibling.firstChild
+                    );
+                    parent.remove();
+                  } else {
+                    // No next paragraph - just unwrap and float
+                    const grandparent = parent.parentElement;
+                    if (grandparent) {
+                      grandparent.insertBefore(selectedImage, parent);
+                      parent.remove();
+                    }
+                  }
+                }
+
+                selectedImage.style.float = "left";
+                selectedImage.style.margin = "0 20px 10px 0";
+                selectedImage.style.maxWidth = "50%";
+                selectedImage.style.display = "";
+                handleInput();
+                setSelectedImage(null);
+              }
+            }}
+            style={{
+              padding: "6px 10px",
+              fontSize: "12px",
+              backgroundColor:
+                selectedImage?.style.float === "left" ? "#f7e6d0" : "#fef5e7",
+              border: "1px solid #e0c392",
+              borderRadius: "4px",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "4px",
+            }}
+            title="Float Left (text wraps on right)"
+          >
+            ⬅️ Left
+          </button>
+          <button
+            onClick={() => {
+              if (selectedImage) {
+                // For center, wrap image in its own <p> with text-align center
+                selectedImage.style.float = "none";
+                selectedImage.style.margin = "1rem auto";
+                selectedImage.style.display = "block";
+                selectedImage.style.maxWidth = "100%";
+                const parent = selectedImage.parentElement;
+
+                // If image is inside a paragraph with other content, extract it
+                if (parent && parent.childNodes.length > 1) {
+                  const p = document.createElement("p");
+                  p.style.textAlign = "center";
+                  parent.parentElement?.insertBefore(p, parent);
+                  p.appendChild(selectedImage);
+                } else if (parent && parent.tagName === "P") {
+                  parent.style.textAlign = "center";
+                } else if (parent) {
+                  // Wrap in a centered paragraph
+                  const p = document.createElement("p");
+                  p.style.textAlign = "center";
+                  parent.insertBefore(p, selectedImage);
+                  p.appendChild(selectedImage);
+                }
+                handleInput();
+                setSelectedImage(null);
+              }
+            }}
+            style={{
+              padding: "6px 10px",
+              fontSize: "12px",
+              backgroundColor:
+                selectedImage?.style.float === "none" ||
+                !selectedImage?.style.float
+                  ? "#f7e6d0"
+                  : "#fef5e7",
+              border: "1px solid #e0c392",
+              borderRadius: "4px",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "4px",
+            }}
+            title="Center (no text wrap)"
+          >
+            ↔️ Center
+          </button>
+          <button
+            onClick={() => {
+              if (selectedImage) {
+                // For float to work, image must be at the START of content that wraps
+                const parent = selectedImage.parentElement;
+
+                if (
+                  parent &&
+                  parent.tagName === "P" &&
+                  parent.childNodes.length === 1
+                ) {
+                  // Image is alone in a <p> - need to merge with next paragraph
+                  const nextSibling = parent.nextElementSibling;
+                  if (
+                    nextSibling &&
+                    (nextSibling.tagName === "P" ||
+                      nextSibling.tagName === "DIV")
+                  ) {
+                    // Insert image at the start of the next paragraph
+                    nextSibling.insertBefore(
+                      selectedImage,
+                      nextSibling.firstChild
+                    );
+                    parent.remove();
+                  } else {
+                    // No next paragraph - just unwrap and float
+                    const grandparent = parent.parentElement;
+                    if (grandparent) {
+                      grandparent.insertBefore(selectedImage, parent);
+                      parent.remove();
+                    }
+                  }
+                }
+
+                selectedImage.style.float = "right";
+                selectedImage.style.margin = "0 0 10px 20px";
+                selectedImage.style.maxWidth = "50%";
+                selectedImage.style.display = "";
+                handleInput();
+                setSelectedImage(null);
+              }
+            }}
+            style={{
+              padding: "6px 10px",
+              fontSize: "12px",
+              backgroundColor:
+                selectedImage?.style.float === "right" ? "#f7e6d0" : "#fef5e7",
+              border: "1px solid #e0c392",
+              borderRadius: "4px",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "4px",
+            }}
+            title="Float Right (text wraps on left)"
+          >
+            Right ➡️
+          </button>
+          <div
+            style={{
+              width: "1px",
+              height: "20px",
+              backgroundColor: "#e0c392",
+              margin: "0 4px",
+            }}
+          />
+          <button
+            onClick={() => {
+              if (selectedImage) {
+                selectedImage.style.maxWidth = "30%";
+                handleInput();
+              }
+            }}
+            style={{
+              padding: "4px 8px",
+              fontSize: "11px",
+              backgroundColor: "#fef5e7",
+              border: "1px solid #e0c392",
+              borderRadius: "4px",
+              cursor: "pointer",
+            }}
+            title="Small size (30%)"
+          >
+            S
+          </button>
+          <button
+            onClick={() => {
+              if (selectedImage) {
+                selectedImage.style.maxWidth = "50%";
+                handleInput();
+              }
+            }}
+            style={{
+              padding: "4px 8px",
+              fontSize: "11px",
+              backgroundColor: "#fef5e7",
+              border: "1px solid #e0c392",
+              borderRadius: "4px",
+              cursor: "pointer",
+            }}
+            title="Medium size (50%)"
+          >
+            M
+          </button>
+          <button
+            onClick={() => {
+              if (selectedImage) {
+                selectedImage.style.maxWidth = "100%";
+                handleInput();
+              }
+            }}
+            style={{
+              padding: "4px 8px",
+              fontSize: "11px",
+              backgroundColor: "#fef5e7",
+              border: "1px solid #e0c392",
+              borderRadius: "4px",
+              cursor: "pointer",
+            }}
+            title="Large size (100%)"
+          >
+            L
+          </button>
+          <div
+            style={{
+              width: "1px",
+              height: "20px",
+              backgroundColor: "#e0c392",
+              margin: "0 4px",
+            }}
+          />
+          <button
+            onClick={() => {
+              if (selectedImage) {
+                const parent = selectedImage.parentElement;
+                if (parent && parent.tagName === "P") {
+                  parent.remove();
+                } else {
+                  selectedImage.remove();
+                }
+                handleInput();
+                setSelectedImage(null);
+              }
+            }}
+            style={{
+              padding: "4px 8px",
+              fontSize: "11px",
+              backgroundColor: "#fee2e2",
+              border: "1px solid #fca5a5",
+              borderRadius: "4px",
+              cursor: "pointer",
+              color: "#dc2626",
+            }}
+            title="Delete image"
+          >
+            🗑️
+          </button>
+        </div>
+      )}
+
+      {/* Image Resize Handles */}
+      {selectedImage &&
+        (() => {
+          const rect = selectedImage.getBoundingClientRect();
+          const handleStyle = {
+            position: "fixed" as const,
+            width: "10px",
+            height: "10px",
+            backgroundColor: "#8b6914",
+            border: "1px solid #fff",
+            borderRadius: "2px",
+            zIndex: 10001,
+          };
+
+          const startResize = (handle: string) => (e: React.MouseEvent) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setIsResizing(true);
+            setResizeHandle(handle);
+            setResizeStart({
+              x: e.clientX,
+              y: e.clientY,
+              width: selectedImage.offsetWidth,
+              height: selectedImage.offsetHeight,
+            });
+          };
+
+          return (
+            <>
+              {/* Top-left */}
+              <div
+                className="image-resize-handle"
+                style={{
+                  ...handleStyle,
+                  top: `${rect.top - 5}px`,
+                  left: `${rect.left - 5}px`,
+                  cursor: "nw-resize",
+                }}
+                onMouseDown={startResize("nw")}
+              />
+              {/* Top-center */}
+              <div
+                className="image-resize-handle"
+                style={{
+                  ...handleStyle,
+                  top: `${rect.top - 5}px`,
+                  left: `${rect.left + rect.width / 2 - 5}px`,
+                  cursor: "n-resize",
+                }}
+                onMouseDown={startResize("n")}
+              />
+              {/* Top-right */}
+              <div
+                className="image-resize-handle"
+                style={{
+                  ...handleStyle,
+                  top: `${rect.top - 5}px`,
+                  left: `${rect.right - 5}px`,
+                  cursor: "ne-resize",
+                }}
+                onMouseDown={startResize("ne")}
+              />
+              {/* Middle-left */}
+              <div
+                className="image-resize-handle"
+                style={{
+                  ...handleStyle,
+                  top: `${rect.top + rect.height / 2 - 5}px`,
+                  left: `${rect.left - 5}px`,
+                  cursor: "w-resize",
+                }}
+                onMouseDown={startResize("w")}
+              />
+              {/* Middle-right */}
+              <div
+                className="image-resize-handle"
+                style={{
+                  ...handleStyle,
+                  top: `${rect.top + rect.height / 2 - 5}px`,
+                  left: `${rect.right - 5}px`,
+                  cursor: "e-resize",
+                }}
+                onMouseDown={startResize("e")}
+              />
+              {/* Bottom-left */}
+              <div
+                className="image-resize-handle"
+                style={{
+                  ...handleStyle,
+                  top: `${rect.bottom - 5}px`,
+                  left: `${rect.left - 5}px`,
+                  cursor: "sw-resize",
+                }}
+                onMouseDown={startResize("sw")}
+              />
+              {/* Bottom-center */}
+              <div
+                className="image-resize-handle"
+                style={{
+                  ...handleStyle,
+                  top: `${rect.bottom - 5}px`,
+                  left: `${rect.left + rect.width / 2 - 5}px`,
+                  cursor: "s-resize",
+                }}
+                onMouseDown={startResize("s")}
+              />
+              {/* Bottom-right */}
+              <div
+                className="image-resize-handle"
+                style={{
+                  ...handleStyle,
+                  top: `${rect.bottom - 5}px`,
+                  left: `${rect.right - 5}px`,
+                  cursor: "se-resize",
+                }}
+                onMouseDown={startResize("se")}
+              />
+            </>
+          );
+        })()}
     </div>
   );
 };

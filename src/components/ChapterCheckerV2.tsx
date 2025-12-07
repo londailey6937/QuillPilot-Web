@@ -2696,30 +2696,6 @@ export const ChapterCheckerV2: React.FC = () => {
                     position: "relative",
                   }}
                 >
-                  {/* Placeholder text overlay - only show when content is empty */}
-                  {(!chapterData.plainText ||
-                    chapterData.plainText.trim() === "") && (
-                    <div
-                      style={{
-                        position: "absolute",
-                        top: "40%",
-                        left: "50%",
-                        transform: "translate(-50%, -50%)",
-                        color: "#9ca3af",
-                        fontSize: "16px",
-                        fontStyle: "italic",
-                        pointerEvents: "none",
-                        zIndex: 10,
-                        textAlign: "center",
-                        width: "auto",
-                        maxWidth: "80%",
-                        padding: "0 40px",
-                      }}
-                    >
-                      The page will expand as you write...
-                    </div>
-                  )}
-
                   <div style={{ flex: 1, minHeight: 0, position: "relative" }}>
                     <DocumentEditor
                       key={`${documentInstanceKey}-${layoutVersion}`} // Force remount when switching documents or layout modes

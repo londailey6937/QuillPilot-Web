@@ -179,9 +179,40 @@ function enhanceDocumentFormatting(html: string): string {
         (p as HTMLElement).style.textIndent = "0";
       } else if (hasImage) {
         p.classList.add("image-paragraph");
+        // Center images by default
+        (p as HTMLElement).style.textAlign = "center";
+        // Also set image styles for proper centering
+        const img = p.querySelector("img");
+        if (img) {
+          img.style.maxWidth = "100%";
+          img.style.height = "auto";
+          img.style.display = "block";
+          img.style.margin = "1rem auto";
+        }
       } else if (text.length > 0 && !p.classList.contains("body-text")) {
         p.classList.add("body-text");
       }
+    }
+  });
+
+  // Handle standalone images (not wrapped in paragraphs) - wrap them in centered paragraphs
+  const standaloneImages = doc.body.querySelectorAll("img");
+  standaloneImages.forEach((img) => {
+    // Check if image is already inside a paragraph
+    if (!img.closest("p")) {
+      const wrapper = doc.createElement("p");
+      wrapper.className = "image-paragraph";
+      wrapper.style.textAlign = "center";
+
+      // Style the image
+      (img as HTMLImageElement).style.maxWidth = "100%";
+      (img as HTMLImageElement).style.height = "auto";
+      (img as HTMLImageElement).style.display = "block";
+      (img as HTMLImageElement).style.margin = "1rem auto";
+
+      // Wrap the image
+      img.parentNode?.insertBefore(wrapper, img);
+      wrapper.appendChild(img);
     }
   });
 

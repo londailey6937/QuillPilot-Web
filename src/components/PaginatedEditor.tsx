@@ -119,9 +119,9 @@ const DEFAULT_PAGE_WIDTH = INCH_PX * 8.5;
 const DEFAULT_PAGE_HEIGHT = INCH_PX * 11;
 const DEFAULT_MARGIN = INCH_PX * 1;
 const DEFAULT_FONT_SIZE = 16;
-const DEFAULT_LINE_HEIGHT = 1.6;
+const DEFAULT_LINE_HEIGHT = 1.5;
 const DEFAULT_FONT_FAMILY = "Georgia, serif";
-const REPAGINATE_DEBOUNCE_MS = 50;
+const REPAGINATE_DEBOUNCE_MS = 500; // Longer debounce to reduce cursor jumps
 const MAX_PAGES = 200;
 
 // ============================================================================
@@ -892,24 +892,54 @@ export const PaginatedEditor = forwardRef<
         return;
       }
 
+      // Get full HTML content
+      const fullHtml = collectAllContent();
+
+      // Notify parent of content change
+      onChange?.({
+        html: fullHtml,
+        text: fullHtml.replace(/<[^>]*>/g, ""),
+      });
+
+      // Check if repagination is actually needed
+      // Only repaginate if content might have overflowed or pages need rebalancing
+      const needsRepagination = () => {
+        // Always repaginate if there are page breaks in content
+        if (fullHtml.includes("page-break")) {
+          return true;
+        }
+
+        // Check if any page content exceeds the available height
+        for (const page of pages) {
+          const pageRef = pageRefs.current.get(page.id);
+          if (pageRef) {
+            const scrollHeight = pageRef.scrollHeight;
+            const clientHeight = contentHeight;
+            // Only repaginate if content significantly overflows (more than a line)
+            if (scrollHeight > clientHeight + 30) {
+              return true;
+            }
+          }
+        }
+
+        // Don't auto-collapse pages - let user manually handle that
+        // This prevents repagination during normal editing
+        return false;
+      };
+
       // Clear any pending repagination
       if (repaginateTimeoutRef.current) {
         clearTimeout(repaginateTimeoutRef.current);
       }
 
-      // Debounce repagination
-      repaginateTimeoutRef.current = setTimeout(() => {
-        const fullHtml = collectAllContent();
-
-        // Notify parent
-        onChange?.({
-          html: fullHtml,
-          text: fullHtml.replace(/<[^>]*>/g, ""),
-        });
-
-        repaginate(fullHtml, true);
-      }, REPAGINATE_DEBOUNCE_MS);
-    }, [collectAllContent, onChange, repaginate]);
+      // Only schedule repagination if needed
+      if (needsRepagination()) {
+        // Debounce repagination
+        repaginateTimeoutRef.current = setTimeout(() => {
+          repaginate(fullHtml, true);
+        }, REPAGINATE_DEBOUNCE_MS);
+      }
+    }, [collectAllContent, onChange, repaginate, pages, contentHeight]);
 
     const handleKeyDown = useCallback(
       (e: React.KeyboardEvent, pageIndex: number) => {
@@ -1285,6 +1315,10 @@ export const PaginatedEditor = forwardRef<
     // Render
     // ========================================================================
 
+    // Get line height from documentStyles if available, otherwise use prop
+    const effectiveLineHeight =
+      documentStyles?.paragraph?.lineHeight ?? lineHeight;
+
     // Styles for page content
     const contentStyle: React.CSSProperties = {
       position: "absolute",
@@ -1295,7 +1329,7 @@ export const PaginatedEditor = forwardRef<
       overflow: "hidden",
       outline: "none",
       fontSize: `${fontSize}px`,
-      lineHeight: lineHeight,
+      lineHeight: effectiveLineHeight,
       fontFamily: fontFamily,
       color: "#333",
       textIndent: `${firstLineIndent}px`,
@@ -1321,17 +1355,22 @@ export const PaginatedEditor = forwardRef<
         <style
           key={`indent-style-${firstLineIndent}-${JSON.stringify(
             documentStyles || {}
-          )}`}
+          )}-${effectiveLineHeight}`}
         >
           {`
             .paginated-page-content {
               text-indent: ${firstLineIndent}px !important;
+              line-height: ${effectiveLineHeight} !important;
+            }
+            .paginated-page-content * {
+              line-height: ${effectiveLineHeight} !important;
             }
             .paginated-page-content p,
-            .paginated-page-content div:not(ul):not(ol) {
+            .paginated-page-content div:not(.page-break) {
               text-indent: ${firstLineIndent}px !important;
-              margin-bottom: 1em;
+              margin-bottom: 0;
               margin-top: 0;
+              line-height: ${effectiveLineHeight} !important;
             }
             /* List styles - don't apply text-indent and ensure bullets/numbers show */
             .paginated-page-content ul,
@@ -2721,6 +2760,58 @@ export const PaginatedEditor = forwardRef<
                 ? `.paginated-page-content .signature { line-height: ${documentStyles.signature.lineHeight} !important; }`
                 : ""
             }
+            /* Image float styles - ensure text wraps around floated images */
+            .paginated-page-content img[style*="float: left"],
+            .paginated-page-content img[style*="float:left"] {
+              float: left !important;
+              margin: 0 20px 10px 0 !important;
+              shape-outside: margin-box;
+            }
+            .paginated-page-content img[style*="float: right"],
+            .paginated-page-content img[style*="float:right"] {
+              float: right !important;
+              margin: 0 0 10px 20px !important;
+              shape-outside: margin-box;
+            }
+            /* Ensure paragraphs don't clear floats - they should wrap around images */
+            .paginated-page-content p {
+              overflow: visible !important;
+              clear: none !important;
+            }
+            /* Add clearfix after content to contain floats */
+            .paginated-page-content::after {
+              content: "";
+              display: table;
+              clear: both;
+            }
+            /* Column container styles */
+            .paginated-page-content .column-container {
+              display: flex !important;
+              gap: 20px;
+              margin: 1rem 0;
+              page-break-inside: avoid;
+              break-inside: avoid;
+            }
+            .paginated-page-content .column-content {
+              flex: 1;
+              min-width: 0;
+              padding: 10px;
+              border: 1px solid #e8dcc8;
+              border-radius: 4px;
+              background: white;
+              min-height: 80px;
+            }
+            .paginated-page-content .column-content:focus {
+              outline: 2px solid #8b6914;
+              outline-offset: 2px;
+            }
+            .paginated-page-content .column-content p {
+              text-indent: ${firstLineIndent}px !important;
+              margin: 0 0 0.5em 0;
+            }
+            .paginated-page-content .column-content p:last-child {
+              margin-bottom: 0;
+            }
           `}
         </style>
 
@@ -3009,7 +3100,7 @@ export const PaginatedEditor = forwardRef<
                   </>
                 )}
 
-                {/* Content */}
+                {/* Content area */}
                 <div
                   ref={(el) => {
                     if (el) {
@@ -3038,8 +3129,8 @@ export const PaginatedEditor = forwardRef<
                       onPageBreakRemove?.();
                     }
                   }}
-                  dangerouslySetInnerHTML={{ __html: page.content }}
                   style={contentStyle}
+                  dangerouslySetInnerHTML={{ __html: page.content }}
                 />
 
                 {/* Footer / Page number */}
