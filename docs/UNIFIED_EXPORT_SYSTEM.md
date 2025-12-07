@@ -323,6 +323,59 @@ Potential improvements to the unified export system:
 5. **Print-Optimized CSS** - Better page breaks and margins for printing
 6. **Interactive HTML** - Add collapsible sections, tabs, interactive charts to HTML export
 
+## Recent Updates (December 2025)
+
+### Column Layout Export
+
+Column layouts are converted to **borderless Word tables** in DOCX export:
+
+```typescript
+// Columns become table cells
+new Table({
+  width: { size: 100, type: WidthType.PERCENTAGE },
+  borders: {
+    /* all borders: BorderStyle.NONE */
+  },
+  rows: [
+    new TableRow({
+      children: [
+        new TableCell({
+          children: [
+            /* column 1 content */
+          ],
+        }),
+        new TableCell({
+          children: [
+            /* column 2 content */
+          ],
+        }),
+      ],
+    }),
+  ],
+});
+```
+
+### HTML Sanitization
+
+The `buildContentHtml()` function now sanitizes HTML to remove:
+
+- `<style>` tags (prevents CSS from appearing as text)
+- `<script>` tags
+- `<head>`, `<meta>`, `<link>` tags
+- Extracts content from `<body>` if present
+
+This fixes garbled CSS text appearing in exports from Word document imports.
+
+### Image Dimension Handling
+
+Images now extract dimensions from inline styles for proper aspect ratio:
+
+```typescript
+// Extract from: style="width: 200px; height: 150px"
+const widthMatch = styleAttr?.match(/width:\s*(\d+)/);
+const heightMatch = styleAttr?.match(/height:\s*(\d+)/);
+```
+
 ## Migration Notes
 
 **Old Approach (Pre-Unification):**
@@ -348,6 +401,12 @@ Potential improvements to the unified export system:
 
 **Solution:** Check the HTML→DOCX conversion logic around line 779 in `docxExport.ts`. You may need to add specific handling for new CSS classes.
 
+### Issue: Garbled CSS text in DOCX export
+
+**Cause:** Word documents imported via Mammoth may include `<style>` tags that get converted to text.
+
+**Solution:** The `buildContentHtml()` function now strips `<style>`, `<script>`, and other non-content tags before export.
+
 ### Issue: HTML template changes not appearing
 
 **Cause:** Vite may have cached the old template.
@@ -369,6 +428,12 @@ npm run dev
 import { exportToHtml } from "@/utils/htmlExport";
 import { exportToDocx } from "@/utils/docxExport";
 ```
+
+### Issue: Columns not appearing in DOCX
+
+**Cause:** Column containers require special handling.
+
+**Solution:** Columns are now automatically converted to borderless Word tables. Check that the `column-container` class is present in the HTML.
 
 ## Related Documentation
 

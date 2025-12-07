@@ -49,6 +49,14 @@ Quick reference for all keyboard shortcuts available in QuillPilot's Writer Mode
 | `Ctrl/Cmd + Home` | Document Start | Jump to beginning of document        |
 | `Ctrl/Cmd + End`  | Document End   | Jump to end of document              |
 
+## Column Layout Shortcuts
+
+| Shortcut                   | Action        | Description                                |
+| -------------------------- | ------------- | ------------------------------------------ |
+| `Ctrl/Cmd + A` (in column) | Select Column | Selects only content within current column |
+
+> **Note**: When cursor is inside a column, Cmd/Ctrl+A selects only that column's content, not the entire document.
+
 ## Pro Tips
 
 ### Quick Heading Creation
@@ -57,6 +65,14 @@ Quick reference for all keyboard shortcuts available in QuillPilot's Writer Mode
 2. Select it (or just place cursor on the line)
 3. Press `Ctrl/Cmd + Alt + [1-6]` to convert to heading
 4. Press `Ctrl/Cmd + Alt + 0` to convert back to paragraph
+
+### Working with Columns
+
+1. Insert columns using the ☰ button in the right toolbar
+2. Click inside any column to edit
+3. Use Cmd/Ctrl+A to select all content within just that column
+4. Drag from the handle bar at top to reposition
+5. Right-click the handle for options (show/hide, delete)
 
 ### Fast Formatting Workflow
 

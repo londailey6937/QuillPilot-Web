@@ -1,8 +1,134 @@
 # Recent Changes & Features
 
-**Last Updated:** December 1, 2025
+**Last Updated:** December 7, 2025
 
 This document tracks recent features, improvements, and changes to the Chapter Analysis system.
+
+---
+
+## December 7, 2025 Updates
+
+### Column Layouts
+
+**Feature:** Multi-column layouts for document formatting
+
+**What it does:**
+
+- Insert 1, 2, 3, or 4 column layouts at cursor position
+- Each column is independently editable
+- Drag handle bar at top for repositioning columns
+- Toggle drag handle visibility via right-click menu
+- Cmd+A (Mac) / Ctrl+A (Win) selects only within current column
+
+**Pagination Behavior:**
+
+- Column containers are treated as atomic blocks
+- If a column layout doesn't fit on the current page, it moves entirely to the next page
+- Columns cannot be split across pages (by design)
+- Warning logged if column is taller than available page space
+
+**How to use:**
+
+1. Click the column button (☰) in the right toolbar
+2. Select number of columns (1-4)
+3. Click inside any column to edit
+4. Drag from the handle bar to reposition
+5. Right-click handle for options (toggle visibility, delete)
+
+**Files changed:**
+
+- `CustomEditor.tsx` - Column insertion, Cmd+A isolation, drag handle toggle
+- `PaginatedEditor.tsx` - Column container detection, special pagination handling
+
+---
+
+### Indent/Outdent with Margins
+
+**Feature:** Proper margin-based indentation instead of blockquote styling
+
+**What it does:**
+
+- Increase Indent (→) adds 40px left margin
+- Decrease Indent (←) removes 40px left margin
+- Works on paragraphs and block elements
+- No longer converts to blockquote styling
+
+**How to use:**
+
+1. Place cursor in paragraph or select text
+2. Click → to indent or ← to outdent
+3. Each click adds/removes 40px margin
+
+**Files changed:**
+
+- `CustomEditor.tsx` - New `increaseIndent()` and `decreaseIndent()` functions
+
+---
+
+### DOCX Export Improvements
+
+**Feature:** Fixed multiple DOCX export issues
+
+**Fixes included:**
+
+- **Garbled CSS text removed** - Style/script tags from Word imports now stripped
+- **Columns export as tables** - Column layouts convert to borderless Word tables
+- **Image dimensions preserved** - Inline style dimensions extracted for proper aspect ratio
+- **HTML sanitization** - Removes meta, link, and other non-content tags
+
+**Files changed:**
+
+- `docxExport.ts` - Table-based column conversion, style tag filtering
+- `htmlBuilder.ts` - HTML sanitization for Word imports
+
+---
+
+### Search Button Moved to Left Toolbar
+
+**Feature:** Find & Replace button relocated
+
+**What changed:**
+
+- 🔍 Search button moved from right toolbar to left toolbar
+- Now located after alignment buttons
+- Keyboard shortcut unchanged: Cmd+F (Mac) / Ctrl+F (Win)
+
+**Files changed:**
+
+- `CustomEditor.tsx` - Toolbar button relocation
+
+---
+
+### Empty Document Placeholder
+
+**Feature:** Placeholder text for new documents
+
+**What it does:**
+
+- New documents show "Start typing here..." as placeholder
+- Placeholder is grayed out and italicized
+- Disappears when you start typing
+- Not saved as actual content
+
+**Files changed:**
+
+- `CustomEditor.tsx` - Empty content initialization
+- `globals.css` - Placeholder CSS styling
+
+---
+
+### Default Column Removed
+
+**Feature:** New documents no longer start with column layout
+
+**What changed:**
+
+- Previously: New documents started with a single column container
+- Now: New documents start with empty paragraph and placeholder
+
+**Files changed:**
+
+- `CustomEditor.tsx` - Simplified empty content initialization
 
 ---
 

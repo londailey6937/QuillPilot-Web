@@ -444,6 +444,75 @@ const handleExport = (format: string) => {
 
 ---
 
+## Document Layout Features
+
+### Column Layouts ✓
+
+**Location**: `CustomEditor.tsx` — accessible via the ☰ button in the right toolbar
+
+**Features**:
+
+- Insert 1, 2, 3, or 4 column layouts
+- Each column is independently editable
+- Drag handle bar for repositioning
+- Toggle drag handle visibility (right-click menu)
+- Cmd+A selects only within current column
+
+**Pagination Behavior**:
+
+- Columns are treated as atomic blocks
+- Cannot be split across pages
+- Automatically move to next page if they don't fit
+- Warning logged for oversized columns
+
+**Technical Details**:
+
+```typescript
+// Column structure
+<div class="column-container">
+  <div class="column-drag-handle">⋮⋮ Drag to move | Click for options</div>
+  <div style="display: flex; gap: 20px;">
+    <div class="column-content" contenteditable="true">
+      Column 1
+    </div>
+    <div class="column-content" contenteditable="true">
+      Column 2
+    </div>
+  </div>
+</div>
+```
+
+**Related Files**:
+
+- `CustomEditor.tsx` - `insertColumnLayout()` function
+- `PaginatedEditor.tsx` - `isColumnContainer()` detection, `splitContentAtHeight()` handling
+
+---
+
+### Margin-Based Indentation ✓
+
+**Location**: `CustomEditor.tsx` — → and ← buttons in toolbar
+
+**Features**:
+
+- Increase indent adds 40px left margin
+- Decrease indent removes 40px left margin
+- Works on paragraphs and block elements
+- Preserves existing margins
+
+**Technical Details**:
+
+```typescript
+// Increase indent
+const currentMargin = parseInt(element.style.marginLeft) || 0;
+element.style.marginLeft = `${currentMargin + 40}px`;
+
+// Decrease indent
+element.style.marginLeft = `${Math.max(0, currentMargin - 40)}px`;
+```
+
+---
+
 ## Browser Compatibility
 
 ✅ **Full Support**:
