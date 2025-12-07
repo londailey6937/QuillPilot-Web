@@ -2788,9 +2788,10 @@ export const PaginatedEditor = forwardRef<
             .paginated-page-content .column-container {
               display: flex !important;
               gap: 20px;
-              margin: 1rem 0;
+              margin: 1rem 4px;
               page-break-inside: avoid;
               break-inside: avoid;
+              box-sizing: border-box;
             }
             .paginated-page-content .column-content {
               flex: 1;
@@ -2800,17 +2801,15 @@ export const PaginatedEditor = forwardRef<
               border-radius: 4px;
               background: white;
               min-height: 80px;
+              box-sizing: border-box;
             }
             .paginated-page-content .column-content:focus {
               outline: 2px solid #8b6914;
               outline-offset: 2px;
             }
-            .paginated-page-content .column-content p {
-              text-indent: ${firstLineIndent}px !important;
-              margin: 0 0 0.5em 0;
-            }
-            .paginated-page-content .column-content p:last-child {
-              margin-bottom: 0;
+            .paginated-page-content .column-content img {
+              max-width: 100%;
+              height: auto;
             }
           `}
         </style>

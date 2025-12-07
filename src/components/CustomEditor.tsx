@@ -1247,6 +1247,9 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   const [showColumnDropdown, setShowColumnDropdown] = useState(false);
   const columnDropdownRef = useRef<HTMLDivElement>(null);
 
+  // Saved selection for image insertion (lost when file dialog opens)
+  const savedSelectionRef = useRef<Range | null>(null);
+
   // Image float toolbar state
   const [selectedImage, setSelectedImage] = useState<HTMLImageElement | null>(
     null
@@ -1255,6 +1258,17 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     top: 0,
     left: 0,
   });
+
+  // Column container toolbar state
+  const [selectedColumnContainer, setSelectedColumnContainer] =
+    useState<HTMLElement | null>(null);
+  const [columnToolbarPosition, setColumnToolbarPosition] = useState({
+    top: 0,
+    left: 0,
+  });
+
+  // Drag state for column containers
+  const [draggedColumn, setDraggedColumn] = useState<HTMLElement | null>(null);
 
   // Bookmarks and Cross-References
   interface Bookmark {
@@ -1516,6 +1530,183 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     document.addEventListener("click", handleImageClick, true);
     return () => document.removeEventListener("click", handleImageClick, true);
   }, [selectedImage]);
+
+  // Column container click handler for toolbar
+  useEffect(() => {
+    const handleColumnContainerClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+
+      // Check if clicked on a column-container (the outer flex container, not the editable columns inside)
+      const columnContainer = target.closest(".column-container");
+      const columnContent = target.closest(".column-content");
+      const dragHandle = target.closest(".column-drag-handle");
+
+      // Select if clicking on the drag handle or container area (not inside editable content)
+      if (dragHandle || (columnContainer && !columnContent)) {
+        const container = (
+          dragHandle ? dragHandle.closest(".column-container") : columnContainer
+        ) as HTMLElement;
+        if (!container) return;
+        const rect = container.getBoundingClientRect();
+
+        // Position toolbar above the container
+        setColumnToolbarPosition({
+          top: rect.top - 45,
+          left: rect.left + rect.width / 2,
+        });
+        setSelectedColumnContainer(container);
+
+        // Add selection outline
+        container.style.outline = "2px solid #8b6914";
+        container.style.outlineOffset = "2px";
+
+        e.preventDefault();
+        e.stopPropagation();
+      } else if (
+        selectedColumnContainer &&
+        !target.closest(".column-toolbar")
+      ) {
+        // Clicked outside container and toolbar - deselect
+        selectedColumnContainer.style.outline = "";
+        selectedColumnContainer.style.outlineOffset = "";
+        setSelectedColumnContainer(null);
+      }
+    };
+
+    document.addEventListener("click", handleColumnContainerClick, true);
+    return () =>
+      document.removeEventListener("click", handleColumnContainerClick, true);
+  }, [selectedColumnContainer]);
+
+  // Column drag-and-drop handlers
+  useEffect(() => {
+    const handleDragStart = (e: DragEvent) => {
+      const target = e.target as HTMLElement;
+      // Only start drag if dragging the handle bar
+      if (target.classList.contains("column-drag-handle")) {
+        const columnContainer = target.closest(
+          ".column-container"
+        ) as HTMLElement;
+        if (columnContainer) {
+          setDraggedColumn(columnContainer);
+          columnContainer.style.opacity = "0.5";
+          e.dataTransfer?.setData("text/plain", "column");
+          // Set drag image to the whole container
+          e.dataTransfer?.setDragImage(columnContainer, 50, 20);
+        }
+      }
+    };
+
+    const handleDragEnd = (e: DragEvent) => {
+      const target = e.target as HTMLElement;
+      // Reset opacity on the column container
+      if (target.classList.contains("column-drag-handle")) {
+        const columnContainer = target.closest(
+          ".column-container"
+        ) as HTMLElement;
+        if (columnContainer) {
+          columnContainer.style.opacity = "1";
+        }
+      }
+      if (target.classList.contains("column-container")) {
+        target.style.opacity = "1";
+      }
+      // Clear all borderTop styles that may have been set during drag
+      document.querySelectorAll('[style*="border-top"]').forEach((el) => {
+        (el as HTMLElement).style.borderTop = "";
+      });
+      setDraggedColumn(null);
+    };
+
+    const handleDragOver = (e: DragEvent) => {
+      if (!draggedColumn) return;
+      e.preventDefault();
+
+      // Clear previous drop indicators
+      document.querySelectorAll('[style*="border-top"]').forEach((el) => {
+        (el as HTMLElement).style.borderTop = "";
+      });
+
+      const target = e.target as HTMLElement;
+      const dropTarget = target.closest(
+        ".column-content, .paginated-page-content, p, div:not(.column-container)"
+      ) as HTMLElement;
+
+      if (
+        dropTarget &&
+        dropTarget !== draggedColumn &&
+        !draggedColumn.contains(dropTarget)
+      ) {
+        // Visual feedback
+        dropTarget.style.borderTop = "2px solid #8b6914";
+      }
+    };
+
+    const handleDragLeave = (e: DragEvent) => {
+      const target = e.target as HTMLElement;
+      target.style.borderTop = "";
+    };
+
+    const handleDrop = (e: DragEvent) => {
+      e.preventDefault();
+      if (!draggedColumn) return;
+
+      // Clear all borderTop styles
+      document.querySelectorAll('[style*="border-top"]').forEach((el) => {
+        (el as HTMLElement).style.borderTop = "";
+      });
+
+      const target = e.target as HTMLElement;
+
+      // Find a suitable drop location
+      const dropTarget = target.closest(
+        ".column-content, .paginated-page-content, p, div"
+      ) as HTMLElement;
+
+      if (
+        dropTarget &&
+        dropTarget !== draggedColumn &&
+        !draggedColumn.contains(dropTarget)
+      ) {
+        // Insert the column container before the drop target
+        if (dropTarget.classList.contains("column-content")) {
+          // Dropping inside a column - insert at cursor position within column
+          dropTarget.appendChild(draggedColumn);
+        } else if (dropTarget.parentElement) {
+          // Insert before the drop target element
+          dropTarget.parentElement.insertBefore(draggedColumn, dropTarget);
+        }
+
+        // Sync and save
+        setTimeout(() => {
+          if (paginatedEditorRef.current && editorRef.current) {
+            editorRef.current.innerHTML =
+              paginatedEditorRef.current.getContent();
+            forceImmediateSaveRef.current = true;
+            editorRef.current.dispatchEvent(
+              new Event("input", { bubbles: true })
+            );
+          }
+        }, 50);
+      }
+
+      setDraggedColumn(null);
+    };
+
+    document.addEventListener("dragstart", handleDragStart);
+    document.addEventListener("dragend", handleDragEnd);
+    document.addEventListener("dragover", handleDragOver);
+    document.addEventListener("dragleave", handleDragLeave);
+    document.addEventListener("drop", handleDrop);
+
+    return () => {
+      document.removeEventListener("dragstart", handleDragStart);
+      document.removeEventListener("dragend", handleDragEnd);
+      document.removeEventListener("dragover", handleDragOver);
+      document.removeEventListener("dragleave", handleDragLeave);
+      document.removeEventListener("drop", handleDrop);
+    };
+  }, [draggedColumn]);
 
   // Handle image resizing
   useEffect(() => {
@@ -2713,17 +2904,25 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   const insertColumnLayout = useCallback(
     (numColumns: number) => {
       // Create column container HTML with side-by-side editable areas
-      let columnsHtml = `<div class="column-container" contenteditable="false" style="display: flex; gap: 20px; margin: 1rem 0; padding: 10px; border: 1px dashed #e0c392; border-radius: 4px; background: #fffef8;">`;
+      // Draggable is set to false by default - only the handle triggers drag
+      // Include a drag handle bar at the top for easy selection
+      let columnsHtml = `<div class="column-container" draggable="false" contenteditable="false" style="display: flex; flex-direction: column; gap: 8px; margin: 1rem 4px; padding: 8px; box-sizing: border-box; border: 1px dashed #d4c4a8; border-bottom: none; border-radius: 6px 6px 0 0; background: #fdfbf7;">`;
+
+      // Add drag handle bar - draggable="true" on the handle itself
+      columnsHtml += `<div class="column-drag-handle" draggable="true" style="display: flex; align-items: center; justify-content: center; padding: 4px 8px; background: #f0e6d3; border-radius: 4px; cursor: grab; font-size: 11px; color: #8b7355; user-select: none;">⋮⋮ Drag to move | Click for options</div>`;
+
+      // Columns row
+      columnsHtml += `<div style="display: flex; gap: 20px;">`;
 
       for (let i = 0; i < numColumns; i++) {
-        columnsHtml += `<div class="column-content" contenteditable="true" style="flex: 1; min-width: 0; padding: 10px; border: 1px solid #e8dcc8; border-radius: 4px; background: white; min-height: 100px;"><p>Column ${
+        columnsHtml += `<div class="column-content" contenteditable="true" style="flex: 1; min-width: 0; padding: 10px; border: 1px solid #e8dcc8; border-radius: 4px; background: white; min-height: 100px; box-sizing: border-box;"><p>Column ${
           i + 1
         } content...</p></div>`;
       }
 
-      columnsHtml += `</div><p><br></p>`;
+      columnsHtml += `</div></div>`;
 
-      // Focus paginated editor and insert
+      // Simple insertion - focus and insert at cursor
       paginatedEditorRef.current?.focus();
       paginatedEditorRef.current?.execCommand("insertHTML", columnsHtml);
 
@@ -2801,8 +3000,8 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
         });
       });
     } else {
-      // Initialize empty editor with a paragraph
-      const emptyContent = `<p><br></p>`;
+      // Initialize empty editor with single column container for consistent layout
+      const emptyContent = `<div class="column-container" draggable="true" contenteditable="false" style="display: flex; flex-direction: column; gap: 8px; margin: 1rem 4px; padding: 8px; box-sizing: border-box; border: 1px dashed #d4c4a8; border-bottom: none; border-radius: 6px 6px 0 0; background: #fdfbf7;"><div class="column-drag-handle" style="display: flex; align-items: center; justify-content: center; padding: 4px 8px; background: #f0e6d3; border-radius: 4px; cursor: grab; font-size: 11px; color: #8b7355; user-select: none;">⋮⋮ Drag to move | Click for options</div><div style="display: flex; gap: 20px;"><div class="column-content" contenteditable="true" style="flex: 1; min-width: 0; padding: 10px; border: 1px solid #e8dcc8; border-radius: 4px; background: white; min-height: 100px; box-sizing: border-box;"><p>Start typing here...</p></div></div></div>`;
 
       // Update PaginatedEditor with empty content after mount
       requestAnimationFrame(() => {
@@ -5026,20 +5225,34 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
 
       const reader = new FileReader();
       reader.onload = (event) => {
-        const imgHtml = `<p style="text-align: center;"><img src="${event.target?.result}" style="max-width: 100%; height: auto; display: block; margin: 1rem auto;" /></p>`;
+        const imgHtml = `<img src="${event.target?.result}" style="max-width: 100%; height: auto; display: block; margin: 0.5rem 0;" />`;
 
-        // Focus paginated editor and insert using execCommand
-        paginatedEditorRef.current?.focus();
-        paginatedEditorRef.current?.execCommand("insertHTML", imgHtml);
-
-        // Sync changes back to editorRef
+        // Small delay then restore selection and insert
         setTimeout(() => {
-          if (paginatedEditorRef.current && editorRef.current) {
-            editorRef.current.innerHTML =
-              paginatedEditorRef.current.getContent();
-            handleInput();
+          // Restore the saved selection (this places cursor back where it was)
+          if (savedSelectionRef.current) {
+            const selection = window.getSelection();
+            if (selection) {
+              selection.removeAllRanges();
+              selection.addRange(savedSelectionRef.current);
+            }
           }
-        }, 100);
+
+          // Now insert at the restored cursor position
+          document.execCommand("insertHTML", false, imgHtml);
+
+          // Sync changes back to editorRef
+          setTimeout(() => {
+            if (paginatedEditorRef.current && editorRef.current) {
+              editorRef.current.innerHTML =
+                paginatedEditorRef.current.getContent();
+              handleInput();
+            }
+          }, 50);
+
+          // Clear saved selection
+          savedSelectionRef.current = null;
+        }, 10);
       };
       reader.readAsDataURL(file);
 
@@ -5217,7 +5430,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
 
           const reader = new FileReader();
           reader.onload = (event) => {
-            const imgHtml = `<p><img src="${event.target?.result}" style="max-width: 100%; height: auto; display: block; margin: 1rem 0;" /></p>`;
+            const imgHtml = `<img src="${event.target?.result}" style="max-width: 100%; height: auto; display: block; margin: 1rem 0;" />`;
             document.execCommand("insertHTML", false, imgHtml);
             // Sync changes to editorRef if paste happened in paginated editor
             setTimeout(() => {
@@ -5400,6 +5613,32 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
 
       // Standard shortcuts (key-based)
       switch (key) {
+        case "a":
+          // Handle Cmd/Ctrl+A - select all within column if inside one
+          if (modKey && !e.altKey && !e.shiftKey) {
+            const selection = window.getSelection();
+            if (selection && selection.rangeCount > 0) {
+              let node: Node | null = selection.anchorNode;
+              // Walk up the DOM to find if we're inside a column-content
+              while (node) {
+                if (node.nodeType === Node.ELEMENT_NODE) {
+                  const element = node as HTMLElement;
+                  if (element.classList?.contains("column-content")) {
+                    // We're inside a column - select only this column's content
+                    e.preventDefault();
+                    const range = document.createRange();
+                    range.selectNodeContents(element);
+                    selection.removeAllRanges();
+                    selection.addRange(range);
+                    return;
+                  }
+                }
+                node = node.parentNode;
+              }
+            }
+            // Not in a column - let browser handle normally
+          }
+          break;
         case "s":
           if (modKey && !e.altKey && !e.shiftKey) {
             e.preventDefault();
@@ -7366,6 +7605,15 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                 <label
                   className="px-2 py-1 rounded bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50] transition-colors cursor-pointer text-xs"
                   title="Image"
+                  onMouseDown={() => {
+                    // Save selection before file dialog opens (which will steal focus)
+                    const selection = window.getSelection();
+                    if (selection && selection.rangeCount > 0) {
+                      savedSelectionRef.current = selection
+                        .getRangeAt(0)
+                        .cloneRange();
+                    }
+                  }}
                 >
                   📸
                   <input
@@ -7418,6 +7666,41 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                       >
                         Insert Column Layout
                       </div>
+                      <button
+                        onClick={() => insertColumnLayout(1)}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                          width: "100%",
+                          padding: "6px 10px",
+                          marginBottom: "4px",
+                          backgroundColor: "#fef5e7",
+                          border: "1px solid #e0c392",
+                          borderRadius: "4px",
+                          cursor: "pointer",
+                          fontSize: "12px",
+                          textAlign: "left",
+                        }}
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.backgroundColor = "#f7e6d0")
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.backgroundColor = "#fef5e7")
+                        }
+                      >
+                        <span style={{ display: "flex", gap: "2px" }}>
+                          <span
+                            style={{
+                              width: "42px",
+                              height: "16px",
+                              backgroundColor: "#e0c392",
+                              borderRadius: "2px",
+                            }}
+                          ></span>
+                        </span>
+                        1 Column
+                      </button>
                       <button
                         onClick={() => insertColumnLayout(2)}
                         style={{
@@ -10645,11 +10928,45 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               margin: "0 4px",
             }}
           />
+          <span
+            style={{
+              fontSize: "11px",
+              color: "#666",
+              padding: "4px 8px",
+              backgroundColor: "#f5f0e8",
+              border: "1px solid #e0c392",
+              borderRadius: "4px",
+            }}
+            title="Current image size (width × height)"
+          >
+            {selectedImage.offsetWidth} × {selectedImage.offsetHeight}px
+          </span>
+          <div
+            style={{
+              width: "1px",
+              height: "20px",
+              backgroundColor: "#e0c392",
+              margin: "0 4px",
+            }}
+          />
+          {/* Move Up/Down buttons */}
           <button
             onClick={() => {
               if (selectedImage) {
-                selectedImage.style.maxWidth = "30%";
-                handleInput();
+                // Find the parent paragraph or container
+                let parent = selectedImage.parentElement;
+                // If image is wrapped in a <p>, we move the <p>
+                const elementToMove =
+                  parent?.tagName === "P" ? parent : selectedImage;
+                const container = elementToMove.parentElement;
+
+                if (container && elementToMove.previousElementSibling) {
+                  container.insertBefore(
+                    elementToMove,
+                    elementToMove.previousElementSibling
+                  );
+                  handleInput();
+                }
               }
             }}
             style={{
@@ -10660,15 +10977,28 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               borderRadius: "4px",
               cursor: "pointer",
             }}
-            title="Small size (30%)"
+            title="Move image up"
           >
-            S
+            ⬆️
           </button>
           <button
             onClick={() => {
               if (selectedImage) {
-                selectedImage.style.maxWidth = "50%";
-                handleInput();
+                // Find the parent paragraph or container
+                let parent = selectedImage.parentElement;
+                // If image is wrapped in a <p>, we move the <p>
+                const elementToMove =
+                  parent?.tagName === "P" ? parent : selectedImage;
+                const container = elementToMove.parentElement;
+
+                if (container && elementToMove.nextElementSibling) {
+                  // Insert after the next sibling
+                  container.insertBefore(
+                    elementToMove,
+                    elementToMove.nextElementSibling.nextElementSibling
+                  );
+                  handleInput();
+                }
               }
             }}
             style={{
@@ -10679,28 +11009,9 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               borderRadius: "4px",
               cursor: "pointer",
             }}
-            title="Medium size (50%)"
+            title="Move image down"
           >
-            M
-          </button>
-          <button
-            onClick={() => {
-              if (selectedImage) {
-                selectedImage.style.maxWidth = "100%";
-                handleInput();
-              }
-            }}
-            style={{
-              padding: "4px 8px",
-              fontSize: "11px",
-              backgroundColor: "#fef5e7",
-              border: "1px solid #e0c392",
-              borderRadius: "4px",
-              cursor: "pointer",
-            }}
-            title="Large size (100%)"
-          >
-            L
+            ⬇️
           </button>
           <div
             style={{
@@ -10735,6 +11046,228 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
             title="Delete image"
           >
             🗑️
+          </button>
+        </div>
+      )}
+
+      {/* Column Container Toolbar */}
+      {selectedColumnContainer && (
+        <div
+          className="column-toolbar"
+          style={{
+            position: "fixed",
+            top: `${columnToolbarPosition.top}px`,
+            left: `${columnToolbarPosition.left}px`,
+            transform: "translateX(-50%)",
+            zIndex: 10000,
+            backgroundColor: "#fffaf3",
+            border: "1.5px solid #e0c392",
+            borderRadius: "8px",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
+            padding: "6px 8px",
+            display: "flex",
+            gap: "6px",
+            alignItems: "center",
+          }}
+        >
+          <span style={{ fontSize: "11px", color: "#666", marginRight: "4px" }}>
+            Columns:
+          </span>
+
+          {/* Move Up */}
+          <button
+            onClick={() => {
+              if (selectedColumnContainer) {
+                const prev = selectedColumnContainer.previousElementSibling;
+                if (prev) {
+                  selectedColumnContainer.parentElement?.insertBefore(
+                    selectedColumnContainer,
+                    prev
+                  );
+                  handleInput();
+                }
+              }
+            }}
+            style={{
+              padding: "4px 8px",
+              fontSize: "12px",
+              backgroundColor: "#fef5e7",
+              border: "1px solid #e0c392",
+              borderRadius: "4px",
+              cursor: "pointer",
+            }}
+            title="Move up"
+          >
+            ⬆️
+          </button>
+
+          {/* Move Down */}
+          <button
+            onClick={() => {
+              if (selectedColumnContainer) {
+                const next = selectedColumnContainer.nextElementSibling;
+                if (next) {
+                  selectedColumnContainer.parentElement?.insertBefore(
+                    next,
+                    selectedColumnContainer
+                  );
+                  handleInput();
+                }
+              }
+            }}
+            style={{
+              padding: "4px 8px",
+              fontSize: "12px",
+              backgroundColor: "#fef5e7",
+              border: "1px solid #e0c392",
+              borderRadius: "4px",
+              cursor: "pointer",
+            }}
+            title="Move down"
+          >
+            ⬇️
+          </button>
+
+          <div
+            style={{
+              width: "1px",
+              height: "20px",
+              backgroundColor: "#e0c392",
+              margin: "0 4px",
+            }}
+          />
+
+          {/* Add Column */}
+          <button
+            onClick={() => {
+              if (selectedColumnContainer) {
+                const newColumn = document.createElement("div");
+                newColumn.className = "column-content";
+                newColumn.contentEditable = "true";
+                newColumn.style.cssText =
+                  "flex: 1; min-width: 0; padding: 10px; border: 1px solid #e8dcc8; border-radius: 4px; background: white; min-height: 100px; box-sizing: border-box;";
+                newColumn.innerHTML = "<p>New column...</p>";
+                selectedColumnContainer.appendChild(newColumn);
+                handleInput();
+              }
+            }}
+            style={{
+              padding: "4px 8px",
+              fontSize: "12px",
+              backgroundColor: "#e8f5e9",
+              border: "1px solid #a5d6a7",
+              borderRadius: "4px",
+              cursor: "pointer",
+            }}
+            title="Add column"
+          >
+            ➕
+          </button>
+
+          {/* Remove Last Column */}
+          <button
+            onClick={() => {
+              if (selectedColumnContainer) {
+                const columns =
+                  selectedColumnContainer.querySelectorAll(".column-content");
+                if (columns.length > 1) {
+                  columns[columns.length - 1].remove();
+                  handleInput();
+                }
+              }
+            }}
+            style={{
+              padding: "4px 8px",
+              fontSize: "12px",
+              backgroundColor: "#fff3e0",
+              border: "1px solid #ffcc80",
+              borderRadius: "4px",
+              cursor: "pointer",
+            }}
+            title="Remove last column"
+          >
+            ➖
+          </button>
+
+          <div
+            style={{
+              width: "1px",
+              height: "20px",
+              backgroundColor: "#e0c392",
+              margin: "0 4px",
+            }}
+          />
+
+          {/* Toggle Drag Handle */}
+          <button
+            onClick={() => {
+              if (selectedColumnContainer) {
+                const handle = selectedColumnContainer.querySelector(
+                  ".column-drag-handle"
+                ) as HTMLElement;
+                if (handle) {
+                  const isHidden = handle.style.display === "none";
+                  handle.style.display = isHidden ? "flex" : "none";
+                  handleInput();
+                }
+              }
+            }}
+            style={{
+              padding: "4px 8px",
+              fontSize: "12px",
+              backgroundColor:
+                (
+                  selectedColumnContainer?.querySelector(
+                    ".column-drag-handle"
+                  ) as HTMLElement
+                )?.style?.display === "none"
+                  ? "#e0e0e0"
+                  : "#fef5e7",
+              border: "1px solid #e0c392",
+              borderRadius: "4px",
+              cursor: "pointer",
+            }}
+            title="Toggle drag handle visibility"
+          >
+            {(
+              selectedColumnContainer?.querySelector(
+                ".column-drag-handle"
+              ) as HTMLElement
+            )?.style?.display === "none"
+              ? "👁️‍🗨️"
+              : "🫣"}
+          </button>
+
+          <div
+            style={{
+              width: "1px",
+              height: "20px",
+              backgroundColor: "#e0c392",
+              margin: "0 4px",
+            }}
+          />
+
+          {/* Delete Container */}
+          <button
+            onClick={() => {
+              if (selectedColumnContainer) {
+                selectedColumnContainer.remove();
+                setSelectedColumnContainer(null);
+                handleInput();
+              }
+            }}
+            style={{
+              padding: "4px 8px",
+              fontSize: "11px",
+              backgroundColor: "#fee2e2",
+              border: "1px solid #fca5a5",
+              borderRadius: "4px",
+              cursor: "pointer",
+              color: "#dc2626",
+            }}
+            title="Delete column layout"
+          >
+            🗑️ Delete
           </button>
         </div>
       )}
