@@ -296,7 +296,10 @@ function splitAtPageBreaks(html: string): string[] {
  */
 function isBlockElement(node: Node): boolean {
   if (node.nodeType !== Node.ELEMENT_NODE) return false;
-  const tag = (node as Element).tagName.toLowerCase();
+  const element = node as Element;
+  const tag = element.tagName.toLowerCase();
+  // Also check for column-container class (special block element)
+  if (element.classList?.contains("column-container")) return true;
   return [
     "p",
     "div",
@@ -538,6 +541,14 @@ export const PaginatedEditor = forwardRef<
     // Content Splitting
     // ========================================================================
 
+    /**
+     * Check if an element is a column container (unsplittable block)
+     */
+    const isColumnContainer = (node: Node): boolean => {
+      if (node.nodeType !== Node.ELEMENT_NODE) return false;
+      return (node as Element).classList?.contains("column-container") || false;
+    };
+
     const splitContentAtHeight = useCallback(
       (html: string, maxHeight: number): [string, string] => {
         // Note: Page breaks are already handled by splitAtPageBreaks()
@@ -564,6 +575,19 @@ export const PaginatedEditor = forwardRef<
             fittingNodes.push(deepCloneNode(node));
           } else {
             // This node causes overflow
+
+            // SPECIAL HANDLING: Column containers cannot be split
+            // They must be moved entirely to the next page
+            if (isColumnContainer(node)) {
+              console.warn(
+                "[PaginatedEditor] Column container exceeds page height and will be moved to next page. " +
+                  "Consider using less content in columns or avoid columns near page boundaries."
+              );
+              remainingNodes.push(deepCloneNode(node));
+              foundSplit = true;
+              continue;
+            }
+
             if (isBlockElement(node)) {
               const element = node as Element;
               const totalWords = countWords(element);
@@ -794,16 +818,36 @@ export const PaginatedEditor = forwardRef<
 
             if (!fitting.trim() && leftover.trim()) {
               // Force content onto page to prevent infinite loop
-              const closeTagIndex = leftover.indexOf("</");
-              const endIndex =
-                closeTagIndex > -1
-                  ? closeTagIndex +
-                    leftover.substring(closeTagIndex).indexOf(">") +
-                    1
-                  : leftover.length;
-              const forcedContent = leftover.substring(0, endIndex) || leftover;
-              newPages.push({ id: pageId, content: forcedContent });
-              remaining = leftover.substring(forcedContent.length);
+              // Parse the leftover to check if it starts with a column-container
+              const tempDiv = document.createElement("div");
+              tempDiv.innerHTML = leftover;
+              const firstElement = tempDiv.firstElementChild;
+
+              if (firstElement?.classList?.contains("column-container")) {
+                // Column container that's too tall - force it onto the page with a warning
+                console.warn(
+                  "[PaginatedEditor] WARNING: Column layout is taller than page content area. " +
+                    "Content may overflow page boundaries. Consider reducing column content."
+                );
+                const columnHtml = firstElement.outerHTML;
+                newPages.push({ id: pageId, content: columnHtml });
+                // Remove the column from remaining content
+                tempDiv.removeChild(firstElement);
+                remaining = tempDiv.innerHTML;
+              } else {
+                // Standard force-fit logic for other content
+                const closeTagIndex = leftover.indexOf("</");
+                const endIndex =
+                  closeTagIndex > -1
+                    ? closeTagIndex +
+                      leftover.substring(closeTagIndex).indexOf(">") +
+                      1
+                    : leftover.length;
+                const forcedContent =
+                  leftover.substring(0, endIndex) || leftover;
+                newPages.push({ id: pageId, content: forcedContent });
+                remaining = leftover.substring(forcedContent.length);
+              }
             } else {
               newPages.push({ id: pageId, content: fitting });
               remaining = leftover;

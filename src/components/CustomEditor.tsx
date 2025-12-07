@@ -2935,6 +2935,13 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
       }, 100);
 
       setShowColumnDropdown(false);
+
+      // Show a brief warning about column pagination behavior
+      // Use a subtle console log rather than intrusive alert
+      console.info(
+        "[QuillPilot] Column layout inserted. Note: Column blocks cannot be split across pages. " +
+          "If a column layout is too tall to fit on the current page, it will be moved entirely to the next page."
+      );
     },
     [handleInput]
   );
@@ -3000,8 +3007,8 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
         });
       });
     } else {
-      // Initialize empty editor with single column container for consistent layout
-      const emptyContent = `<div class="column-container" draggable="true" contenteditable="false" style="display: flex; flex-direction: column; gap: 8px; margin: 1rem 4px; padding: 8px; box-sizing: border-box; border: 1px dashed #d4c4a8; border-bottom: none; border-radius: 6px 6px 0 0; background: #fdfbf7;"><div class="column-drag-handle" style="display: flex; align-items: center; justify-content: center; padding: 4px 8px; background: #f0e6d3; border-radius: 4px; cursor: grab; font-size: 11px; color: #8b7355; user-select: none;">⋮⋮ Drag to move | Click for options</div><div style="display: flex; gap: 20px;"><div class="column-content" contenteditable="true" style="flex: 1; min-width: 0; padding: 10px; border: 1px solid #e8dcc8; border-radius: 4px; background: white; min-height: 100px; box-sizing: border-box;"><p>Start typing here...</p></div></div></div>`;
+      // Initialize empty editor - placeholder is shown via CSS :empty pseudo-class
+      const emptyContent = `<p><br></p>`;
 
       // Update PaginatedEditor with empty content after mount
       requestAnimationFrame(() => {
@@ -3708,6 +3715,78 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
       saveToHistory,
     ]
   );
+
+  // Indent functions that use margin-left instead of blockquote
+  const INDENT_SIZE = 40; // pixels per indent level
+
+  const increaseIndent = useCallback(() => {
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) return;
+
+    // Find the block element(s) containing the selection
+    let node: Node | null = selection.anchorNode;
+    while (node && node.nodeType !== Node.ELEMENT_NODE) {
+      node = node.parentNode;
+    }
+
+    // Find the paragraph or block-level element
+    let blockElement: HTMLElement | null = node as HTMLElement;
+    while (
+      blockElement &&
+      !["P", "DIV", "H1", "H2", "H3", "H4", "H5", "H6", "LI"].includes(
+        blockElement.tagName
+      )
+    ) {
+      blockElement = blockElement.parentElement;
+    }
+
+    if (
+      blockElement &&
+      !blockElement.classList?.contains("column-content") &&
+      !blockElement.classList?.contains("column-container")
+    ) {
+      const currentMargin = parseInt(blockElement.style.marginLeft || "0", 10);
+      blockElement.style.marginLeft = `${currentMargin + INDENT_SIZE}px`;
+      handleInput();
+    }
+  }, [handleInput]);
+
+  const decreaseIndent = useCallback(() => {
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) return;
+
+    // Find the block element(s) containing the selection
+    let node: Node | null = selection.anchorNode;
+    while (node && node.nodeType !== Node.ELEMENT_NODE) {
+      node = node.parentNode;
+    }
+
+    // Find the paragraph or block-level element
+    let blockElement: HTMLElement | null = node as HTMLElement;
+    while (
+      blockElement &&
+      !["P", "DIV", "H1", "H2", "H3", "H4", "H5", "H6", "LI"].includes(
+        blockElement.tagName
+      )
+    ) {
+      blockElement = blockElement.parentElement;
+    }
+
+    if (
+      blockElement &&
+      !blockElement.classList?.contains("column-content") &&
+      !blockElement.classList?.contains("column-container")
+    ) {
+      const currentMargin = parseInt(blockElement.style.marginLeft || "0", 10);
+      const newMargin = Math.max(0, currentMargin - INDENT_SIZE);
+      if (newMargin === 0) {
+        blockElement.style.marginLeft = "";
+      } else {
+        blockElement.style.marginLeft = `${newMargin}px`;
+      }
+      handleInput();
+    }
+  }, [handleInput]);
 
   const replaceFontTagsWithStyledSpans = useCallback(
     (faces: string[], cssFamily: string): HTMLSpanElement[] => {
@@ -7544,8 +7623,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                 <button
                   onMouseDown={(e) => {
                     e.preventDefault();
-                    document.execCommand("outdent", false);
-                    handleInput();
+                    decreaseIndent();
                   }}
                   className="px-2 py-1 rounded bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50] transition-colors text-xs"
                   title="Decrease Indent (Outdent)"
@@ -7555,8 +7633,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                 <button
                   onMouseDown={(e) => {
                     e.preventDefault();
-                    document.execCommand("indent", false);
-                    handleInput();
+                    increaseIndent();
                   }}
                   className="px-2 py-1 rounded bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50] transition-colors text-xs"
                   title="Increase Indent"

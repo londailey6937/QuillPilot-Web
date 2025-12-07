@@ -17,6 +17,11 @@ import {
   Header,
   TabStopType,
   LeaderType,
+  Table,
+  TableRow,
+  TableCell,
+  WidthType,
+  VerticalAlign,
 } from "docx";
 import { saveAs } from "file-saver";
 import { ChapterAnalysis, PrincipleEvaluation, Recommendation } from "@/types";
@@ -1376,6 +1381,19 @@ async function convertNodeToParagraphs(
   const className = element.className || "";
   const combinedStyle = deriveStyleForElement(element, inheritedStyle);
 
+  // Skip non-content elements that should not appear in the document
+  if (
+    tag === "style" ||
+    tag === "script" ||
+    tag === "link" ||
+    tag === "meta" ||
+    tag === "head" ||
+    tag === "title" ||
+    tag === "noscript"
+  ) {
+    return [];
+  }
+
   // Handle special CSS classes for styled sections
   if (className.includes("spacing-indicator")) {
     return convertSpacingIndicator(element);
@@ -1419,6 +1437,129 @@ async function convertNodeToParagraphs(
         children: [new PageBreak()],
       }),
     ];
+  }
+
+  // Handle column containers - convert to table for side-by-side layout
+  if (className.includes("column-container")) {
+    // Find all column-content divs within the container
+    const columnContents = element.querySelectorAll(".column-content");
+
+    if (columnContents.length > 1) {
+      // Multiple columns - create a table for side-by-side layout
+      const tableCells: TableCell[] = [];
+      const columnWidth = Math.floor(100 / columnContents.length);
+
+      for (const columnContent of Array.from(columnContents)) {
+        // Process each column's content into paragraphs
+        const cellParagraphs: Paragraph[] = [];
+        for (const child of Array.from(columnContent.childNodes)) {
+          const converted = await convertNodeToParagraphs(child, combinedStyle);
+          cellParagraphs.push(...converted);
+        }
+
+        // Ensure at least one paragraph in the cell
+        if (cellParagraphs.length === 0) {
+          cellParagraphs.push(new Paragraph({ children: [] }));
+        }
+
+        tableCells.push(
+          new TableCell({
+            children: cellParagraphs,
+            width: { size: columnWidth, type: WidthType.PERCENTAGE },
+            verticalAlign: VerticalAlign.TOP,
+            borders: {
+              top: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+              bottom: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+              left: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+              right: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+            },
+            margins: {
+              top: 100,
+              bottom: 100,
+              left: 100,
+              right: 100,
+            },
+          })
+        );
+      }
+
+      const table = new Table({
+        rows: [
+          new TableRow({
+            children: tableCells,
+          }),
+        ],
+        width: { size: 100, type: WidthType.PERCENTAGE },
+        borders: {
+          top: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+          bottom: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+          left: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+          right: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+          insideHorizontal: {
+            style: BorderStyle.NONE,
+            size: 0,
+            color: "FFFFFF",
+          },
+          insideVertical: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+        },
+      });
+
+      // Return table wrapped - tables can be added directly to document sections
+      return [table as unknown as Paragraph];
+    } else if (columnContents.length === 1) {
+      // Single column - just process the content normally
+      const paragraphs: Paragraph[] = [];
+      for (const child of Array.from(columnContents[0].childNodes)) {
+        const converted = await convertNodeToParagraphs(child, combinedStyle);
+        paragraphs.push(...converted);
+      }
+      return paragraphs;
+    } else {
+      // Fallback: process all children except drag handle
+      const paragraphs: Paragraph[] = [];
+      for (const child of Array.from(element.childNodes)) {
+        if (
+          child.nodeType === Node.ELEMENT_NODE &&
+          (child as HTMLElement).classList?.contains("column-drag-handle")
+        ) {
+          continue;
+        }
+        const converted = await convertNodeToParagraphs(child, combinedStyle);
+        paragraphs.push(...converted);
+      }
+      return paragraphs;
+    }
+  }
+
+  // Skip column drag handle elements - they're UI only
+  if (className.includes("column-drag-handle")) {
+    return [];
+  }
+
+  // Handle column content divs that might be processed individually
+  if (className.includes("column-content")) {
+    const paragraphs: Paragraph[] = [];
+    for (const child of Array.from(element.childNodes)) {
+      const converted = await convertNodeToParagraphs(child, combinedStyle);
+      paragraphs.push(...converted);
+    }
+    return paragraphs;
+  }
+
+  // Handle generic wrapper divs with display:flex (column row wrappers)
+  // These should just pass through to their children
+  const style = element.getAttribute("style") || "";
+  if (
+    tag === "div" &&
+    !className &&
+    (style.includes("display: flex") || style.includes("display:flex"))
+  ) {
+    const paragraphs: Paragraph[] = [];
+    for (const child of Array.from(element.childNodes)) {
+      const converted = await convertNodeToParagraphs(child, combinedStyle);
+      paragraphs.push(...converted);
+    }
+    return paragraphs;
   }
 
   if (tag === "ul" || tag === "ol") {
@@ -2257,18 +2398,39 @@ async function createImageParagraph(
   const { data, mimeType, byteSignature } = payload;
 
   const dimensions = await getImageDimensions(src);
+
+  // Try to get dimensions from multiple sources
   const widthAttribute = parseInt(element.getAttribute("width") || "", 10);
   const heightAttribute = parseInt(element.getAttribute("height") || "", 10);
-  const maxWidth = 480;
-  const maxHeight = 320;
 
+  // Also check inline styles for width/height (used by image resize handles)
+  const style = element.getAttribute("style") || "";
+  const styleWidthMatch = style.match(/width:\s*(\d+)px/);
+  const styleHeightMatch = style.match(/height:\s*(\d+)px/);
+  const styleWidth = styleWidthMatch ? parseInt(styleWidthMatch[1], 10) : NaN;
+  const styleHeight = styleHeightMatch
+    ? parseInt(styleHeightMatch[1], 10)
+    : NaN;
+
+  const maxWidth = 480;
+  const maxHeight = 600; // Increased max height for better aspect ratio
+
+  // Priority: style > attribute > natural dimensions > max
   const inferredWidth = resolveDimension(
-    Number.isNaN(widthAttribute) ? undefined : widthAttribute,
+    !Number.isNaN(styleWidth)
+      ? styleWidth
+      : !Number.isNaN(widthAttribute)
+      ? widthAttribute
+      : undefined,
     dimensions?.width,
     maxWidth
   );
   const inferredHeight = resolveDimension(
-    Number.isNaN(heightAttribute) ? undefined : heightAttribute,
+    !Number.isNaN(styleHeight)
+      ? styleHeight
+      : !Number.isNaN(heightAttribute)
+      ? heightAttribute
+      : undefined,
     dimensions?.height,
     maxHeight
   );

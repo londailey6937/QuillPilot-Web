@@ -1674,6 +1674,19 @@ p {
   color: #2c3e50;
 }
 
+/* Editor placeholder for empty content */
+.paginated-page-content:empty::before,
+.paginated-page-content:has(> p:only-child > br:only-child)::before,
+.paginated-page-content:has(> p:only-child:empty)::before {
+  content: "Start typing here...";
+  color: #9ca3af;
+  font-style: italic;
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
 /* Page Preview Animation */
 @keyframes fadeIn {
   from {

@@ -133,15 +133,43 @@ export function buildContentHtml({
 
   // Build main content
   const trimmedText = text?.trim() ?? "";
-  const isScreenplay = html?.includes("screenplay-block");
+
+  // Strip out non-content elements from HTML (style, script, etc.) that might be from Word imports
+  let cleanHtml = html || "";
+  if (cleanHtml) {
+    // Remove style tags and their content
+    cleanHtml = cleanHtml.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "");
+    // Remove script tags and their content
+    cleanHtml = cleanHtml.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "");
+    // Remove XML declarations and processing instructions
+    cleanHtml = cleanHtml.replace(/<\?xml[^>]*\?>/gi, "");
+    // Remove HTML comments (including Word conditional comments)
+    cleanHtml = cleanHtml.replace(/<!--[\s\S]*?-->/g, "");
+    // Remove link tags
+    cleanHtml = cleanHtml.replace(/<link[^>]*>/gi, "");
+    // Remove meta tags
+    cleanHtml = cleanHtml.replace(/<meta[^>]*>/gi, "");
+    // Remove head section entirely
+    cleanHtml = cleanHtml.replace(/<head[^>]*>[\s\S]*?<\/head>/gi, "");
+    // Extract just the body content if it exists
+    const bodyMatch = cleanHtml.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+    if (bodyMatch) {
+      cleanHtml = bodyMatch[1];
+    }
+    // Remove html and body tags
+    cleanHtml = cleanHtml.replace(/<\/?html[^>]*>/gi, "");
+    cleanHtml = cleanHtml.replace(/<\/?body[^>]*>/gi, "");
+  }
+
+  const isScreenplay = cleanHtml?.includes("screenplay-block");
 
   // For screenplays, preserve the HTML structure exactly
   if (isScreenplay) {
-    contentHtml += sanitizeAndWrapHtml(html || "");
+    contentHtml += sanitizeAndWrapHtml(cleanHtml || "");
   } else if (includeHighlights && trimmedText) {
-    contentHtml += buildDocumentWithHighlights(trimmedText, html);
-  } else if (html?.trim()) {
-    contentHtml += sanitizeAndWrapHtml(html || "");
+    contentHtml += buildDocumentWithHighlights(trimmedText, cleanHtml);
+  } else if (cleanHtml?.trim()) {
+    contentHtml += sanitizeAndWrapHtml(cleanHtml || "");
   } else {
     contentHtml += `<div class="chapter-content">${sanitizeAndWrapHtml(
       trimmedText
