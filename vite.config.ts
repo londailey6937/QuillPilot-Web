@@ -100,6 +100,24 @@ export default defineConfig({
             "./src/components/AcademicCitationManager.tsx",
             "./src/components/NonFictionOutlineGenerator.tsx",
           ],
+          // Export utilities - split for lazy loading
+          "html-export": ["./src/utils/htmlExport.ts"],
+          "pdf-export": ["./src/utils/pdfExport.ts"],
+          // Template library
+          "template-library": ["./src/utils/templateLibrary.ts"],
+          // Supabase client
+          supabase: ["./src/utils/supabase.ts", "@supabase/supabase-js"],
+          // Claude integration
+          claude: ["./src/utils/claudeIntegration.ts"],
+          // Navigation menu (large component)
+          "nav-menu": ["./src/components/NavigationMenu.tsx"],
+          // Auth components
+          auth: [
+            "./src/components/AuthModal.tsx",
+            "./src/components/UserMenu.tsx",
+          ],
+          // Tier one analysis
+          "tier-analysis": ["./src/utils/tierOneAnalysis.ts"],
         },
       },
     },

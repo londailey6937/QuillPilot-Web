@@ -87,17 +87,9 @@ import {
 } from "@/utils/customDomainStorage";
 import AnalysisWorker from "@/workers/analysisWorker?worker";
 import { buildTierOneAnalysisSummary } from "@/utils/tierOneAnalysis";
-import { exportToHtml } from "@/utils/htmlExport";
-import {
-  exportToPdf,
-  exportToManuscriptPdf,
-  ManuscriptSettings,
-} from "@/utils/pdfExport";
-import {
-  TEMPLATE_LIBRARY,
-  getTemplateById,
-  type Template,
-} from "@/utils/templateLibrary";
+// Dynamic imports for export functions (code-splitting)
+import type { ManuscriptSettings } from "@/utils/pdfExport";
+import { TEMPLATE_LIBRARY, type Template } from "@/utils/templateLibrary";
 import {
   processClaudePrompts,
   getStoredClaudeKey,
@@ -1778,6 +1770,7 @@ export const ChapterCheckerV2: React.FC = () => {
               htmlContent: richHtmlContent,
             });
 
+          const { exportToPdf } = await import("@/utils/pdfExport");
           await exportToPdf({
             text: currentChapterText,
             html: richHtmlContent,
@@ -1796,6 +1789,7 @@ export const ChapterCheckerV2: React.FC = () => {
               htmlContent: richHtmlContent,
             });
 
+          const { exportToHtml } = await import("@/utils/htmlExport");
           exportToHtml({
             text: currentChapterText,
             html: richHtmlContent,
@@ -1897,6 +1891,7 @@ export const ChapterCheckerV2: React.FC = () => {
 
     try {
       if (format === "pdf") {
+        const { exportToManuscriptPdf } = await import("@/utils/pdfExport");
         await exportToManuscriptPdf({
           text: currentChapterText,
           html: richHtmlContent,
