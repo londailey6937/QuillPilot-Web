@@ -12,6 +12,7 @@ import {
   detectPassiveVoice,
 } from "@/utils/spacingInsights";
 import { SensoryDetailAnalyzer } from "@/utils/sensoryDetailAnalyzer";
+import { optimizeImage } from "@/utils/imageOptimizer";
 import { Character, CharacterMapping } from "../types";
 import { AIWritingAssistant } from "./AIWritingAssistant";
 import { DialogueEnhancer } from "./DialogueEnhancer";
@@ -5863,15 +5864,23 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     [formatText, handleInput, onUpdate]
   );
 
-  // Insert image
+  // Insert image with optimization
   const handleImageUpload = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       if (!file) return;
 
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const imgHtml = `<img src="${event.target?.result}" style="max-width: 100%; height: auto; display: block; margin: 0.5rem 0;" />`;
+      try {
+        // Optimize image before inserting (compress and resize if needed)
+        const optimizedSrc = await optimizeImage(file, {
+          maxWidth: 1200,
+          maxHeight: 1200,
+          quality: 0.85,
+          maxFileSizeKB: 500,
+          format: "webp",
+        });
+
+        const imgHtml = `<img src="${optimizedSrc}" style="max-width: 100%; height: auto; display: block; margin: 0.5rem 0;" />`;
 
         // Small delay then restore selection and insert
         setTimeout(() => {
@@ -5899,8 +5908,17 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           // Clear saved selection
           savedSelectionRef.current = null;
         }, 10);
-      };
-      reader.readAsDataURL(file);
+      } catch (err) {
+        console.error("Image optimization failed, using original:", err);
+        // Fallback to original image if optimization fails
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const imgHtml = `<img src="${event.target?.result}" style="max-width: 100%; height: auto; display: block; margin: 0.5rem 0;" />`;
+          document.execCommand("insertHTML", false, imgHtml);
+          handleInput();
+        };
+        reader.readAsDataURL(file);
+      }
 
       // Reset input
       e.target.value = "";
@@ -6074,20 +6092,41 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           const blob = items[i].getAsFile();
           if (!blob) continue;
 
-          const reader = new FileReader();
-          reader.onload = (event) => {
-            const imgHtml = `<img src="${event.target?.result}" style="max-width: 100%; height: auto; display: block; margin: 1rem 0;" />`;
-            document.execCommand("insertHTML", false, imgHtml);
-            // Sync changes to editorRef if paste happened in paginated editor
-            setTimeout(() => {
-              if (paginatedEditorRef.current && editorRef.current) {
-                editorRef.current.innerHTML =
-                  paginatedEditorRef.current.getContent();
-              }
-              handleInput();
-            }, 0);
-          };
-          reader.readAsDataURL(blob);
+          // Convert blob to File for optimization
+          const file = new File([blob], "pasted-image.png", {
+            type: blob.type,
+          });
+
+          // Optimize pasted image
+          optimizeImage(file, {
+            maxWidth: 1200,
+            maxHeight: 1200,
+            quality: 0.85,
+            maxFileSizeKB: 500,
+            format: "webp",
+          })
+            .then((optimizedSrc) => {
+              const imgHtml = `<img src="${optimizedSrc}" style="max-width: 100%; height: auto; display: block; margin: 1rem 0;" />`;
+              document.execCommand("insertHTML", false, imgHtml);
+              // Sync changes to editorRef if paste happened in paginated editor
+              setTimeout(() => {
+                if (paginatedEditorRef.current && editorRef.current) {
+                  editorRef.current.innerHTML =
+                    paginatedEditorRef.current.getContent();
+                }
+                handleInput();
+              }, 0);
+            })
+            .catch(() => {
+              // Fallback to original if optimization fails
+              const reader = new FileReader();
+              reader.onload = (event) => {
+                const imgHtml = `<img src="${event.target?.result}" style="max-width: 100%; height: auto; display: block; margin: 1rem 0;" />`;
+                document.execCommand("insertHTML", false, imgHtml);
+                handleInput();
+              };
+              reader.readAsDataURL(blob);
+            });
           return;
         }
       }
@@ -12162,32 +12201,59 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                 const fileInput = document.createElement("input");
                 fileInput.type = "file";
                 fileInput.accept = "image/*";
-                fileInput.onchange = (e) => {
+                fileInput.onchange = async (e) => {
                   const file = (e.target as HTMLInputElement).files?.[0];
                   if (file && selectedImage) {
-                    const reader = new FileReader();
-                    reader.onload = (event) => {
-                      const newSrc = event.target?.result as string;
-                      if (newSrc) {
-                        selectedImage.src = newSrc;
-                        // Preserve the original dimensions
-                        if (originalStyleWidth) {
-                          selectedImage.style.width = originalStyleWidth;
-                        } else {
-                          selectedImage.style.width = `${originalWidth}px`;
-                        }
-                        if (originalStyleHeight) {
-                          selectedImage.style.height = originalStyleHeight;
-                        } else {
-                          selectedImage.style.height = `${originalHeight}px`;
-                        }
-                        selectedImage.style.maxWidth =
-                          originalMaxWidth || "100%";
-                        selectedImage.style.objectFit = "cover";
-                        handleInput();
+                    try {
+                      // Optimize the replacement image
+                      const optimizedSrc = await optimizeImage(file, {
+                        maxWidth: Math.max(originalWidth * 2, 1200),
+                        maxHeight: Math.max(originalHeight * 2, 1200),
+                        quality: 0.85,
+                        maxFileSizeKB: 500,
+                        format: "webp",
+                      });
+
+                      selectedImage.src = optimizedSrc;
+                      // Preserve the original dimensions
+                      if (originalStyleWidth) {
+                        selectedImage.style.width = originalStyleWidth;
+                      } else {
+                        selectedImage.style.width = `${originalWidth}px`;
                       }
-                    };
-                    reader.readAsDataURL(file);
+                      if (originalStyleHeight) {
+                        selectedImage.style.height = originalStyleHeight;
+                      } else {
+                        selectedImage.style.height = `${originalHeight}px`;
+                      }
+                      selectedImage.style.maxWidth = originalMaxWidth || "100%";
+                      selectedImage.style.objectFit = "cover";
+                      handleInput();
+                    } catch (err) {
+                      // Fallback to original if optimization fails
+                      const reader = new FileReader();
+                      reader.onload = (event) => {
+                        const newSrc = event.target?.result as string;
+                        if (newSrc && selectedImage) {
+                          selectedImage.src = newSrc;
+                          if (originalStyleWidth) {
+                            selectedImage.style.width = originalStyleWidth;
+                          } else {
+                            selectedImage.style.width = `${originalWidth}px`;
+                          }
+                          if (originalStyleHeight) {
+                            selectedImage.style.height = originalStyleHeight;
+                          } else {
+                            selectedImage.style.height = `${originalHeight}px`;
+                          }
+                          selectedImage.style.maxWidth =
+                            originalMaxWidth || "100%";
+                          selectedImage.style.objectFit = "cover";
+                          handleInput();
+                        }
+                      };
+                      reader.readAsDataURL(file);
+                    }
                   }
                 };
                 fileInput.click();

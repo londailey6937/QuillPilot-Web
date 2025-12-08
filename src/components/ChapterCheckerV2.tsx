@@ -13,13 +13,7 @@ import React, {
   useCallback,
 } from "react";
 import { DocumentUploader, UploadedDocumentPayload } from "./DocumentUploader";
-import { DocumentEditor } from "./DocumentEditor";
-import { ChapterAnalysisDashboard } from "./VisualizationComponents";
 import { NavigationMenu } from "./NavigationMenu";
-import { UpgradePrompt, InlineUpgradePrompt } from "./UpgradePrompt";
-import { TierTwoPreview } from "./TierTwoPreview";
-import { MissingConceptSuggestions } from "./MissingConceptSuggestions";
-import { CharacterManager } from "./CharacterManager";
 import { DarkModeToggle } from "./ThemeProvider";
 import { ChapterAnalysis, Section } from "@/types";
 
@@ -41,6 +35,33 @@ const QuickStartModal = lazy(() =>
   import("./QuickStartModal").then((m) => ({ default: m.QuickStartModal }))
 );
 const ManuscriptFormatModal = lazy(() => import("./ManuscriptFormatModal"));
+
+// Lazy load heavy editor and visualization components
+const DocumentEditor = lazy(() =>
+  import("./DocumentEditor").then((m) => ({ default: m.DocumentEditor }))
+);
+const ChapterAnalysisDashboard = lazy(() =>
+  import("./VisualizationComponents").then((m) => ({
+    default: m.ChapterAnalysisDashboard,
+  }))
+);
+const UpgradePrompt = lazy(() =>
+  import("./UpgradePrompt").then((m) => ({ default: m.UpgradePrompt }))
+);
+const InlineUpgradePrompt = lazy(() =>
+  import("./UpgradePrompt").then((m) => ({ default: m.InlineUpgradePrompt }))
+);
+const TierTwoPreview = lazy(() =>
+  import("./TierTwoPreview").then((m) => ({ default: m.TierTwoPreview }))
+);
+const MissingConceptSuggestions = lazy(() =>
+  import("./MissingConceptSuggestions").then((m) => ({
+    default: m.MissingConceptSuggestions,
+  }))
+);
+const CharacterManager = lazy(() =>
+  import("./CharacterManager").then((m) => ({ default: m.CharacterManager }))
+);
 
 import {
   AccessLevel,

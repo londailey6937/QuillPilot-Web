@@ -44,7 +44,7 @@ export default defineConfig({
         manualChunks: {
           // React core libraries
           "react-vendor": ["react", "react-dom"],
-          // Document processing libraries (large)
+          // Document processing libraries (large) - split further
           "mammoth-vendor": ["mammoth"],
           "docx-vendor": ["docx"],
           // DOMPurify for sanitization
@@ -56,7 +56,8 @@ export default defineConfig({
             "./src/data/genreRegistry.ts",
             "./src/utils/fictionElementsAnalyzer.ts",
           ],
-          // Visualization components
+          // Visualization - split from recharts
+          recharts: ["recharts"],
           visualization: ["./src/components/VisualizationComponents.tsx"],
           // Export utilities
           docxExport: ["./src/utils/docxExport.ts"],
@@ -65,25 +66,26 @@ export default defineConfig({
           QuickStartModal: ["./src/components/QuickStartModal.tsx"],
           ReferenceLibraryModal: ["./src/components/ReferenceLibraryModal.tsx"],
           WritersReferenceModal: ["./src/components/WritersReferenceModal.tsx"],
-          // Advanced tools panel components
-          "advanced-tools": [
-            "./src/components/AdvancedToolsPanel.tsx",
-            "./src/components/AIWritingAssistant.tsx",
-            "./src/components/DialogueEnhancer.tsx",
-            "./src/components/ReadabilityAnalyzer.tsx",
-            "./src/components/ClicheDetector.tsx",
-            "./src/components/BeatSheetGenerator.tsx",
+          // Advanced tools panel - split into smaller chunks
+          "ai-writing": ["./src/components/AIWritingAssistant.tsx"],
+          "dialogue-tools": ["./src/components/DialogueEnhancer.tsx"],
+          "readability-tools": ["./src/components/ReadabilityAnalyzer.tsx"],
+          "cliche-detector": ["./src/components/ClicheDetector.tsx"],
+          "beat-sheet": ["./src/components/BeatSheetGenerator.tsx"],
+          "pov-emotion": [
             "./src/components/POVChecker.tsx",
             "./src/components/EmotionTracker.tsx",
+          ],
+          "motif-poetry": [
             "./src/components/MotifTracker.tsx",
             "./src/components/PoetryMeterAnalyzer.tsx",
           ],
-          // Editor components
-          "editor-core": [
-            "./src/components/CustomEditor.tsx",
-            "./src/components/DocumentEditor.tsx",
-          ],
-          // Chapter checker
+          "advanced-tools-panel": ["./src/components/AdvancedToolsPanel.tsx"],
+          // Editor components - split
+          "custom-editor": ["./src/components/CustomEditor.tsx"],
+          "document-editor": ["./src/components/DocumentEditor.tsx"],
+          "paginated-editor": ["./src/components/PaginatedEditor.tsx"],
+          // Chapter checker - separate chunk
           "chapter-checker": ["./src/components/ChapterCheckerV2.tsx"],
           // Document upload/processing
           "document-processing": ["./src/components/DocumentUploader.tsx"],
