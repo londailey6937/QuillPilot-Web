@@ -8,13 +8,14 @@ Your complete guide to mastering QuillPilot's writing tools and features.
 
 1. [Writer Mode Overview](#writer-mode-overview)
 2. [The Editor Toolbar](#the-editor-toolbar)
-3. [Advanced Tools Panel](#advanced-tools-panel)
-4. [Productivity Features](#productivity-features)
-5. [Chapter Library](#chapter-library)
-6. [Character Management](#character-management)
-7. [Export Options](#export-options)
-8. [Tips & Best Practices](#tips--best-practices)
-9. [Keyboard Shortcuts](#keyboard-shortcuts-reference)
+3. [Side Panels](#side-panels)
+4. [Advanced Tools Panel](#advanced-tools-panel)
+5. [Productivity Features](#productivity-features)
+6. [Chapter Library](#chapter-library)
+7. [Character Management](#character-management)
+8. [Export Options](#export-options)
+9. [Tips & Best Practices](#tips--best-practices)
+10. [Keyboard Shortcuts](#keyboard-shortcuts-reference)
 
 > **⌨️ Complete Keyboard Shortcuts Guide**: See [KEYBOARD_SHORTCUTS.md](./KEYBOARD_SHORTCUTS.md) for detailed shortcuts reference
 
@@ -250,6 +251,76 @@ Customize how different text styles (headings, paragraphs, quotes) appear in you
 **💡 Quick Access:** Your saved templates also appear at the top of the ⚙️ Modify Styles panel for one-click switching!
 
 **💡 Tip:** Templates are saved to your browser and persist between sessions. Create different themes for different projects!
+
+---
+
+## Side Panels
+
+QuillPilot provides two side panels that stay visible while you write, giving you quick access to navigation, notes, and tools without leaving your document.
+
+### Left Panel: Page Rail & Document Outline
+
+#### Page Rail
+
+The Page Rail shows thumbnail previews of all pages in your document:
+
+- **Visual navigation**: Click any thumbnail to jump to that page
+- **Live indicator**: Shows which page you're currently editing
+- **Page count**: Displays total pages at the top
+- **Hover preview**: Hold cursor over a thumbnail to see a larger preview
+
+#### Document Outline
+
+Below the Page Rail, the Document Outline automatically extracts headings from your document:
+
+- **H1, H2, H3 headings** appear in a hierarchical list
+- **Click to jump**: Click any heading to scroll directly to that section
+- **Indented display**: Shows heading hierarchy at a glance
+- **Real-time updates**: Outline updates as you add/edit headings
+- **Heading count**: Shows total headings in your document
+
+**💡 Tip**: Use headings (Cmd/Ctrl+Alt+1-3) to structure your chapters. The outline makes it easy to navigate long manuscripts!
+
+### Right Panel: Notes, Characters & Tools
+
+#### Pinned Notes
+
+Quick sticky notes that stay visible while writing:
+
+- **Add a note**: Type in the input field and press Enter or click +
+- **Color-coded**: Each note gets a unique pastel color
+- **Delete notes**: Hover over a note and click the × button
+- **Persistent**: Notes stay visible as you scroll through your document
+
+**Best uses for Pinned Notes:**
+
+- Character reminders ("Sarah has green eyes, not blue")
+- Plot points to address ("Need to foreshadow the letter")
+- Writing session goals ("Finish chapter 3 today")
+- Quick research notes ("Victorian era: no electricity")
+
+#### Character Quick Reference
+
+When you have characters defined in the Character Manager, this section shows your main characters:
+
+- **Up to 5 characters** displayed (sorted by importance)
+- **Role icons**: ⭐ Protagonist, 💀 Antagonist, 💕 Love Interest, 🧙 Mentor, 👤 Others
+- **Quick info**: Name and role at a glance
+- **Expand**: Click "more..." to open full Character Manager
+
+**💡 Tip**: Keep your protagonist and antagonist details visible while writing scenes featuring them!
+
+#### Advanced Tools
+
+Below the quick-access features, find the full [Advanced Tools Panel](#advanced-tools-panel) with 17 analysis and writing tools.
+
+### Hiding the Side Panels
+
+Both side panels hide when you enable **Focus Mode** (🎯):
+
+- Click the **🎯** button in the toolbar to toggle Focus Mode
+- Side panels disappear for distraction-free writing
+- Click 🎯 again to restore panels
 
 ---
 

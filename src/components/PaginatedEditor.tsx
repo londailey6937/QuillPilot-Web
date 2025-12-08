@@ -3060,7 +3060,7 @@ export const PaginatedEditor = forwardRef<
                     xmlns="http://www.w3.org/2000/svg"
                     style={{ pointerEvents: "none" }}
                   >
-                    <path d="M6 0L12 8H0L6 0Z" fill="#3b82f6" />
+                    <path d="M6 0L12 8H0L6 0Z" fill="#ef8432" />
                   </svg>
                 </div>
               </div>
@@ -3110,13 +3110,9 @@ export const PaginatedEditor = forwardRef<
                   width: `${pageWidthPx}px`,
                   height: `${pageHeightPx}px`,
                   backgroundColor: "#ffffff",
-                  boxShadow:
-                    activePageIndex === index
-                      ? "0 0 0 3px #3b82f6, 0 8px 32px rgba(0, 0, 0, 0.2)"
-                      : "0 4px 20px rgba(0, 0, 0, 0.15)",
+                  boxShadow: "0 4px 20px rgba(0, 0, 0, 0.15)",
                   position: "relative",
                   overflow: "hidden",
-                  transition: "box-shadow 0.15s ease",
                 }}
               >
                 {/* Header */}

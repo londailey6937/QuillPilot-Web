@@ -8,6 +8,47 @@ This document tracks recent features, improvements, and changes to the Chapter A
 
 ## December 7, 2025 Updates
 
+### Writer Productivity Side Panels
+
+**Feature:** Three new writer-focused features in the side panels
+
+**Document Outline (Left Panel - Page Rail)**
+
+- Automatically extracts H1, H2, H3 headings from your document
+- Click any heading to jump directly to that section
+- Indented display shows heading hierarchy
+- Updates in real-time as you write
+- Shows total heading count
+
+**Pinned Notes (Right Panel - Top)**
+
+- Quick sticky notes that stay visible while writing
+- Add notes with Enter key or + button
+- Color-coded for easy identification
+- Delete notes with hover × button
+- Perfect for quick reminders, character notes, plot points
+
+**Character Quick Reference (Right Panel)**
+
+- Shows up to 5 main characters from your Character Manager
+- Sorted by role importance (protagonist first)
+- Icons indicate role type (⭐ protagonist, 💀 antagonist, etc.)
+- Click "more..." to open full Character Manager
+- Only appears when characters are defined
+
+**Toggle Behavior:**
+
+- All three features toggle off with Focus Mode (🎯)
+- Same toggle controls Page Rail and Advanced Tools
+- Designed to minimize distraction when needed
+
+**Files changed:**
+
+- `CustomEditor.tsx` - Added outline extraction, pinned notes state, character display
+- `globals.css` - Tool button hover styles
+
+---
+
 ### Column Layouts
 
 **Feature:** Multi-column layouts for document formatting

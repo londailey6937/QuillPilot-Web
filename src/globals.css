@@ -22,6 +22,16 @@
   display: none; /* Chrome, Safari and Opera */
 }
 
+/* Advanced Tools panel button hover effect */
+.tool-button-hover {
+  transition: all 0.2s ease;
+}
+
+.tool-button-hover:hover {
+  box-shadow: 0 10px 20px rgba(44, 62, 80, 0.15) !important;
+  transform: translateY(-1px);
+}
+
 /* Block type dropdown - custom stable button dropdown */
 .block-type-dropdown {
   font-size: 12px;

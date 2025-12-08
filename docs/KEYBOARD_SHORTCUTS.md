@@ -92,9 +92,10 @@ Quick reference for all keyboard shortcuts available in QuillPilot's Writer Mode
 When in Focus Mode (🎯 button in toolbar):
 
 - All analysis indicators are hidden
+- **Side panels hidden** (Page Rail, Document Outline, Pinned Notes, Character Reference, Advanced Tools)
 - Full focus on your writing
 - All keyboard shortcuts still work
-- Press the 🎯 button again to exit
+- Press the 🎯 button again to exit and restore panels
 
 ## Typewriter Mode
 

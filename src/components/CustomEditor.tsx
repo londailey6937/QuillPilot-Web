@@ -1348,6 +1348,26 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   const pageRailRef = useRef<HTMLDivElement>(null);
   const [footerAlignmentOffset, setFooterAlignmentOffset] = useState(0);
 
+  // Pinned Notes quick view state
+  interface QuickNote {
+    id: string;
+    text: string;
+    color: string;
+  }
+  const [quickNotes, setQuickNotes] = useState<QuickNote[]>([]);
+  const [newQuickNote, setNewQuickNote] = useState("");
+
+  // Document Outline state
+  interface OutlineItem {
+    id: string;
+    level: number;
+    text: string;
+    element: HTMLElement;
+    pageNumber: number;
+    prefix?: string;
+  }
+  const [documentOutline, setDocumentOutline] = useState<OutlineItem[]>([]);
+
   // Pagination state
   const [pageCount, setPageCount] = useState(1);
   const [pageSnippets, setPageSnippets] = useState<string[]>([]);
@@ -2118,7 +2138,8 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
 
     const contentHeight = editorRef.current.scrollHeight;
     const pages = Math.max(1, Math.ceil(contentHeight / PAGE_HEIGHT_PX));
-    setPageCount(pages);
+    // Note: pageCount is set by PaginatedEditor via handlePageCountChange
+    // Don't set it here as it can override the correct value
 
     updatePageSnippets(pages);
 
@@ -2132,7 +2153,176 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
         paginatedEditorRef.current.setContent(editorContent);
       }
     }
+
+    // Update document outline (extract headings from paginated editor)
+    const pageElements =
+      paginatedEditorRef.current?.getPageContentElements() || [];
+    const outline: OutlineItem[] = [];
+    let headingIndex = 0;
+    pageElements.forEach((pageEl, pageIndex) => {
+      // Select all heading elements and styled blocks (Title, Chapter, Subtitle)
+      const headings = pageEl.querySelectorAll(
+        "h1, h2, h3, .book-title, .doc-title, .chapter-heading, .subtitle, .doc-subtitle"
+      );
+      headings.forEach((heading) => {
+        const el = heading as HTMLElement;
+        const classList = el.classList;
+        let level: number;
+        let prefix: string;
+
+        // Determine level based on element type or class
+        if (
+          classList.contains("book-title") ||
+          classList.contains("doc-title")
+        ) {
+          level = 0; // Title is above H1
+          prefix = "T";
+        } else if (classList.contains("chapter-heading")) {
+          level = 1;
+          prefix = "Ch";
+        } else if (
+          classList.contains("subtitle") ||
+          classList.contains("doc-subtitle")
+        ) {
+          level = 1;
+          prefix = "Sub";
+        } else if (el.tagName === "H1") {
+          level = 1;
+          prefix = "H1";
+        } else if (el.tagName === "H2") {
+          level = 2;
+          prefix = "H2";
+        } else if (el.tagName === "H3") {
+          level = 3;
+          prefix = "H3";
+        } else {
+          return; // Skip unknown elements
+        }
+
+        const text = el.textContent?.trim() || "";
+        if (text) {
+          outline.push({
+            id: `heading-${headingIndex++}`,
+            level,
+            text: text.slice(0, 50) + (text.length > 50 ? "..." : ""),
+            element: el,
+            pageNumber: pageIndex + 1,
+            prefix,
+          });
+        }
+      });
+    });
+    setDocumentOutline(outline);
   }, [updatePageSnippets]);
+
+  // Scroll to a heading in the document outline
+  const scrollToHeading = useCallback((item: OutlineItem) => {
+    if (!item.element) return;
+
+    // Find the heading in the paginated editor
+    const pageElements =
+      paginatedEditorRef.current?.getPageContentElements() || [];
+    for (const pageEl of pageElements) {
+      const headings = pageEl.querySelectorAll(
+        "h1, h2, h3, .book-title, .doc-title, .chapter-heading, .subtitle, .doc-subtitle"
+      );
+      for (const heading of headings) {
+        if (
+          heading.textContent?.trim().startsWith(item.text.replace("...", ""))
+        ) {
+          heading.scrollIntoView({ behavior: "smooth", block: "center" });
+          // Briefly highlight the heading
+          const originalBg = (heading as HTMLElement).style.backgroundColor;
+          (heading as HTMLElement).style.backgroundColor =
+            "rgba(239, 132, 50, 0.3)";
+          setTimeout(() => {
+            (heading as HTMLElement).style.backgroundColor = originalBg;
+          }, 1500);
+          return;
+        }
+      }
+    }
+  }, []);
+
+  // Update document outline from paginated editor content
+  const updateDocumentOutline = useCallback(() => {
+    const pageElements =
+      paginatedEditorRef.current?.getPageContentElements() || [];
+    const outline: OutlineItem[] = [];
+    let headingIndex = 0;
+    pageElements.forEach((pageEl, pageIndex) => {
+      // Select all heading elements and styled blocks (Title, Chapter, Subtitle)
+      const headings = pageEl.querySelectorAll(
+        "h1, h2, h3, .book-title, .doc-title, .chapter-heading, .subtitle, .doc-subtitle"
+      );
+      headings.forEach((heading) => {
+        const el = heading as HTMLElement;
+        const classList = el.classList;
+        let level: number;
+        let prefix: string;
+
+        // Determine level based on element type or class
+        if (
+          classList.contains("book-title") ||
+          classList.contains("doc-title")
+        ) {
+          level = 0; // Title is above H1
+          prefix = "T";
+        } else if (classList.contains("chapter-heading")) {
+          level = 1;
+          prefix = "Ch";
+        } else if (
+          classList.contains("subtitle") ||
+          classList.contains("doc-subtitle")
+        ) {
+          level = 1;
+          prefix = "Sub";
+        } else if (el.tagName === "H1") {
+          level = 1;
+          prefix = "H1";
+        } else if (el.tagName === "H2") {
+          level = 2;
+          prefix = "H2";
+        } else if (el.tagName === "H3") {
+          level = 3;
+          prefix = "H3";
+        } else {
+          return; // Skip unknown elements
+        }
+
+        const text = el.textContent?.trim() || "";
+        if (text) {
+          outline.push({
+            id: `heading-${headingIndex++}`,
+            level,
+            text: text.slice(0, 50) + (text.length > 50 ? "..." : ""),
+            element: el,
+            pageNumber: pageIndex + 1,
+            prefix,
+          });
+        }
+      });
+    });
+    setDocumentOutline(outline);
+  }, []);
+
+  // Add a quick pinned note
+  const addQuickNote = useCallback(() => {
+    if (!newQuickNote.trim()) return;
+    const colors = ["#fef3c7", "#dbeafe", "#dcfce7", "#fce7f3", "#e0e7ff"];
+    const newNote: QuickNote = {
+      id: Date.now().toString(),
+      text: newQuickNote.trim(),
+      color: colors[quickNotes.length % colors.length],
+    };
+    setQuickNotes((prev) => [...prev, newNote]);
+    setNewQuickNote("");
+  }, [newQuickNote, quickNotes.length]);
+
+  // Delete a quick note
+  const deleteQuickNote = useCallback((id: string) => {
+    setQuickNotes((prev) => prev.filter((n) => n.id !== id));
+  }, []);
 
   const insertPageBreakAtCursor = useCallback(() => {
     if (typeof window === "undefined") return false;
@@ -2463,6 +2653,15 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
       mutationObserver.disconnect();
     };
   }, [recomputePagination]);
+
+  // Update document outline on initial load and when content prop changes
+  useEffect(() => {
+    // Small delay to ensure paginated editor has rendered
+    const timer = setTimeout(() => {
+      updateDocumentOutline();
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [content, updateDocumentOutline]);
 
   // Analyze content for spacing and dual-coding
   const analyzeContent = useCallback((text: string) => {
@@ -7019,7 +7218,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                         }
                       }, 50);
                     }}
-                    className="w-full px-1.5 py-1 pr-6 rounded border border-[#e0c392] hover:border-[#ef8432] transition-colors text-xs text-[#2a2421]"
+                    className="w-full px-1.5 py-1 pr-6 rounded border border-[#e0c392] hover:border-[#ef8432] focus:outline-none focus:ring-2 focus:ring-[#ef8432] transition-colors text-xs text-[#2a2421]"
                     title="Font Family"
                     style={{
                       backgroundColor: "#fff8ec",
@@ -7526,11 +7725,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                     e.preventDefault();
                     alignText("left");
                   }}
-                  className={`px-1.5 py-1 rounded transition-colors text-xs ${
-                    textAlign === "left"
-                      ? "bg-[#ef8432] text-white border border-[#ef8432]"
-                      : toolbarInactiveButtonClass
-                  }`}
+                  className={`px-1.5 py-1 rounded transition-colors text-xs ${toolbarInactiveButtonClass}`}
                   title="Align Left"
                 >
                   ≡
@@ -8166,7 +8361,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                 <select
                   value={selectedCharacterId}
                   onChange={(e) => setSelectedCharacterId(e.target.value)}
-                  className="w-full px-2 py-1.5 rounded border bg-white hover:bg-gray-50 transition-colors text-sm mb-2"
+                  className="w-full px-2 py-1.5 rounded border border-[#e0c392] bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#ef8432] transition-colors text-sm mb-2"
                 >
                   <option value="">Select character...</option>
                   {characters
@@ -9419,7 +9614,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
             value={findText}
             onChange={(e) => setFindText(e.target.value)}
             placeholder="Find..."
-            className="px-3 py-1.5 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-3 py-1.5 border border-[#e0c392] rounded focus:outline-none focus:ring-2 focus:ring-[#ef8432]"
             onKeyDown={(e) => {
               if (e.key === "Enter") findInText();
               if (e.key === "Escape") setShowFindReplace(false);
@@ -9430,7 +9625,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
             value={replaceText}
             onChange={(e) => setReplaceText(e.target.value)}
             placeholder="Replace with..."
-            className="px-3 py-1.5 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-3 py-1.5 border border-[#e0c392] rounded focus:outline-none focus:ring-2 focus:ring-[#ef8432]"
             onKeyDown={(e) => {
               if (e.key === "Escape") setShowFindReplace(false);
             }}
@@ -9438,7 +9633,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           <div className="flex items-center gap-2">
             <button
               onClick={findInText}
-              className="px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-sm"
+              className="px-3 py-1.5 bg-[#ef8432] text-white rounded hover:bg-[#d97316] transition-colors text-sm"
               disabled={!findText}
             >
               Find Next
@@ -9485,7 +9680,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           overflow: "hidden",
         }}
       >
-        {/* Page Rail - absolutely positioned to not affect centering */}
+        {/* Page Rail - Outline-focused navigation */}
         {showThumbnailRail && !focusMode && (
           <aside
             ref={pageRailRef}
@@ -9504,130 +9699,147 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               boxShadow: "0 16px 32px rgba(44, 62, 80, 0.12)",
               padding: "16px 12px",
               paddingBottom: "16px",
-              overflowY: "auto",
+              display: "flex",
+              flexDirection: "column",
             }}
           >
+            {/* Header */}
             <div className="flex items-center justify-between mb-3">
               <div className="text-[11px] font-semibold uppercase tracking-wide text-[#92400e]">
-                Page Rail
+                📑 Document Outline
               </div>
-              <span className="text-[11px] text-[#6b7280]">
-                {pageCount} {pageCount === 1 ? "Page" : "Pages"}
-              </span>
             </div>
-            <div className="flex flex-col gap-2">
-              {Array.from({ length: pageCount }, (_, index) => {
-                const snippet = pageSnippets[index] || "";
-                const isActive = index === activePage;
-                return (
-                  <button
-                    key={`thumbnail-${index}`}
-                    type="button"
-                    onClick={() =>
-                      jumpToPage(index, { suppressSelectionSync: true })
-                    }
-                    onMouseEnter={(e) => {
-                      const rect = e.currentTarget.getBoundingClientRect();
-                      previewTimeoutRef.current = setTimeout(() => {
-                        const dims = computePreviewDimensions(
-                          typeof window !== "undefined"
-                            ? window.innerHeight
-                            : undefined
-                        );
-                        setPreviewDimensions(dims);
-                        setPreviewPageIndex(index);
-                        const previewHeight = dims.previewHeight;
-                        const previewWidth = dims.previewWidth;
-                        let top = PREVIEW_SAFE_MARGIN_PX;
-                        let left = rect.right + 20;
 
-                        if (
-                          typeof window !== "undefined" &&
-                          top + previewHeight >
-                            window.innerHeight - PREVIEW_SAFE_MARGIN_PX
-                        ) {
-                          top = Math.max(
-                            PREVIEW_SAFE_MARGIN_PX,
-                            window.innerHeight -
-                              previewHeight -
-                              PREVIEW_SAFE_MARGIN_PX
-                          );
-                        }
-
-                        if (
-                          typeof window !== "undefined" &&
-                          left + previewWidth > window.innerWidth - 20
-                        ) {
-                          left = rect.left - previewWidth - 20;
-                        }
-                        setPreviewPosition({ top, left });
-                      }, 600); // 600ms delay before showing preview
-                    }}
-                    onMouseLeave={() => {
-                      if (previewTimeoutRef.current) {
-                        clearTimeout(previewTimeoutRef.current);
-                        previewTimeoutRef.current = null;
-                      }
-                      setPreviewPageIndex(null);
-                    }}
-                    className="text-left focus-visible:ring-2 focus-visible:ring-[#ef8432]"
-                    style={{
-                      border: isActive
-                        ? "2px solid #ef8432"
-                        : "1px solid #f5d1ab",
-                      borderRadius: "16px",
-                      padding: "10px",
-                      backgroundColor: isActive ? "#fff" : "#fefdf9",
-                      boxShadow: isActive
-                        ? "0 10px 24px rgba(239, 132, 50, 0.25)"
-                        : "0 6px 14px rgba(44, 62, 80, 0.08)",
-                      transition: "border 0.2s ease, box-shadow 0.2s ease",
-                      cursor: "pointer",
-                    }}
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-semibold text-[#2c3e50]">
-                        Page {index + 1}
-                      </span>
-                      {isActive && (
-                        <span className="text-[10px] text-[#ef8432] font-semibold">
-                          Live
-                        </span>
-                      )}
-                    </div>
-                    <div
+            {/* Document Outline - Main content area */}
+            <div
+              className="flex-1 overflow-y-auto hide-scrollbar"
+              style={{ minHeight: 0 }}
+            >
+              {documentOutline.length > 0 ? (
+                <div className="flex flex-col gap-1.5">
+                  {documentOutline.map((item) => (
+                    <button
+                      key={item.id}
+                      onClick={() => scrollToHeading(item)}
+                      className="text-left px-2 py-2 rounded-lg hover:bg-[#f7e6d0] transition-colors tool-button-hover group"
                       style={{
-                        width: "100%",
-                        backgroundColor: "#ffffff",
-                        borderRadius: "10px",
-                        border: "1px solid rgba(224,195,146,0.9)",
-                        aspectRatio: "8.5 / 11",
-                        position: "relative",
-                        overflow: "hidden",
+                        paddingLeft: `${8 + Math.max(0, item.level) * 12}px`,
+                        backgroundColor:
+                          item.pageNumber === activePage + 1
+                            ? "#fff"
+                            : "#fefdf9",
+                        border:
+                          item.pageNumber === activePage + 1
+                            ? "1px solid #ef8432"
+                            : "1px solid #f5d1ab",
+                        boxShadow:
+                          item.pageNumber === activePage + 1
+                            ? "0 2px 8px rgba(239, 132, 50, 0.15)"
+                            : "none",
                       }}
                     >
-                      <div
-                        style={{
-                          position: "absolute",
-                          inset: "6px",
-                          fontSize: "9px",
-                          lineHeight: 1.3,
-                          color: "#374151",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "pre-wrap",
-                          wordBreak: "break-word",
-                        }}
-                      >
-                        {snippet
-                          ? snippet.substring(0, 200) +
-                            (snippet.length > 200 ? "..." : "")
-                          : "Start writing to fill this page."}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1 flex-1 min-w-0">
+                          <span
+                            className="text-[9px] text-[#6b7280] flex-shrink-0"
+                            style={{
+                              opacity: 0.6,
+                              fontWeight: item.level === 0 ? 600 : 400,
+                              color: item.level === 0 ? "#ef8432" : undefined,
+                            }}
+                          >
+                            {item.prefix || `H${item.level}`}
+                          </span>
+                          <span className="text-[11px] text-[#2c3e50] truncate">
+                            {item.text}
+                          </span>
+                        </div>
+                        <span
+                          className="text-[10px] text-[#9ca3af] flex-shrink-0 ml-2 group-hover:text-[#ef8432]"
+                          title={`Page ${item.pageNumber}`}
+                        >
+                          p.{item.pageNumber}
+                        </span>
                       </div>
-                    </div>
-                  </button>
-                );
-              })}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 px-4">
+                  <div className="text-[32px] mb-2 opacity-50">📝</div>
+                  <p className="text-[11px] text-[#6b7280] leading-relaxed">
+                    Add headings to your document to see an outline here.
+                  </p>
+                  <p className="text-[10px] text-[#9ca3af] mt-2">
+                    Use Title, Chapter, H1, H2, H3 from Block Type
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Page Navigator - Fixed at bottom */}
+            <div
+              className="pt-3 mt-3 border-t border-[#e0c392]"
+              style={{ flexShrink: 0 }}
+            >
+              <div className="flex items-center justify-between">
+                <button
+                  onClick={() => {
+                    if (activePage > 0) {
+                      jumpToPage(activePage - 1, {
+                        suppressSelectionSync: true,
+                      });
+                    }
+                  }}
+                  disabled={activePage === 0}
+                  className="p-1.5 rounded-lg hover:bg-[#f7e6d0] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                  title="Previous page"
+                >
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#2c3e50"
+                    strokeWidth="2"
+                  >
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                  </svg>
+                </button>
+
+                <div className="text-center">
+                  <div className="text-[13px] font-semibold text-[#2c3e50]">
+                    Page {activePage + 1}
+                  </div>
+                  <div className="text-[10px] text-[#6b7280]">
+                    of {pageCount}
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => {
+                    if (activePage < pageCount - 1) {
+                      jumpToPage(activePage + 1, {
+                        suppressSelectionSync: true,
+                      });
+                    }
+                  }}
+                  disabled={activePage >= pageCount - 1}
+                  className="p-1.5 rounded-lg hover:bg-[#f7e6d0] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                  title="Next page"
+                >
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#2c3e50"
+                    strokeWidth="2"
+                  >
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                  </svg>
+                </button>
+              </div>
             </div>
           </aside>
         )}
@@ -9916,6 +10128,134 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               msOverflowStyle: "none",
             }}
           >
+            {/* Quick Pinned Notes Section */}
+            <div className="mb-4">
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-[11px] font-semibold uppercase tracking-wide text-[#92400e]">
+                  📌 Pinned Notes
+                </div>
+                <span className="text-[10px] text-[#6b7280]">
+                  {quickNotes.length} notes
+                </span>
+              </div>
+              <div className="flex flex-col gap-1.5 mb-2">
+                {quickNotes.length === 0 ? (
+                  <div className="text-[10px] text-[#6b7280] italic py-2 text-center">
+                    No pinned notes yet
+                  </div>
+                ) : (
+                  quickNotes.map((note) => (
+                    <div
+                      key={note.id}
+                      className="relative group rounded-lg p-2 text-[10px] text-[#2c3e50]"
+                      style={{
+                        backgroundColor: note.color,
+                        border: "1px solid rgba(0,0,0,0.1)",
+                      }}
+                    >
+                      {note.text}
+                      <button
+                        onClick={() => deleteQuickNote(note.id)}
+                        className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full text-[8px] opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                        title="Delete note"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+              <div className="flex gap-1">
+                <input
+                  type="text"
+                  value={newQuickNote}
+                  onChange={(e) => setNewQuickNote(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && addQuickNote()}
+                  placeholder="Quick note..."
+                  className="flex-1 px-2 py-1 text-[10px] rounded border border-[#e0c392] focus:outline-none focus:ring-1 focus:ring-[#ef8432]"
+                  style={{ backgroundColor: "#fff" }}
+                />
+                <button
+                  onClick={addQuickNote}
+                  disabled={!newQuickNote.trim()}
+                  className="px-2 py-1 text-[10px] rounded bg-[#ef8432] text-white disabled:opacity-50"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+
+            {/* Character Quick Reference Section */}
+            {characters.length > 0 && (
+              <div className="mb-4 pb-3 border-b border-[#e0c392]">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-[11px] font-semibold uppercase tracking-wide text-[#92400e]">
+                    👥 Characters
+                  </div>
+                  <span className="text-[10px] text-[#6b7280]">
+                    {characters.length} total
+                  </span>
+                </div>
+                <div className="flex flex-col gap-1">
+                  {characters
+                    .sort((a, b) => {
+                      const roleOrder: Record<string, number> = {
+                        protagonist: 1,
+                        antagonist: 2,
+                        deuteragonist: 3,
+                        "love-interest": 4,
+                        mentor: 5,
+                        sidekick: 6,
+                        supporting: 7,
+                        minor: 8,
+                      };
+                      return (
+                        (roleOrder[a.role] || 99) - (roleOrder[b.role] || 99)
+                      );
+                    })
+                    .slice(0, 5)
+                    .map((char) => (
+                      <div
+                        key={char.id}
+                        className="flex items-center gap-2 px-2 py-1.5 rounded-lg text-[10px]"
+                        style={{
+                          backgroundColor: "#fefdf9",
+                          border: "1px solid #f5d1ab",
+                        }}
+                      >
+                        <span className="text-sm">
+                          {char.role === "protagonist"
+                            ? "⭐"
+                            : char.role === "antagonist"
+                            ? "💀"
+                            : char.role === "love-interest"
+                            ? "💕"
+                            : char.role === "mentor"
+                            ? "🧙"
+                            : "👤"}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-semibold text-[#2c3e50] truncate">
+                            {char.name}
+                          </div>
+                          <div className="text-[9px] text-[#6b7280] capitalize">
+                            {char.role.replace("-", " ")}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  {characters.length > 5 && (
+                    <button
+                      onClick={() => onOpenCharacterManager?.()}
+                      className="text-[10px] text-[#ef8432] hover:underline text-center py-1"
+                    >
+                      +{characters.length - 5} more...
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
             <div className="flex items-center justify-between mb-3">
               <div className="text-[11px] font-semibold uppercase tracking-wide text-[#92400e]">
                 Advanced Tools
@@ -9929,7 +10269,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               <button
                 type="button"
                 onClick={() => setActiveTool("ai-assistant")}
-                className="text-left focus-visible:ring-2 focus-visible:ring-[#ef8432]"
+                className="text-left focus-visible:ring-2 focus-visible:ring-[#ef8432] tool-button-hover"
                 style={{
                   border:
                     activeTool === "ai-assistant"
@@ -9943,22 +10283,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                     activeTool === "ai-assistant"
                       ? "0 10px 24px rgba(239, 132, 50, 0.25)"
                       : "0 6px 14px rgba(44, 62, 80, 0.08)",
-                  transition: "all 0.2s ease",
                   cursor: "pointer",
-                }}
-                onMouseEnter={(e) => {
-                  if (activeTool !== "ai-assistant") {
-                    e.currentTarget.style.boxShadow =
-                      "0 10px 20px rgba(44, 62, 80, 0.15)";
-                    e.currentTarget.style.transform = "translateY(-1px)";
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (activeTool !== "ai-assistant") {
-                    e.currentTarget.style.boxShadow =
-                      "0 6px 14px rgba(44, 62, 80, 0.08)";
-                    e.currentTarget.style.transform = "translateY(0)";
-                  }
                 }}
               >
                 <div className="flex items-center gap-2 mb-1">
@@ -9974,7 +10299,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               <button
                 type="button"
                 onClick={() => setActiveTool("dialogue")}
-                className="text-left focus-visible:ring-2 focus-visible:ring-[#ef8432]"
+                className="text-left focus-visible:ring-2 focus-visible:ring-[#ef8432] tool-button-hover"
                 style={{
                   border:
                     activeTool === "dialogue"
@@ -9988,22 +10313,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                     activeTool === "dialogue"
                       ? "0 10px 24px rgba(239, 132, 50, 0.25)"
                       : "0 6px 14px rgba(44, 62, 80, 0.08)",
-                  transition: "all 0.2s ease",
                   cursor: "pointer",
-                }}
-                onMouseEnter={(e) => {
-                  if (activeTool !== "dialogue") {
-                    e.currentTarget.style.boxShadow =
-                      "0 10px 20px rgba(44, 62, 80, 0.15)";
-                    e.currentTarget.style.transform = "translateY(-1px)";
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (activeTool !== "dialogue") {
-                    e.currentTarget.style.boxShadow =
-                      "0 6px 14px rgba(44, 62, 80, 0.08)";
-                    e.currentTarget.style.transform = "translateY(0)";
-                  }
                 }}
               >
                 <div className="flex items-center gap-2 mb-1">
@@ -10019,7 +10329,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               <button
                 type="button"
                 onClick={() => setActiveTool("readability")}
-                className="text-left focus-visible:ring-2 focus-visible:ring-[#ef8432]"
+                className="text-left focus-visible:ring-2 focus-visible:ring-[#ef8432] tool-button-hover"
                 style={{
                   border:
                     activeTool === "readability"
@@ -10033,22 +10343,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                     activeTool === "readability"
                       ? "0 10px 24px rgba(239, 132, 50, 0.25)"
                       : "0 6px 14px rgba(44, 62, 80, 0.08)",
-                  transition: "all 0.2s ease",
                   cursor: "pointer",
-                }}
-                onMouseEnter={(e) => {
-                  if (activeTool !== "readability") {
-                    e.currentTarget.style.boxShadow =
-                      "0 10px 20px rgba(44, 62, 80, 0.15)";
-                    e.currentTarget.style.transform = "translateY(-1px)";
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (activeTool !== "readability") {
-                    e.currentTarget.style.boxShadow =
-                      "0 6px 14px rgba(44, 62, 80, 0.08)";
-                    e.currentTarget.style.transform = "translateY(0)";
-                  }
                 }}
               >
                 <div className="flex items-center gap-2 mb-1">
@@ -10065,7 +10360,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               <button
                 type="button"
                 onClick={() => setActiveTool("cliche")}
-                className="text-left focus-visible:ring-2 focus-visible:ring-[#ef8432]"
+                className="text-left focus-visible:ring-2 focus-visible:ring-[#ef8432] tool-button-hover"
                 style={{
                   border:
                     activeTool === "cliche"
@@ -10078,7 +10373,6 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                     activeTool === "cliche"
                       ? "0 10px 24px rgba(239, 132, 50, 0.25)"
                       : "0 6px 14px rgba(44, 62, 80, 0.08)",
-                  transition: "all 0.2s ease",
                   cursor: "pointer",
                 }}
               >
@@ -10096,7 +10390,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               <button
                 type="button"
                 onClick={() => setActiveTool("beats")}
-                className="text-left focus-visible:ring-2 focus-visible:ring-[#ef8432]"
+                className="text-left focus-visible:ring-2 focus-visible:ring-[#ef8432] tool-button-hover"
                 style={{
                   border:
                     activeTool === "beats"
@@ -10109,7 +10403,6 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                     activeTool === "beats"
                       ? "0 10px 24px rgba(239, 132, 50, 0.25)"
                       : "0 6px 14px rgba(44, 62, 80, 0.08)",
-                  transition: "all 0.2s ease",
                   cursor: "pointer",
                 }}
               >
@@ -10127,7 +10420,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               <button
                 type="button"
                 onClick={() => setActiveTool("pov")}
-                className="text-left focus-visible:ring-2 focus-visible:ring-[#ef8432]"
+                className="text-left focus-visible:ring-2 focus-visible:ring-[#ef8432] tool-button-hover"
                 style={{
                   border:
                     activeTool === "pov"
@@ -10140,7 +10433,6 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                     activeTool === "pov"
                       ? "0 10px 24px rgba(239, 132, 50, 0.25)"
                       : "0 6px 14px rgba(44, 62, 80, 0.08)",
-                  transition: "all 0.2s ease",
                   cursor: "pointer",
                 }}
               >
@@ -10158,7 +10450,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               <button
                 type="button"
                 onClick={() => setActiveTool("emotion")}
-                className="text-left focus-visible:ring-2 focus-visible:ring-[#ef8432]"
+                className="text-left focus-visible:ring-2 focus-visible:ring-[#ef8432] tool-button-hover"
                 style={{
                   border:
                     activeTool === "emotion"
@@ -10172,7 +10464,6 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                     activeTool === "emotion"
                       ? "0 10px 24px rgba(239, 132, 50, 0.25)"
                       : "0 6px 14px rgba(44, 62, 80, 0.08)",
-                  transition: "all 0.2s ease",
                   cursor: "pointer",
                 }}
               >
@@ -10190,7 +10481,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               <button
                 type="button"
                 onClick={() => setActiveTool("motif")}
-                className="text-left focus-visible:ring-2 focus-visible:ring-[#ef8432]"
+                className="text-left focus-visible:ring-2 focus-visible:ring-[#ef8432] tool-button-hover"
                 style={{
                   border:
                     activeTool === "motif"
@@ -10203,7 +10494,6 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                     activeTool === "motif"
                       ? "0 10px 24px rgba(239, 132, 50, 0.25)"
                       : "0 6px 14px rgba(44, 62, 80, 0.08)",
-                  transition: "all 0.2s ease",
                   cursor: "pointer",
                 }}
               >
@@ -10226,7 +10516,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               <button
                 type="button"
                 onClick={() => setActiveTool("poetry-meter")}
-                className="text-left focus-visible:ring-2 focus-visible:ring-[#ef8432]"
+                className="text-left focus-visible:ring-2 focus-visible:ring-[#ef8432] tool-button-hover"
                 style={{
                   border:
                     activeTool === "poetry-meter"
@@ -10240,7 +10530,6 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                     activeTool === "poetry-meter"
                       ? "0 10px 24px rgba(239, 132, 50, 0.25)"
                       : "0 6px 14px rgba(44, 62, 80, 0.08)",
-                  transition: "all 0.2s ease",
                   cursor: "pointer",
                 }}
               >
@@ -10258,7 +10547,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               <button
                 type="button"
                 onClick={() => setActiveTool("nonfiction-outline")}
-                className="text-left focus-visible:ring-2 focus-visible:ring-[#ef8432]"
+                className="text-left focus-visible:ring-2 focus-visible:ring-[#ef8432] tool-button-hover"
                 style={{
                   border:
                     activeTool === "nonfiction-outline"
@@ -10272,7 +10561,6 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                     activeTool === "nonfiction-outline"
                       ? "0 10px 24px rgba(239, 132, 50, 0.25)"
                       : "0 6px 14px rgba(44, 62, 80, 0.08)",
-                  transition: "all 0.2s ease",
                   cursor: "pointer",
                 }}
               >
@@ -10290,7 +10578,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               <button
                 type="button"
                 onClick={() => setActiveTool("citation-manager")}
-                className="text-left focus-visible:ring-2 focus-visible:ring-[#ef8432]"
+                className="text-left focus-visible:ring-2 focus-visible:ring-[#ef8432] tool-button-hover"
                 style={{
                   border:
                     activeTool === "citation-manager"
@@ -10304,7 +10592,6 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                     activeTool === "citation-manager"
                       ? "0 10px 24px rgba(239, 132, 50, 0.25)"
                       : "0 6px 14px rgba(44, 62, 80, 0.08)",
-                  transition: "all 0.2s ease",
                   cursor: "pointer",
                 }}
               >
@@ -10327,7 +10614,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               <button
                 type="button"
                 onClick={() => setActiveTool("name-generator")}
-                className="text-left focus-visible:ring-2 focus-visible:ring-[#ef8432]"
+                className="text-left focus-visible:ring-2 focus-visible:ring-[#ef8432] tool-button-hover"
                 style={{
                   border:
                     activeTool === "name-generator"
@@ -10341,7 +10628,6 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                     activeTool === "name-generator"
                       ? "0 10px 24px rgba(239, 132, 50, 0.25)"
                       : "0 6px 14px rgba(44, 62, 80, 0.08)",
-                  transition: "all 0.2s ease",
                   cursor: "pointer",
                 }}
               >
@@ -10359,7 +10645,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               <button
                 type="button"
                 onClick={() => setActiveTool("world-building")}
-                className="text-left focus-visible:ring-2 focus-visible:ring-[#ef8432]"
+                className="text-left focus-visible:ring-2 focus-visible:ring-[#ef8432] tool-button-hover"
                 style={{
                   border:
                     activeTool === "world-building"
@@ -10373,7 +10659,6 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                     activeTool === "world-building"
                       ? "0 10px 24px rgba(239, 132, 50, 0.25)"
                       : "0 6px 14px rgba(44, 62, 80, 0.08)",
-                  transition: "all 0.2s ease",
                   cursor: "pointer",
                 }}
               >
@@ -10391,7 +10676,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               <button
                 type="button"
                 onClick={() => setActiveTool("research-notes")}
-                className="text-left focus-visible:ring-2 focus-visible:ring-[#ef8432]"
+                className="text-left focus-visible:ring-2 focus-visible:ring-[#ef8432] tool-button-hover"
                 style={{
                   border:
                     activeTool === "research-notes"
@@ -10405,7 +10690,6 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                     activeTool === "research-notes"
                       ? "0 10px 24px rgba(239, 132, 50, 0.25)"
                       : "0 6px 14px rgba(44, 62, 80, 0.08)",
-                  transition: "all 0.2s ease",
                   cursor: "pointer",
                 }}
               >
@@ -10423,7 +10707,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               <button
                 type="button"
                 onClick={() => setActiveTool("mood-board")}
-                className="text-left focus-visible:ring-2 focus-visible:ring-[#ef8432]"
+                className="text-left focus-visible:ring-2 focus-visible:ring-[#ef8432] tool-button-hover"
                 style={{
                   border:
                     activeTool === "mood-board"
@@ -10437,7 +10721,6 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                     activeTool === "mood-board"
                       ? "0 10px 24px rgba(239, 132, 50, 0.25)"
                       : "0 6px 14px rgba(44, 62, 80, 0.08)",
-                  transition: "all 0.2s ease",
                   cursor: "pointer",
                 }}
               >
@@ -10455,7 +10738,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               <button
                 type="button"
                 onClick={() => setActiveTool("version-history")}
-                className="text-left focus-visible:ring-2 focus-visible:ring-[#ef8432]"
+                className="text-left focus-visible:ring-2 focus-visible:ring-[#ef8432] tool-button-hover"
                 style={{
                   border:
                     activeTool === "version-history"
@@ -10469,7 +10752,6 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                     activeTool === "version-history"
                       ? "0 10px 24px rgba(239, 132, 50, 0.25)"
                       : "0 6px 14px rgba(44, 62, 80, 0.08)",
-                  transition: "all 0.2s ease",
                   cursor: "pointer",
                 }}
               >
@@ -10487,7 +10769,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               <button
                 type="button"
                 onClick={() => setActiveTool("comments")}
-                className="text-left focus-visible:ring-2 focus-visible:ring-[#ef8432]"
+                className="text-left focus-visible:ring-2 focus-visible:ring-[#ef8432] tool-button-hover"
                 style={{
                   border:
                     activeTool === "comments"
@@ -10501,7 +10783,6 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                     activeTool === "comments"
                       ? "0 10px 24px rgba(239, 132, 50, 0.25)"
                       : "0 6px 14px rgba(44, 62, 80, 0.08)",
-                  transition: "all 0.2s ease",
                   cursor: "pointer",
                 }}
               >
@@ -10544,6 +10825,8 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
             analysisTimeoutRef.current = setTimeout(() => {
               analyzeContent(newContent.text);
             }, 300);
+            // Update document outline for headings
+            updateDocumentOutline();
           }}
           onPageCountChange={handlePageCountChange}
           isEditable={isEditable}
