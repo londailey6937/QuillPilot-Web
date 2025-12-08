@@ -28,7 +28,7 @@ import { CharacterNameGenerator } from "./CharacterNameGenerator";
 import { WorldBuildingNotebook } from "./WorldBuildingNotebook";
 import { ResearchNotesPanel } from "./ResearchNotesPanel";
 import { ImageMoodBoard } from "./ImageMoodBoard";
-import { CommentAnnotation } from "./CommentAnnotation";
+import { MarginComments } from "./MarginComments";
 import {
   PaginatedEditor,
   PaginatedEditorRef,
@@ -80,6 +80,8 @@ interface CustomEditorProps {
   documentTools?: React.ReactNode;
   // Callback when page count changes
   onPageCountChange?: (count: number) => void;
+  // Callback to open chapter library
+  onOpenChapterLibrary?: () => void;
 }
 
 const INCH_IN_PX = 96;
@@ -209,12 +211,12 @@ const BLOCK_TYPE_SECTIONS: BlockTypeMenuSection[] = [
     accent: palette.border,
     background: "#eddcc5",
     items: [
-      { value: "paragraph", label: "Paragraph (Reset)" },
       { value: "book-title", label: "Book Title" },
-      { value: "title", label: "Section Title" },
       { value: "subtitle", label: "Subtitle" },
+      { value: "paragraph", label: "Body Text" },
       { value: "chapter-heading", label: "Chapter Heading" },
       { value: "part-title", label: "Part Title" },
+      { value: "title", label: "Section Title" },
       { value: "epigraph", label: "Epigraph" },
       { value: "dedication", label: "Dedication" },
       { value: "acknowledgments", label: "Acknowledgments" },
@@ -1180,6 +1182,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   onHeaderFooterChange,
   documentTools,
   onPageCountChange,
+  onOpenChapterLibrary,
 }) => {
   const editorRef = useRef<HTMLDivElement>(null); // Currently unused - needs refactoring to work with PaginatedEditor
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -1303,7 +1306,6 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     | "world-building"
     | "research-notes"
     | "mood-board"
-    | "comments"
     | null;
   const [activeTool, setActiveTool] = useState<ActiveTool>(null);
   const [showCrossRefModal, setShowCrossRefModal] = useState(false);
@@ -1317,7 +1319,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   const [findText, setFindText] = useState("");
   const [replaceText, setReplaceText] = useState("");
   const [showStats, setShowStats] = useState(false);
-  const [focusMode, setFocusMode] = useState(false);
+  const [focusMode, setFocusMode] = useState(true); // Start with focus mode on - cleaner initial view
   const [typewriterMode, setTypewriterMode] = useState(false);
   const [sprintMode, setSprintMode] = useState(false);
   const [sprintDuration, setSprintDuration] = useState(15); // minutes
@@ -1343,6 +1345,12 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   const pageRailRef = useRef<HTMLDivElement>(null);
   const [footerAlignmentOffset, setFooterAlignmentOffset] = useState(0);
 
+  // Notes sidebar state (inline with editor)
+  const [showNotesSidebar, setShowNotesSidebar] = useState(false);
+
+  // Margin comments state
+  const [showMarginComments, setShowMarginComments] = useState(false);
+
   // Pinned Notes quick view state
   interface QuickNote {
     id: string;
@@ -1362,6 +1370,11 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     prefix?: string;
   }
   const [documentOutline, setDocumentOutline] = useState<OutlineItem[]>([]);
+
+  // Drag-and-drop state for document outline reordering
+  const [draggedOutlineItem, setDraggedOutlineItem] =
+    useState<OutlineItem | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
   // Pagination state
   const [pageCount, setPageCount] = useState(1);
@@ -1451,19 +1464,47 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   // Ruler container ref (used for alignment calculations)
   const rulerContainerRef = useRef<HTMLDivElement>(null);
 
+  // Ref to track if we should ignore outside clicks (when applying a style)
+  const ignoreOutsideClickRef = useRef(false);
+
   // Close block type dropdown on click outside
   useEffect(() => {
+    if (!showBlockTypeDropdown) return;
+
     const handleClickOutside = (e: MouseEvent) => {
-      if (
-        showBlockTypeDropdown &&
-        blockTypeDropdownRef.current &&
-        !blockTypeDropdownRef.current.contains(e.target as Node)
-      ) {
-        setShowBlockTypeDropdown(false);
+      // If we're applying a style, ignore this click
+      if (ignoreOutsideClickRef.current) {
+        ignoreOutsideClickRef.current = false;
+        return;
       }
+
+      const target = e.target as HTMLElement;
+
+      // Check if click is inside dropdown
+      const dropdownElement = document.querySelector(
+        "[data-block-type-dropdown]"
+      );
+      if (dropdownElement && dropdownElement.contains(target)) {
+        return; // Click inside dropdown, don't close
+      }
+
+      if (blockTypeDropdownRef.current?.contains(target)) {
+        return; // Click inside ref, don't close
+      }
+
+      // Click was outside, close the dropdown
+      setShowBlockTypeDropdown(false);
     };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+
+    // Small delay to let current click finish processing
+    const timeoutId = setTimeout(() => {
+      document.addEventListener("mousedown", handleClickOutside);
+    }, 10);
+
+    return () => {
+      clearTimeout(timeoutId);
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
   }, [showBlockTypeDropdown]);
 
   // Close font size dropdown on click outside
@@ -2239,6 +2280,180 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     }
   }, []);
 
+  // Move a section (heading + content until next heading) to a new position
+  const moveOutlineSection = useCallback(
+    (fromIndex: number, toIndex: number) => {
+      if (fromIndex === toIndex) return;
+
+      const outline = documentOutline;
+      if (fromIndex < 0 || fromIndex >= outline.length) return;
+      if (toIndex < 0 || toIndex > outline.length) return;
+
+      const fromItem = outline[fromIndex];
+      const fromElement = fromItem.element;
+      if (!fromElement || !fromElement.parentNode) return;
+
+      // Find the end of this section (everything until the next heading at same or higher level)
+      const fromLevel = fromItem.level;
+      let endElement: HTMLElement | null = null;
+
+      // Get all content to move (from this heading to just before next same-level-or-higher heading)
+      const elementsToMove: HTMLElement[] = [];
+      let currentEl: HTMLElement | null = fromElement;
+
+      while (currentEl) {
+        elementsToMove.push(currentEl);
+        const nextEl = currentEl.nextElementSibling as HTMLElement | null;
+
+        if (!nextEl) break;
+
+        // Check if next element is a heading at same or higher level
+        const isHeading = nextEl.matches(
+          "h1, h2, h3, .book-title, .doc-title, .chapter-heading, .subtitle, .doc-subtitle"
+        );
+        if (isHeading) {
+          // Find what level this heading is
+          let nextLevel: number;
+          if (
+            nextEl.classList.contains("book-title") ||
+            nextEl.classList.contains("doc-title")
+          ) {
+            nextLevel = 0;
+          } else if (nextEl.classList.contains("chapter-heading")) {
+            nextLevel = 1;
+          } else if (
+            nextEl.classList.contains("subtitle") ||
+            nextEl.classList.contains("doc-subtitle")
+          ) {
+            nextLevel = 1;
+          } else if (nextEl.tagName === "H1") {
+            nextLevel = 1;
+          } else if (nextEl.tagName === "H2") {
+            nextLevel = 2;
+          } else if (nextEl.tagName === "H3") {
+            nextLevel = 3;
+          } else {
+            nextLevel = 99;
+          }
+
+          // Stop if we hit a heading at same or higher level
+          if (nextLevel <= fromLevel) {
+            endElement = nextEl;
+            break;
+          }
+        }
+
+        currentEl = nextEl;
+      }
+
+      if (elementsToMove.length === 0) return;
+
+      // Determine the target position (insert before which element)
+      let targetElement: HTMLElement | null = null;
+
+      if (toIndex < outline.length) {
+        // Insert before the element at toIndex
+        // But if we're moving down, account for the fact that items will shift
+        const adjustedToIndex = toIndex > fromIndex ? toIndex : toIndex;
+        if (adjustedToIndex < outline.length) {
+          targetElement = outline[adjustedToIndex].element;
+        }
+      }
+
+      // Create a document fragment to hold moved elements
+      const fragment = document.createDocumentFragment();
+      elementsToMove.forEach((el) => fragment.appendChild(el));
+
+      // Insert at the target position
+      if (targetElement && targetElement.parentNode) {
+        targetElement.parentNode.insertBefore(fragment, targetElement);
+      } else {
+        // Insert at the end
+        const pageElements =
+          paginatedEditorRef.current?.getPageContentElements() || [];
+        if (pageElements.length > 0) {
+          const lastPage = pageElements[pageElements.length - 1];
+          lastPage.appendChild(fragment);
+        }
+      }
+
+      // Trigger content update and outline refresh
+      if (paginatedEditorRef.current) {
+        const html = paginatedEditorRef.current.getContent();
+        // Extract text from HTML for the text property
+        const tempDiv = document.createElement("div");
+        tempDiv.innerHTML = html;
+        const text = tempDiv.textContent || tempDiv.innerText || "";
+        // Notify parent of content change
+        onUpdate?.({ html, text });
+      }
+
+      // Update the outline after a short delay to let DOM settle
+      setTimeout(() => {
+        updateOutlineNow();
+      }, 100);
+    },
+    [documentOutline, onUpdate]
+  );
+
+  // Helper function to update outline immediately (used by moveOutlineSection)
+  const updateOutlineNow = useCallback(() => {
+    const pageElements =
+      paginatedEditorRef.current?.getPageContentElements() || [];
+    const outline: OutlineItem[] = [];
+    let headingIndex = 0;
+    pageElements.forEach((pageEl, pageIndex) => {
+      const headings = pageEl.querySelectorAll(
+        "h1, h2, h3, .book-title, .doc-title, .chapter-heading, .subtitle, .doc-subtitle"
+      );
+      headings.forEach((heading) => {
+        const el = heading as HTMLElement;
+        const classList = el.classList;
+        let level: number;
+        let prefix: string;
+        if (
+          classList.contains("book-title") ||
+          classList.contains("doc-title")
+        ) {
+          level = 0;
+          prefix = "T";
+        } else if (classList.contains("chapter-heading")) {
+          level = 1;
+          prefix = "Ch";
+        } else if (
+          classList.contains("subtitle") ||
+          classList.contains("doc-subtitle")
+        ) {
+          level = 1;
+          prefix = "Sub";
+        } else if (el.tagName === "H1") {
+          level = 1;
+          prefix = "H1";
+        } else if (el.tagName === "H2") {
+          level = 2;
+          prefix = "H2";
+        } else if (el.tagName === "H3") {
+          level = 3;
+          prefix = "H3";
+        } else {
+          return;
+        }
+        const text = el.textContent?.trim() || "";
+        if (text) {
+          outline.push({
+            id: `heading-${headingIndex++}`,
+            level,
+            text: text.slice(0, 50) + (text.length > 50 ? "..." : ""),
+            element: el,
+            pageNumber: pageIndex + 1,
+            prefix,
+          });
+        }
+      });
+    });
+    setDocumentOutline(outline);
+  }, []);
+
   // Update document outline from paginated editor content
   const updateDocumentOutline = useCallback(() => {
     const pageElements =
@@ -2488,7 +2703,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   // Header/Footer state - preview panels removed, keeping export functionality
   const [showHeaderFooter] = useState(false);
   const [headerText, setHeaderText] = useState(
-    "Lon Dailey — Manuscript Draft\nProject: Winterlight\nUpdated: January 2026"
+    "Jane Author — Manuscript Draft\nProject: Winterlight\nUpdated: December 8, 2025"
   );
   const [footerText, setFooterText] = useState(
     "Confidential — Do Not Distribute"
@@ -4686,7 +4901,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               "book-title": "Book Title",
               subtitle: "Subtitle",
               "chapter-heading": "Chapter 1",
-              "part-title": "Part I",
+              "part-title": "Part One",
             };
 
             const className = styleMap[styleTag] || "";
@@ -5967,6 +6182,13 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
             performRedo();
           }
           break;
+        case "n":
+          // Cmd/Ctrl+Shift+N - Toggle notes sidebar
+          if (modKey && e.shiftKey && !e.altKey) {
+            e.preventDefault();
+            setShowNotesSidebar((prev) => !prev);
+          }
+          break;
       }
     },
     [formatText, performUndo, performRedo, changeBlockType, onSave, handleInput]
@@ -6708,6 +6930,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                 {/* Block type dropdown - Custom stable implementation */}
                 <div
                   ref={blockTypeDropdownRef}
+                  data-block-type-dropdown="true"
                   className="relative inline-block"
                   style={{ position: "relative" }}
                 >
@@ -6827,6 +7050,14 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                   {showBlockTypeDropdown && (
                     <div
                       className="block-type-dropdown-menu"
+                      onMouseDown={(e) => {
+                        // Prevent this from triggering the document click-outside handler
+                        e.stopPropagation();
+                      }}
+                      onClick={(e) => {
+                        // Prevent click from bubbling to document
+                        e.stopPropagation();
+                      }}
                       style={{
                         position: "absolute",
                         left: 0,
@@ -6921,12 +7152,15 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                                 type="button"
                                 onMouseDown={(e) => {
                                   e.preventDefault();
+                                  e.stopPropagation();
+                                  // Set flag to ignore outside clicks while applying style
+                                  ignoreOutsideClickRef.current = true;
                                   console.log(
                                     `[Dropdown] Clicked on style: ${item.value}`
                                   );
                                   ensureEditorSelection();
                                   changeBlockType(item.value);
-                                  setShowBlockTypeDropdown(false);
+                                  // Dropdown stays open - user clicks outside to close
                                 }}
                                 style={{
                                   width: "100%",
@@ -9672,51 +9906,119 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
             >
               {documentOutline.length > 0 ? (
                 <div className="flex flex-col gap-1.5">
-                  {documentOutline.map((item) => (
-                    <button
+                  {documentOutline.map((item, index) => (
+                    <div
                       key={item.id}
-                      onClick={() => scrollToHeading(item)}
-                      className="text-left px-2 py-2 rounded-lg hover:bg-[#f7e6d0] transition-colors tool-button-hover group"
+                      draggable
+                      onDragStart={(e) => {
+                        setDraggedOutlineItem(item);
+                        e.dataTransfer.effectAllowed = "move";
+                        e.dataTransfer.setData("text/plain", item.id);
+                        // Add dragging class for visual feedback
+                        (e.target as HTMLElement).style.opacity = "0.5";
+                      }}
+                      onDragEnd={(e) => {
+                        setDraggedOutlineItem(null);
+                        setDragOverIndex(null);
+                        (e.target as HTMLElement).style.opacity = "1";
+                      }}
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        e.dataTransfer.dropEffect = "move";
+                        const draggedIndex = documentOutline.findIndex(
+                          (i) => i.id === draggedOutlineItem?.id
+                        );
+                        if (draggedIndex !== -1 && draggedIndex !== index) {
+                          setDragOverIndex(index);
+                        }
+                      }}
+                      onDragLeave={() => {
+                        setDragOverIndex(null);
+                      }}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        const draggedIndex = documentOutline.findIndex(
+                          (i) => i.id === draggedOutlineItem?.id
+                        );
+                        if (draggedIndex !== -1 && draggedIndex !== index) {
+                          moveOutlineSection(draggedIndex, index);
+                        }
+                        setDraggedOutlineItem(null);
+                        setDragOverIndex(null);
+                      }}
+                      className="relative"
                       style={{
-                        paddingLeft: `${8 + Math.max(0, item.level) * 12}px`,
-                        backgroundColor:
-                          item.pageNumber === activePage + 1
-                            ? "#fff"
-                            : "#fefdf9",
-                        border:
-                          item.pageNumber === activePage + 1
-                            ? "1px solid #ef8432"
-                            : "1px solid #f5d1ab",
-                        boxShadow:
-                          item.pageNumber === activePage + 1
-                            ? "0 2px 8px rgba(239, 132, 50, 0.15)"
-                            : "none",
+                        cursor: "grab",
                       }}
                     >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1 flex-1 min-w-0">
+                      {/* Drop indicator line */}
+                      {dragOverIndex === index && draggedOutlineItem && (
+                        <div
+                          style={{
+                            position: "absolute",
+                            top: -2,
+                            left: 0,
+                            right: 0,
+                            height: 3,
+                            backgroundColor: "#ef8432",
+                            borderRadius: 2,
+                            zIndex: 10,
+                          }}
+                        />
+                      )}
+                      <button
+                        onClick={() => scrollToHeading(item)}
+                        className="w-full text-left px-2 py-2 rounded-lg hover:bg-[#f7e6d0] transition-colors tool-button-hover group"
+                        style={{
+                          paddingLeft: `${8 + Math.max(0, item.level) * 12}px`,
+                          backgroundColor:
+                            draggedOutlineItem?.id === item.id
+                              ? "#f7e6d0"
+                              : item.pageNumber === activePage + 1
+                              ? "#fff"
+                              : "#fefdf9",
+                          border:
+                            item.pageNumber === activePage + 1
+                              ? "1px solid #ef8432"
+                              : "1px solid #f5d1ab",
+                          boxShadow:
+                            item.pageNumber === activePage + 1
+                              ? "0 2px 8px rgba(239, 132, 50, 0.15)"
+                              : "none",
+                        }}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                            {/* Drag handle */}
+                            <span
+                              className="text-[10px] text-[#9ca3af] flex-shrink-0 opacity-50 group-hover:opacity-100 cursor-grab"
+                              title="Drag to reorder"
+                            >
+                              ⋮⋮
+                            </span>
+                            <span
+                              className="text-[9px] text-[#6b7280] flex-shrink-0"
+                              style={{
+                                opacity: 0.6,
+                                fontWeight: item.level === 0 ? 600 : 400,
+                                color: item.level === 0 ? "#ef8432" : undefined,
+                              }}
+                            >
+                              {item.prefix || `H${item.level}`}
+                            </span>
+                            <span className="text-[11px] text-[#2c3e50] truncate">
+                              {item.text}
+                            </span>
+                          </div>
                           <span
-                            className="text-[9px] text-[#6b7280] flex-shrink-0"
-                            style={{
-                              opacity: 0.6,
-                              fontWeight: item.level === 0 ? 600 : 400,
-                              color: item.level === 0 ? "#ef8432" : undefined,
-                            }}
+                            className="text-[10px] text-[#9ca3af] flex-shrink-0 ml-2 group-hover:text-[#ef8432]"
+                            title={`Page ${item.pageNumber}`}
                           >
-                            {item.prefix || `H${item.level}`}
-                          </span>
-                          <span className="text-[11px] text-[#2c3e50] truncate">
-                            {item.text}
+                            p.{item.pageNumber}
                           </span>
                         </div>
-                        <span
-                          className="text-[10px] text-[#9ca3af] flex-shrink-0 ml-2 group-hover:text-[#ef8432]"
-                          title={`Page ${item.pageNumber}`}
-                        >
-                          p.{item.pageNumber}
-                        </span>
-                      </div>
-                    </button>
+                      </button>
+                    </div>
                   ))}
                 </div>
               ) : (
@@ -10083,63 +10385,6 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               msOverflowStyle: "none",
             }}
           >
-            {/* Quick Pinned Notes Section */}
-            <div className="mb-4">
-              <div className="flex items-center justify-between mb-2">
-                <div className="text-[11px] font-semibold uppercase tracking-wide text-[#92400e]">
-                  📌 Pinned Notes
-                </div>
-                <span className="text-[10px] text-[#6b7280]">
-                  {quickNotes.length} notes
-                </span>
-              </div>
-              <div className="flex flex-col gap-1.5 mb-2">
-                {quickNotes.length === 0 ? (
-                  <div className="text-[10px] text-[#6b7280] italic py-2 text-center">
-                    No pinned notes yet
-                  </div>
-                ) : (
-                  quickNotes.map((note) => (
-                    <div
-                      key={note.id}
-                      className="relative group rounded-lg p-2 text-[10px] text-[#2c3e50]"
-                      style={{
-                        backgroundColor: note.color,
-                        border: "1px solid rgba(0,0,0,0.1)",
-                      }}
-                    >
-                      {note.text}
-                      <button
-                        onClick={() => deleteQuickNote(note.id)}
-                        className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full text-[8px] opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
-                        title="Delete note"
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))
-                )}
-              </div>
-              <div className="flex gap-1">
-                <input
-                  type="text"
-                  value={newQuickNote}
-                  onChange={(e) => setNewQuickNote(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && addQuickNote()}
-                  placeholder="Quick note..."
-                  className="flex-1 px-2 py-1 text-[10px] rounded border border-[#e0c392] focus:outline-none focus:ring-1 focus:ring-[#ef8432]"
-                  style={{ backgroundColor: "#fff" }}
-                />
-                <button
-                  onClick={addQuickNote}
-                  disabled={!newQuickNote.trim()}
-                  className="px-2 py-1 text-[10px] rounded bg-[#ef8432] text-white disabled:opacity-50"
-                >
-                  +
-                </button>
-              </div>
-            </div>
-
             {/* Character Quick Reference Section */}
             {characters.length > 0 && (
               <div className="mb-4 pb-3 border-b border-[#e0c392]">
@@ -10689,24 +10934,21 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                   Upload reference images for scenes
                 </div>
               </button>
-              {/* Comments */}
+              {/* Comments - Now toggles margin comments */}
               <button
                 type="button"
-                onClick={() => setActiveTool("comments")}
+                onClick={() => setShowMarginComments(!showMarginComments)}
                 className="text-left focus-visible:ring-2 focus-visible:ring-[#ef8432] tool-button-hover"
                 style={{
-                  border:
-                    activeTool === "comments"
-                      ? "2px solid #ef8432"
-                      : "1px solid #f5d1ab",
+                  border: showMarginComments
+                    ? "2px solid #ef8432"
+                    : "1px solid #f5d1ab",
                   borderRadius: "12px",
                   padding: "10px",
-                  backgroundColor:
-                    activeTool === "comments" ? "#fff" : "#fefdf9",
-                  boxShadow:
-                    activeTool === "comments"
-                      ? "0 10px 24px rgba(239, 132, 50, 0.25)"
-                      : "0 6px 14px rgba(44, 62, 80, 0.08)",
+                  backgroundColor: showMarginComments ? "#fff" : "#fefdf9",
+                  boxShadow: showMarginComments
+                    ? "0 10px 24px rgba(239, 132, 50, 0.25)"
+                    : "0 6px 14px rgba(44, 62, 80, 0.08)",
                   cursor: "pointer",
                 }}
               >
@@ -10715,9 +10957,14 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                   <span className="text-xs font-semibold text-[#2c3e50]">
                     Comments
                   </span>
+                  {showMarginComments && (
+                    <span className="text-[9px] text-[#ef8432] font-medium">
+                      ON
+                    </span>
+                  )}
                 </div>
                 <div className="text-[10px] text-[#6b7280] leading-tight">
-                  Leave notes for yourself or beta readers
+                  Inline margin comments on selected text
                 </div>
               </button>
             </div>
@@ -10780,7 +11027,205 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
             handleInput();
           }}
         />
+
+        {/* Margin Comments Panel */}
+        {viewMode === "writer" && !isFreeMode && showMarginComments && (
+          <MarginComments
+            fileName={undefined}
+            editorRef={editorRef}
+            paginatedEditorRef={paginatedEditorRef}
+            isVisible={showMarginComments}
+            onToggle={() => setShowMarginComments(false)}
+          />
+        )}
       </div>
+
+      {/* Floating Notes Toggle Button - Always visible in writer mode */}
+      {viewMode === "writer" && !isFreeMode && (
+        <button
+          onClick={() => setShowNotesSidebar(!showNotesSidebar)}
+          style={{
+            position: "fixed",
+            right: "16px",
+            bottom: "80px",
+            zIndex: 1100,
+            width: "48px",
+            height: "48px",
+            borderRadius: "50%",
+            border: showNotesSidebar
+              ? "2px solid #e0c392"
+              : "2px solid #e0c392",
+            background: showNotesSidebar
+              ? "linear-gradient(135deg, #f7e6d0 0%, #eddcc5 100%)"
+              : "linear-gradient(135deg, #fef5e7 0%, #f7e6d0 100%)",
+            boxShadow: showNotesSidebar
+              ? "0 4px 16px rgba(224, 195, 146, 0.5), inset 0 1px 2px rgba(0,0,0,0.1)"
+              : "0 4px 16px rgba(44, 62, 80, 0.2)",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            transition: "all 0.2s ease",
+          }}
+          title={showNotesSidebar ? "Hide notes (⌘⇧N)" : "Show notes (⌘⇧N)"}
+        >
+          <span
+            style={{
+              fontSize: "20px",
+              color: "#2c3e50",
+            }}
+          >
+            📝
+          </span>
+        </button>
+      )}
+
+      {/* Floating Notes Panel */}
+      {showNotesSidebar && viewMode === "writer" && !isFreeMode && (
+        <aside
+          className="inline-notes-sidebar hide-scrollbar"
+          style={{
+            position: "fixed",
+            right: "16px",
+            bottom: "140px",
+            width: "300px",
+            maxHeight: "calc(100vh - 200px)",
+            zIndex: 1099,
+            borderRadius: "16px",
+            border: "1px solid #e0c392",
+            background:
+              "linear-gradient(180deg, rgba(254,245,231,0.98), rgba(247,230,208,0.95))",
+            boxShadow: "0 8px 32px rgba(44, 62, 80, 0.2)",
+            padding: "16px",
+            overflowY: "auto",
+            scrollbarWidth: "none",
+          }}
+        >
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <span className="text-lg">📝</span>
+              <span className="text-sm font-semibold text-[#2c3e50]">
+                Quick Notes
+              </span>
+            </div>
+            <span className="text-[10px] text-[#6b7280]">⌘⇧N to toggle</span>
+          </div>
+
+          {/* Quick Add Note */}
+          <div className="mb-3">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={newQuickNote}
+                onChange={(e) => setNewQuickNote(e.target.value)}
+                onKeyDown={(e) => {
+                  // Prevent Cmd+A from selecting entire page
+                  if ((e.metaKey || e.ctrlKey) && e.key === "a") {
+                    e.stopPropagation();
+                    return; // Let browser handle select-all within input
+                  }
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    addQuickNote();
+                  }
+                  e.stopPropagation();
+                }}
+                placeholder="Add a quick note..."
+                className="flex-1 px-3 py-2 text-sm rounded-lg border border-[#e0c392] focus:outline-none focus:ring-2 focus:ring-[#ef8432] focus:border-transparent"
+                style={{ backgroundColor: "#fff" }}
+              />
+              <button
+                onClick={addQuickNote}
+                disabled={!newQuickNote.trim()}
+                className="px-3 py-2 text-sm rounded-lg bg-[#ef8432] text-white disabled:opacity-50 hover:bg-[#d97320] transition-colors"
+              >
+                +
+              </button>
+            </div>
+          </div>
+
+          {/* Notes List */}
+          <div className="flex flex-col gap-2 max-h-[300px] overflow-y-auto">
+            {quickNotes.length === 0 ? (
+              <div className="text-center py-6 text-sm text-[#6b7280]">
+                <div className="text-2xl mb-1">📝</div>
+                <p className="text-xs">No notes yet</p>
+              </div>
+            ) : (
+              quickNotes.map((note) => (
+                <div
+                  key={note.id}
+                  className="relative group rounded-lg p-2.5 text-sm text-[#2c3e50]"
+                  style={{
+                    backgroundColor: note.color,
+                    border: "1px solid rgba(0,0,0,0.08)",
+                  }}
+                >
+                  <div
+                    className="pr-12 text-xs leading-relaxed select-text"
+                    style={{ userSelect: "text" }}
+                  >
+                    {note.text}
+                  </div>
+                  <div className="absolute top-1.5 right-1.5 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={() => {
+                        // Insert text at cursor in editor
+                        if (paginatedEditorRef.current) {
+                          paginatedEditorRef.current.focus();
+                          paginatedEditorRef.current.execCommand(
+                            "insertText",
+                            note.text
+                          );
+                          if (editorRef.current) {
+                            editorRef.current.innerHTML =
+                              paginatedEditorRef.current.getContent();
+                          }
+                          handleInput();
+                        }
+                      }}
+                      className="w-5 h-5 bg-[#ef8432] text-white rounded text-[10px] flex items-center justify-center hover:bg-[#d97320]"
+                      title="Insert at cursor"
+                    >
+                      ↵
+                    </button>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(note.text);
+                      }}
+                      className="w-5 h-5 bg-[#2c3e50] text-white rounded text-[10px] flex items-center justify-center hover:bg-[#1a252f]"
+                      title="Copy to clipboard"
+                    >
+                      📋
+                    </button>
+                    <button
+                      onClick={() => deleteQuickNote(note.id)}
+                      className="w-5 h-5 bg-red-500 text-white rounded text-[10px] flex items-center justify-center hover:bg-red-600"
+                      title="Delete note"
+                    >
+                      ×
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Open Full Panel Link */}
+          <div className="mt-3 pt-3 border-t border-[#e0c392]">
+            <button
+              onClick={() => {
+                setShowNotesSidebar(false);
+                setActiveTool("research-notes");
+              }}
+              className="w-full px-2 py-1.5 text-xs rounded-lg text-[#6b7280] hover:text-[#2c3e50] hover:bg-[#f7e6d0] transition-colors flex items-center justify-center gap-1"
+            >
+              <span>📚</span>
+              <span>Open Full Notes Panel</span>
+            </button>
+          </div>
+        </aside>
+      )}
 
       {isLoading && (
         <div
@@ -11032,14 +11477,6 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
         <ImageMoodBoard
           onClose={() => setActiveTool(null)}
           onOpenHelp={() => onOpenHelp?.("moodBoard")}
-        />
-      )}
-      {viewMode === "writer" && !isFreeMode && activeTool === "comments" && (
-        <CommentAnnotation
-          documentContent={editorRef.current?.innerText || ""}
-          selectedText={window.getSelection()?.toString() || ""}
-          onClose={() => setActiveTool(null)}
-          onOpenHelp={() => onOpenHelp?.("comments")}
         />
       )}
 

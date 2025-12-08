@@ -37,6 +37,7 @@ Quick reference for all keyboard shortcuts available in QuillPilot's Writer Mode
 | `Ctrl/Cmd + Y`         | Redo           | Redo (Windows/Linux alternative)         |
 | `Ctrl/Cmd + F`         | Find & Replace | Open find and replace dialog             |
 | `Ctrl/Cmd + K`         | Insert Link    | Add hyperlink to selected text           |
+| `Ctrl/Cmd + Shift + N` | Quick Notes    | Toggle floating quick notes panel        |
 
 ## Editor Navigation
 

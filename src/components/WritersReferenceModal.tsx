@@ -36,7 +36,7 @@ export function WritersReferenceModal({
     advancedTools: "Advanced Tools Panel (Genre, Analysis)",
     aiAssistant: "AI Writing Assistant (Rephrase, Enhance, Suggestions)",
     dialogue: "Dialogue Enhancer (Speech, Conversation, Tags)",
-    comments: "Comments & Annotations (Notes, Feedback)",
+    comments: "Inline Margin Comments (Notes on Text)",
     beatSheet: "Beat Sheet Generator (Story Structure, Plot, Scenes)",
     povChecker: "POV Checker (Point of View, Perspective, Narrator)",
     readability: "Readability Metrics (Grade Level, Complexity, Flesch)",
@@ -373,6 +373,17 @@ export function WritersReferenceModal({
             <h3>Productivity Features</h3>
             <ul style={{ marginBottom: "1.5rem" }}>
               <li>
+                <strong>Quick Notes</strong> - Click the 📝 button
+                (bottom-right) or press Cmd/Ctrl+Shift+N to access notes
+                anytime. Insert notes directly into your document with one
+                click.
+              </li>
+              <li>
+                <strong>Document Outline Drag-Drop</strong> - Drag headings in
+                the outline to reorganize chapters, scenes, or sections. The
+                entire section (heading + content) moves together.
+              </li>
+              <li>
                 <strong>Focus Mode</strong> - Hide page thumbnails and analysis
                 panels for distraction-free writing
               </li>
@@ -386,15 +397,15 @@ export function WritersReferenceModal({
                 save to your computer.
               </li>
               <li>
-                <strong>Comments & Annotations</strong> - Leave notes for
-                yourself or collaborators
+                <strong>Inline Margin Comments</strong> - Select text and add
+                comments that appear in the margin, not in a popup
               </li>
             </ul>
 
             <div className="tip-box">
-              <strong>🚀 Pro Tip:</strong> Use Cmd/Ctrl+K to open the command
-              palette and quickly access any tool without clicking. Press
-              Cmd/Ctrl+/ to see all keyboard shortcuts.
+              <strong>🚀 Pro Tip:</strong> Focus Mode is on by default for a
+              clean writing experience. Click the eye icon to toggle side
+              panels.
             </div>
 
             <div
@@ -776,9 +787,9 @@ export function WritersReferenceModal({
                 authenticity
               </li>
               <li>
-                <strong>💬 Comments & Annotations</strong>{" "}
-                <span className="new-badge">NEW</span> — Leave notes for
-                yourself or beta readers
+                <strong>💬 Inline Margin Comments</strong>{" "}
+                <span className="new-badge">NEW</span> — Add comments alongside
+                text in the margin, not in a popup
               </li>
             </ul>
 
@@ -1283,61 +1294,62 @@ export function WritersReferenceModal({
         return (
           <div className="writers-ref-content">
             <h2>
-              💬 Comments & Annotations <span className="new-badge">NEW</span>
+              💬 Inline Margin Comments <span className="new-badge">NEW</span>
             </h2>
             <p>
-              Leave notes for yourself or beta readers throughout your
-              manuscript.
+              Add comments directly in the margin alongside your text - no modal
+              popups interrupting your flow.
             </p>
 
-            <h3>Categories</h3>
-            <ul>
+            <h3>How to Use</h3>
+            <ol>
               <li>
-                <strong>📝 General:</strong> General notes and reminders
+                Click "Comments" in the right panel to enable margin comments
               </li>
-              <li>
-                <strong>💡 Suggestion:</strong> Ideas for improvement
-              </li>
-              <li>
-                <strong>❓ Question:</strong> Things to research or verify
-              </li>
-              <li>
-                <strong>✏️ Correction:</strong> Errors to fix
-              </li>
-            </ul>
+              <li>Select text in your document</li>
+              <li>Click "Add comment" in the margin panel</li>
+              <li>Type your comment and choose a highlight color</li>
+              <li>Press ⌘+Enter (or click Add) to save</li>
+            </ol>
 
             <h3>Features</h3>
             <ul>
               <li>
-                <strong>Beta Reader Mode:</strong> Toggle to show only comments
-                meant for others
+                <strong>Color-coded highlights:</strong> Choose from yellow,
+                green, blue, pink, or orange
               </li>
               <li>
-                <strong>Filter by Category:</strong> Focus on one type of
-                comment
+                <strong>Click to navigate:</strong> Click any comment to scroll
+                to and highlight the referenced text
               </li>
               <li>
-                <strong>Resolve Comments:</strong> Mark items as addressed
+                <strong>Resolve comments:</strong> Mark items as addressed (they
+                appear faded)
               </li>
               <li>
-                <strong>Filter Resolved:</strong> Hide completed items
+                <strong>Delete comments:</strong> Remove comments and their
+                highlights
+              </li>
+              <li>
+                <strong>Sorted by position:</strong> Comments appear in document
+                order
               </li>
             </ul>
 
-            <h3>How to Use</h3>
-            <ol>
-              <li>Select text you want to annotate</li>
-              <li>Open Advanced Tools → Comments</li>
-              <li>Choose a category and write your note</li>
-              <li>Toggle Beta Reader Mode when sharing with others</li>
-            </ol>
+            <h3>Best Uses</h3>
+            <ul>
+              <li>Self-editing notes ("Check this dialogue")</li>
+              <li>Beta reader feedback collection</li>
+              <li>Revision reminders ("Expand this scene")</li>
+              <li>Research notes ("Verify historical accuracy")</li>
+            </ul>
 
             <div className="tip-box">
               <strong>💡 Tips:</strong>
               <ul>
-                <li>Use Questions for facts you need to verify later</li>
-                <li>Mark suggestions as resolved once you've addressed them</li>
-                <li>Beta Reader Mode hides your personal notes when sharing</li>
+                <li>Use different colors for different types of notes</li>
+                <li>Resolve comments as you address them to track progress</li>
+                <li>Comments are saved per document automatically</li>
               </ul>
             </div>
           </div>
@@ -2468,6 +2480,10 @@ export function WritersReferenceModal({
                 <tr>
                   <td>Cmd/Ctrl+A</td>
                   <td>Select All</td>
+                </tr>
+                <tr>
+                  <td>Cmd/Ctrl+Shift+N</td>
+                  <td>Toggle Quick Notes</td>
                 </tr>
               </tbody>
             </table>

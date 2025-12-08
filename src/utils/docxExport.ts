@@ -22,6 +22,7 @@ import {
   TableCell,
   WidthType,
   VerticalAlign,
+  Packer,
 } from "docx";
 import { saveAs } from "file-saver";
 import { ChapterAnalysis, PrincipleEvaluation, Recommendation } from "@/types";
@@ -2750,3 +2751,431 @@ function extractTocEntriesWithPageNumbers(
 
   return entries;
 }
+
+/**
+ * Manuscript Format Settings Interface
+ */
+export interface ManuscriptSettings {
+  authorName: string;
+  authorAddress: string;
+  authorCity: string;
+  authorState: string;
+  authorZip: string;
+  authorEmail: string;
+  authorPhone: string;
+  title: string;
+  penName?: string;
+  wordCount: number;
+  includeRunningHeaders: boolean;
+  runningHeaderStyle: "author-title" | "title-only" | "custom";
+  customRunningHeader?: string;
+  fontFamily:
+    | "courier-new"
+    | "courier-prime"
+    | "times-new-roman"
+    | "georgia"
+    | "garamond"
+    | "palatino"
+    | "book-antiqua"
+    | "century-schoolbook"
+    | "cambria";
+  fontSize: 12;
+  lineSpacing: "double";
+  margins: {
+    top: number;
+    bottom: number;
+    left: number;
+    right: number;
+  };
+  firstLineIndent: number;
+  paragraphSpacing: "none" | "single";
+}
+
+/**
+ * Export to DOCX in Shunn Standard Manuscript Format
+ * Full industry-standard formatting for fiction submissions
+ */
+export const exportToManuscriptDocx = async ({
+  text,
+  html,
+  settings,
+  fileName,
+}: {
+  text: string;
+  html?: string | null;
+  settings: ManuscriptSettings;
+  fileName?: string;
+}) => {
+  const {
+    authorName,
+    authorAddress,
+    authorCity,
+    authorState,
+    authorZip,
+    authorEmail,
+    authorPhone,
+    title,
+    penName,
+    wordCount,
+    includeRunningHeaders,
+    runningHeaderStyle,
+    customRunningHeader,
+    fontFamily,
+    margins,
+    firstLineIndent,
+  } = settings;
+
+  // Get font family for docx
+  const fontMap: Record<string, string> = {
+    "courier-new": "Courier New",
+    "courier-prime": "Courier Prime",
+    "times-new-roman": "Times New Roman",
+    georgia: "Georgia",
+    garamond: "Garamond",
+    palatino: "Palatino Linotype",
+    "book-antiqua": "Book Antiqua",
+    "century-schoolbook": "Century Schoolbook",
+    cambria: "Cambria",
+  };
+  const docxFontFamily = fontMap[fontFamily] || "Times New Roman";
+
+  // Round word count to nearest 100
+  const roundedWordCount = Math.round(wordCount / 100) * 100;
+
+  // Build running header text
+  const getRunningHeaderText = (): string => {
+    if (!includeRunningHeaders) return "";
+    switch (runningHeaderStyle) {
+      case "author-title":
+        const lastName = authorName.split(" ").pop() || authorName;
+        return `${lastName} / ${title.toUpperCase()}`;
+      case "title-only":
+        return title.toUpperCase();
+      case "custom":
+        return customRunningHeader || "";
+      default:
+        return "";
+    }
+  };
+
+  const runningHeaderText = getRunningHeaderText();
+  const displayName = penName || authorName;
+
+  // Create title page paragraphs
+  const titlePageParagraphs: Paragraph[] = [];
+
+  // Author contact info (top-left)
+  titlePageParagraphs.push(
+    new Paragraph({
+      children: [
+        new TextRun({
+          text: authorName,
+          font: docxFontFamily,
+          size: 24, // 12pt
+        }),
+      ],
+      spacing: { after: 0, line: 480 }, // Double spacing = 480 twips
+    })
+  );
+
+  if (authorAddress) {
+    titlePageParagraphs.push(
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: authorAddress,
+            font: docxFontFamily,
+            size: 24,
+          }),
+        ],
+        spacing: { after: 0, line: 480 },
+      })
+    );
+  }
+
+  titlePageParagraphs.push(
+    new Paragraph({
+      children: [
+        new TextRun({
+          text: `${authorCity}, ${authorState} ${authorZip}`,
+          font: docxFontFamily,
+          size: 24,
+        }),
+      ],
+      spacing: { after: 0, line: 480 },
+    })
+  );
+
+  if (authorEmail) {
+    titlePageParagraphs.push(
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: authorEmail,
+            font: docxFontFamily,
+            size: 24,
+          }),
+        ],
+        spacing: { after: 0, line: 480 },
+      })
+    );
+  }
+
+  if (authorPhone) {
+    titlePageParagraphs.push(
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: authorPhone,
+            font: docxFontFamily,
+            size: 24,
+          }),
+        ],
+        spacing: { after: 0, line: 480 },
+      })
+    );
+  }
+
+  // Add spacing to push title to center of page (approximately)
+  for (let i = 0; i < 12; i++) {
+    titlePageParagraphs.push(
+      new Paragraph({
+        children: [],
+        spacing: { after: 0, line: 480 },
+      })
+    );
+  }
+
+  // Title (centered)
+  titlePageParagraphs.push(
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      children: [
+        new TextRun({
+          text: title.toUpperCase(),
+          font: docxFontFamily,
+          size: 24,
+          bold: false,
+        }),
+      ],
+      spacing: { after: 0, line: 480 },
+    })
+  );
+
+  // "by" line
+  titlePageParagraphs.push(
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      children: [
+        new TextRun({
+          text: "by",
+          font: docxFontFamily,
+          size: 24,
+        }),
+      ],
+      spacing: { after: 0, line: 480 },
+    })
+  );
+
+  // Author name (centered)
+  titlePageParagraphs.push(
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      children: [
+        new TextRun({
+          text: displayName,
+          font: docxFontFamily,
+          size: 24,
+        }),
+      ],
+      spacing: { after: 0, line: 480 },
+    })
+  );
+
+  // Page break after title page
+  titlePageParagraphs.push(
+    new Paragraph({
+      children: [new PageBreak()],
+    })
+  );
+
+  // Convert content to manuscript-formatted paragraphs
+  const contentParagraphs: Paragraph[] = [];
+
+  // Parse HTML content or use plain text
+  if (html) {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, "text/html");
+    const elements = doc.body.querySelectorAll(
+      "p, h1, h2, h3, h4, h5, h6, blockquote"
+    );
+
+    elements.forEach((element) => {
+      const elementText = element.textContent?.trim() || "";
+      if (!elementText) return;
+
+      const tagName = element.tagName.toLowerCase();
+      const isHeading = tagName.startsWith("h");
+
+      contentParagraphs.push(
+        new Paragraph({
+          alignment: isHeading ? AlignmentType.CENTER : AlignmentType.LEFT,
+          indent: isHeading
+            ? undefined
+            : { firstLine: convertInchesToTwip(firstLineIndent) },
+          children: [
+            new TextRun({
+              text: elementText,
+              font: docxFontFamily,
+              size: 24, // 12pt
+              bold: isHeading,
+            }),
+          ],
+          spacing: { after: 0, line: 480 }, // Double spacing
+        })
+      );
+
+      // Add extra space after headings
+      if (isHeading) {
+        contentParagraphs.push(
+          new Paragraph({
+            children: [],
+            spacing: { after: 0, line: 480 },
+          })
+        );
+      }
+    });
+  } else {
+    // Plain text fallback
+    const paragraphs = text.split(/\n\n+/);
+    paragraphs.forEach((para) => {
+      const trimmed = para.trim();
+      if (!trimmed) return;
+
+      contentParagraphs.push(
+        new Paragraph({
+          alignment: AlignmentType.LEFT,
+          indent: { firstLine: convertInchesToTwip(firstLineIndent) },
+          children: [
+            new TextRun({
+              text: trimmed,
+              font: docxFontFamily,
+              size: 24,
+            }),
+          ],
+          spacing: { after: 0, line: 480 },
+        })
+      );
+    });
+  }
+
+  // Add end marker
+  contentParagraphs.push(
+    new Paragraph({
+      children: [],
+      spacing: { after: 0, line: 480 },
+    })
+  );
+  contentParagraphs.push(
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      children: [
+        new TextRun({
+          text: "# # #",
+          font: docxFontFamily,
+          size: 24,
+        }),
+      ],
+      spacing: { after: 0, line: 480 },
+    })
+  );
+
+  // Create document with proper manuscript formatting
+  const doc = new Document({
+    sections: [
+      // Title page section (no header)
+      {
+        properties: {
+          page: {
+            margin: {
+              top: convertInchesToTwip(margins.top),
+              bottom: convertInchesToTwip(margins.bottom),
+              left: convertInchesToTwip(margins.left),
+              right: convertInchesToTwip(margins.right),
+            },
+          },
+        },
+        headers: {
+          default: new Header({
+            children: [
+              new Paragraph({
+                alignment: AlignmentType.RIGHT,
+                children: [
+                  new TextRun({
+                    text: `About ${roundedWordCount.toLocaleString()} words`,
+                    font: docxFontFamily,
+                    size: 24,
+                  }),
+                ],
+              }),
+            ],
+          }),
+        },
+        children: titlePageParagraphs,
+      },
+      // Content section (with running headers)
+      {
+        properties: {
+          page: {
+            margin: {
+              top: convertInchesToTwip(margins.top),
+              bottom: convertInchesToTwip(margins.bottom),
+              left: convertInchesToTwip(margins.left),
+              right: convertInchesToTwip(margins.right),
+            },
+          },
+        },
+        headers: includeRunningHeaders
+          ? {
+              default: new Header({
+                children: [
+                  new Paragraph({
+                    alignment: AlignmentType.RIGHT,
+                    tabStops: [
+                      {
+                        type: TabStopType.RIGHT,
+                        position: convertInchesToTwip(6.5),
+                      },
+                    ],
+                    children: [
+                      new TextRun({
+                        text: runningHeaderText,
+                        font: docxFontFamily,
+                        size: 24,
+                      }),
+                      new TextRun({
+                        text: "\t",
+                      }),
+                      new TextRun({
+                        children: [PageNumber.CURRENT],
+                        font: docxFontFamily,
+                        size: 24,
+                      }),
+                    ],
+                  }),
+                ],
+              }),
+            }
+          : undefined,
+        children: contentParagraphs,
+      },
+    ],
+  });
+
+  // Generate and save
+  const blob = await Packer.toBlob(doc);
+  const outputFileName = normalizeDocxFileName(
+    fileName || title || "manuscript"
+  );
+  saveAs(blob, outputFileName);
+};

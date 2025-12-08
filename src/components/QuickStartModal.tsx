@@ -156,6 +156,10 @@ export function QuickStartModal({
                   <li>Rich text formatting (headings, lists, links, tables)</li>
                   <li>Full image support (upload & paste)</li>
                   <li>Keyboard shortcuts (Cmd/Ctrl+B/I/U/K/F/Z)</li>
+                  <li>
+                    Quick Notes panel (📝 button or Cmd/Ctrl+Shift+N) - jot down
+                    ideas anytime
+                  </li>
                   <li>Inline color-coded analysis indicators</li>
                   <li>Real-time pacing insights</li>
                   <li>Import DOCX files with formatting preserved</li>
@@ -431,8 +435,8 @@ export function QuickStartModal({
                     details
                   </li>
                   <li>
-                    <strong>📝 Research Notes Panel</strong> - Keep notes while
-                    writing
+                    <strong>📝 Writer's Notes Panel</strong> - Full research
+                    notes with categories and tags
                   </li>
                   <li>
                     <strong>🖼️ Image Mood Board</strong> - Upload reference
@@ -859,20 +863,20 @@ export function QuickStartModal({
                     fontSize: "1.1rem",
                   }}
                 >
-                  Focus Mode
+                  Focus Mode (On by Default)
                 </h5>
                 <ul className="quickstart-list">
                   <li>
-                    <strong>Hide distractions:</strong> Removes page rail and
-                    advanced tools panel
+                    <strong>Clean start:</strong> Focus Mode is enabled on
+                    launch for distraction-free writing
                   </li>
                   <li>
-                    <strong>Full-screen writing:</strong> Clean, minimal
-                    interface for deep work
+                    <strong>Notes always available:</strong> Quick Notes toggle
+                    (📝) stays visible in Focus Mode
                   </li>
                   <li>
-                    <strong>Toggle anytime:</strong> Switch focus mode on/off as
-                    needed
+                    <strong>Toggle anytime:</strong> Click the eye icon to show
+                    page rail and tools panel
                   </li>
                   <li>
                     <strong>Word count visible:</strong> Track progress without

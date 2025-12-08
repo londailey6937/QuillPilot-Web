@@ -40,6 +40,7 @@ const WritersReferenceModal = lazy(() =>
 const QuickStartModal = lazy(() =>
   import("./QuickStartModal").then((m) => ({ default: m.QuickStartModal }))
 );
+const ManuscriptFormatModal = lazy(() => import("./ManuscriptFormatModal"));
 
 import {
   AccessLevel,
@@ -66,7 +67,11 @@ import {
 import AnalysisWorker from "@/workers/analysisWorker?worker";
 import { buildTierOneAnalysisSummary } from "@/utils/tierOneAnalysis";
 import { exportToHtml } from "@/utils/htmlExport";
-import { exportToPdf } from "@/utils/pdfExport";
+import {
+  exportToPdf,
+  exportToManuscriptPdf,
+  ManuscriptSettings,
+} from "@/utils/pdfExport";
 import {
   TEMPLATE_LIBRARY,
   getTemplateById,
@@ -560,6 +565,9 @@ export const ChapterCheckerV2: React.FC = () => {
 
   // Unified Save dialog state
   const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
+
+  // Shunn Manuscript Format modal state
+  const [isManuscriptModalOpen, setIsManuscriptModalOpen] = useState(false);
 
   // Character management (Tier 3)
   const [characters, setCharacters] = useState<Character[]>([]);
@@ -1851,6 +1859,47 @@ export const ChapterCheckerV2: React.FC = () => {
     }
   };
 
+  // Handler for Shunn Manuscript Format export
+  const handleManuscriptExport = async (
+    settings: ManuscriptSettings,
+    format: "pdf" | "docx"
+  ) => {
+    if (!chapterData) {
+      alert("No document to export");
+      return;
+    }
+
+    const richHtmlContent =
+      chapterData.editorHtml ??
+      (chapterData.isHybridDocx ? chapterData.html : null) ??
+      null;
+
+    try {
+      if (format === "pdf") {
+        await exportToManuscriptPdf({
+          text: currentChapterText,
+          html: richHtmlContent,
+          settings,
+          fileName: settings.title || fileName || "manuscript",
+        });
+      } else {
+        const { exportToManuscriptDocx } = await import("@/utils/docxExport");
+        await exportToManuscriptDocx({
+          text: currentChapterText,
+          html: richHtmlContent,
+          settings,
+          fileName: settings.title || fileName || "manuscript",
+        });
+      }
+    } catch (err) {
+      console.error("Manuscript export failed:", err);
+      alert(
+        "Error exporting manuscript: " +
+          (err instanceof Error ? err.message : "Unknown error")
+      );
+    }
+  };
+
   const handleExport = () => {
     if (!analysis) return;
 
@@ -2596,6 +2645,18 @@ export const ChapterCheckerV2: React.FC = () => {
             initialSection={writersReferenceSection}
           />
         )}
+
+        {isManuscriptModalOpen && (
+          <ManuscriptFormatModal
+            isOpen={isManuscriptModalOpen}
+            onClose={() => setIsManuscriptModalOpen(false)}
+            onExport={handleManuscriptExport}
+            documentTitle={fileName || undefined}
+            documentWordCount={
+              currentChapterText.split(/\s+/).filter(Boolean).length
+            }
+          />
+        )}
       </Suspense>
 
       {/* Save Dialog - Unified Save with format selection */}
@@ -2655,6 +2716,81 @@ export const ChapterCheckerV2: React.FC = () => {
             <div
               style={{ display: "flex", flexDirection: "column", gap: "10px" }}
             >
+              {/* Shunn Manuscript Format - Featured option */}
+              <button
+                onClick={() => {
+                  setIsSaveDialogOpen(false);
+                  setIsManuscriptModalOpen(true);
+                }}
+                style={{
+                  padding: "14px 16px",
+                  background:
+                    "linear-gradient(135deg, #fff7ed 0%, #fef3c7 100%)",
+                  color: "#2c3e50",
+                  border: "2px solid #ef8432",
+                  borderRadius: "10px",
+                  cursor: "pointer",
+                  fontSize: "14px",
+                  fontWeight: 500,
+                  textAlign: "left",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "12px",
+                  transition: "all 0.2s",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = "scale(1.01)";
+                  e.currentTarget.style.boxShadow =
+                    "0 4px 12px rgba(239, 132, 50, 0.2)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "scale(1)";
+                  e.currentTarget.style.boxShadow = "none";
+                }}
+              >
+                <span style={{ fontSize: "20px" }}>📜</span>
+                <div>
+                  <div
+                    style={{
+                      fontWeight: 600,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                    }}
+                  >
+                    Shunn Manuscript Format
+                    <span
+                      style={{
+                        fontSize: "10px",
+                        padding: "2px 6px",
+                        backgroundColor: "#ef8432",
+                        color: "white",
+                        borderRadius: "4px",
+                        fontWeight: 500,
+                      }}
+                    >
+                      PRO
+                    </span>
+                  </div>
+                  <div style={{ fontSize: "12px", color: "#64748b" }}>
+                    Industry-standard submission format with title page
+                  </div>
+                </div>
+              </button>
+
+              <div
+                style={{
+                  borderTop: "1px solid #e0c392",
+                  margin: "4px 0",
+                  paddingTop: "4px",
+                  fontSize: "11px",
+                  color: "#9ca3af",
+                  textAlign: "center",
+                }}
+              >
+                Standard Formats
+              </div>
+
               <button
                 onClick={() => handleSaveAs("docx")}
                 style={{
@@ -3109,10 +3245,10 @@ export const ChapterCheckerV2: React.FC = () => {
                               <button
                                 onClick={() => setIsSaveDialogOpen(true)}
                                 style={{
-                                  padding: "4px 12px",
-                                  backgroundColor: "#ef8432",
-                                  color: "white",
-                                  border: "1.5px solid #d67528",
+                                  padding: "4px 10px",
+                                  backgroundColor: "#fef5e7",
+                                  color: "#2c3e50",
+                                  border: "1.5px solid #e0c392",
                                   borderRadius: "8px",
                                   cursor: "pointer",
                                   fontSize: "11px",
@@ -3125,11 +3261,11 @@ export const ChapterCheckerV2: React.FC = () => {
                                 }}
                                 onMouseEnter={(e) => {
                                   e.currentTarget.style.backgroundColor =
-                                    "#d67528";
+                                    "#f7e6d0";
                                 }}
                                 onMouseLeave={(e) => {
                                   e.currentTarget.style.backgroundColor =
-                                    "#ef8432";
+                                    "#fef5e7";
                                 }}
                                 title="Save document to file (⌘S)"
                               >
@@ -4988,10 +5124,16 @@ export const ChapterCheckerV2: React.FC = () => {
                   <div style={{ display: "flex", gap: "8px" }}>
                     <button
                       onClick={() => {
-                        if (!analysis) return;
+                        // Use empty analysis if none exists - templates should still work
+                        const safeAnalysis = analysis || {
+                          principles: [],
+                          wordCount: currentChapterText.split(/\s+/).length,
+                          sentenceCount:
+                            currentChapterText.split(/[.!?]+/).length,
+                        };
 
                         const generatedTemplate = template.generateTemplate(
-                          analysis,
+                          safeAnalysis,
                           currentChapterText
                         );
 
@@ -5298,7 +5440,7 @@ export const ChapterCheckerV2: React.FC = () => {
                     return;
                   }
 
-                  if (!analysis || !selectedTemplateForClaude) return;
+                  if (!selectedTemplateForClaude) return;
 
                   try {
                     setIsProcessingClaude(true);
@@ -5306,10 +5448,17 @@ export const ChapterCheckerV2: React.FC = () => {
                     // Store the API key
                     storeClaudeKey(apiKey);
 
+                    // Use empty analysis if none exists
+                    const safeAnalysis = analysis || {
+                      principles: [],
+                      wordCount: currentChapterText.split(/\s+/).length,
+                      sentenceCount: currentChapterText.split(/[.!?]+/).length,
+                    };
+
                     // Generate base template
                     const generatedTemplate =
                       selectedTemplateForClaude.generateTemplate(
-                        analysis,
+                        safeAnalysis,
                         currentChapterText
                       );
 

@@ -278,25 +278,45 @@ Below the Page Rail, the Document Outline automatically extracts headings from y
 - **Real-time updates**: Outline updates as you add/edit headings
 - **Heading count**: Shows total headings in your document
 
+**🔀 Drag-and-Drop Reordering:**
+
+The Document Outline supports drag-and-drop to reorganize your document structure:
+
+- **Drag handle**: Hover over any heading to see the ⋮⋮ drag handle
+- **Drag to reorder**: Drag a heading to a new position in the outline
+- **Orange indicator**: Shows exactly where the section will be placed
+- **Moves entire section**: The heading AND all content until the next same-level heading moves together
+- **Instant update**: Your document content is immediately reorganized
+
+**💡 Tip**: Use drag-and-drop to quickly reorganize chapters, scenes, or sections. This is especially useful during revision when you want to experiment with different structures!
+
 **💡 Tip**: Use headings (Cmd/Ctrl+Alt+1-3) to structure your chapters. The outline makes it easy to navigate long manuscripts!
 
-### Right Panel: Notes, Characters & Tools
+### Right Panel: Characters & Tools
 
-#### Pinned Notes
+#### Floating Quick Notes (📝 Button)
 
-Quick sticky notes that stay visible while writing:
+A floating quick notes panel accessible anytime in Writer mode:
 
-- **Add a note**: Type in the input field and press Enter or click +
+- **Toggle**: Click the 📝 button in bottom-right corner, or use `Cmd+Shift+N` / `Ctrl+Shift+N`
+- **Add notes**: Type in the input field and press Enter or click +
 - **Color-coded**: Each note gets a unique pastel color
-- **Delete notes**: Hover over a note and click the × button
-- **Persistent**: Notes stay visible as you scroll through your document
+- **Action buttons** (appear on hover):
+  - **↵ Insert**: Insert note text at your cursor position in the editor
+  - **📋 Copy**: Copy note text to clipboard
+  - **× Delete**: Remove the note
+- **Selectable text**: Highlight and copy specific portions of notes
+- **Full panel**: Click "Open Full Notes Panel" for the complete Research Notes tool
 
-**Best uses for Pinned Notes:**
+**Best uses for Quick Notes:**
 
 - Character reminders ("Sarah has green eyes, not blue")
 - Plot points to address ("Need to foreshadow the letter")
 - Writing session goals ("Finish chapter 3 today")
 - Quick research notes ("Victorian era: no electricity")
+- Reference text to insert into your writing
+
+**💡 Tip**: Quick Notes stays available even when side panels are hidden, so you can always jot down ideas!
 
 #### Character Quick Reference
 
@@ -383,36 +403,38 @@ Analyze dialogue for authenticity and character voice.
 
 ---
 
-#### 💬 Comments & Annotations ⭐ NEW
+#### 💬 Inline Margin Comments ⭐ NEW
 
-Leave notes for yourself or beta readers throughout your manuscript.
-
-**Categories:**
-
-- 📝 **General**: General notes and reminders
-- 💡 **Suggestion**: Ideas for improvement
-- ❓ **Question**: Things to research or verify
-- ✏️ **Correction**: Errors to fix
-
-**Features:**
-
-- **Beta Reader Mode**: Toggle to show only comments meant for others
-- **Filter by Category**: Focus on one type of comment
-- **Resolve Comments**: Mark items as addressed
-- **Filter Resolved**: Hide completed items
+Add comments directly in the margin alongside your text - no modal popups interrupting your flow.
 
 **How to Use:**
 
-1. Select text you want to annotate
-2. Open Advanced Tools → Comments
-3. Choose a category and write your note
-4. Toggle Beta Reader Mode when sharing with others
+1. Click "Comments" in the right panel to enable margin comments
+2. Select text in your document
+3. Click "Add comment" in the margin panel
+4. Type your comment and choose a highlight color
+5. Press ⌘+Enter (or click Add) to save
+
+**Features:**
+
+- **Color-coded highlights**: Choose from yellow, green, blue, pink, or orange
+- **Click to navigate**: Click any comment to scroll to and highlight the referenced text
+- **Resolve comments**: Mark items as addressed (they appear faded)
+- **Delete comments**: Remove comments and their highlights
+- **Sorted by position**: Comments appear in document order
+
+**Best Uses:**
+
+- Self-editing notes ("Check this dialogue")
+- Beta reader feedback collection
+- Revision reminders ("Expand this scene")
+- Research notes ("Verify historical accuracy")
 
 **💡 Tips:**
 
-- Use Questions for facts you need to verify later
-- Mark suggestions as resolved once you've addressed them
-- Beta Reader Mode hides your personal notes when sharing
+- Use different colors for different types of notes
+- Resolve comments as you address them to track progress
+- Comments are saved per document automatically
 
 ---
 
@@ -634,22 +656,27 @@ Set and track writing goals.
 
 ---
 
-### 🎯 Focus Mode
+### 🎯 Focus Mode (On by Default)
 
-Eliminate distractions for deep writing.
+Eliminate distractions for deep writing. **Focus Mode is enabled on launch** for a clean writing experience.
 
 **Location:** Editor toolbar (🎯 button) — see [The Editor Toolbar](#the-editor-toolbar) for all toolbar options.
 
 **What It Hides:**
 
+- Page rail (thumbnail navigation)
+- Advanced tools panel
 - Analysis indicators
-- Spacing callouts
-- Statistics bar
-- Everything except your text
+
+**What Stays Visible:**
+
+- Toolbars (formatting, styles)
+- Quick Notes toggle (📝 button)
+- Word count
 
 **How to Use:** Click the 🎯 button in the editor toolbar to toggle on/off.
 
-**💡 Tip**: Use Focus Mode for first drafts, disable it for revision.
+**💡 Tip**: Focus Mode is great for first drafts. Toggle it off when you need the tools panel for analysis and revision.
 
 ---
 

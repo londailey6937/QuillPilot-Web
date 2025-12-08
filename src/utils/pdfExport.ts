@@ -572,3 +572,275 @@ function processScreenplayPdf(
     }
   });
 }
+
+/**
+ * Manuscript Format Settings Interface (matches docxExport)
+ */
+export interface ManuscriptSettings {
+  authorName: string;
+  authorAddress: string;
+  authorCity: string;
+  authorState: string;
+  authorZip: string;
+  authorEmail: string;
+  authorPhone: string;
+  title: string;
+  penName?: string;
+  wordCount: number;
+  includeRunningHeaders: boolean;
+  runningHeaderStyle: "author-title" | "title-only" | "custom";
+  customRunningHeader?: string;
+  fontFamily:
+    | "courier-new"
+    | "courier-prime"
+    | "times-new-roman"
+    | "georgia"
+    | "garamond"
+    | "palatino"
+    | "book-antiqua"
+    | "century-schoolbook"
+    | "cambria";
+  fontSize: 12;
+  lineSpacing: "double";
+  margins: {
+    top: number;
+    bottom: number;
+    left: number;
+    right: number;
+  };
+  firstLineIndent: number;
+  paragraphSpacing: "none" | "single";
+}
+
+/**
+ * Export to PDF in Shunn Standard Manuscript Format
+ * Full industry-standard formatting for fiction submissions
+ */
+export const exportToManuscriptPdf = async ({
+  text,
+  html,
+  settings,
+  fileName,
+}: {
+  text: string;
+  html?: string | null;
+  settings: ManuscriptSettings;
+  fileName?: string;
+}) => {
+  const {
+    authorName,
+    authorAddress,
+    authorCity,
+    authorState,
+    authorZip,
+    authorEmail,
+    authorPhone,
+    title,
+    penName,
+    wordCount,
+    includeRunningHeaders,
+    runningHeaderStyle,
+    customRunningHeader,
+    fontFamily,
+    margins,
+    firstLineIndent,
+  } = settings;
+
+  const doc = new jsPDF({
+    orientation: "portrait",
+    unit: "in",
+    format: "letter",
+  });
+
+  // Set font - jsPDF has limited built-in fonts, map to closest match
+  // Serif fonts (Georgia, Garamond, Palatino, Book Antiqua, Century, Cambria, Times) -> times
+  // Monospace fonts (Courier New, Courier Prime) -> courier
+  const serifFonts = [
+    "times-new-roman",
+    "georgia",
+    "garamond",
+    "palatino",
+    "book-antiqua",
+    "century-schoolbook",
+    "cambria",
+  ];
+  const pdfFontFamily = serifFonts.includes(fontFamily) ? "times" : "courier";
+  doc.setFont(pdfFontFamily, "normal");
+  doc.setFontSize(12);
+
+  const pageWidth = 8.5;
+  const pageHeight = 11;
+  const contentWidth = pageWidth - margins.left - margins.right;
+  const lineHeight = 0.24; // Double spacing for 12pt
+
+  // Round word count to nearest 100
+  const roundedWordCount = Math.round(wordCount / 100) * 100;
+  const displayName = penName || authorName;
+
+  // Build running header text
+  const getRunningHeaderText = (): string => {
+    if (!includeRunningHeaders) return "";
+    switch (runningHeaderStyle) {
+      case "author-title":
+        const lastName = authorName.split(" ").pop() || authorName;
+        return `${lastName} / ${title.toUpperCase()}`;
+      case "title-only":
+        return title.toUpperCase();
+      case "custom":
+        return customRunningHeader || "";
+      default:
+        return "";
+    }
+  };
+
+  const runningHeaderText = getRunningHeaderText();
+
+  // ===== TITLE PAGE =====
+  let yPosition = margins.top;
+
+  // Author contact info (top-left)
+  doc.text(authorName, margins.left, yPosition);
+  yPosition += lineHeight;
+
+  if (authorAddress) {
+    doc.text(authorAddress, margins.left, yPosition);
+    yPosition += lineHeight;
+  }
+
+  doc.text(
+    `${authorCity}, ${authorState} ${authorZip}`,
+    margins.left,
+    yPosition
+  );
+  yPosition += lineHeight;
+
+  if (authorEmail) {
+    doc.text(authorEmail, margins.left, yPosition);
+    yPosition += lineHeight;
+  }
+
+  if (authorPhone) {
+    doc.text(authorPhone, margins.left, yPosition);
+    yPosition += lineHeight;
+  }
+
+  // Word count (top-right)
+  doc.text(
+    `About ${roundedWordCount.toLocaleString()} words`,
+    pageWidth - margins.right,
+    margins.top,
+    { align: "right" }
+  );
+
+  // Title (centered, halfway down the page)
+  const titleY = pageHeight / 2 - 0.5;
+  doc.text(title.toUpperCase(), pageWidth / 2, titleY, { align: "center" });
+
+  // "by" line
+  doc.text("by", pageWidth / 2, titleY + lineHeight * 2, { align: "center" });
+
+  // Author name
+  doc.text(displayName, pageWidth / 2, titleY + lineHeight * 4, {
+    align: "center",
+  });
+
+  // ===== CONTENT PAGES =====
+  doc.addPage();
+  yPosition = margins.top;
+  let currentPage = 2;
+
+  // Helper function to add running header and check page breaks
+  const checkPageBreak = () => {
+    if (yPosition > pageHeight - margins.bottom) {
+      doc.addPage();
+      currentPage++;
+      yPosition = margins.top;
+
+      // Add running header on new page
+      if (includeRunningHeaders) {
+        doc.setFontSize(12);
+        doc.text(runningHeaderText, margins.left, 0.5);
+        doc.text(`${currentPage}`, pageWidth - margins.right, 0.5, {
+          align: "right",
+        });
+      }
+    }
+  };
+
+  // Add running header to first content page
+  if (includeRunningHeaders) {
+    doc.text(runningHeaderText, margins.left, 0.5);
+    doc.text(`${currentPage}`, pageWidth - margins.right, 0.5, {
+      align: "right",
+    });
+  }
+
+  // Process content
+  const contentSource = html || text;
+  let paragraphs: string[] = [];
+
+  if (html) {
+    const parser = new DOMParser();
+    const htmlDoc = parser.parseFromString(html, "text/html");
+    const elements = htmlDoc.body.querySelectorAll(
+      "p, h1, h2, h3, h4, h5, h6, blockquote"
+    );
+
+    elements.forEach((element) => {
+      const elementText = element.textContent?.trim() || "";
+      if (elementText) {
+        paragraphs.push(elementText);
+      }
+    });
+  } else {
+    paragraphs = text.split(/\n\n+/).filter((p) => p.trim());
+  }
+
+  // Render each paragraph
+  for (const para of paragraphs) {
+    if (!para.trim()) continue;
+
+    // Word wrap with first-line indent
+    const words = para.trim().split(/\s+/);
+    let currentLine = "";
+    let isFirstLine = true;
+    const indent = firstLineIndent;
+
+    for (let i = 0; i < words.length; i++) {
+      const testLine = currentLine ? `${currentLine} ${words[i]}` : words[i];
+      const maxWidth = contentWidth - (isFirstLine ? indent : 0);
+      const lineWidth = doc.getTextWidth(testLine);
+
+      if (lineWidth > maxWidth && currentLine !== "") {
+        checkPageBreak();
+        const xPos = margins.left + (isFirstLine ? indent : 0);
+        doc.text(currentLine, xPos, yPosition);
+        yPosition += lineHeight;
+        currentLine = words[i];
+        isFirstLine = false;
+      } else {
+        currentLine = testLine;
+      }
+    }
+
+    // Print remaining line
+    if (currentLine) {
+      checkPageBreak();
+      const xPos = margins.left + (isFirstLine ? indent : 0);
+      doc.text(currentLine, xPos, yPosition);
+      yPosition += lineHeight;
+    }
+
+    // Double-space between paragraphs (blank line)
+    yPosition += lineHeight;
+  }
+
+  // Add end marker
+  yPosition += lineHeight;
+  checkPageBreak();
+  doc.text("# # #", pageWidth / 2, yPosition, { align: "center" });
+
+  // Save the PDF
+  const outputFileName = fileName || title || "manuscript";
+  doc.save(`${outputFileName}.pdf`);
+};

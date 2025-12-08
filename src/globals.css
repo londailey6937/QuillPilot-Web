@@ -961,6 +961,7 @@ p {
   margin-top: 3em;
   margin-bottom: 1.5em;
   text-indent: 0;
+  font-variant-numeric: lining-nums;
 }
 
 .editor-content p.title-content {

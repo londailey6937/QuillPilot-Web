@@ -1,8 +1,153 @@
 # Recent Changes & Features
 
-**Last Updated:** December 7, 2025
+**Last Updated:** December 8, 2025
 
 This document tracks recent features, improvements, and changes to the Chapter Analysis system.
+
+---
+
+## December 8, 2025 Updates
+
+### Focus Mode On by Default
+
+**Feature:** App launches with Focus Mode enabled for a cleaner initial experience
+
+**What changed:**
+
+- Focus Mode is now ON when you open the app
+- Side rails (page thumbnails, tools panel) are hidden by default
+- Quick Notes toggle (📝 button) stays visible in Focus Mode
+- Click the 🎯 button to toggle Focus Mode off and see all panels
+
+**Why it matters:**
+
+- Cleaner first impression - just toolbar, editor, and notes toggle
+- Writers can start writing immediately without distractions
+- Easy access to notes without leaving Focus Mode
+- Simple toggle to reveal full tools when needed
+
+**Files changed:**
+
+- `CustomEditor.tsx` - Focus mode default state changed to `true`
+
+---
+
+### Inline Margin Comments
+
+**Feature:** Add comments directly in the margin alongside your text, not in a modal
+
+**What it does:**
+
+- Select text in your document and add a comment
+- Comments appear in a panel to the right of the editor
+- Color-coded highlights mark commented text in the document
+- Click a comment to scroll to and highlight the referenced text
+- Resolve or delete comments as you address them
+
+**How to use:**
+
+1. Click the "Comments" button in the right panel to enable margin comments
+2. Select text in your document
+3. Click "Add comment" in the margin panel
+4. Type your comment and choose a highlight color
+5. Press ⌘+Enter (or click Add) to save
+
+**Design:**
+
+- Comments panel slides in to the right of the document
+- Comments are sorted by position in document
+- Color-coded left border matches highlight color
+- Resolved comments appear faded with strikethrough
+- Compact card design shows highlighted text preview
+
+**Why it matters:**
+
+- See comments in context alongside your writing
+- No modal popup interrupting your flow
+- Clear visual connection between comment and text
+- Perfect for self-editing notes or beta reader feedback
+
+**Files changed:**
+
+- `MarginComments.tsx` - New component for inline margin comments
+- `CustomEditor.tsx` - Integration and toggle state
+
+---
+
+### Document Outline Drag-and-Drop Reordering
+
+**Feature:** Drag-and-drop sections directly in the Document Outline to reorganize your document
+
+**What it does:**
+
+- Drag any heading in the Document Outline to reorder sections
+- Visual drag handle (⋮⋮) appears on hover for each outline item
+- Orange drop indicator shows where the section will be placed
+- Entire section moves (heading + all content until next same-level heading)
+- Changes immediately update the document content
+
+**How to use:**
+
+1. Open the Document Outline (left panel in Writer mode)
+2. Hover over a heading to see the drag handle
+3. Drag the heading to a new position
+4. Release to drop - the section moves in your document
+
+**Design:**
+
+- Subtle drag handle becomes more visible on hover
+- Orange indicator line shows drop position
+- Dragged item appears semi-transparent
+- Smooth transitions on reorder
+
+**Why it matters:**
+
+- Quickly reorganize chapters, scenes, or sections
+- No need to cut/paste large blocks of text
+- Visualize and adjust document structure at a glance
+- Essential for revision and editing workflows
+
+**Files changed:**
+
+- `CustomEditor.tsx` - Drag-drop handlers and outline reordering logic
+
+---
+
+### Quick Notes Floating Panel
+
+**Feature:** Floating quick notes panel accessible anytime in Writer mode
+
+**What it does:**
+
+- Click the 📝 button in the bottom-right corner to toggle notes panel
+- Keyboard shortcut: `Cmd+Shift+N` (Mac) / `Ctrl+Shift+N` (Windows)
+- Add quick notes directly from the floating panel
+- Notes have action buttons on hover:
+  - **↵ Insert** - Insert note text at cursor position in editor
+  - **📋 Copy** - Copy note text to clipboard
+  - **× Delete** - Remove the note
+- Text within notes is selectable for partial copying
+- One-click access to full Research Notes panel
+
+**Design:**
+
+- Toggle button uses cream/tan palette (not orange) when active
+- Pressed state: darker tan gradient with subtle inset shadow
+- Panel floats above all other UI elements (z-index 1099)
+- Available even when side panels are hidden
+
+**Why it matters:**
+
+- No context-switching to a separate modal
+- Keep notes visible while writing
+- Quick insertion of reference material into your document
+- Always accessible regardless of panel state
+
+**Files changed:**
+
+- `CustomEditor.tsx` - Floating notes panel with insert/copy/delete actions
+- `ChapterCheckerV2.tsx` - Save button styling (matches upload button)
+- `KEYBOARD_SHORTCUTS.md` - Notes toggle shortcut
 
 ---
 
