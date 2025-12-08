@@ -325,6 +325,7 @@ const generalContentTemplate: Template = {
 export const TEMPLATE_LIBRARY: Template[] = [
   academicTemplate, // Fiction Writing
   generalContentTemplate, // Non-Fiction Writing
+  employeeManualTemplate, // Employee Manual / Training
 ];
 
 /**

@@ -3362,9 +3362,9 @@ export const ChapterCheckerV2: React.FC = () => {
                                     }
                                     style={{
                                       padding: "4px 10px",
-                                      backgroundColor: "#fef5e7",
-                                      color: "#2c3e50",
-                                      border: "1.5px solid #e0c392",
+                                      backgroundColor: "#ef8432",
+                                      color: "white",
+                                      border: "1.5px solid #d97706",
                                       borderRadius: "8px",
                                       cursor: "pointer",
                                       fontSize: "11px",
@@ -3377,11 +3377,11 @@ export const ChapterCheckerV2: React.FC = () => {
                                     }}
                                     onMouseEnter={(e) => {
                                       e.currentTarget.style.backgroundColor =
-                                        "#f7e6d0";
+                                        "#d97706";
                                     }}
                                     onMouseLeave={(e) => {
                                       e.currentTarget.style.backgroundColor =
-                                        "#fef5e7";
+                                        "#ef8432";
                                     }}
                                     title="Generate AI Template"
                                   >
