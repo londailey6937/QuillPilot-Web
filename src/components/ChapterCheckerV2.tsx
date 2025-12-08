@@ -3362,9 +3362,9 @@ export const ChapterCheckerV2: React.FC = () => {
                                     }
                                     style={{
                                       padding: "4px 10px",
-                                      backgroundColor: "#ef8432",
-                                      color: "white",
-                                      border: "1.5px solid #d97706",
+                                      backgroundColor: "#fef5e7",
+                                      color: "#2c3e50",
+                                      border: "1.5px solid #e0c392",
                                       borderRadius: "8px",
                                       cursor: "pointer",
                                       fontSize: "11px",
@@ -3377,11 +3377,11 @@ export const ChapterCheckerV2: React.FC = () => {
                                     }}
                                     onMouseEnter={(e) => {
                                       e.currentTarget.style.backgroundColor =
-                                        "#d97706";
+                                        "#f7e6d0";
                                     }}
                                     onMouseLeave={(e) => {
                                       e.currentTarget.style.backgroundColor =
-                                        "#ef8432";
+                                        "#fef5e7";
                                     }}
                                     title="Generate AI Template"
                                   >
@@ -5168,7 +5168,7 @@ export const ChapterCheckerV2: React.FC = () => {
                       style={{
                         flex: 1,
                         padding: "10px",
-                        backgroundColor: "white",
+                        backgroundColor: "#fef5e7",
                         color: "#2c3e50",
                         border: "1.5px solid #e0c392",
                         borderRadius: "20px",
@@ -5181,7 +5181,7 @@ export const ChapterCheckerV2: React.FC = () => {
                         e.currentTarget.style.backgroundColor = "#f7e6d0";
                       }}
                       onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = "white";
+                        e.currentTarget.style.backgroundColor = "#fef5e7";
                       }}
                     >
                       📝 Manual Template

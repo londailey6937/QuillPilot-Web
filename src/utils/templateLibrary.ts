@@ -18,7 +18,7 @@ export interface Template {
  * Fiction Writing Template
  * Focused on narrative elements and storytelling techniques
  */
-const academicTemplate: Template = {
+const fictionTemplate: Template = {
   id: "fiction",
   name: "Fiction Writing",
   description:
@@ -26,72 +26,100 @@ const academicTemplate: Template = {
   icon: "📖",
   category: "academic",
   generateTemplate: (analysis, chapterText) => {
-    const spacingScore =
-      analysis.principles?.find((p: any) => p.principle === "spacedRepetition")
-        ?.score || 0;
-    const dualCodingScore =
-      analysis.principles?.find((p: any) => p.principle === "dualCoding")
-        ?.score || 0;
-
     let template = `<div style="font-family: Inter, system-ui, sans-serif; line-height: 1.8; max-width: 800px; margin: 0 auto; padding: 20px;">`;
 
-    template += `<div style="background: linear-gradient(135deg, #4b5563 0%, #374151 100%); color: white; padding: 24px; border-radius: 12px; margin-bottom: 32px;">
-      <h1 style="margin: 0 0 8px 0; font-size: 28px;">📚 Academic Content Enhancement Template</h1>
-      <p style="margin: 0; opacity: 0.95; font-size: 14px;">This template helps optimize your educational content for better learning outcomes.</p>
+    template += `<div style="background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%); color: white; padding: 24px; border-radius: 12px; margin-bottom: 32px;">
+      <h1 style="margin: 0 0 8px 0; font-size: 28px;">📖 Fiction Writing Template</h1>
+      <p style="margin: 0; opacity: 0.95; font-size: 14px;">Craft compelling narratives with rich characters and engaging plots.</p>
     </div>`;
 
-    // Spacing Analysis Section
-    if (spacingScore < 70) {
-      template += `<div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 20px; margin-bottom: 24px; border-radius: 8px;">
-        <h2 style="margin: 0 0 12px 0; color: #92400e; font-size: 20px;">⏰ Spacing & Repetition (Score: ${Math.round(
-          spacingScore
-        )}/100)</h2>
+    // Scene Setting Section
+    template += `<div style="background: #dbeafe; border-left: 4px solid #3b82f6; padding: 20px; margin-bottom: 24px; border-radius: 8px;">
+      <h2 style="margin: 0 0 12px 0; color: #1e40af; font-size: 20px;">🌍 Scene Setting & World-Building</h2>
 
-        <div style="background: white; padding: 16px; border-radius: 6px; margin: 12px 0;">
-          <strong style="color: #7c2d12;">[WRITER - Add Concept Reviews]</strong>
-          <p style="margin: 8px 0 0 0; color: #78350f;">Review your chapter and identify 3-5 key concepts that need better spacing. Add brief review sections that revisit these concepts at expanding intervals (e.g., after 2 pages, then 5 pages, then 10 pages).</p>
-        </div>
+      <div style="background: white; padding: 16px; border-radius: 6px; margin: 12px 0;">
+        <strong style="color: #7c2d12;">[WRITER - Establish the Setting]</strong>
+        <p style="margin: 8px 0 0 0; color: #1e3a8a;">Ground your reader in time and place. Use sensory details—what do characters see, hear, smell, feel? Create atmosphere through specific, evocative descriptions rather than generic statements.</p>
+      </div>
 
-        <div style="background: white; padding: 16px; border-radius: 6px; margin: 12px 0;">
-          <strong style="color: #6366f1;">[CLAUDE - Generate Spaced Review Questions]</strong>
-          <p style="margin: 8px 0; color: #78350f; font-style: italic;">Prompt to use with Claude:</p>
-          <code style="display: block; background: #f9fafb; padding: 12px; border-radius: 4px; font-size: 13px; color: #1f2937;">
-            "Based on this educational content, generate 5 review questions that revisit key concepts at strategic intervals. Include: 1) immediate recall, 2) delayed review (after new material), 3) application question, 4) integration with previous concepts, and 5) real-world connection. Here's the content: [paste relevant section]"
-          </code>
-        </div>
-      </div>`;
-    }
+      <div style="background: white; padding: 16px; border-radius: 6px; margin: 12px 0;">
+        <strong style="color: #6366f1;">[CLAUDE - Enhance Setting Description]</strong>
+        <code style="display: block; background: #f9fafb; padding: 12px; border-radius: 4px; font-size: 13px; color: #1f2937; margin-top: 8px;">
+          "Enhance this scene's setting with vivid sensory details. Add 2-3 specific details for each sense (sight, sound, smell, touch). Make the setting feel alive and immersive without over-writing. Here's the scene: [paste scene]"
+        </code>
+      </div>
+    </div>`;
 
-    // Dual Coding Section
-    if (dualCodingScore < 70) {
-      template += `<div style="background: #dbeafe; border-left: 4px solid #3b82f6; padding: 20px; margin-bottom: 24px; border-radius: 8px;">
-        <h2 style="margin: 0 0 12px 0; color: #1e40af; font-size: 20px;">🎨 Visual Content (Score: ${Math.round(
-          dualCodingScore
-        )}/100)</h2>
+    // Character Development Section
+    template += `<div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 20px; margin-bottom: 24px; border-radius: 8px;">
+      <h2 style="margin: 0 0 12px 0; color: #92400e; font-size: 20px;">👤 Character Development</h2>
 
-        <div style="background: white; padding: 16px; border-radius: 6px; margin: 12px 0;">
-          <strong style="color: #059669;">[VISUAL - Add Diagrams]</strong>
-          <p style="margin: 8px 0 0 0; color: #1e3a8a;">Consider adding visual elements:</p>
-          <ul style="margin: 8px 0; padding-left: 24px; color: #1e3a8a;">
-            <li>Concept maps showing relationships between ideas</li>
-            <li>Process diagrams with step-by-step flows</li>
-            <li>Comparison tables for contrasting concepts</li>
-            <li>Annotated examples with callouts</li>
-          </ul>
-        </div>
+      <div style="background: white; padding: 16px; border-radius: 6px; margin: 12px 0;">
+        <strong style="color: #7c2d12;">[WRITER - Deepen Characters]</strong>
+        <p style="margin: 8px 0 0 0; color: #78350f;">Show character through action and dialogue, not just description. What does your character want? What's stopping them? Give them contradictions—flaws that make them human. Every character should have a distinct voice.</p>
+      </div>
 
-        <div style="background: white; padding: 16px; border-radius: 6px; margin: 12px 0;">
-          <strong style="color: #6366f1;">[CLAUDE - Suggest Visual Placements]</strong>
-          <p style="margin: 8px 0; color: #1e3a8a; font-style: italic;">Prompt to use with Claude:</p>
-          <code style="display: block; background: #f9fafb; padding: 12px; border-radius: 4px; font-size: 13px; color: #1f2937;">
-            "Analyze this educational content and suggest 3-5 specific locations where visual aids would enhance understanding. For each suggestion, specify: 1) the concept being explained, 2) the type of visual (diagram, chart, illustration, etc.), 3) what the visual should show, and 4) why it would help learning. Here's the content: [paste relevant section]"
-          </code>
-        </div>
-      </div>`;
-    }
+      <div style="background: white; padding: 16px; border-radius: 6px; margin: 12px 0;">
+        <strong style="color: #6366f1;">[CLAUDE - Character Voice Check]</strong>
+        <code style="display: block; background: #f9fafb; padding: 12px; border-radius: 4px; font-size: 13px; color: #1f2937; margin-top: 8px;">
+          "Analyze this character's dialogue and actions. Does their voice feel distinct? Suggest 3 ways to make their speech patterns, word choices, or mannerisms more unique. Here's the character content: [paste dialogue/scenes]"
+        </code>
+      </div>
+    </div>`;
+
+    // Dialogue Section
+    template += `<div style="background: #dcfce7; border-left: 4px solid #16a34a; padding: 20px; margin-bottom: 24px; border-radius: 8px;">
+      <h2 style="margin: 0 0 12px 0; color: #166534; font-size: 20px;">💬 Dialogue & Subtext</h2>
+
+      <div style="background: white; padding: 16px; border-radius: 6px; margin: 12px 0;">
+        <strong style="color: #7c2d12;">[WRITER - Sharpen Dialogue]</strong>
+        <p style="margin: 8px 0 0 0; color: #14532d;">Great dialogue does double duty—it reveals character AND advances plot. Cut small talk unless it's doing work. Add subtext: what characters mean vs. what they say. Use dialogue tags sparingly; let the words speak.</p>
+      </div>
+
+      <div style="background: white; padding: 16px; border-radius: 6px; margin: 12px 0;">
+        <strong style="color: #6366f1;">[CLAUDE - Add Subtext to Dialogue]</strong>
+        <code style="display: block; background: #f9fafb; padding: 12px; border-radius: 4px; font-size: 13px; color: #1f2937; margin-top: 8px;">
+          "Rewrite this dialogue to add subtext—what the characters really mean beneath their words. Add tension, unspoken emotions, or hidden agendas. Keep the same basic exchange but make it richer. Here's the dialogue: [paste dialogue]"
+        </code>
+      </div>
+    </div>`;
+
+    // Show Don't Tell Section
+    template += `<div style="background: #f3e8ff; border-left: 4px solid #9333ea; padding: 20px; margin-bottom: 24px; border-radius: 8px;">
+      <h2 style="margin: 0 0 12px 0; color: #581c87; font-size: 20px;">👁️ Show, Don't Tell</h2>
+
+      <div style="background: white; padding: 16px; border-radius: 6px; margin: 12px 0;">
+        <strong style="color: #7c2d12;">[WRITER - Convert Telling to Showing]</strong>
+        <p style="margin: 8px 0 0 0; color: #581c87;">Replace emotional statements with physical reactions and behaviors. Instead of "She was angry," show clenched fists, a tight jaw, clipped words. Let readers infer emotions from evidence.</p>
+      </div>
+
+      <div style="background: white; padding: 16px; border-radius: 6px; margin: 12px 0;">
+        <strong style="color: #6366f1;">[CLAUDE - Transform Tell into Show]</strong>
+        <code style="display: block; background: #f9fafb; padding: 12px; border-radius: 4px; font-size: 13px; color: #1f2937; margin-top: 8px;">
+          "Find instances of 'telling' in this passage and rewrite them as 'showing.' Replace emotional labels with physical details, actions, and sensory descriptions. Maintain the same meaning but make it more immersive. Here's the passage: [paste text]"
+        </code>
+      </div>
+    </div>`;
+
+    // Pacing & Tension Section
+    template += `<div style="background: #fee2e2; border-left: 4px solid #ef4444; padding: 20px; margin-bottom: 24px; border-radius: 8px;">
+      <h2 style="margin: 0 0 12px 0; color: #991b1b; font-size: 20px;">⚡ Pacing & Tension</h2>
+
+      <div style="background: white; padding: 16px; border-radius: 6px; margin: 12px 0;">
+        <strong style="color: #7c2d12;">[WRITER - Control Your Pacing]</strong>
+        <p style="margin: 8px 0 0 0; color: #7f1d1d;">Short sentences = fast pace, tension. Long sentences = slower, reflective moments. Vary paragraph length. End chapters on hooks. Every scene needs conflict or tension—even quiet moments should have undercurrents.</p>
+      </div>
+
+      <div style="background: white; padding: 16px; border-radius: 6px; margin: 12px 0;">
+        <strong style="color: #6366f1;">[CLAUDE - Analyze Pacing]</strong>
+        <code style="display: block; background: #f9fafb; padding: 12px; border-radius: 4px; font-size: 13px; color: #1f2937; margin-top: 8px;">
+          "Analyze the pacing of this scene. Where does it drag? Where could tension be heightened? Suggest specific sentence-level changes to improve rhythm and momentum. Here's the scene: [paste scene]"
+        </code>
+      </div>
+    </div>`;
 
     template += `<div style="background: #f3f4f6; padding: 20px; border-radius: 8px; margin-top: 24px;">
-      <p style="margin: 0; color: #4b5563; font-size: 14px;"><strong>Next Steps:</strong> Fill in the [WRITER] sections directly, or copy the [CLAUDE] prompts to use with Claude AI for assistance. Add visuals where [VISUAL] tags appear.</p>
+      <p style="margin: 0; color: #4b5563; font-size: 14px;"><strong>Next Steps:</strong> Work through each section, filling in [WRITER] prompts with your own revisions. Use [CLAUDE] prompts when you need AI assistance with specific passages.</p>
     </div>`;
 
     template += `</div>`;
@@ -323,7 +351,7 @@ const generalContentTemplate: Template = {
  * Template Library - All available templates
  */
 export const TEMPLATE_LIBRARY: Template[] = [
-  academicTemplate, // Fiction Writing
+  fictionTemplate, // Fiction Writing
   generalContentTemplate, // Non-Fiction Writing
   employeeManualTemplate, // Employee Manual / Training
 ];
