@@ -28,7 +28,6 @@ import { CharacterNameGenerator } from "./CharacterNameGenerator";
 import { WorldBuildingNotebook } from "./WorldBuildingNotebook";
 import { ResearchNotesPanel } from "./ResearchNotesPanel";
 import { ImageMoodBoard } from "./ImageMoodBoard";
-import { VersionHistory } from "./VersionHistory";
 import { CommentAnnotation } from "./CommentAnnotation";
 import {
   PaginatedEditor,
@@ -79,8 +78,6 @@ interface CustomEditorProps {
   }) => void;
   // Document tools to render between toolbars
   documentTools?: React.ReactNode;
-  // Saved chapters hook for toolbar placeholder actions
-  onOpenChapterLibrary?: () => void;
   // Callback when page count changes
   onPageCountChange?: (count: number) => void;
 }
@@ -1182,7 +1179,6 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   onOpenHelp,
   onHeaderFooterChange,
   documentTools,
-  onOpenChapterLibrary,
   onPageCountChange,
 }) => {
   const editorRef = useRef<HTMLDivElement>(null); // Currently unused - needs refactoring to work with PaginatedEditor
@@ -1307,7 +1303,6 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     | "world-building"
     | "research-notes"
     | "mood-board"
-    | "version-history"
     | "comments"
     | null;
   const [activeTool, setActiveTool] = useState<ActiveTool>(null);
@@ -6480,47 +6475,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   const bookTitleFontSizePx = Number(
     (documentStyles["book-title"].fontSize * POINT_TO_PX).toFixed(2)
   );
-  const toolbarCenterPlaceholder = !focusMode ? (
-    <div
-      className="flex items-center gap-2"
-      style={{
-        padding: "4px 8px",
-        borderRadius: "999px",
-        backgroundColor: "rgba(255, 255, 255, 0.8)",
-        border: "1px dashed #e0c392",
-        boxShadow: "0 2px 6px rgba(239, 132, 50, 0.12)",
-      }}
-    >
-      <button
-        onClick={() => setActiveTool("version-history")}
-        className={`px-2 py-1 rounded transition-colors text-xs toolbar-view-button ${
-          activeTool === "version-history" ? "active" : ""
-        }`}
-        title="Open Version History"
-      >
-        📜 Version History
-      </button>
-      <div
-        style={{ width: "1px", height: "16px", backgroundColor: "#e0c392" }}
-      />
-      <button
-        onClick={() => onOpenChapterLibrary?.()}
-        disabled={!onOpenChapterLibrary}
-        className="px-2 py-1 rounded transition-colors text-xs toolbar-view-button"
-        style={{
-          opacity: onOpenChapterLibrary ? 1 : 0.5,
-          cursor: onOpenChapterLibrary ? "pointer" : "not-allowed",
-        }}
-        title={
-          onOpenChapterLibrary
-            ? "Open Chapter Library"
-            : "Chapter Library available when provided"
-        }
-      >
-        📁 Chapter Library
-      </button>
-    </div>
-  ) : null;
+  const toolbarCenterPlaceholder = null; // Removed - users manage versions through save filenames
   const spacingIndicators = renderIndicators();
   const visualSuggestions = renderSuggestions();
 
@@ -10260,7 +10215,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               <div className="text-[11px] font-semibold uppercase tracking-wide text-[#92400e]">
                 Advanced Tools
               </div>
-              <span className="text-[11px] text-[#6b7280]">17 Tools</span>
+              <span className="text-[11px] text-[#6b7280]">16 Tools</span>
             </div>
             <div className="text-[9px] font-semibold uppercase tracking-wide text-[#92400e] mb-2 mt-1">
               Analysis Tools
@@ -10734,37 +10689,6 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                   Upload reference images for scenes
                 </div>
               </button>
-              {/* Version History */}
-              <button
-                type="button"
-                onClick={() => setActiveTool("version-history")}
-                className="text-left focus-visible:ring-2 focus-visible:ring-[#ef8432] tool-button-hover"
-                style={{
-                  border:
-                    activeTool === "version-history"
-                      ? "2px solid #ef8432"
-                      : "1px solid #f5d1ab",
-                  borderRadius: "12px",
-                  padding: "10px",
-                  backgroundColor:
-                    activeTool === "version-history" ? "#fff" : "#fefdf9",
-                  boxShadow:
-                    activeTool === "version-history"
-                      ? "0 10px 24px rgba(239, 132, 50, 0.25)"
-                      : "0 6px 14px rgba(44, 62, 80, 0.08)",
-                  cursor: "pointer",
-                }}
-              >
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-sm">📜</span>
-                  <span className="text-xs font-semibold text-[#2c3e50]">
-                    Version History
-                  </span>
-                </div>
-                <div className="text-[10px] text-[#6b7280] leading-tight">
-                  Save snapshots, compare drafts
-                </div>
-              </button>
               {/* Comments */}
               <button
                 type="button"
@@ -11110,21 +11034,6 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           onOpenHelp={() => onOpenHelp?.("moodBoard")}
         />
       )}
-      {viewMode === "writer" &&
-        !isFreeMode &&
-        activeTool === "version-history" && (
-          <VersionHistory
-            currentContent={editorRef.current?.innerText || ""}
-            onRestore={(text) => {
-              if (editorRef.current) {
-                editorRef.current.innerText = text;
-                handleInput();
-              }
-            }}
-            onClose={() => setActiveTool(null)}
-            onOpenHelp={() => onOpenHelp?.("versionHistory")}
-          />
-        )}
       {viewMode === "writer" && !isFreeMode && activeTool === "comments" && (
         <CommentAnnotation
           documentContent={editorRef.current?.innerText || ""}

@@ -741,9 +741,44 @@ export const exportToDocx = async ({
     ],
   });
 
-  // Generate and download
+  // Generate and save - use File System Access API if available for "Save As" dialog
   const blob = await Packager.toBlob(doc);
   const downloadName = normalizeDocxFileName(fileName);
+
+  // Try to use the modern File System Access API (Chrome, Edge, Opera)
+  // This gives users a proper "Save As" dialog to choose the location
+  if ("showSaveFilePicker" in window) {
+    try {
+      const handle = await (window as any).showSaveFilePicker({
+        suggestedName: downloadName,
+        types: [
+          {
+            description: "Word Document",
+            accept: {
+              "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+                [".docx"],
+            },
+          },
+        ],
+      });
+      const writable = await handle.createWritable();
+      await writable.write(blob);
+      await writable.close();
+      return; // Successfully saved with user-chosen location
+    } catch (err: any) {
+      // User cancelled the save dialog, or API not fully supported
+      if (err.name === "AbortError") {
+        return; // User cancelled - don't fall back to download
+      }
+      // For other errors, fall back to traditional download
+      console.warn(
+        "File System Access API failed, falling back to download:",
+        err
+      );
+    }
+  }
+
+  // Fallback for Safari, Firefox, or if File System Access API fails
   saveAs(blob, downloadName);
 };
 

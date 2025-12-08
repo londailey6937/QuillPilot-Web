@@ -439,10 +439,6 @@ export function QuickStartModal({
                     images
                   </li>
                   <li>
-                    <strong>📜 Version History</strong> - Save and compare
-                    drafts
-                  </li>
-                  <li>
                     <strong>💬 Comments & Annotations</strong> - Leave notes for
                     yourself
                   </li>
@@ -908,7 +904,9 @@ export function QuickStartModal({
                     for fast editing
                   </li>
                   <li>
-                    <strong>Auto-save:</strong> Your work is continuously saved
+                    <strong>Auto-save:</strong> Your draft is continuously
+                    protected (look for "✓ Draft protected"). Press{" "}
+                    <strong>Cmd/Ctrl+S</strong> to save to your computer.
                   </li>
                 </ul>
               </section>

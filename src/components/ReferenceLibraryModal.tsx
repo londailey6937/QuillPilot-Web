@@ -1524,8 +1524,10 @@ export function ReferenceLibraryModal({
                 >
                   Writer Mode keeps one rolling backup named&nbsp;
                   <code>quillpilot_autosave</code> in your browser's local
-                  storage. Every new edit replaces the previous snapshot, so
-                  export or save analyses for long-term checkpoints.
+                  storage. Every new edit replaces the previous snapshot. A
+                  <strong> "✓ Draft protected"</strong> badge appears next to
+                  your document title. Press <strong>Cmd/Ctrl+S</strong> to save
+                  to your computer — you choose where to save it.
                 </p>
                 <ul style={{ marginBottom: "1rem", paddingLeft: "1.5rem" }}>
                   <li style={{ marginBottom: "0.5rem", color: "#000000" }}>

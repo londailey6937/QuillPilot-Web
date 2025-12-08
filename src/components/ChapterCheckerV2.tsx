@@ -85,7 +85,6 @@ import {
 import { AnimatedLogo } from "./AnimatedLogo";
 import { AuthModal } from "./AuthModal";
 import { UserMenu } from "./UserMenu";
-import { ChapterLibrary } from "./ChapterLibrary";
 
 const HEADING_LENGTH_LIMIT = 120;
 const MAX_FALLBACK_SECTIONS = 8;
@@ -527,7 +526,6 @@ export const ChapterCheckerV2: React.FC = () => {
     string | undefined
   >(undefined);
   const [isQuickStartModalOpen, setIsQuickStartModalOpen] = useState(false);
-  const [isChapterLibraryOpen, setIsChapterLibraryOpen] = useState(false);
 
   // Ruler and margin state
   const [leftMargin, setLeftMargin] = useState(48); // pixels
@@ -553,6 +551,15 @@ export const ChapterCheckerV2: React.FC = () => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
+
+  // Document autosave status (for visible "Saved" indicator)
+  const [documentSaveStatus, setDocumentSaveStatus] = useState<
+    "saved" | "saving" | "unsaved" | "error"
+  >("saved");
+  const [lastSavedTime, setLastSavedTime] = useState<Date | null>(null);
+
+  // Unified Save dialog state
+  const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
 
   // Character management (Tier 3)
   const [characters, setCharacters] = useState<Character[]>([]);
@@ -1144,6 +1151,7 @@ export const ChapterCheckerV2: React.FC = () => {
     );
 
     // Auto-save to localStorage
+    setDocumentSaveStatus("saving");
     try {
       localStorage.setItem(
         "quillpilot_autosave",
@@ -1153,8 +1161,11 @@ export const ChapterCheckerV2: React.FC = () => {
           timestamp: new Date().toISOString(),
         })
       );
+      setDocumentSaveStatus("saved");
+      setLastSavedTime(new Date());
     } catch (error) {
       console.error("Failed to auto-save:", error);
+      setDocumentSaveStatus("error");
     }
 
     // Trigger auto-analysis if enabled (debounced 3 seconds after typing stops)
@@ -1201,6 +1212,10 @@ export const ChapterCheckerV2: React.FC = () => {
 
     setViewMode("writer");
     setPendingAutosave(null);
+
+    // Mark as saved since we just restored from localStorage
+    setDocumentSaveStatus("saved");
+    setLastSavedTime(saved.timestamp ? new Date(saved.timestamp) : new Date());
   };
 
   const handleRestoreAutosave = () => {
@@ -1660,9 +1675,21 @@ export const ChapterCheckerV2: React.FC = () => {
       setIsAnalyzing(false);
     }
   };
-  const handleExportDocx = async () => {
+  // Unified Save function - opens Save dialog for format selection
+  const handleUnifiedSave = () => {
     if (!chapterData) {
-      alert("No document to export");
+      alert("No document to save");
+      return;
+    }
+    setIsSaveDialogOpen(true);
+  };
+
+  // Save to specific format with File System Access API (user chooses location)
+  const handleSaveAs = async (
+    format: "docx" | "pdf" | "html" | "json" | "txt"
+  ) => {
+    if (!chapterData) {
+      alert("No document to save");
       return;
     }
 
@@ -1670,134 +1697,155 @@ export const ChapterCheckerV2: React.FC = () => {
     const features = ACCESS_TIERS[accessLevel];
     if (!features.exportResults) {
       alert(
-        "🔒 Export features require a Premium or Professional subscription.\n\n" +
-          "Upgrade to export your documents in DOCX format."
+        "🔒 Save features require a Premium or Professional subscription.\n\n" +
+          "Upgrade to save your documents."
       );
       return;
     }
 
+    setIsSaveDialogOpen(false);
+
+    const baseFileName = fileName || "untitled-document";
+    const richHtmlContent =
+      chapterData.editorHtml ??
+      (chapterData.isHybridDocx ? chapterData.html : null) ??
+      null;
+    const isWriterMode = viewMode === "writer";
+
     try {
-      const { exportToDocx } = await import("@/utils/docxExport");
-      const richHtmlContent =
-        chapterData.editorHtml ??
-        (chapterData.isHybridDocx ? chapterData.html : null) ??
-        null;
+      switch (format) {
+        case "docx": {
+          const { exportToDocx } = await import("@/utils/docxExport");
+          const fallbackAnalysis = isWriterMode
+            ? null
+            : analysis ??
+              buildTierOneAnalysisSummary({
+                plainText: chapterData.plainText || currentChapterText,
+                htmlContent: richHtmlContent,
+              });
 
-      // In writer mode, export a clean document without analysis
-      // In analysis mode, include metrics and highlights
-      const isWriterMode = viewMode === "writer";
+          await exportToDocx({
+            text: currentChapterText,
+            html: richHtmlContent,
+            fileName: baseFileName,
+            analysis: fallbackAnalysis,
+            includeHighlights: !isWriterMode,
+            mode: isWriterMode ? "writer" : "analysis",
+            headerText: headerFooterSettings.headerText,
+            footerText: headerFooterSettings.footerText,
+            showPageNumbers: headerFooterSettings.showPageNumbers,
+            pageNumberPosition: headerFooterSettings.pageNumberPosition,
+            headerAlign: headerFooterSettings.headerAlign,
+            footerAlign: headerFooterSettings.footerAlign,
+            facingPages: headerFooterSettings.facingPages,
+          });
+          break;
+        }
+        case "pdf": {
+          const fallbackAnalysis =
+            analysis ??
+            buildTierOneAnalysisSummary({
+              plainText: chapterData.plainText || currentChapterText,
+              htmlContent: richHtmlContent,
+            });
 
-      const fallbackAnalysis = isWriterMode
-        ? null
-        : analysis ??
-          buildTierOneAnalysisSummary({
-            plainText: chapterData.plainText || currentChapterText,
-            htmlContent: richHtmlContent,
+          await exportToPdf({
+            text: currentChapterText,
+            html: richHtmlContent,
+            fileName: baseFileName,
+            analysis: fallbackAnalysis,
+            includeAnalysis: true,
+            format: "manuscript",
+          });
+          break;
+        }
+        case "html": {
+          const fallbackAnalysis =
+            analysis ??
+            buildTierOneAnalysisSummary({
+              plainText: chapterData.plainText || currentChapterText,
+              htmlContent: richHtmlContent,
+            });
+
+          exportToHtml({
+            text: currentChapterText,
+            html: richHtmlContent,
+            fileName: baseFileName,
+            analysis: fallbackAnalysis,
+            includeHighlights: true,
+          });
+          break;
+        }
+        case "json": {
+          // Save as JSON with all document data
+          const jsonData = {
+            name: baseFileName,
+            content: currentChapterText,
+            editorHtml: richHtmlContent,
+            analysis: analysis,
+            savedAt: new Date().toISOString(),
+          };
+          const blob = new Blob([JSON.stringify(jsonData, null, 2)], {
+            type: "application/json",
           });
 
-      await exportToDocx({
-        text: currentChapterText,
-        html: richHtmlContent,
-        fileName: fileName || "edited-chapter",
-        analysis: fallbackAnalysis,
-        includeHighlights: !isWriterMode,
-        mode: isWriterMode ? "writer" : "analysis",
-        headerText: headerFooterSettings.headerText,
-        footerText: headerFooterSettings.footerText,
-        showPageNumbers: headerFooterSettings.showPageNumbers,
-        pageNumberPosition: headerFooterSettings.pageNumberPosition,
-        headerAlign: headerFooterSettings.headerAlign,
-        footerAlign: headerFooterSettings.footerAlign,
-        facingPages: headerFooterSettings.facingPages,
-      });
+          // Try File System Access API first
+          if ("showSaveFilePicker" in window) {
+            try {
+              const handle = await (window as any).showSaveFilePicker({
+                suggestedName: `${baseFileName}.json`,
+                types: [
+                  {
+                    description: "JSON Document",
+                    accept: { "application/json": [".json"] },
+                  },
+                ],
+              });
+              const writable = await handle.createWritable();
+              await writable.write(blob);
+              await writable.close();
+              return;
+            } catch (err: any) {
+              if (err.name === "AbortError") return;
+            }
+          }
+          // Fallback
+          const { saveAs } = await import("file-saver");
+          saveAs(blob, `${baseFileName}.json`);
+          break;
+        }
+        case "txt": {
+          const blob = new Blob([currentChapterText], { type: "text/plain" });
+
+          // Try File System Access API first
+          if ("showSaveFilePicker" in window) {
+            try {
+              const handle = await (window as any).showSaveFilePicker({
+                suggestedName: `${baseFileName}.txt`,
+                types: [
+                  {
+                    description: "Plain Text",
+                    accept: { "text/plain": [".txt"] },
+                  },
+                ],
+              });
+              const writable = await handle.createWritable();
+              await writable.write(blob);
+              await writable.close();
+              return;
+            } catch (err: any) {
+              if (err.name === "AbortError") return;
+            }
+          }
+          // Fallback
+          const { saveAs } = await import("file-saver");
+          saveAs(blob, `${baseFileName}.txt`);
+          break;
+        }
+      }
     } catch (err) {
       alert(
-        "Error exporting DOCX: " +
-          (err instanceof Error ? err.message : "Unknown error")
-      );
-    }
-  };
-
-  const handleExportPdf = async () => {
-    if (!chapterData) {
-      alert("No document to export");
-      return;
-    }
-
-    // Check if user has export access based on subscription
-    const features = ACCESS_TIERS[accessLevel];
-    if (!features.exportResults) {
-      alert(
-        "🔒 Export features require a Premium or Professional subscription.\n\n" +
-          "Upgrade to export your documents in PDF format."
-      );
-      return;
-    }
-
-    try {
-      const fallbackAnalysis =
-        analysis ??
-        buildTierOneAnalysisSummary({
-          plainText: chapterData.plainText || currentChapterText,
-          htmlContent: chapterData.editorHtml ?? chapterData.html ?? null,
-        });
-
-      await exportToPdf({
-        text: currentChapterText,
-        html: chapterData.editorHtml ?? chapterData.html ?? null,
-        fileName: fileName || "manuscript",
-        analysis: fallbackAnalysis,
-        includeAnalysis: true,
-        format: "manuscript",
-      });
-    } catch (err) {
-      console.error("PDF export failed:", err);
-      alert(
-        "Error exporting PDF: " +
-          (err instanceof Error ? err.message : "Unknown error")
-      );
-    }
-  };
-
-  const handleExportHtml = () => {
-    if (!chapterData) {
-      alert("No document to export");
-      return;
-    }
-
-    // Check if user has export access based on subscription
-    const features = ACCESS_TIERS[accessLevel];
-    if (!features.exportResults) {
-      alert(
-        "🔒 Export features require a Premium or Professional subscription.\n\n" +
-          "Upgrade to export your documents in HTML format."
-      );
-      return;
-    }
-
-    try {
-      const richHtmlContent =
-        chapterData.editorHtml ??
-        (chapterData.isHybridDocx ? chapterData.html : null) ??
-        null;
-
-      const fallbackAnalysis =
-        analysis ??
-        buildTierOneAnalysisSummary({
-          plainText: chapterData.plainText || currentChapterText,
-          htmlContent: richHtmlContent,
-        });
-
-      exportToHtml({
-        text: currentChapterText,
-        html: richHtmlContent,
-        fileName: fileName || "edited-chapter",
-        analysis: fallbackAnalysis,
-        includeHighlights: true,
-      });
-    } catch (err) {
-      alert(
-        "Error exporting HTML: " +
+        "Error saving: " +
           (err instanceof Error ? err.message : "Unknown error")
       );
     }
@@ -1991,15 +2039,15 @@ export const ChapterCheckerV2: React.FC = () => {
         console.log("🖨️ Custom print triggered via keyboard shortcut");
         handlePrint();
       }
-      // Check for Cmd/Ctrl + S to open Chapter Library
+      // Check for Cmd/Ctrl + S to open Save dialog
       if (
         (e.metaKey || e.ctrlKey) &&
         (e.key.toLowerCase() === "s" || e.code === "KeyS")
       ) {
         e.preventDefault();
         e.stopPropagation();
-        console.log("📚 Chapter Library opened via keyboard shortcut");
-        setIsChapterLibraryOpen(true);
+        console.log("💾 Save dialog opened via keyboard shortcut");
+        handleUnifiedSave();
       }
     };
 
@@ -2179,11 +2227,54 @@ export const ChapterCheckerV2: React.FC = () => {
                   maxWidth: "500px",
                 }}
               >
-                <span style={{ fontWeight: "600", fontSize: "14px" }}>
-                  📄{" "}
-                  {fileName ||
-                    (hasDocumentStats ? "Untitled Document" : "Document Specs")}
-                </span>
+                <div
+                  style={{ display: "flex", alignItems: "center", gap: "10px" }}
+                >
+                  <span style={{ fontWeight: "600", fontSize: "14px" }}>
+                    📄{" "}
+                    {fileName ||
+                      (hasDocumentStats
+                        ? "Untitled Document"
+                        : "Document Specs")}
+                  </span>
+                  {hasDocumentStats && (
+                    <span
+                      style={{
+                        fontSize: "11px",
+                        padding: "2px 8px",
+                        borderRadius: "10px",
+                        backgroundColor:
+                          documentSaveStatus === "saved"
+                            ? "#e8f4e8"
+                            : documentSaveStatus === "saving"
+                            ? "#fff3cd"
+                            : "#f8d7da",
+                        color:
+                          documentSaveStatus === "saved"
+                            ? "#2d5a2d"
+                            : documentSaveStatus === "saving"
+                            ? "#856404"
+                            : "#721c24",
+                        fontWeight: 500,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "4px",
+                        cursor: "help",
+                      }}
+                      title={
+                        documentSaveStatus === "saved"
+                          ? "Draft auto-protected in browser. Press Cmd/Ctrl+S to save to your computer."
+                          : documentSaveStatus === "saving"
+                          ? "Saving draft to browser..."
+                          : "Changes not yet saved"
+                      }
+                    >
+                      {documentSaveStatus === "saved" && <>✓ Draft protected</>}
+                      {documentSaveStatus === "saving" && <>⏳ Saving...</>}
+                      {documentSaveStatus === "unsaved" && <>● Unsaved</>}
+                    </span>
+                  )}
+                </div>
                 {hasDocumentStats ? (
                   <div
                     style={{
@@ -2470,7 +2561,6 @@ export const ChapterCheckerV2: React.FC = () => {
         onOpenReferenceLibrary={() => setIsReferenceLibraryModalOpen(true)}
         onOpenWritersReference={() => setIsWritersReferenceModalOpen(true)}
         onOpenQuickStart={() => setIsQuickStartModalOpen(true)}
-        onOpenChapterLibrary={() => setIsChapterLibraryOpen(true)}
       />
 
       {/* Lazy-loaded modals with Suspense */}
@@ -2508,111 +2598,260 @@ export const ChapterCheckerV2: React.FC = () => {
         )}
       </Suspense>
 
-      {/* Chapter Library */}
-      <ChapterLibrary
-        isOpen={isChapterLibraryOpen}
-        onClose={() => setIsChapterLibraryOpen(false)}
-        onLoadChapter={(chapter) => {
-          // Load chapter into editor - properly restore all data
-          const plainText = chapter.content || "";
-          let editorHtml = chapter.editorHtml || "";
+      {/* Save Dialog - Unified Save with format selection */}
+      {isSaveDialogOpen && (
+        <>
+          <div
+            onClick={() => setIsSaveDialogOpen(false)}
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: "rgba(0, 0, 0, 0.5)",
+              zIndex: 9999,
+            }}
+          />
+          <div
+            style={{
+              position: "fixed",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              backgroundColor: "#fef5e7",
+              borderRadius: "16px",
+              boxShadow: "0 8px 32px rgba(0, 0, 0, 0.2)",
+              zIndex: 10000,
+              width: "90%",
+              maxWidth: "400px",
+              padding: "24px",
+              border: "2px solid #e0c392",
+            }}
+          >
+            <h2
+              style={{
+                margin: "0 0 8px 0",
+                color: "#2c3e50",
+                fontSize: "20px",
+                fontWeight: 600,
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+              }}
+            >
+              💾 Save Document
+            </h2>
+            <p
+              style={{
+                margin: "0 0 20px 0",
+                color: "#64748b",
+                fontSize: "14px",
+              }}
+            >
+              Choose a format and save location
+            </p>
 
-          // Helper function to normalize HTML into proper paragraph structure
-          // This ensures each paragraph is in its own <p> element, not combined with <br> tags
-          const normalizeHtmlParagraphs = (html: string): string => {
-            // If the HTML is a single <p> element containing <br><br> patterns, split it
-            // This handles content that was saved with poor structure
+            <div
+              style={{ display: "flex", flexDirection: "column", gap: "10px" }}
+            >
+              <button
+                onClick={() => handleSaveAs("docx")}
+                style={{
+                  padding: "14px 16px",
+                  backgroundColor: "#fff",
+                  color: "#2c3e50",
+                  border: "1.5px solid #e0c392",
+                  borderRadius: "10px",
+                  cursor: "pointer",
+                  fontSize: "14px",
+                  fontWeight: 500,
+                  textAlign: "left",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "12px",
+                  transition: "all 0.2s",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = "#f7e6d0";
+                  e.currentTarget.style.borderColor = "#ef8432";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = "#fff";
+                  e.currentTarget.style.borderColor = "#e0c392";
+                }}
+              >
+                <span style={{ fontSize: "20px" }}>📄</span>
+                <div>
+                  <div style={{ fontWeight: 600 }}>Word Document (.docx)</div>
+                  <div style={{ fontSize: "12px", color: "#64748b" }}>
+                    Microsoft Word format - most compatible
+                  </div>
+                </div>
+              </button>
 
-            // First, check if we have a single paragraph with multiple <br> breaks
-            const tempDiv = document.createElement("div");
-            tempDiv.innerHTML = html;
+              <button
+                onClick={() => handleSaveAs("pdf")}
+                style={{
+                  padding: "14px 16px",
+                  backgroundColor: "#fff",
+                  color: "#2c3e50",
+                  border: "1.5px solid #e0c392",
+                  borderRadius: "10px",
+                  cursor: "pointer",
+                  fontSize: "14px",
+                  fontWeight: 500,
+                  textAlign: "left",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "12px",
+                  transition: "all 0.2s",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = "#f7e6d0";
+                  e.currentTarget.style.borderColor = "#ef8432";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = "#fff";
+                  e.currentTarget.style.borderColor = "#e0c392";
+                }}
+              >
+                <span style={{ fontSize: "20px" }}>📕</span>
+                <div>
+                  <div style={{ fontWeight: 600 }}>PDF Document (.pdf)</div>
+                  <div style={{ fontSize: "12px", color: "#64748b" }}>
+                    Manuscript format - for submission
+                  </div>
+                </div>
+              </button>
 
-            const paragraphs = tempDiv.querySelectorAll("p");
-            if (paragraphs.length === 1) {
-              const singleP = paragraphs[0];
-              const innerHtml = singleP.innerHTML;
+              <button
+                onClick={() => handleSaveAs("txt")}
+                style={{
+                  padding: "14px 16px",
+                  backgroundColor: "#fff",
+                  color: "#2c3e50",
+                  border: "1.5px solid #e0c392",
+                  borderRadius: "10px",
+                  cursor: "pointer",
+                  fontSize: "14px",
+                  fontWeight: 500,
+                  textAlign: "left",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "12px",
+                  transition: "all 0.2s",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = "#f7e6d0";
+                  e.currentTarget.style.borderColor = "#ef8432";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = "#fff";
+                  e.currentTarget.style.borderColor = "#e0c392";
+                }}
+              >
+                <span style={{ fontSize: "20px" }}>📝</span>
+                <div>
+                  <div style={{ fontWeight: 600 }}>Plain Text (.txt)</div>
+                  <div style={{ fontSize: "12px", color: "#64748b" }}>
+                    Simple text - no formatting
+                  </div>
+                </div>
+              </button>
 
-              // Check for double <br> patterns that indicate paragraph breaks
-              if (
-                innerHtml.includes("<br><br>") ||
-                innerHtml.includes("<br>\n<br>") ||
-                innerHtml.includes("<br/><br/>")
-              ) {
-                // Split on double breaks and create proper paragraphs
-                const parts = innerHtml.split(/<br\s*\/?>\s*<br\s*\/?>/gi);
-                if (parts.length > 1) {
-                  return parts
-                    .map((part) => part.trim())
-                    .filter((part) => part.length > 0)
-                    .map((part) => `<p>${part}</p>`)
-                    .join("");
-                }
-              }
-            }
+              <button
+                onClick={() => handleSaveAs("html")}
+                style={{
+                  padding: "14px 16px",
+                  backgroundColor: "#fff",
+                  color: "#2c3e50",
+                  border: "1.5px solid #e0c392",
+                  borderRadius: "10px",
+                  cursor: "pointer",
+                  fontSize: "14px",
+                  fontWeight: 500,
+                  textAlign: "left",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "12px",
+                  transition: "all 0.2s",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = "#f7e6d0";
+                  e.currentTarget.style.borderColor = "#ef8432";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = "#fff";
+                  e.currentTarget.style.borderColor = "#e0c392";
+                }}
+              >
+                <span style={{ fontSize: "20px" }}>🌐</span>
+                <div>
+                  <div style={{ fontWeight: 600 }}>Web Page (.html)</div>
+                  <div style={{ fontSize: "12px", color: "#64748b" }}>
+                    Open in any browser
+                  </div>
+                </div>
+              </button>
 
-            return html;
-          };
+              <button
+                onClick={() => handleSaveAs("json")}
+                style={{
+                  padding: "14px 16px",
+                  backgroundColor: "#fff",
+                  color: "#2c3e50",
+                  border: "1.5px solid #e0c392",
+                  borderRadius: "10px",
+                  cursor: "pointer",
+                  fontSize: "14px",
+                  fontWeight: 500,
+                  textAlign: "left",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "12px",
+                  transition: "all 0.2s",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = "#f7e6d0";
+                  e.currentTarget.style.borderColor = "#ef8432";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = "#fff";
+                  e.currentTarget.style.borderColor = "#e0c392";
+                }}
+              >
+                <span style={{ fontSize: "20px" }}>📦</span>
+                <div>
+                  <div style={{ fontWeight: 600 }}>
+                    QuillPilot Project (.json)
+                  </div>
+                  <div style={{ fontSize: "12px", color: "#64748b" }}>
+                    Full backup with analysis data
+                  </div>
+                </div>
+              </button>
+            </div>
 
-          // Normalize the HTML if it exists
-          if (editorHtml) {
-            editorHtml = normalizeHtmlParagraphs(editorHtml);
-          }
-
-          // If no editorHtml, convert plain text to proper HTML paragraphs
-          // This ensures paragraph breaks are preserved in the editor
-          const htmlContent =
-            editorHtml ||
-            plainText
-              .split(/\n\n+/)
-              .map((para) => `<p>${para.replace(/\n/g, "<br>")}</p>`)
-              .join("");
-
-          console.log(
-            "[ChapterCheckerV2] Setting chapterData with htmlContent length:",
-            htmlContent.length
-          );
-          console.log(
-            "[ChapterCheckerV2] htmlContent first 500 chars:",
-            htmlContent.substring(0, 500)
-          );
-
-          // Set chapterData with full structure for the editor
-          setChapterData({
-            html: htmlContent,
-            plainText,
-            originalPlainText: plainText,
-            isHybridDocx: !!editorHtml,
-            imageCount: 0,
-            editorHtml: htmlContent, // Use normalized content
-          });
-
-          // Bump instance key to trigger editor reload
-          console.log("[ChapterCheckerV2] Bumping documentInstanceKey");
-          bumpDocumentInstanceKey();
-
-          // Set other state
-          setChapterText(plainText);
-          setFileName(chapter.name);
-          setError(null);
-          setAnalysis(chapter.analysis || null);
-          setIsChapterLibraryOpen(false);
-
-          // Switch to writer mode to show the loaded content
-          console.log("[ChapterCheckerV2] Switching to writer mode");
-          setViewMode("writer");
-        }}
-        currentChapter={
-          currentChapterText
-            ? {
-                id: undefined,
-                name: fileName,
-                content: currentChapterText,
-                editorHtml: chapterData?.editorHtml || chapterData?.html || "",
-                analysis,
-              }
-            : null
-        }
-      />
+            <button
+              onClick={() => setIsSaveDialogOpen(false)}
+              style={{
+                marginTop: "16px",
+                padding: "10px 16px",
+                backgroundColor: "transparent",
+                color: "#64748b",
+                border: "none",
+                borderRadius: "8px",
+                cursor: "pointer",
+                fontSize: "14px",
+                width: "100%",
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+        </>
+      )}
 
       <AuthModal
         isOpen={isAuthModalOpen}
@@ -2868,12 +3107,12 @@ export const ChapterCheckerV2: React.FC = () => {
                           {!isAnalyzing && (
                             <>
                               <button
-                                onClick={handleExportDocx}
+                                onClick={() => setIsSaveDialogOpen(true)}
                                 style={{
-                                  padding: "4px 10px",
-                                  backgroundColor: "#fef5e7",
-                                  color: "#2c3e50",
-                                  border: "1.5px solid #e0c392",
+                                  padding: "4px 12px",
+                                  backgroundColor: "#ef8432",
+                                  color: "white",
+                                  border: "1.5px solid #d67528",
                                   borderRadius: "8px",
                                   cursor: "pointer",
                                   fontSize: "11px",
@@ -2882,180 +3121,19 @@ export const ChapterCheckerV2: React.FC = () => {
                                   whiteSpace: "nowrap",
                                   display: "flex",
                                   alignItems: "center",
-                                  justifyContent: "center",
+                                  gap: "4px",
                                 }}
                                 onMouseEnter={(e) => {
                                   e.currentTarget.style.backgroundColor =
-                                    "#f7e6d0";
+                                    "#d67528";
                                 }}
                                 onMouseLeave={(e) => {
                                   e.currentTarget.style.backgroundColor =
-                                    "#fef5e7";
+                                    "#ef8432";
                                 }}
-                                title="Export DOCX (Microsoft Word)"
+                                title="Save document to file (⌘S)"
                               >
-                                <svg
-                                  width="16"
-                                  height="16"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  xmlns="http://www.w3.org/2000/svg"
-                                >
-                                  <rect
-                                    x="2"
-                                    y="3"
-                                    width="20"
-                                    height="18"
-                                    rx="2"
-                                    fill="#2B579A"
-                                  />
-                                  <text
-                                    x="12"
-                                    y="16"
-                                    textAnchor="middle"
-                                    fill="white"
-                                    fontSize="11"
-                                    fontWeight="bold"
-                                    fontFamily="Arial, sans-serif"
-                                  >
-                                    W
-                                  </text>
-                                </svg>
-                              </button>
-                              <button
-                                onClick={handleExportPdf}
-                                style={{
-                                  padding: "4px 10px",
-                                  backgroundColor: "#fef5e7",
-                                  color: "#2c3e50",
-                                  border: "1.5px solid #e0c392",
-                                  borderRadius: "8px",
-                                  cursor: "pointer",
-                                  fontSize: "11px",
-                                  fontWeight: "600",
-                                  transition: "all 0.2s",
-                                  whiteSpace: "nowrap",
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                }}
-                                onMouseEnter={(e) => {
-                                  e.currentTarget.style.backgroundColor =
-                                    "#f7e6d0";
-                                }}
-                                onMouseLeave={(e) => {
-                                  e.currentTarget.style.backgroundColor =
-                                    "#fef5e7";
-                                }}
-                                title="Export PDF (Manuscript Format)"
-                              >
-                                <svg
-                                  width="16"
-                                  height="16"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  xmlns="http://www.w3.org/2000/svg"
-                                >
-                                  <rect
-                                    x="3"
-                                    y="2"
-                                    width="18"
-                                    height="20"
-                                    rx="2"
-                                    fill="#B30B00"
-                                  />
-                                  <path
-                                    d="M7 7h10M7 10h10M7 13h6"
-                                    stroke="white"
-                                    strokeWidth="1.5"
-                                    strokeLinecap="round"
-                                  />
-                                  <text
-                                    x="12"
-                                    y="19"
-                                    textAnchor="middle"
-                                    fill="white"
-                                    fontSize="5"
-                                    fontWeight="bold"
-                                    fontFamily="Arial"
-                                  >
-                                    PDF
-                                  </text>
-                                </svg>
-                              </button>
-                              <button
-                                onClick={handleExportHtml}
-                                style={{
-                                  padding: "4px 10px",
-                                  backgroundColor: "#fef5e7",
-                                  color: "#2c3e50",
-                                  border: "1.5px solid #e0c392",
-                                  borderRadius: "8px",
-                                  cursor: "pointer",
-                                  fontSize: "11px",
-                                  fontWeight: "600",
-                                  transition: "all 0.2s",
-                                  whiteSpace: "nowrap",
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                }}
-                                onMouseEnter={(e) => {
-                                  e.currentTarget.style.backgroundColor =
-                                    "#f7e6d0";
-                                }}
-                                onMouseLeave={(e) => {
-                                  e.currentTarget.style.backgroundColor =
-                                    "#fef5e7";
-                                }}
-                                title="Export HTML (Open in Browser)"
-                              >
-                                <svg
-                                  width="16"
-                                  height="16"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  xmlns="http://www.w3.org/2000/svg"
-                                >
-                                  <circle
-                                    cx="12"
-                                    cy="12"
-                                    r="10"
-                                    stroke="#2c3e50"
-                                    strokeWidth="2"
-                                    fill="none"
-                                  />
-                                  <circle
-                                    cx="12"
-                                    cy="12"
-                                    r="4"
-                                    fill="#ef8432"
-                                  />
-                                  <path
-                                    d="M12 2C6.48 2 2 6.48 2 12h7.5"
-                                    stroke="#4285f4"
-                                    strokeWidth="2"
-                                    strokeLinecap="round"
-                                  />
-                                  <path
-                                    d="M12 2c5.52 0 10 4.48 10 10h-7.5"
-                                    stroke="#ea4335"
-                                    strokeWidth="2"
-                                    strokeLinecap="round"
-                                  />
-                                  <path
-                                    d="M22 12c0 5.52-4.48 10-10 10"
-                                    stroke="#fbbc05"
-                                    strokeWidth="2"
-                                    strokeLinecap="round"
-                                  />
-                                  <path
-                                    d="M2 12c0 5.52 4.48 10 10 10"
-                                    stroke="#34a853"
-                                    strokeWidth="2"
-                                    strokeLinecap="round"
-                                  />
-                                </svg>
+                                💾 Save
                               </button>
                               <button
                                 onClick={handlePrint}
@@ -3177,38 +3255,6 @@ export const ChapterCheckerV2: React.FC = () => {
                                   </button>
                                 )}
 
-                              {chapterData && (
-                                <button
-                                  onClick={() => setIsChapterLibraryOpen(true)}
-                                  style={{
-                                    padding: "4px 10px",
-                                    backgroundColor: "#fef5e7",
-                                    color: "#2c3e50",
-                                    border: "1.5px solid #e0c392",
-                                    borderRadius: "8px",
-                                    cursor: "pointer",
-                                    fontSize: "11px",
-                                    fontWeight: "600",
-                                    transition: "all 0.2s",
-                                    whiteSpace: "nowrap",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                  }}
-                                  onMouseEnter={(e) => {
-                                    e.currentTarget.style.backgroundColor =
-                                      "#f7e6d0";
-                                  }}
-                                  onMouseLeave={(e) => {
-                                    e.currentTarget.style.backgroundColor =
-                                      "#fef5e7";
-                                  }}
-                                  title="Save Chapter (Cmd+S)"
-                                >
-                                  📁
-                                </button>
-                              )}
-
                               {viewMode === "writer" && (
                                 <button
                                   onClick={() => {
@@ -3303,7 +3349,6 @@ export const ChapterCheckerV2: React.FC = () => {
                           )}
                         </>
                       }
-                      onOpenChapterLibrary={() => setIsChapterLibraryOpen(true)}
                       onPageCountChange={setEditorPageCount}
                     />
                   </div>

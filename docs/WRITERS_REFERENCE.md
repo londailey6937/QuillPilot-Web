@@ -11,11 +11,10 @@ Your complete guide to mastering QuillPilot's writing tools and features.
 3. [Side Panels](#side-panels)
 4. [Advanced Tools Panel](#advanced-tools-panel)
 5. [Productivity Features](#productivity-features)
-6. [Chapter Library](#chapter-library)
-7. [Character Management](#character-management)
-8. [Export Options](#export-options)
-9. [Tips & Best Practices](#tips--best-practices)
-10. [Keyboard Shortcuts](#keyboard-shortcuts-reference)
+6. [Character Management](#character-management)
+7. [Export Options](#export-options)
+8. [Tips & Best Practices](#tips--best-practices)
+9. [Keyboard Shortcuts](#keyboard-shortcuts-reference)
 
 > **⌨️ Complete Keyboard Shortcuts Guide**: See [KEYBOARD_SHORTCUTS.md](./KEYBOARD_SHORTCUTS.md) for detailed shortcuts reference
 
@@ -30,7 +29,7 @@ Writer Mode transforms QuillPilot from an analysis tool into a full-featured wri
 - **Rich text editor** with professional formatting tools
 - **Live analysis indicators** showing pacing and sensory detail issues
 - **Real-time statistics** (word count, reading time, reading level)
-- **Auto-save** protection against lost work
+- **Draft protection** with visible "✓ Draft protected" indicator (press Cmd/Ctrl+S to save to computer)
 - **Advanced Tools Panel** for deep manuscript analysis
 
 ### Writer Mode Layout
@@ -384,32 +383,6 @@ Analyze dialogue for authenticity and character voice.
 
 ---
 
-#### 📜 Version History ⭐ NEW
-
-Save snapshots of your document and compare changes over time.
-
-**Features:**
-
-- **Save Snapshots**: Create named versions at any point
-- **Compare Drafts**: See additions (green) and deletions (red) side-by-side
-- **Restore Versions**: Roll back to any previous snapshot
-- **Auto-timestamps**: Know exactly when each version was saved
-
-**How to Use:**
-
-1. Open Advanced Tools → Version History
-2. Click "Save Snapshot" to capture current state
-3. Add a descriptive name (e.g., "Before killing darlings")
-4. Click any version to compare or restore
-
-**💡 Tips:**
-
-- Save a version before major cuts or rewrites
-- Name versions descriptively: "Chapter 5 - added flashback"
-- Use compare mode to review what changed between drafts
-
----
-
 #### 💬 Comments & Annotations ⭐ NEW
 
 Leave notes for yourself or beta readers throughout your manuscript.
@@ -736,45 +709,6 @@ Dictate your story hands-free.
 
 ---
 
-## Chapter Library
-
-QuillPilot's Chapter Library feature allows you to save and manage multiple chapters locally on your computer using the File System Access API.
-
-### Quick Overview
-
-- **Save chapters** as JSON files in a folder of your choice
-- **Load any saved chapter** instantly into the editor
-- **No cloud storage** required - all files stay on your machine
-- **Full control** over your writing files
-
-### How to Access
-
-1. Click the hamburger menu (☰) in the top-left
-2. Click "📚 Chapter Library"
-3. Select a folder on your computer (first time only)
-4. Save, load, or delete chapters
-
-### Features
-
-- **Save/Save As**: Quickly save current chapter or create variations
-- **Load chapters**: Switch between chapters with one click
-- **Delete chapters**: Remove unwanted chapters with confirmation
-- **Folder persistence**: QuillPilot remembers your chapter folder
-- **Auto-refresh**: See new files added outside QuillPilot
-
-### Browser Support
-
-✅ **Supported**: Chrome 86+, Edge 86+, Opera 72+
-⚠️ **Not Supported**: Firefox, Safari (API not yet available)
-
-If your browser doesn't support this feature, QuillPilot will display a warning.
-
-### Complete Guide
-
-For detailed instructions, tips, workflows, and troubleshooting, see the complete **[Chapter Library Guide](./CHAPTER_LIBRARY_GUIDE.md)**.
-
----
-
 ## Character Management
 
 ### Adding Characters
@@ -866,7 +800,6 @@ This helps track character appearances and ensures consistency.
 
 - Focus Mode (hide distractions)
 - Word Sprint Timer (build momentum)
-- Version History (save before major scenes)
 
 **During Revision:**
 

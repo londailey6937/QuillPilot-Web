@@ -773,11 +773,12 @@ All changes are additive and backward compatible.
 
 **No migration needed!** All changes are additive:
 
-1. **Auto-save is automatic** - Just works
-2. **Template generation** - New button appears in Writer Mode
-3. **Domain detection** - More conservative, may return null more often
-4. **"None" option** - Manually select if auto-detect fails
-5. **Section hiding** - Automatic based on domain selection
+1. **Draft protection is automatic** - Look for "✓ Draft protected" badge
+2. **Cmd/Ctrl+S** - Opens Save dialog to save to your computer (choose format and location)
+3. **Template generation** - New button appears in Writer Mode
+4. **Domain detection** - More conservative, may return null more often
+5. **"None" option** - Manually select if auto-detect fails
+6. **Section hiding** - Automatic based on domain selection
 
 **Recommended actions:**
 

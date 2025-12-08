@@ -15,7 +15,6 @@ import { CharacterNameGenerator } from "./CharacterNameGenerator";
 import { WorldBuildingNotebook } from "./WorldBuildingNotebook";
 import { ResearchNotesPanel } from "./ResearchNotesPanel";
 import { ImageMoodBoard } from "./ImageMoodBoard";
-import { VersionHistory } from "./VersionHistory";
 import { CommentAnnotation } from "./CommentAnnotation";
 
 interface AdvancedToolsPanelProps {
@@ -43,7 +42,6 @@ type ActiveTool =
   | "world-building"
   | "research-notes"
   | "mood-board"
-  | "version-history"
   | "comments"
   | null;
 
@@ -192,14 +190,6 @@ export const AdvancedToolsPanel: React.FC<AdvancedToolsPanelProps> = ({
       icon: "🖼️",
       description: "Upload reference images for scenes",
       color: palette.success,
-      requiresSelection: false,
-    },
-    {
-      id: "version-history" as ActiveTool,
-      name: "Version History",
-      icon: "📜",
-      description: "Save snapshots, compare drafts",
-      color: palette.info,
       requiresSelection: false,
     },
     {
@@ -718,21 +708,6 @@ export const AdvancedToolsPanel: React.FC<AdvancedToolsPanelProps> = ({
         <ImageMoodBoard
           onClose={closeTool}
           onOpenHelp={() => onOpenHelp?.("moodBoard")}
-        />
-      )}
-
-      {activeTool === "version-history" && (
-        <VersionHistory
-          currentContent={text}
-          onRestore={(content) => {
-            if (onInsertText) {
-              // Clear and insert restored content
-              onInsertText(content);
-            }
-            closeTool();
-          }}
-          onClose={closeTool}
-          onOpenHelp={() => onOpenHelp?.("versionHistory")}
         />
       )}
 

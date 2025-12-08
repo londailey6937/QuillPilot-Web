@@ -36,7 +36,6 @@ export function WritersReferenceModal({
     advancedTools: "Advanced Tools Panel (Genre, Analysis)",
     aiAssistant: "AI Writing Assistant (Rephrase, Enhance, Suggestions)",
     dialogue: "Dialogue Enhancer (Speech, Conversation, Tags)",
-    versionHistory: "Version History (Drafts, Revisions, Backup)",
     comments: "Comments & Annotations (Notes, Feedback)",
     beatSheet: "Beat Sheet Generator (Story Structure, Plot, Scenes)",
     povChecker: "POV Checker (Point of View, Perspective, Narrator)",
@@ -53,7 +52,7 @@ export function WritersReferenceModal({
     researchNotes: "Writer's Notes (Research, Ideas)",
     moodBoard: "Image Mood Board (Visual Inspiration, Atmosphere)",
     productivity: "Productivity Features (Focus, Sprint, Timer, Goals)",
-    chapterLibrary: "Chapter Library (Organize, Manage, Scenes)",
+    chapterLibrary: "Document Store (Save, Organize, Manage)",
     characters: "Character Management (Profiles, Tracking, Arcs)",
     export: "Export Options (PDF, DOCX, HTML, Save)",
     tips: "Tips & Best Practices (Writing, Workflow)",
@@ -366,8 +365,6 @@ export function WritersReferenceModal({
                   • Research Notes
                   <br />
                   • Mood Board
-                  <br />
-                  • Version History
                   <br />• Comments
                 </div>
               </div>
@@ -384,12 +381,9 @@ export function WritersReferenceModal({
                 screen while you write
               </li>
               <li>
-                <strong>Auto-Save</strong> - Your work is automatically saved as
-                you type
-              </li>
-              <li>
-                <strong>Version History</strong> - Save snapshots and compare
-                drafts
+                <strong>Auto-Save</strong> - Your draft is automatically
+                protected as you type ("✓ Draft protected"). Press Cmd/Ctrl+S to
+                save to your computer.
               </li>
               <li>
                 <strong>Comments & Annotations</strong> - Leave notes for
@@ -780,10 +774,6 @@ export function WritersReferenceModal({
               <li>
                 <strong>💬 Dialogue Enhancer</strong> — Analyze dialogue for
                 authenticity
-              </li>
-              <li>
-                <strong>📜 Version History</strong>{" "}
-                <span className="new-badge">NEW</span> — Save and compare drafts
               </li>
               <li>
                 <strong>💬 Comments & Annotations</strong>{" "}
@@ -1285,57 +1275,6 @@ export function WritersReferenceModal({
                   POV Checker
                 </button>
               </div>
-            </div>
-          </div>
-        );
-
-      case "versionHistory":
-        return (
-          <div className="writers-ref-content">
-            <h2>
-              📜 Version History <span className="new-badge">NEW</span>
-            </h2>
-            <p>
-              Save snapshots of your document and compare changes over time.
-            </p>
-
-            <h3>Features</h3>
-            <ul>
-              <li>
-                <strong>Save Snapshots:</strong> Create named versions at any
-                point
-              </li>
-              <li>
-                <strong>Compare Drafts:</strong> See additions (green) and
-                deletions (red) side-by-side
-              </li>
-              <li>
-                <strong>Restore Versions:</strong> Roll back to any previous
-                snapshot
-              </li>
-              <li>
-                <strong>Auto-timestamps:</strong> Know exactly when each version
-                was saved
-              </li>
-            </ul>
-
-            <h3>How to Use</h3>
-            <ol>
-              <li>Open Advanced Tools → Version History</li>
-              <li>Click "Save Snapshot" to capture current state</li>
-              <li>Add a descriptive name (e.g., "Before killing darlings")</li>
-              <li>Click any version to compare or restore</li>
-            </ol>
-
-            <div className="tip-box">
-              <strong>💡 Tips:</strong>
-              <ul>
-                <li>Save a version before major cuts or rewrites</li>
-                <li>
-                  Name versions descriptively: "Chapter 5 - added flashback"
-                </li>
-                <li>Use compare mode to review what changed between drafts</li>
-              </ul>
             </div>
           </div>
         );
@@ -2120,20 +2059,20 @@ export function WritersReferenceModal({
       case "chapterLibrary":
         return (
           <div className="writers-ref-content">
-            <h2>📚 Chapter Library</h2>
+            <h2>📁 Document Store</h2>
             <p>
-              Save and manage multiple chapters locally on your computer using
-              the File System Access API.
+              Save and manage your documents locally on your computer using the
+              File System Access API.
             </p>
 
             <h3>Quick Overview</h3>
             <ul>
               <li>
-                <strong>Save chapters</strong> as JSON files in a folder of your
+                <strong>Save documents</strong> as files in a folder of your
                 choice
               </li>
               <li>
-                <strong>Load any saved chapter</strong> instantly into the
+                <strong>Load any saved document</strong> instantly into the
                 editor
               </li>
               <li>
@@ -2147,10 +2086,12 @@ export function WritersReferenceModal({
 
             <h3>How to Access</h3>
             <ol>
-              <li>Click the hamburger menu (☰) in the top-left</li>
-              <li>Click "📚 Chapter Library"</li>
+              <li>
+                Press <strong>Cmd/Ctrl + S</strong> (quickest way)
+              </li>
+              <li>Or click "📁 Document Store" in the toolbar</li>
               <li>Select a folder on your computer (first time only)</li>
-              <li>Save, load, or delete chapters</li>
+              <li>Save, load, or delete documents</li>
             </ol>
 
             <h3>Features</h3>
@@ -2164,15 +2105,15 @@ export function WritersReferenceModal({
               <tbody>
                 <tr>
                   <td>💾 Save/Save As</td>
-                  <td>Quickly save current chapter or create variations</td>
+                  <td>Quickly save current document or create variations</td>
                 </tr>
                 <tr>
-                  <td>📂 Load chapters</td>
-                  <td>Switch between chapters with one click</td>
+                  <td>📂 Load documents</td>
+                  <td>Switch between documents with one click</td>
                 </tr>
                 <tr>
-                  <td>🗑️ Delete chapters</td>
-                  <td>Remove unwanted chapters with confirmation</td>
+                  <td>🗑️ Delete documents</td>
+                  <td>Remove unwanted documents with confirmation</td>
                 </tr>
                 <tr>
                   <td>🔄 Auto-refresh</td>
@@ -2180,7 +2121,7 @@ export function WritersReferenceModal({
                 </tr>
                 <tr>
                   <td>📁 Folder persistence</td>
-                  <td>QuillPilot remembers your chapter folder</td>
+                  <td>QuillPilot remembers your document folder</td>
                 </tr>
               </tbody>
             </table>
@@ -2424,7 +2365,6 @@ export function WritersReferenceModal({
             <ul>
               <li>Focus Mode (hide distractions)</li>
               <li>Word Sprint Timer (build momentum)</li>
-              <li>Version History (save before major scenes)</li>
             </ul>
 
             <h4>During Revision</h4>

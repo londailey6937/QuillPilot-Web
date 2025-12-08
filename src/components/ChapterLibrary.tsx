@@ -1,6 +1,6 @@
 /**
- * Chapter Library Component
- * Manages local chapters using File System Access API
+ * Document Store Component
+ * Manages local documents using File System Access API
  */
 
 import React, { useState, useEffect } from "react";
@@ -18,7 +18,7 @@ import {
   type ChapterMetadata,
 } from "../utils/fileSystemStorage";
 
-interface ChapterLibraryProps {
+interface DocumentStoreProps {
   isOpen: boolean;
   onClose: () => void;
   onLoadChapter: (chapter: ChapterFile) => void;
@@ -36,7 +36,7 @@ export function ChapterLibrary({
   onClose,
   onLoadChapter,
   currentChapter,
-}: ChapterLibraryProps): JSX.Element | null {
+}: DocumentStoreProps): JSX.Element | null {
   const [chapters, setChapters] = useState<ChapterMetadata[]>([]);
   const [dirHandle, setDirHandle] = useState<FileSystemDirectoryHandle | null>(
     null
@@ -229,7 +229,7 @@ export function ChapterLibrary({
               fontWeight: 600,
             }}
           >
-            📚 Chapter Library
+            📁 Document Store
           </h2>
         </div>
 
@@ -269,7 +269,7 @@ export function ChapterLibrary({
                 }}
               >
                 Select a folder on your computer to save and manage your
-                chapters.
+                documents.
               </p>
               <button
                 onClick={handleSelectFolder}
@@ -284,10 +284,10 @@ export function ChapterLibrary({
                   cursor: "pointer",
                 }}
               >
-                📁 Select Chapter Folder
+                📁 Select Document Folder
               </button>
               <p style={{ fontSize: "14px", color: "#666", marginTop: "16px" }}>
-                Your chapters will be saved as JSON files in this folder.
+                Your documents will be saved as files in this folder.
               </p>
             </div>
           ) : (
@@ -310,7 +310,7 @@ export function ChapterLibrary({
                       color: "#2c3e50",
                     }}
                   >
-                    💾 Current Chapter
+                    💾 Current Document
                   </h3>
                   {showSaveAs ? (
                     <div
@@ -415,7 +415,7 @@ export function ChapterLibrary({
                 }}
               >
                 <h3 style={{ margin: 0, fontSize: "16px", color: "#2c3e50" }}>
-                  Chapter Library ({chapters.length})
+                  Saved Documents ({chapters.length})
                 </h3>
                 <button
                   onClick={() => refreshChapterList(dirHandle)}
@@ -460,7 +460,7 @@ export function ChapterLibrary({
                     padding: "32px",
                   }}
                 >
-                  No chapters saved yet. Save your current chapter to get
+                  No documents saved yet. Save your current document to get
                   started!
                 </p>
               ) : (
