@@ -3,9 +3,9 @@
  * Provides offline caching for static assets and improves load performance
  */
 
-const CACHE_NAME = "quillpilot-v1";
-const STATIC_CACHE_NAME = "quillpilot-static-v1";
-const DYNAMIC_CACHE_NAME = "quillpilot-dynamic-v1";
+const CACHE_NAME = "quillpilot-v2";
+const STATIC_CACHE_NAME = "quillpilot-static-v2";
+const DYNAMIC_CACHE_NAME = "quillpilot-dynamic-v2";
 
 // Static assets to cache immediately on install
 const STATIC_ASSETS = ["/", "/index.html", "/favicon.svg", "/site.webmanifest"];
