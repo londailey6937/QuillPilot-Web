@@ -3132,14 +3132,19 @@ export const PaginatedEditor = forwardRef<
               <div
                 key={page.id}
                 className="paginated-page"
-                style={{
-                  width: `${pageWidthPx}px`,
-                  height: `${pageHeightPx}px`,
-                  backgroundColor: "#ffffff",
-                  boxShadow: "0 4px 20px rgba(0, 0, 0, 0.15)",
-                  position: "relative",
-                  overflow: "hidden",
-                }}
+                style={
+                  {
+                    width: `${pageWidthPx}px`,
+                    height: `${pageHeightPx}px`,
+                    backgroundColor: "#ffffff",
+                    boxShadow: "0 4px 20px rgba(0, 0, 0, 0.15)",
+                    position: "relative",
+                    overflow: "hidden",
+                    // Performance optimization: skip rendering for off-screen pages
+                    contentVisibility: "auto",
+                    containIntrinsicSize: `${pageWidthPx}px ${pageHeightPx}px`,
+                  } as React.CSSProperties
+                }
               >
                 {/* Header */}
                 {headerText && (

@@ -188,6 +188,9 @@ function enhanceDocumentFormatting(html: string): string {
           img.style.height = "auto";
           img.style.display = "block";
           img.style.margin = "1rem auto";
+          // Add lazy loading for performance
+          img.setAttribute("loading", "lazy");
+          img.setAttribute("decoding", "async");
         }
       } else if (text.length > 0 && !p.classList.contains("body-text")) {
         p.classList.add("body-text");
@@ -198,6 +201,10 @@ function enhanceDocumentFormatting(html: string): string {
   // Handle standalone images (not wrapped in paragraphs) - wrap them in centered paragraphs
   const standaloneImages = doc.body.querySelectorAll("img");
   standaloneImages.forEach((img) => {
+    // Add lazy loading to all images for performance
+    img.setAttribute("loading", "lazy");
+    img.setAttribute("decoding", "async");
+
     // Check if image is already inside a paragraph
     if (!img.closest("p")) {
       const wrapper = doc.createElement("p");

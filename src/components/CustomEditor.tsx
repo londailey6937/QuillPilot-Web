@@ -5880,7 +5880,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           format: "webp",
         });
 
-        const imgHtml = `<img src="${optimizedSrc}" style="max-width: 100%; height: auto; display: block; margin: 0.5rem 0;" />`;
+        const imgHtml = `<img src="${optimizedSrc}" loading="lazy" decoding="async" style="max-width: 100%; height: auto; display: block; margin: 0.5rem 0;" />`;
 
         // Small delay then restore selection and insert
         setTimeout(() => {
@@ -5913,7 +5913,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
         // Fallback to original image if optimization fails
         const reader = new FileReader();
         reader.onload = (event) => {
-          const imgHtml = `<img src="${event.target?.result}" style="max-width: 100%; height: auto; display: block; margin: 0.5rem 0;" />`;
+          const imgHtml = `<img src="${event.target?.result}" loading="lazy" decoding="async" style="max-width: 100%; height: auto; display: block; margin: 0.5rem 0;" />`;
           document.execCommand("insertHTML", false, imgHtml);
           handleInput();
         };
@@ -6106,7 +6106,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
             format: "webp",
           })
             .then((optimizedSrc) => {
-              const imgHtml = `<img src="${optimizedSrc}" style="max-width: 100%; height: auto; display: block; margin: 1rem 0;" />`;
+              const imgHtml = `<img src="${optimizedSrc}" loading="lazy" decoding="async" style="max-width: 100%; height: auto; display: block; margin: 1rem 0;" />`;
               document.execCommand("insertHTML", false, imgHtml);
               // Sync changes to editorRef if paste happened in paginated editor
               setTimeout(() => {
@@ -6121,7 +6121,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               // Fallback to original if optimization fails
               const reader = new FileReader();
               reader.onload = (event) => {
-                const imgHtml = `<img src="${event.target?.result}" style="max-width: 100%; height: auto; display: block; margin: 1rem 0;" />`;
+                const imgHtml = `<img src="${event.target?.result}" loading="lazy" decoding="async" style="max-width: 100%; height: auto; display: block; margin: 1rem 0;" />`;
                 document.execCommand("insertHTML", false, imgHtml);
                 handleInput();
               };
