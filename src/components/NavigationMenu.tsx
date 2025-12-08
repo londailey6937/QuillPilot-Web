@@ -866,14 +866,14 @@ export function NavigationMenu({
             style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}
           >
             <ComingSoonItem
-              icon="💉"
-              title="More Genre Detection"
-              desc="Expanded genre libraries and trope analysis"
+              icon="📚"
+              title="Textbook Analysis (v2)"
+              desc="Learning science-powered analysis for educational content with dual-coding suggestions, concept graphs, and academic domain detection"
             />
             <ComingSoonItem
-              icon="🌎"
-              title="Additional Genres"
-              desc="Urban fantasy, paranormal, dystopian, and more"
+              icon="🎭"
+              title="Expanded Genre Support"
+              desc="More genres (urban fantasy, paranormal, dystopian) plus expanded trope libraries"
             />
           </div>
         </div>

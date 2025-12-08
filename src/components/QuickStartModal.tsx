@@ -40,6 +40,51 @@ export function QuickStartModal({
         return (
           <div className="quickstart-shell">
             <div className="quickstart-content">
+              <section
+                className="quickstart-card"
+                style={{
+                  background:
+                    "linear-gradient(135deg, #fff7ed 0%, #fef5e7 100%)",
+                  border: "2px solid #ef8432",
+                }}
+              >
+                <h4>🆕 What's New (December 2024)</h4>
+                <p style={{ marginBottom: "1rem", color: "#6b4423" }}>
+                  Recent improvements to enhance your writing experience:
+                </p>
+                <ul className="quickstart-list" style={{ color: "#2c3e50" }}>
+                  <li>
+                    <strong>📝 List Numbering Controls:</strong> New toolbar
+                    buttons for <code>1↺</code> (Restart Numbering) and{" "}
+                    <code>#→</code> (Continue Numbering) - easily restart
+                    numbered lists at 1 or continue from a previous list
+                  </li>
+                  <li>
+                    <strong>📁 Save to Any Folder:</strong> PDF, HTML, DOCX, and
+                    Shunn Manuscript exports now open a "Save As" dialog so you
+                    can choose where to save your files (Chrome/Edge)
+                  </li>
+                  <li>
+                    <strong>📐 Justify Alignment:</strong> New ☰ button for
+                    full-width text justification
+                  </li>
+                  <li>
+                    <strong>⚡ Faster Undo:</strong> Cmd/Ctrl+Z now responds
+                    more quickly
+                  </li>
+                  <li>
+                    <strong>🎨 More Fonts:</strong> Added Baskerville, Book
+                    Antiqua, Cambria, Century Schoolbook, Cochin, Didot,
+                    Trebuchet MS, Tahoma, and Lucida Console
+                  </li>
+                  <li>
+                    <strong>🖌️ Style Enhancements:</strong> Color picker in
+                    Modify Styles panel, Save Template button, improved style
+                    reset when reapplying
+                  </li>
+                </ul>
+              </section>
+
               <section className="quickstart-card">
                 <h4>🚀 Getting Started in 3 Steps</h4>
                 <p style={{ marginBottom: "1.5rem" }}>

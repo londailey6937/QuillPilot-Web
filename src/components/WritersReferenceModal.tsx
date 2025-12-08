@@ -82,6 +82,55 @@ export function WritersReferenceModal({
         return (
           <div className="writers-ref-content">
             <h2>Writer Mode Overview</h2>
+
+            <div
+              style={{
+                background: "linear-gradient(135deg, #fff7ed 0%, #fef5e7 100%)",
+                border: "2px solid #ef8432",
+                borderRadius: "8px",
+                padding: "1rem 1.5rem",
+                marginBottom: "1.5rem",
+              }}
+            >
+              <h3
+                style={{
+                  color: "#ef8432",
+                  marginTop: 0,
+                  marginBottom: "0.75rem",
+                }}
+              >
+                🆕 Recent Updates (December 2024)
+              </h3>
+              <ul
+                style={{ margin: 0, paddingLeft: "1.5rem", lineHeight: "1.8" }}
+              >
+                <li>
+                  <strong>List Numbering:</strong> <code>1↺</code> restarts at
+                  1, <code>#→</code> continues from previous list
+                </li>
+                <li>
+                  <strong>Save Location:</strong> Export dialogs now let you
+                  choose where to save (PDF, HTML, DOCX, Shunn)
+                </li>
+                <li>
+                  <strong>Justify Text:</strong> New ☰ button for full-width
+                  alignment
+                </li>
+                <li>
+                  <strong>More Fonts:</strong> Baskerville, Book Antiqua,
+                  Cambria, Century Schoolbook, Cochin, Didot, Trebuchet MS,
+                  Tahoma, Lucida Console
+                </li>
+                <li>
+                  <strong>Modify Styles:</strong> Color picker added, Save
+                  Template button, better style reset
+                </li>
+                <li>
+                  <strong>Faster Undo:</strong> Cmd/Ctrl+Z responds more quickly
+                </li>
+              </ul>
+            </div>
+
             <p>
               Writer Mode is a distraction-free writing environment built
               directly into QuillPilot. It combines professional text editing
@@ -569,6 +618,84 @@ export function WritersReferenceModal({
                 <tr>
                   <td>Footnote</td>
                   <td>Reference notes</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h3>📝 List Controls</h3>
+            <table className="ref-table">
+              <thead>
+                <tr>
+                  <th>Button</th>
+                  <th>Function</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>•</td>
+                  <td>Create bullet list</td>
+                </tr>
+                <tr>
+                  <td>1.</td>
+                  <td>Create numbered list</td>
+                </tr>
+                <tr>
+                  <td>
+                    <strong>1↺</strong>
+                  </td>
+                  <td>
+                    🆕 <strong>Restart Numbering</strong> — Start list at 1 from
+                    current item (splits list if mid-list)
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <strong>#→</strong>
+                  </td>
+                  <td>
+                    🆕 <strong>Continue Numbering</strong> — Continue from
+                    previous list (e.g., after a paragraph break)
+                  </td>
+                </tr>
+                <tr>
+                  <td>⇤</td>
+                  <td>Decrease indent (outdent)</td>
+                </tr>
+                <tr>
+                  <td>⇥</td>
+                  <td>Increase indent</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h3>📐 Alignment</h3>
+            <table className="ref-table">
+              <thead>
+                <tr>
+                  <th>Button</th>
+                  <th>Function</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>≡ (left)</td>
+                  <td>Align text left</td>
+                </tr>
+                <tr>
+                  <td>≡ (center)</td>
+                  <td>Center text</td>
+                </tr>
+                <tr>
+                  <td>≡ (right)</td>
+                  <td>Align text right</td>
+                </tr>
+                <tr>
+                  <td>
+                    <strong>☰</strong>
+                  </td>
+                  <td>
+                    🆕 <strong>Justify</strong> — Full-width text alignment
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -2315,6 +2442,15 @@ export function WritersReferenceModal({
         return (
           <div className="writers-ref-content">
             <h2>Export Options</h2>
+
+            <div
+              className="tip-box"
+              style={{ background: "#fff7ed", borderColor: "#ef8432" }}
+            >
+              <strong>🆕 New:</strong> All exports now open a "Save As" dialog
+              so you can choose where to save your files (Chrome/Edge). No more
+              hunting in Downloads!
+            </div>
 
             <h3>📄 PDF Export</h3>
             <p>

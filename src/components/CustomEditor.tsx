@@ -11939,7 +11939,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
             }}
             title="Float Left (text wraps on right)"
           >
-            ⬅️ Left
+            ⬅️ <span style={{ color: "#374151" }}>Left</span>
           </button>
           <button
             onClick={() => {
@@ -11987,7 +11987,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
             }}
             title="Center (no text wrap)"
           >
-            ↔️ Center
+            ↔️ <span style={{ color: "#374151" }}>Center</span>
           </button>
           <button
             onClick={() => {
@@ -12045,7 +12045,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
             }}
             title="Float Right (text wraps on left)"
           >
-            Right ➡️
+            <span style={{ color: "#374151" }}>Right</span> ➡️
           </button>
           <div
             style={{
@@ -12148,6 +12148,64 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               margin: "0 4px",
             }}
           />
+          <button
+            onClick={() => {
+              if (selectedImage) {
+                // Store original dimensions before replacing
+                const originalWidth = selectedImage.offsetWidth;
+                const originalHeight = selectedImage.offsetHeight;
+                const originalStyleWidth = selectedImage.style.width;
+                const originalStyleHeight = selectedImage.style.height;
+                const originalMaxWidth = selectedImage.style.maxWidth;
+
+                // Create a hidden file input to select replacement image
+                const fileInput = document.createElement("input");
+                fileInput.type = "file";
+                fileInput.accept = "image/*";
+                fileInput.onchange = (e) => {
+                  const file = (e.target as HTMLInputElement).files?.[0];
+                  if (file && selectedImage) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                      const newSrc = event.target?.result as string;
+                      if (newSrc) {
+                        selectedImage.src = newSrc;
+                        // Preserve the original dimensions
+                        if (originalStyleWidth) {
+                          selectedImage.style.width = originalStyleWidth;
+                        } else {
+                          selectedImage.style.width = `${originalWidth}px`;
+                        }
+                        if (originalStyleHeight) {
+                          selectedImage.style.height = originalStyleHeight;
+                        } else {
+                          selectedImage.style.height = `${originalHeight}px`;
+                        }
+                        selectedImage.style.maxWidth =
+                          originalMaxWidth || "100%";
+                        selectedImage.style.objectFit = "cover";
+                        handleInput();
+                      }
+                    };
+                    reader.readAsDataURL(file);
+                  }
+                };
+                fileInput.click();
+              }
+            }}
+            style={{
+              padding: "4px 8px",
+              fontSize: "11px",
+              backgroundColor: "#e0f2fe",
+              border: "1px solid #7dd3fc",
+              borderRadius: "4px",
+              cursor: "pointer",
+              color: "#0369a1",
+            }}
+            title="Replace image"
+          >
+            🔄
+          </button>
           <button
             onClick={() => {
               if (selectedImage) {

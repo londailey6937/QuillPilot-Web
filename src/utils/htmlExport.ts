@@ -1,5 +1,6 @@
 import { ChapterAnalysis } from "@/types";
 import { buildHtmlFromTemplate } from "./htmlBuilder";
+import { saveAs } from "file-saver";
 
 interface HtmlExportOptions {
   text: string;
@@ -54,13 +55,13 @@ function extractDocumentTitle(html: string | null | undefined): string | null {
 /**
  * Export document as styled HTML using template
  */
-export const exportToHtml = ({
+export const exportToHtml = async ({
   text,
   html,
   fileName = "edited-chapter",
   analysis,
   includeHighlights = true,
-}: HtmlExportOptions): void => {
+}: HtmlExportOptions): Promise<void> => {
   // Extract document title from content, fallback to filename, then to "Untitled Document"
   const extractedTitle = extractDocumentTitle(html);
   const fileNameTitle = fileName.replace(/\.[^/.]+$/, "");
@@ -75,24 +76,52 @@ export const exportToHtml = ({
     includeHighlights,
   });
 
-  // Download
-  downloadHtmlFile(finalHtml, documentTitle);
+  // Download with file picker
+  await downloadHtmlFile(finalHtml, documentTitle);
 };
 
 /**
- * Download HTML string as a file
+ * Download HTML string as a file using File System Access API or fallback
  */
-function downloadHtmlFile(htmlContent: string, baseFileName: string): void {
+async function downloadHtmlFile(
+  htmlContent: string,
+  baseFileName: string
+): Promise<void> {
   const blob = new Blob([htmlContent], { type: "text/html;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
+  const downloadName = normalizeHtmlFileName(baseFileName);
 
-  link.href = url;
-  link.download = normalizeHtmlFileName(baseFileName);
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+  // Try to use the modern File System Access API (Chrome, Edge, Opera)
+  // This gives users a proper "Save As" dialog to choose the location
+  if ("showSaveFilePicker" in window) {
+    try {
+      const handle = await (window as any).showSaveFilePicker({
+        suggestedName: downloadName,
+        types: [
+          {
+            description: "HTML Document",
+            accept: { "text/html": [".html"] },
+          },
+        ],
+      });
+      const writable = await handle.createWritable();
+      await writable.write(blob);
+      await writable.close();
+      return; // Successfully saved with user-chosen location
+    } catch (err: any) {
+      // User cancelled the save dialog, or API not fully supported
+      if (err.name === "AbortError") {
+        return; // User cancelled - don't fall back to download
+      }
+      // For other errors, fall back to traditional download
+      console.warn(
+        "File System Access API failed, falling back to download:",
+        err
+      );
+    }
+  }
+
+  // Fallback for Safari, Firefox, or if File System Access API fails
+  saveAs(blob, downloadName);
 }
 
 function normalizeHtmlFileName(fileName: string | null | undefined): string {
