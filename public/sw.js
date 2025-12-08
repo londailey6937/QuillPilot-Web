@@ -1,5 +1,3 @@
-/// <reference lib="webworker" />
-
 /**
  * Service Worker for QuillPilot
  * Provides offline caching for static assets and improves load performance
@@ -10,12 +8,7 @@ const STATIC_CACHE_NAME = "quillpilot-static-v1";
 const DYNAMIC_CACHE_NAME = "quillpilot-dynamic-v1";
 
 // Static assets to cache immediately on install
-const STATIC_ASSETS = [
-  "/",
-  "/index.html",
-  "/favicon.svg",
-  "/site.webmanifest",
-];
+const STATIC_ASSETS = ["/", "/index.html", "/favicon.svg", "/site.webmanifest"];
 
 // File extensions to cache dynamically
 const CACHEABLE_EXTENSIONS = [
@@ -33,7 +26,7 @@ const CACHEABLE_EXTENSIONS = [
 ];
 
 // Install event - cache static assets
-self.addEventListener("install", (event: ExtendableEvent) => {
+self.addEventListener("install", (event) => {
   event.waitUntil(
     caches
       .open(STATIC_CACHE_NAME)
@@ -43,13 +36,13 @@ self.addEventListener("install", (event: ExtendableEvent) => {
       })
       .then(() => {
         // Skip waiting to activate immediately
-        return (self as unknown as ServiceWorkerGlobalScope).skipWaiting();
+        return self.skipWaiting();
       })
   );
 });
 
 // Activate event - clean up old caches
-self.addEventListener("activate", (event: ExtendableEvent) => {
+self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches
       .keys()
@@ -72,13 +65,13 @@ self.addEventListener("activate", (event: ExtendableEvent) => {
       })
       .then(() => {
         // Take control of all clients immediately
-        return (self as unknown as ServiceWorkerGlobalScope).clients.claim();
+        return self.clients.claim();
       })
   );
 });
 
 // Fetch event - serve from cache, fallback to network
-self.addEventListener("fetch", (event: FetchEvent) => {
+self.addEventListener("fetch", (event) => {
   const request = event.request;
   const url = new URL(request.url);
 
@@ -90,7 +83,10 @@ self.addEventListener("fetch", (event: FetchEvent) => {
   // Skip external requests (fonts, APIs)
   if (url.origin !== location.origin) {
     // For Google Fonts, use cache-first strategy
-    if (url.hostname === "fonts.googleapis.com" || url.hostname === "fonts.gstatic.com") {
+    if (
+      url.hostname === "fonts.googleapis.com" ||
+      url.hostname === "fonts.gstatic.com"
+    ) {
       event.respondWith(
         caches.match(request).then((cached) => {
           if (cached) {
@@ -124,15 +120,17 @@ self.addEventListener("fetch", (event: FetchEvent) => {
       caches.match(request).then((cached) => {
         if (cached) {
           // Return cached version, but update cache in background
-          fetch(request).then((response) => {
-            if (response.ok) {
-              caches.open(DYNAMIC_CACHE_NAME).then((cache) => {
-                cache.put(request, response);
-              });
-            }
-          }).catch(() => {
-            // Ignore fetch errors for background update
-          });
+          fetch(request)
+            .then((response) => {
+              if (response.ok) {
+                caches.open(DYNAMIC_CACHE_NAME).then((cache) => {
+                  cache.put(request, response);
+                });
+              }
+            })
+            .catch(() => {
+              // Ignore fetch errors for background update
+            });
           return cached;
         }
 
@@ -156,7 +154,8 @@ self.addEventListener("fetch", (event: FetchEvent) => {
     fetch(request)
       .then((response) => {
         // Cache successful HTML responses
-        if (response.ok && request.headers.get("accept")?.includes("text/html")) {
+        const acceptHeader = request.headers.get("accept");
+        if (response.ok && acceptHeader && acceptHeader.includes("text/html")) {
           const responseClone = response.clone();
           caches.open(DYNAMIC_CACHE_NAME).then((cache) => {
             cache.put(request, responseClone);
@@ -172,7 +171,7 @@ self.addEventListener("fetch", (event: FetchEvent) => {
           }
           // Return offline page for navigation requests
           if (request.mode === "navigate") {
-            return caches.match("/index.html") as Promise<Response>;
+            return caches.match("/index.html");
           }
           throw new Error("No cached response available");
         });
@@ -181,18 +180,14 @@ self.addEventListener("fetch", (event: FetchEvent) => {
 });
 
 // Listen for messages from the main thread
-self.addEventListener("message", (event: MessageEvent) => {
+self.addEventListener("message", (event) => {
   if (event.data === "skipWaiting") {
-    (self as unknown as ServiceWorkerGlobalScope).skipWaiting();
+    self.skipWaiting();
   }
 
   if (event.data === "clearCache") {
     caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((name) => caches.delete(name))
-      );
+      return Promise.all(cacheNames.map((name) => caches.delete(name)));
     });
   }
 });
-
-export {};

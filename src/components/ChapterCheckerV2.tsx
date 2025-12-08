@@ -36,32 +36,14 @@ const QuickStartModal = lazy(() =>
 );
 const ManuscriptFormatModal = lazy(() => import("./ManuscriptFormatModal"));
 
-// Lazy load heavy editor and visualization components
-const DocumentEditor = lazy(() =>
-  import("./DocumentEditor").then((m) => ({ default: m.DocumentEditor }))
-);
-const ChapterAnalysisDashboard = lazy(() =>
-  import("./VisualizationComponents").then((m) => ({
-    default: m.ChapterAnalysisDashboard,
-  }))
-);
-const UpgradePrompt = lazy(() =>
-  import("./UpgradePrompt").then((m) => ({ default: m.UpgradePrompt }))
-);
-const InlineUpgradePrompt = lazy(() =>
-  import("./UpgradePrompt").then((m) => ({ default: m.InlineUpgradePrompt }))
-);
-const TierTwoPreview = lazy(() =>
-  import("./TierTwoPreview").then((m) => ({ default: m.TierTwoPreview }))
-);
-const MissingConceptSuggestions = lazy(() =>
-  import("./MissingConceptSuggestions").then((m) => ({
-    default: m.MissingConceptSuggestions,
-  }))
-);
-const CharacterManager = lazy(() =>
-  import("./CharacterManager").then((m) => ({ default: m.CharacterManager }))
-);
+// Regular imports for components that render during auth state changes
+// (Lazy loading these causes React error #426 during synchronous updates)
+import { DocumentEditor } from "./DocumentEditor";
+import { ChapterAnalysisDashboard } from "./VisualizationComponents";
+import { UpgradePrompt, InlineUpgradePrompt } from "./UpgradePrompt";
+import { TierTwoPreview } from "./TierTwoPreview";
+import { MissingConceptSuggestions } from "./MissingConceptSuggestions";
+import { CharacterManager } from "./CharacterManager";
 
 import {
   AccessLevel,
@@ -3836,11 +3818,10 @@ export const ChapterCheckerV2: React.FC = () => {
                       </button>
                     </div>
                     <p style={{ margin: "4px 0" }}>
-                      Everything in Premium plus Writer Mode with 8+ advanced
+                      Everything in Premium plus Writer Mode with advanced
                       productivity tools for real-time editing, unlimited
                       analyses (up to 1,000 pages), and full support for
-                      screenplays and poetry—perfect for professional authors
-                      and writing teams.
+                      screenplays and poetry—perfect for professional authors.
                     </p>
                     <ul
                       style={{
@@ -3887,7 +3868,7 @@ export const ChapterCheckerV2: React.FC = () => {
                         restrictions or quotas.
                       </li>
                       <li>
-                        Version tracking and comprehensive export options for
+                        Comprehensive export options (PDF, DOCX, HTML) for
                         agent/editor submission workflows.
                       </li>
                     </ul>
