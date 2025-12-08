@@ -1416,13 +1416,13 @@ export const PaginatedEditor = forwardRef<
               margin-top: 0;
               line-height: ${effectiveLineHeight} !important;
             }
-            /* List styles - don't apply text-indent and ensure bullets/numbers show */
+            /* List styles - proper hanging indent so wrapped text aligns with first line */
             .paginated-page-content ul,
             .paginated-page-content ol {
               text-indent: 0 !important;
-              margin-left: 1.5em;
-              padding-left: 1em;
-              margin-bottom: 1em;
+              margin-left: 0;
+              padding-left: 2.5em;
+              margin-bottom: 0;
               margin-top: 0;
               list-style-position: outside;
             }
@@ -1434,7 +1434,8 @@ export const PaginatedEditor = forwardRef<
             }
             .paginated-page-content li {
               text-indent: 0 !important;
-              margin-bottom: 0.25em;
+              margin-bottom: 0;
+              padding-left: 0;
               display: list-item !important;
             }
             /* Centered lists - use inside bullets so they center with text */
@@ -1707,6 +1708,16 @@ export const PaginatedEditor = forwardRef<
                 : ""
             }
             ${
+              documentStyles?.paragraph?.fontSize
+                ? `.paginated-page-content p:not(.book-title):not(.doc-title):not(.chapter-heading):not(.subtitle):not(.doc-subtitle):not(.quote):not(.intense-quote):not(.lead-paragraph):not(.pullquote) { font-size: ${documentStyles.paragraph.fontSize}pt !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.paragraph?.fontFamily
+                ? `.paginated-page-content p:not(.book-title):not(.doc-title):not(.chapter-heading):not(.subtitle):not(.doc-subtitle):not(.quote):not(.intense-quote):not(.lead-paragraph):not(.pullquote) { font-family: ${documentStyles.paragraph.fontFamily} !important; }`
+                : ""
+            }
+            ${
               documentStyles?.paragraph?.fontWeight
                 ? `.paginated-page-content p:not(.book-title):not(.doc-title):not(.chapter-heading):not(.subtitle):not(.doc-subtitle):not(.quote):not(.intense-quote):not(.lead-paragraph):not(.pullquote) { font-weight: ${documentStyles.paragraph.fontWeight} !important; }`
                 : ""
@@ -1714,6 +1725,21 @@ export const PaginatedEditor = forwardRef<
             ${
               documentStyles?.paragraph?.fontStyle
                 ? `.paginated-page-content p:not(.book-title):not(.doc-title):not(.chapter-heading):not(.subtitle):not(.doc-subtitle):not(.quote):not(.intense-quote):not(.lead-paragraph):not(.pullquote) { font-style: ${documentStyles.paragraph.fontStyle} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.paragraph?.textAlign
+                ? `.paginated-page-content p:not(.book-title):not(.doc-title):not(.chapter-heading):not(.subtitle):not(.doc-subtitle):not(.quote):not(.intense-quote):not(.lead-paragraph):not(.pullquote) { text-align: ${documentStyles.paragraph.textAlign} !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.paragraph?.marginTop
+                ? `.paginated-page-content p:not(.book-title):not(.doc-title):not(.chapter-heading):not(.subtitle):not(.doc-subtitle):not(.quote):not(.intense-quote):not(.lead-paragraph):not(.pullquote) { margin-top: ${documentStyles.paragraph.marginTop}em !important; }`
+                : ""
+            }
+            ${
+              documentStyles?.paragraph?.marginBottom
+                ? `.paginated-page-content p:not(.book-title):not(.doc-title):not(.chapter-heading):not(.subtitle):not(.doc-subtitle):not(.quote):not(.intense-quote):not(.lead-paragraph):not(.pullquote) { margin-bottom: ${documentStyles.paragraph.marginBottom}em !important; }`
                 : ""
             }
             ${

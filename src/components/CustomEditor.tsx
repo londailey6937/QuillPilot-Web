@@ -362,6 +362,69 @@ const FONT_FAMILY_OPTIONS = [
     cssFamily: "'Courier Prime', 'Courier New', Courier, monospace",
     matchFaces: ["Courier Prime", "Courier Prime, monospace"],
   },
+  {
+    value: "baskerville",
+    label: "Baskerville",
+    commandValue: "Baskerville",
+    cssFamily: "Baskerville, 'Libre Baskerville', 'Times New Roman', serif",
+    matchFaces: ["Baskerville", "Baskerville, serif"],
+  },
+  {
+    value: "book-antiqua",
+    label: "Book Antiqua",
+    commandValue: "Book Antiqua",
+    cssFamily: "'Book Antiqua', 'Palatino Linotype', Palatino, serif",
+    matchFaces: ["Book Antiqua", "Book Antiqua, serif"],
+  },
+  {
+    value: "cambria",
+    label: "Cambria",
+    commandValue: "Cambria",
+    cssFamily: "Cambria, Georgia, serif",
+    matchFaces: ["Cambria", "Cambria, serif"],
+  },
+  {
+    value: "century-schoolbook",
+    label: "Century Schoolbook",
+    commandValue: "Century Schoolbook",
+    cssFamily: "'Century Schoolbook', 'New Century Schoolbook', serif",
+    matchFaces: ["Century Schoolbook", "Century Schoolbook, serif"],
+  },
+  {
+    value: "cochin",
+    label: "Cochin",
+    commandValue: "Cochin",
+    cssFamily: "Cochin, Georgia, serif",
+    matchFaces: ["Cochin", "Cochin, serif"],
+  },
+  {
+    value: "didot",
+    label: "Didot",
+    commandValue: "Didot",
+    cssFamily: "Didot, 'Bodoni MT', 'Times New Roman', serif",
+    matchFaces: ["Didot", "Didot, serif"],
+  },
+  {
+    value: "trebuchet",
+    label: "Trebuchet MS",
+    commandValue: "Trebuchet MS",
+    cssFamily: "'Trebuchet MS', 'Lucida Grande', sans-serif",
+    matchFaces: ["Trebuchet MS", "Trebuchet MS, sans-serif"],
+  },
+  {
+    value: "tahoma",
+    label: "Tahoma",
+    commandValue: "Tahoma",
+    cssFamily: "Tahoma, Geneva, sans-serif",
+    matchFaces: ["Tahoma", "Tahoma, sans-serif"],
+  },
+  {
+    value: "lucida-console",
+    label: "Lucida Console",
+    commandValue: "Lucida Console",
+    cssFamily: "'Lucida Console', Monaco, monospace",
+    matchFaces: ["Lucida Console", "Lucida Console, monospace"],
+  },
 ].map((option) => ({
   ...option,
   matchFaces: Array.from(
@@ -3291,7 +3354,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
         }
         saveTimeoutRef.current = setTimeout(() => {
           saveToHistory(html);
-        }, 500);
+        }, 150);
       }
     }
 
@@ -4111,6 +4174,17 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
             );
             paginatedEditorRef.current?.focus();
           }
+
+          // For list operations, force repagination after selection is restored
+          // to ensure content doesn't overflow page boundaries
+          if (
+            command === "insertUnorderedList" ||
+            command === "insertOrderedList"
+          ) {
+            setTimeout(() => {
+              recomputePagination();
+            }, 100);
+          }
         });
       } else {
         handleInput();
@@ -4672,10 +4746,46 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
             newParagraph.className = newClassName;
 
             // Do NOT copy over positioning attributes - start fresh
-            // Clear any transform/centering from the old element
-            newParagraph.style.removeProperty("transform");
-            newParagraph.style.removeProperty("--center-shift");
+            // Clear all inline styles so CSS can take over
+            [
+              "transform",
+              "--center-shift",
+              "font-size",
+              "font-family",
+              "font-weight",
+              "font-style",
+              "line-height",
+              "color",
+              "background-color",
+              "text-align",
+              "text-indent",
+              "margin-left",
+              "margin-right",
+            ].forEach((prop) => newParagraph.style.removeProperty(prop));
             newParagraph.removeAttribute("data-ruler-center");
+
+            // Clean up inline styles from child elements
+            newParagraph.querySelectorAll("span, font").forEach((child) => {
+              const el = child as HTMLElement;
+              [
+                "font-size",
+                "font-family",
+                "font-weight",
+                "font-style",
+                "color",
+                "background-color",
+              ].forEach((prop) => {
+                el.style.removeProperty(prop);
+              });
+              // Remove empty spans
+              if (!el.style.cssText && !el.className && el.tagName === "SPAN") {
+                const parent = el.parentNode;
+                while (el.firstChild) {
+                  parent?.insertBefore(el.firstChild, el);
+                }
+                el.remove();
+              }
+            });
 
             // Replace the heading with the paragraph
             blockElement.parentNode?.replaceChild(newParagraph, blockElement);
@@ -4730,6 +4840,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
 
           // For non-heading elements, apply style directly
           blockElement.className = newClassName;
+          // Reset all formatting properties so style CSS can take over
           [
             "text-indent",
             "margin-left",
@@ -4739,7 +4850,36 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
             "text-align",
             "transform",
             "--center-shift",
+            "font-size",
+            "font-family",
+            "font-weight",
+            "font-style",
+            "line-height",
+            "color",
+            "background-color",
           ].forEach((prop) => blockElement.style.removeProperty(prop));
+          // Also remove inline styles from child elements (spans with font-size, etc.)
+          blockElement.querySelectorAll("span, font").forEach((child) => {
+            const el = child as HTMLElement;
+            [
+              "font-size",
+              "font-family",
+              "font-weight",
+              "font-style",
+              "color",
+              "background-color",
+            ].forEach((prop) => {
+              el.style.removeProperty(prop);
+            });
+            // Remove empty spans
+            if (!el.style.cssText && !el.className && el.tagName === "SPAN") {
+              const parent = el.parentNode;
+              while (el.firstChild) {
+                parent?.insertBefore(el.firstChild, el);
+              }
+              el.remove();
+            }
+          });
 
           const styleKey = styleTag as keyof typeof documentStyles;
           const isCenterAligned =
@@ -5626,32 +5766,45 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
       const savedAnchorNode = selection.anchorNode;
       const savedAnchorOffset = selection.anchorOffset;
 
-      // Check if we're in an image-containing element
-      let node = selection.anchorNode;
-      let parentElement: HTMLElement | null = null;
+      // Find the block element containing the selection
+      let node: Node | null = selection.anchorNode;
+      let blockElement: HTMLElement | null = null;
 
-      // Traverse up to find the containing paragraph or div
+      // Traverse up to find the containing paragraph, div, or heading
       while (
         node &&
         node !== paginatedEditorRef.current?.getScrollContainer()
       ) {
         if (node.nodeType === Node.ELEMENT_NODE) {
           const element = node as HTMLElement;
-          // Check if this element or any child contains an image
-          if (element.querySelector("img") || element.tagName === "IMG") {
-            parentElement = element.closest("p, div") as HTMLElement;
+          const tagName = element.tagName.toUpperCase();
+          if (
+            [
+              "P",
+              "DIV",
+              "H1",
+              "H2",
+              "H3",
+              "H4",
+              "H5",
+              "H6",
+              "LI",
+              "BLOCKQUOTE",
+            ].includes(tagName)
+          ) {
+            blockElement = element;
             break;
           }
         }
         node = node.parentNode;
       }
 
-      // If we found an image container, apply text-align style directly
-      if (parentElement) {
-        parentElement.style.textAlign = alignment;
+      // If we found a block element, apply text-align style directly
+      if (blockElement) {
+        blockElement.style.textAlign = alignment;
 
-        // Also update image margin for proper centering
-        const img = parentElement.querySelector("img");
+        // Also handle images within the block
+        const img = blockElement.querySelector("img");
         if (img instanceof HTMLElement) {
           if (alignment === "center") {
             img.style.margin = "1rem auto";
@@ -5666,43 +5819,48 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           }
         }
 
-        // Don't call handleInput - just update the content and notify parent
+        // Update content and notify parent
         if (paginatedEditorRef.current) {
           const html = paginatedEditorRef.current.getContent();
           const text = html.replace(/<[^>]*>/g, "");
           onUpdate?.({ html, text });
-
-          // Restore selection after a brief delay
-          setTimeout(() => {
-            try {
-              const newSelection = window.getSelection();
-              if (
-                newSelection &&
-                savedAnchorNode &&
-                document.contains(savedAnchorNode)
-              ) {
-                newSelection.removeAllRanges();
-                const newRange = document.createRange();
-                newRange.setStart(savedAnchorNode, savedAnchorOffset);
-                newRange.collapse(true);
-                newSelection.addRange(newRange);
-              }
-            } catch (e) {
-              console.warn("[alignText] Could not restore selection:", e);
-            }
-          }, 10);
         }
+        handleInput();
+
+        // Restore selection after a brief delay
+        setTimeout(() => {
+          try {
+            const newSelection = window.getSelection();
+            if (
+              newSelection &&
+              savedAnchorNode &&
+              document.contains(savedAnchorNode)
+            ) {
+              newSelection.removeAllRanges();
+              const newRange = document.createRange();
+              newRange.setStart(savedAnchorNode, savedAnchorOffset);
+              newRange.collapse(true);
+              newSelection.addRange(newRange);
+            }
+          } catch (e) {
+            console.warn("[alignText] Could not restore selection:", e);
+          }
+        }, 10);
 
         setTextAlign(alignment);
       } else {
-        // Standard text alignment using execCommand
-        formatText(
-          `justify${alignment.charAt(0).toUpperCase() + alignment.slice(1)}`
-        );
+        // Fallback: use execCommand for cases where we can't find a block element
+        const command =
+          alignment === "justify"
+            ? "justifyFull"
+            : `justify${
+                alignment.charAt(0).toUpperCase() + alignment.slice(1)
+              }`;
+        formatText(command);
         setTextAlign(alignment);
       }
     },
-    [formatText, handleInput]
+    [formatText, handleInput, onUpdate]
   );
 
   // Insert image
@@ -6846,6 +7004,46 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               : ""
           }
           ${
+            documentStyles.paragraph?.fontSize
+              ? `.custom-editor-container .paginated-page-content p:not(.book-title):not(.doc-title):not(.chapter-heading):not(.subtitle):not(.doc-subtitle):not(.quote):not(.intense-quote) { font-size: ${documentStyles.paragraph.fontSize}pt !important; }`
+              : ""
+          }
+          ${
+            documentStyles.paragraph?.fontFamily
+              ? `.custom-editor-container .paginated-page-content p:not(.book-title):not(.doc-title):not(.chapter-heading):not(.subtitle):not(.doc-subtitle):not(.quote):not(.intense-quote) { font-family: ${documentStyles.paragraph.fontFamily} !important; }`
+              : ""
+          }
+          ${
+            documentStyles.paragraph?.fontWeight
+              ? `.custom-editor-container .paginated-page-content p:not(.book-title):not(.doc-title):not(.chapter-heading):not(.subtitle):not(.doc-subtitle):not(.quote):not(.intense-quote) { font-weight: ${documentStyles.paragraph.fontWeight} !important; }`
+              : ""
+          }
+          ${
+            documentStyles.paragraph?.fontStyle
+              ? `.custom-editor-container .paginated-page-content p:not(.book-title):not(.doc-title):not(.chapter-heading):not(.subtitle):not(.doc-subtitle):not(.quote):not(.intense-quote) { font-style: ${documentStyles.paragraph.fontStyle} !important; }`
+              : ""
+          }
+          ${
+            documentStyles.paragraph?.textAlign
+              ? `.custom-editor-container .paginated-page-content p:not(.book-title):not(.doc-title):not(.chapter-heading):not(.subtitle):not(.doc-subtitle):not(.quote):not(.intense-quote) { text-align: ${documentStyles.paragraph.textAlign} !important; }`
+              : ""
+          }
+          ${
+            documentStyles.paragraph?.marginTop
+              ? `.custom-editor-container .paginated-page-content p:not(.book-title):not(.doc-title):not(.chapter-heading):not(.subtitle):not(.doc-subtitle):not(.quote):not(.intense-quote) { margin-top: ${documentStyles.paragraph.marginTop}em !important; }`
+              : ""
+          }
+          ${
+            documentStyles.paragraph?.marginBottom
+              ? `.custom-editor-container .paginated-page-content p:not(.book-title):not(.doc-title):not(.chapter-heading):not(.subtitle):not(.doc-subtitle):not(.quote):not(.intense-quote) { margin-bottom: ${documentStyles.paragraph.marginBottom}em !important; }`
+              : ""
+          }
+          ${
+            documentStyles.paragraph?.lineHeight
+              ? `.custom-editor-container .paginated-page-content p:not(.book-title):not(.doc-title):not(.chapter-heading):not(.subtitle):not(.doc-subtitle):not(.quote):not(.intense-quote) { line-height: ${documentStyles.paragraph.lineHeight} !important; }`
+              : ""
+          }
+          ${
             documentStyles.heading1?.color
               ? `.custom-editor-container .paginated-page-content h1:not(.chapter-heading) { color: ${documentStyles.heading1.color} !important; }`
               : ""
@@ -7458,6 +7656,20 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                     const selectedText = selection.toString();
                     const range = selection.getRangeAt(0);
 
+                    // Get the actual computed font size from the selection
+                    let actualFontSize = 16;
+                    const anchorNode = selection.anchorNode;
+                    if (anchorNode) {
+                      const element =
+                        anchorNode.nodeType === Node.TEXT_NODE
+                          ? anchorNode.parentElement
+                          : (anchorNode as HTMLElement);
+                      if (element) {
+                        const computed = window.getComputedStyle(element);
+                        actualFontSize = parseFloat(computed.fontSize) || 16;
+                      }
+                    }
+
                     // Create marker nodes to track selection boundaries
                     const startMarker = document.createElement("span");
                     startMarker.id = "selection-start-marker-temp";
@@ -7484,7 +7696,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                     selection.removeAllRanges();
                     selection.addRange(newRange);
 
-                    const currentSize = parseInt(fontSize) || 16;
+                    const currentSize = Math.round(actualFontSize);
                     const newSize = Math.max(8, currentSize - 1);
                     setFontSize(`${newSize}px`);
 
@@ -7752,6 +7964,20 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                     const selectedText = selection.toString();
                     const range = selection.getRangeAt(0);
 
+                    // Get the actual computed font size from the selection
+                    let actualFontSize = 16;
+                    const anchorNode = selection.anchorNode;
+                    if (anchorNode) {
+                      const element =
+                        anchorNode.nodeType === Node.TEXT_NODE
+                          ? anchorNode.parentElement
+                          : (anchorNode as HTMLElement);
+                      if (element) {
+                        const computed = window.getComputedStyle(element);
+                        actualFontSize = parseFloat(computed.fontSize) || 16;
+                      }
+                    }
+
                     // Create marker nodes to track selection boundaries
                     const startMarker = document.createElement("span");
                     startMarker.id = "selection-start-marker-temp";
@@ -7778,7 +8004,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                     selection.removeAllRanges();
                     selection.addRange(newRange);
 
-                    const currentSize = parseInt(fontSize) || 16;
+                    const currentSize = Math.round(actualFontSize);
                     const newSize = Math.min(72, currentSize + 1);
                     setFontSize(`${newSize}px`);
 
@@ -7947,6 +8173,20 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                 >
                   ≡
                 </button>
+                <button
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    alignText("justify");
+                  }}
+                  className={`px-1.5 py-1 rounded transition-colors text-xs ${
+                    textAlign === "justify"
+                      ? "bg-[#ef8432] text-white border border-[#ef8432]"
+                      : toolbarInactiveButtonClass
+                  }`}
+                  title="Justify (full width alignment)"
+                >
+                  ☰
+                </button>
 
                 <div style={toolbarDividerStyle} aria-hidden="true" />
 
@@ -8018,6 +8258,106 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                   title="Numbered List"
                 >
                   1.
+                </button>
+                <button
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    // Find the current list item and its parent ol
+                    const selection = window.getSelection();
+                    if (selection && selection.anchorNode) {
+                      let node: Node | null = selection.anchorNode;
+                      while (node) {
+                        if (node.nodeName === "OL") {
+                          (node as HTMLOListElement).start = 1;
+                          handleInput();
+                          break;
+                        }
+                        if (node.nodeName === "LI") {
+                          const li = node as HTMLLIElement;
+                          const ol = li.closest("ol");
+                          if (ol) {
+                            // Create a new ol starting at 1 for this li and subsequent siblings
+                            const newOl = document.createElement("ol");
+                            newOl.start = 1;
+                            // Move this li and all following siblings to the new ol
+                            let current: Element | null = li;
+                            while (current) {
+                              const next = current.nextElementSibling;
+                              newOl.appendChild(current);
+                              current = next;
+                            }
+                            // Insert new ol after the original ol
+                            ol.parentNode?.insertBefore(newOl, ol.nextSibling);
+                            handleInput();
+                          }
+                          break;
+                        }
+                        node = node.parentNode;
+                      }
+                    }
+                  }}
+                  className="px-2 py-1 rounded bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50] transition-colors text-xs"
+                  title="Restart Numbering (start list at 1 from current item)"
+                >
+                  1↺
+                </button>
+                <button
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    // Continue numbering from previous list
+                    const selection = window.getSelection();
+                    if (selection && selection.anchorNode) {
+                      let node: Node | null = selection.anchorNode;
+                      // Find the current ol
+                      let currentOl: HTMLOListElement | null = null;
+                      while (node) {
+                        if (node.nodeName === "OL") {
+                          currentOl = node as HTMLOListElement;
+                          break;
+                        }
+                        if (node.nodeName === "LI") {
+                          currentOl = (node as HTMLLIElement).closest("ol");
+                          break;
+                        }
+                        node = node.parentNode;
+                      }
+
+                      if (currentOl) {
+                        // Find the previous ol by searching backwards through siblings
+                        let prevElement: Element | null =
+                          currentOl.previousElementSibling;
+                        let prevOl: HTMLOListElement | null = null;
+
+                        while (prevElement) {
+                          if (prevElement.nodeName === "OL") {
+                            prevOl = prevElement as HTMLOListElement;
+                            break;
+                          }
+                          // Also check if previous element contains an ol (nested case)
+                          const nestedOl = prevElement.querySelector("ol");
+                          if (nestedOl) {
+                            prevOl = nestedOl as HTMLOListElement;
+                            break;
+                          }
+                          prevElement = prevElement.previousElementSibling;
+                        }
+
+                        if (prevOl) {
+                          // Calculate where to continue from
+                          const prevStart = prevOl.start || 1;
+                          const prevCount =
+                            prevOl.querySelectorAll(":scope > li").length;
+                          const continueFrom = prevStart + prevCount;
+                          currentOl.start = continueFrom;
+                          handleInput();
+                        }
+                      }
+                    }
+                  }}
+                  className="px-2 py-1 rounded bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50] transition-colors text-xs"
+                  title="Continue Numbering (continue from previous list)"
+                >
+                  #→
                 </button>
                 <button
                   onMouseDown={(e) => {
@@ -9269,7 +9609,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                                 {item.label}
                               </span>
                             </div>
-                            <div className="grid grid-cols-6 gap-1.5 text-xs">
+                            <div className="grid grid-cols-7 gap-1.5 text-xs">
                               <div>
                                 <label className="block text-[#6b7280] mb-0.5 text-[10px]">
                                   Size
@@ -9289,6 +9629,26 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                                   className="w-full px-1 py-0.5 border rounded text-xs focus:ring-1 focus:ring-[#ef8432]"
                                   min="8"
                                   max="72"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[#6b7280] mb-0.5 text-[10px]">
+                                  Color
+                                </label>
+                                <input
+                                  type="color"
+                                  value={(style as any).color || "#000000"}
+                                  onChange={(e) =>
+                                    setDocumentStyles((prev) => ({
+                                      ...prev,
+                                      [styleKey]: {
+                                        ...(prev as any)[styleKey],
+                                        color: e.target.value,
+                                      },
+                                    }))
+                                  }
+                                  className="w-full h-6 border rounded cursor-pointer"
+                                  title="Text color"
                                 />
                               </div>
                               <div>
@@ -9766,6 +10126,29 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                 Reset to Defaults
               </button>
               <div className="flex gap-2">
+                <button
+                  onClick={(e) => {
+                    const name = prompt("Enter a name for this template:");
+                    if (name && name.trim()) {
+                      handleSaveStyleTemplate(name.trim());
+                      // Visual feedback
+                      const btn = e.currentTarget;
+                      const originalText = btn.textContent;
+                      btn.textContent = "✓ Saved!";
+                      btn.classList.remove("bg-[#fef5e7]");
+                      btn.classList.add("bg-green-100", "text-green-600");
+                      setTimeout(() => {
+                        btn.textContent = originalText;
+                        btn.classList.remove("bg-green-100", "text-green-600");
+                        btn.classList.add("bg-[#fef5e7]");
+                      }, 1500);
+                    }
+                  }}
+                  className="px-3 py-1.5 text-sm bg-[#fef5e7] text-[#6b4423] rounded border border-[#e0c392] hover:bg-[#f7e6d0] transition-colors"
+                  title="Save current styles as a reusable template"
+                >
+                  💾 Save as Template
+                </button>
                 <button
                   onClick={(e) => {
                     // Apply styles to CSS variables and close
