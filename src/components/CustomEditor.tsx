@@ -8332,6 +8332,275 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
 
                 <div style={toolbarDividerStyle} aria-hidden="true" />
 
+                {/* Column Layout Dropdown */}
+                <div
+                  ref={columnDropdownRef}
+                  style={{ position: "relative", display: "inline-block" }}
+                >
+                  <button
+                    onClick={() => setShowColumnDropdown(!showColumnDropdown)}
+                    className={`px-2 py-1 rounded transition-colors text-xs ${
+                      showColumnDropdown
+                        ? "bg-[#f7e6d0] text-[#ef8432] border border-[#ef8432]"
+                        : "bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50]"
+                    }`}
+                    title="Insert Columns - Side-by-side text areas"
+                  >
+                    ▥
+                  </button>
+                  {showColumnDropdown && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: "100%",
+                        left: 0,
+                        marginTop: "4px",
+                        backgroundColor: "#fffaf3",
+                        border: "1.5px solid #e0c392",
+                        borderRadius: "8px",
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                        padding: "8px",
+                        zIndex: 1000,
+                        minWidth: "180px",
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontSize: "11px",
+                          color: "#666",
+                          marginBottom: "8px",
+                          fontWeight: 600,
+                        }}
+                      >
+                        Insert Column Layout
+                      </div>
+                      <button
+                        onClick={() => insertColumnLayout(1)}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                          width: "100%",
+                          padding: "6px 10px",
+                          marginBottom: "4px",
+                          backgroundColor: "#fef5e7",
+                          border: "1px solid #e0c392",
+                          borderRadius: "4px",
+                          cursor: "pointer",
+                          fontSize: "12px",
+                          textAlign: "left",
+                        }}
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.backgroundColor = "#f7e6d0")
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.backgroundColor = "#fef5e7")
+                        }
+                      >
+                        <span style={{ display: "flex", gap: "2px" }}>
+                          <span
+                            style={{
+                              width: "42px",
+                              height: "16px",
+                              backgroundColor: "#e0c392",
+                              borderRadius: "2px",
+                            }}
+                          ></span>
+                        </span>
+                        1 Column
+                      </button>
+                      <button
+                        onClick={() => insertColumnLayout(2)}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                          width: "100%",
+                          padding: "6px 10px",
+                          marginBottom: "4px",
+                          backgroundColor: "#fef5e7",
+                          border: "1px solid #e0c392",
+                          borderRadius: "4px",
+                          cursor: "pointer",
+                          fontSize: "12px",
+                          textAlign: "left",
+                        }}
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.backgroundColor = "#f7e6d0")
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.backgroundColor = "#fef5e7")
+                        }
+                      >
+                        <span style={{ display: "flex", gap: "2px" }}>
+                          <span
+                            style={{
+                              width: "20px",
+                              height: "16px",
+                              backgroundColor: "#e0c392",
+                              borderRadius: "2px",
+                            }}
+                          ></span>
+                          <span
+                            style={{
+                              width: "20px",
+                              height: "16px",
+                              backgroundColor: "#e0c392",
+                              borderRadius: "2px",
+                            }}
+                          ></span>
+                        </span>
+                        2 Columns
+                      </button>
+                      <button
+                        onClick={() => insertColumnLayout(3)}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                          width: "100%",
+                          padding: "6px 10px",
+                          marginBottom: "4px",
+                          backgroundColor: "#fef5e7",
+                          border: "1px solid #e0c392",
+                          borderRadius: "4px",
+                          cursor: "pointer",
+                          fontSize: "12px",
+                          textAlign: "left",
+                        }}
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.backgroundColor = "#f7e6d0")
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.backgroundColor = "#fef5e7")
+                        }
+                      >
+                        <span style={{ display: "flex", gap: "2px" }}>
+                          <span
+                            style={{
+                              width: "14px",
+                              height: "16px",
+                              backgroundColor: "#e0c392",
+                              borderRadius: "2px",
+                            }}
+                          ></span>
+                          <span
+                            style={{
+                              width: "14px",
+                              height: "16px",
+                              backgroundColor: "#e0c392",
+                              borderRadius: "2px",
+                            }}
+                          ></span>
+                          <span
+                            style={{
+                              width: "14px",
+                              height: "16px",
+                              backgroundColor: "#e0c392",
+                              borderRadius: "2px",
+                            }}
+                          ></span>
+                        </span>
+                        3 Columns
+                      </button>
+                      <button
+                        onClick={() => insertColumnLayout(4)}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                          width: "100%",
+                          padding: "6px 10px",
+                          backgroundColor: "#fef5e7",
+                          border: "1px solid #e0c392",
+                          borderRadius: "4px",
+                          cursor: "pointer",
+                          fontSize: "12px",
+                          textAlign: "left",
+                        }}
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.backgroundColor = "#f7e6d0")
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.backgroundColor = "#fef5e7")
+                        }
+                      >
+                        <span style={{ display: "flex", gap: "2px" }}>
+                          <span
+                            style={{
+                              width: "10px",
+                              height: "16px",
+                              backgroundColor: "#e0c392",
+                              borderRadius: "2px",
+                            }}
+                          ></span>
+                          <span
+                            style={{
+                              width: "10px",
+                              height: "16px",
+                              backgroundColor: "#e0c392",
+                              borderRadius: "2px",
+                            }}
+                          ></span>
+                          <span
+                            style={{
+                              width: "10px",
+                              height: "16px",
+                              backgroundColor: "#e0c392",
+                              borderRadius: "2px",
+                            }}
+                          ></span>
+                          <span
+                            style={{
+                              width: "10px",
+                              height: "16px",
+                              backgroundColor: "#e0c392",
+                              borderRadius: "2px",
+                            }}
+                          ></span>
+                        </span>
+                        4 Columns
+                      </button>
+                      <div
+                        style={{
+                          fontSize: "10px",
+                          color: "#888",
+                          marginTop: "8px",
+                          lineHeight: 1.3,
+                        }}
+                      >
+                        Each column is independently editable. Click inside a
+                        column to type.
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Page Break */}
+                <button
+                  onClick={() => {
+                    if (insertPageBreakAtCursor()) {
+                      // Force immediate repagination by getting content and setting it back
+                      if (paginatedEditorRef.current) {
+                        const content = paginatedEditorRef.current.getContent();
+                        // Sync to editorRef for history
+                        if (editorRef.current) {
+                          editorRef.current.innerHTML = content;
+                        }
+                        // Force repagination
+                        paginatedEditorRef.current.setContent(content);
+                      }
+                      handleInput();
+                    }
+                  }}
+                  className="px-2 py-1 rounded transition-colors text-xs bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50]"
+                  title="Insert Page Break - Start new page here"
+                >
+                  📄
+                </button>
+
+                <div style={toolbarDividerStyle} aria-hidden="true" />
+
                 {/* Find/Search */}
                 <button
                   onClick={() => setShowFindReplace(!showFindReplace)}
@@ -8582,250 +8851,6 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                   />
                 </label>
 
-                {/* Column Layout Dropdown */}
-                <div
-                  ref={columnDropdownRef}
-                  style={{ position: "relative", display: "inline-block" }}
-                >
-                  <button
-                    onClick={() => setShowColumnDropdown(!showColumnDropdown)}
-                    className={`px-2 py-1 rounded transition-colors text-xs ${
-                      showColumnDropdown
-                        ? "bg-[#f7e6d0] text-[#ef8432] border border-[#ef8432]"
-                        : "bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50]"
-                    }`}
-                    title="Insert Columns - Side-by-side text areas"
-                  >
-                    ▥
-                  </button>
-                  {showColumnDropdown && (
-                    <div
-                      style={{
-                        position: "absolute",
-                        top: "100%",
-                        left: 0,
-                        marginTop: "4px",
-                        backgroundColor: "#fffaf3",
-                        border: "1.5px solid #e0c392",
-                        borderRadius: "8px",
-                        boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                        padding: "8px",
-                        zIndex: 1000,
-                        minWidth: "180px",
-                      }}
-                    >
-                      <div
-                        style={{
-                          fontSize: "11px",
-                          color: "#666",
-                          marginBottom: "8px",
-                          fontWeight: 600,
-                        }}
-                      >
-                        Insert Column Layout
-                      </div>
-                      <button
-                        onClick={() => insertColumnLayout(1)}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "8px",
-                          width: "100%",
-                          padding: "6px 10px",
-                          marginBottom: "4px",
-                          backgroundColor: "#fef5e7",
-                          border: "1px solid #e0c392",
-                          borderRadius: "4px",
-                          cursor: "pointer",
-                          fontSize: "12px",
-                          textAlign: "left",
-                        }}
-                        onMouseEnter={(e) =>
-                          (e.currentTarget.style.backgroundColor = "#f7e6d0")
-                        }
-                        onMouseLeave={(e) =>
-                          (e.currentTarget.style.backgroundColor = "#fef5e7")
-                        }
-                      >
-                        <span style={{ display: "flex", gap: "2px" }}>
-                          <span
-                            style={{
-                              width: "42px",
-                              height: "16px",
-                              backgroundColor: "#e0c392",
-                              borderRadius: "2px",
-                            }}
-                          ></span>
-                        </span>
-                        1 Column
-                      </button>
-                      <button
-                        onClick={() => insertColumnLayout(2)}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "8px",
-                          width: "100%",
-                          padding: "6px 10px",
-                          marginBottom: "4px",
-                          backgroundColor: "#fef5e7",
-                          border: "1px solid #e0c392",
-                          borderRadius: "4px",
-                          cursor: "pointer",
-                          fontSize: "12px",
-                          textAlign: "left",
-                        }}
-                        onMouseEnter={(e) =>
-                          (e.currentTarget.style.backgroundColor = "#f7e6d0")
-                        }
-                        onMouseLeave={(e) =>
-                          (e.currentTarget.style.backgroundColor = "#fef5e7")
-                        }
-                      >
-                        <span style={{ display: "flex", gap: "2px" }}>
-                          <span
-                            style={{
-                              width: "20px",
-                              height: "16px",
-                              backgroundColor: "#e0c392",
-                              borderRadius: "2px",
-                            }}
-                          ></span>
-                          <span
-                            style={{
-                              width: "20px",
-                              height: "16px",
-                              backgroundColor: "#e0c392",
-                              borderRadius: "2px",
-                            }}
-                          ></span>
-                        </span>
-                        2 Columns
-                      </button>
-                      <button
-                        onClick={() => insertColumnLayout(3)}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "8px",
-                          width: "100%",
-                          padding: "6px 10px",
-                          marginBottom: "4px",
-                          backgroundColor: "#fef5e7",
-                          border: "1px solid #e0c392",
-                          borderRadius: "4px",
-                          cursor: "pointer",
-                          fontSize: "12px",
-                          textAlign: "left",
-                        }}
-                        onMouseEnter={(e) =>
-                          (e.currentTarget.style.backgroundColor = "#f7e6d0")
-                        }
-                        onMouseLeave={(e) =>
-                          (e.currentTarget.style.backgroundColor = "#fef5e7")
-                        }
-                      >
-                        <span style={{ display: "flex", gap: "2px" }}>
-                          <span
-                            style={{
-                              width: "14px",
-                              height: "16px",
-                              backgroundColor: "#e0c392",
-                              borderRadius: "2px",
-                            }}
-                          ></span>
-                          <span
-                            style={{
-                              width: "14px",
-                              height: "16px",
-                              backgroundColor: "#e0c392",
-                              borderRadius: "2px",
-                            }}
-                          ></span>
-                          <span
-                            style={{
-                              width: "14px",
-                              height: "16px",
-                              backgroundColor: "#e0c392",
-                              borderRadius: "2px",
-                            }}
-                          ></span>
-                        </span>
-                        3 Columns
-                      </button>
-                      <button
-                        onClick={() => insertColumnLayout(4)}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "8px",
-                          width: "100%",
-                          padding: "6px 10px",
-                          backgroundColor: "#fef5e7",
-                          border: "1px solid #e0c392",
-                          borderRadius: "4px",
-                          cursor: "pointer",
-                          fontSize: "12px",
-                          textAlign: "left",
-                        }}
-                        onMouseEnter={(e) =>
-                          (e.currentTarget.style.backgroundColor = "#f7e6d0")
-                        }
-                        onMouseLeave={(e) =>
-                          (e.currentTarget.style.backgroundColor = "#fef5e7")
-                        }
-                      >
-                        <span style={{ display: "flex", gap: "2px" }}>
-                          <span
-                            style={{
-                              width: "10px",
-                              height: "16px",
-                              backgroundColor: "#e0c392",
-                              borderRadius: "2px",
-                            }}
-                          ></span>
-                          <span
-                            style={{
-                              width: "10px",
-                              height: "16px",
-                              backgroundColor: "#e0c392",
-                              borderRadius: "2px",
-                            }}
-                          ></span>
-                          <span
-                            style={{
-                              width: "10px",
-                              height: "16px",
-                              backgroundColor: "#e0c392",
-                              borderRadius: "2px",
-                            }}
-                          ></span>
-                          <span
-                            style={{
-                              width: "10px",
-                              height: "16px",
-                              backgroundColor: "#e0c392",
-                              borderRadius: "2px",
-                            }}
-                          ></span>
-                        </span>
-                        4 Columns
-                      </button>
-                      <div
-                        style={{
-                          fontSize: "10px",
-                          color: "#888",
-                          marginTop: "8px",
-                          lineHeight: 1.3,
-                        }}
-                      >
-                        Each column is independently editable. Click inside a
-                        column to type.
-                      </div>
-                    </div>
-                  )}
-                </div>
-
                 <button
                   onClick={copyFormat}
                   className={`px-2 py-1 rounded transition-colors text-xs ${
@@ -8847,29 +8872,6 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                   savedTemplates={savedStyleTemplates}
                   onDeleteTemplate={handleDeleteStyleTemplate}
                 />
-
-                {/* Page Break */}
-                <button
-                  onClick={() => {
-                    if (insertPageBreakAtCursor()) {
-                      // Force immediate repagination by getting content and setting it back
-                      if (paginatedEditorRef.current) {
-                        const content = paginatedEditorRef.current.getContent();
-                        // Sync to editorRef for history
-                        if (editorRef.current) {
-                          editorRef.current.innerHTML = content;
-                        }
-                        // Force repagination
-                        paginatedEditorRef.current.setContent(content);
-                      }
-                      handleInput();
-                    }
-                  }}
-                  className="px-2 py-1 rounded transition-colors text-xs bg-[#fef5e7] hover:bg-[#f7e6d0] text-[#2c3e50]"
-                  title="Insert Page Break - Start new page here"
-                >
-                  📄
-                </button>
 
                 <div style={toolbarDividerStyle} aria-hidden="true" />
 
