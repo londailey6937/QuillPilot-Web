@@ -3385,7 +3385,7 @@ export const ChapterCheckerV2: React.FC = () => {
                                     }}
                                     title="Generate AI Template"
                                   >
-                                    ✨
+                                    🪄
                                   </button>
                                 )}
 
@@ -5031,7 +5031,7 @@ export const ChapterCheckerV2: React.FC = () => {
         >
           <div
             style={{
-              backgroundColor: "white",
+              backgroundColor: "#fef5e7",
               borderRadius: "16px",
               padding: "32px",
               maxWidth: "700px",
@@ -5039,6 +5039,7 @@ export const ChapterCheckerV2: React.FC = () => {
               maxHeight: "90vh",
               overflow: "auto",
               boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
+              border: "1px solid #e0c392",
             }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -5048,7 +5049,7 @@ export const ChapterCheckerV2: React.FC = () => {
                   margin: "0 0 8px 0",
                   fontSize: "24px",
                   fontWeight: "700",
-                  color: "#2c3e50",
+                  color: "#111827",
                 }}
               >
                 🤖 Generate AI Template
@@ -5057,7 +5058,7 @@ export const ChapterCheckerV2: React.FC = () => {
                 style={{
                   margin: 0,
                   fontSize: "14px",
-                  color: "#2c3e50",
+                  color: "#111827",
                   lineHeight: "1.6",
                 }}
               >
@@ -5099,7 +5100,7 @@ export const ChapterCheckerV2: React.FC = () => {
                           margin: "0 0 6px 0",
                           fontSize: "18px",
                           fontWeight: "600",
-                          color: "#2c3e50",
+                          color: "#111827",
                         }}
                       >
                         {template.name}
@@ -5108,7 +5109,7 @@ export const ChapterCheckerV2: React.FC = () => {
                         style={{
                           margin: 0,
                           fontSize: "14px",
-                          color: "#2c3e50",
+                          color: "#111827",
                           lineHeight: "1.5",
                         }}
                       >
@@ -5132,6 +5133,11 @@ export const ChapterCheckerV2: React.FC = () => {
                         const generatedTemplate = template.generateTemplate(
                           safeAnalysis,
                           currentChapterText
+                        );
+
+                        console.log(
+                          "[TEMPLATE DEBUG] Generated HTML:",
+                          generatedTemplate.substring(0, 500)
                         );
 
                         const plainTextContent = generatedTemplate.replace(
@@ -5161,6 +5167,9 @@ export const ChapterCheckerV2: React.FC = () => {
                         setIsTemplateMode(true);
                         setShowTemplateSelector(false);
 
+                        // Force editor to remount with new content
+                        bumpDocumentInstanceKey();
+
                         alert(
                           `✅ ${template.name} Template Generated!\n\nFill in the [WRITER] sections manually or use Claude API for [CLAUDE] sections.`
                         );
@@ -5169,7 +5178,7 @@ export const ChapterCheckerV2: React.FC = () => {
                         flex: 1,
                         padding: "10px",
                         backgroundColor: "#fef5e7",
-                        color: "#2c3e50",
+                        color: "#111827",
                         border: "1.5px solid #e0c392",
                         borderRadius: "20px",
                         fontSize: "13px",
@@ -5228,8 +5237,8 @@ export const ChapterCheckerV2: React.FC = () => {
                 width: "100%",
                 padding: "12px",
                 backgroundColor: "#f2ebe3",
-                color: "#2c3e50",
-                border: "1.5px solid #2c3e50",
+                color: "#111827",
+                border: "1.5px solid #111827",
                 borderRadius: "20px",
                 fontSize: "14px",
                 fontWeight: "600",

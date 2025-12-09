@@ -866,6 +866,14 @@ export const PaginatedEditor = forwardRef<
 
         console.log("[PaginatedEditor] Setting", newPages.length, "pages");
 
+        // DEBUG: Log first page content to see if styles are preserved
+        if (newPages.length > 0) {
+          console.log(
+            "[PaginatedEditor DEBUG] First page content (first 500 chars):",
+            newPages[0].content.substring(0, 500)
+          );
+        }
+
         setPages(newPages);
         onPageCountChange?.(newPages.length);
 
@@ -3136,7 +3144,7 @@ export const PaginatedEditor = forwardRef<
                   {
                     width: `${pageWidthPx}px`,
                     height: `${pageHeightPx}px`,
-                    backgroundColor: "#ffffff",
+                    backgroundColor: "#fef5e7",
                     boxShadow: "0 4px 20px rgba(0, 0, 0, 0.15)",
                     position: "relative",
                     overflow: "hidden",
