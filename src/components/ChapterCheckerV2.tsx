@@ -5248,10 +5248,6 @@ export const ChapterCheckerV2: React.FC = () => {
 
                         // Force editor to remount with new content
                         bumpDocumentInstanceKey();
-
-                        alert(
-                          `✅ ${template.name} Template Generated!\n\nFill in the [WRITER] sections manually or use Claude API for [CLAUDE] sections.`
-                        );
                       }}
                       style={{
                         flex: 1,

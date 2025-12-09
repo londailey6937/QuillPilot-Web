@@ -10,7 +10,7 @@ QuillPilot Power Features extend the core analysis engine with professional-grad
 
 ### Purpose
 
-Track improvements between manuscript versions and measure revision effectiveness.
+Track improvem ents between manuscript versions and measure revision effectiveness.
 
 ### Features
 
