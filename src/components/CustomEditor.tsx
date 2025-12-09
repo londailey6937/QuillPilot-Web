@@ -2620,17 +2620,107 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
 
     if (!isInPaginatedEditor) return false;
 
-    const breakEl = document.createElement("div");
-    breakEl.className = "page-break";
-    range.collapse(true);
-    range.insertNode(breakEl);
+    // Find the closest block-level parent (p, div, h1-h6, etc.)
+    let blockParent: HTMLElement | null = null;
+    let node: Node | null = range.commonAncestorContainer;
 
-    // Move cursor after the break
-    const afterRange = document.createRange();
-    afterRange.setStartAfter(breakEl);
-    afterRange.collapse(true);
-    selection.removeAllRanges();
-    selection.addRange(afterRange);
+    while (node && node.nodeType !== Node.ELEMENT_NODE) {
+      node = node.parentNode;
+    }
+
+    while (node) {
+      const el = node as HTMLElement;
+      const tagName = el.tagName?.toLowerCase();
+      if (
+        tagName &&
+        [
+          "p",
+          "div",
+          "h1",
+          "h2",
+          "h3",
+          "h4",
+          "h5",
+          "h6",
+          "blockquote",
+          "li",
+        ].includes(tagName)
+      ) {
+        // Don't use the page-content div itself as block parent
+        if (
+          !el.classList?.contains("paginated-page-content") &&
+          !el.classList?.contains("editor-content")
+        ) {
+          blockParent = el;
+          break;
+        }
+      }
+      node = node.parentNode;
+    }
+
+    // Collapse range to cursor position
+    range.collapse(true);
+
+    if (blockParent && blockParent.parentNode) {
+      // Split the block element at cursor position
+      // Create a range from start of block to cursor
+      const beforeRange = document.createRange();
+      beforeRange.setStart(blockParent, 0);
+      beforeRange.setEnd(range.startContainer, range.startOffset);
+
+      // Extract content before cursor
+      const beforeContent = beforeRange.cloneContents();
+
+      // Create a range from cursor to end of block
+      const afterRange = document.createRange();
+      afterRange.setStart(range.startContainer, range.startOffset);
+      afterRange.setEndAfter(blockParent.lastChild || blockParent);
+
+      // Extract content after cursor
+      const afterContent = afterRange.cloneContents();
+
+      // Create new elements: before paragraph, page break, after paragraph
+      const beforeParagraph = blockParent.cloneNode(false) as HTMLElement;
+      beforeParagraph.appendChild(beforeContent);
+
+      const breakEl = document.createElement("div");
+      breakEl.className = "page-break";
+
+      const afterParagraph = blockParent.cloneNode(false) as HTMLElement;
+      afterParagraph.appendChild(afterContent);
+
+      // Insert new structure
+      const parent = blockParent.parentNode;
+      parent.insertBefore(beforeParagraph, blockParent);
+      parent.insertBefore(breakEl, blockParent);
+      parent.insertBefore(afterParagraph, blockParent);
+      parent.removeChild(blockParent);
+
+      // Move cursor to start of after paragraph
+      const newRange = document.createRange();
+      if (afterParagraph.firstChild) {
+        newRange.setStart(afterParagraph.firstChild, 0);
+      } else {
+        // If empty, add a zero-width space and position there
+        afterParagraph.innerHTML = "\u200B";
+        newRange.setStart(afterParagraph.firstChild!, 0);
+      }
+      newRange.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(newRange);
+    } else {
+      // Fallback: just insert break at cursor (original behavior)
+      const breakEl = document.createElement("div");
+      breakEl.className = "page-break";
+      range.insertNode(breakEl);
+
+      // Move cursor after the break
+      const afterRange = document.createRange();
+      afterRange.setStartAfter(breakEl);
+      afterRange.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(afterRange);
+    }
 
     return true;
   }, []);
@@ -2658,6 +2748,14 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
       if (caretY >= pageBottom - 5) {
         e.preventDefault();
         if (insertPageBreakAtCursor()) {
+          // Force immediate repagination
+          if (paginatedEditorRef.current) {
+            const content = paginatedEditorRef.current.getContent();
+            if (editorRef.current) {
+              editorRef.current.innerHTML = content;
+            }
+            paginatedEditorRef.current.setContent(content);
+          }
           // Re-insert the character after the break
           setTimeout(() => {
             if (e.data) {
@@ -8754,6 +8852,16 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                 <button
                   onClick={() => {
                     if (insertPageBreakAtCursor()) {
+                      // Force immediate repagination by getting content and setting it back
+                      if (paginatedEditorRef.current) {
+                        const content = paginatedEditorRef.current.getContent();
+                        // Sync to editorRef for history
+                        if (editorRef.current) {
+                          editorRef.current.innerHTML = content;
+                        }
+                        // Force repagination
+                        paginatedEditorRef.current.setContent(content);
+                      }
                       handleInput();
                     }
                   }}
