@@ -30,6 +30,8 @@ import { WorldBuildingNotebook } from "./WorldBuildingNotebook";
 import { ResearchNotesPanel } from "./ResearchNotesPanel";
 import { ImageMoodBoard } from "./ImageMoodBoard";
 import { MarginComments } from "./MarginComments";
+import { WritingStreakTracker } from "./WritingStreakTracker";
+import { VoiceToText } from "./VoiceToText";
 import {
   PaginatedEditor,
   PaginatedEditorRef,
@@ -1389,6 +1391,9 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   const [sprintDuration, setSprintDuration] = useState(15); // minutes
   const [sprintTimeRemaining, setSprintTimeRemaining] = useState(0);
   const [sprintStartWords, setSprintStartWords] = useState(0);
+  const [showStreakTracker, setShowStreakTracker] = useState(false);
+  const [showVoiceToText, setShowVoiceToText] = useState(false);
+  const [showSprintSetup, setShowSprintSetup] = useState(false);
   const [textAlign, setTextAlign] = useState("left");
   const [findMatches, setFindMatches] = useState<TextMatch[]>([]);
   const [currentMatchIndex, setCurrentMatchIndex] = useState(-1);
@@ -8813,6 +8818,35 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                   ⌨️
                 </button>
 
+                <div style={toolbarDividerStyle} aria-hidden="true" />
+
+                {/* Productivity Tools */}
+                <button
+                  onClick={() => setShowSprintSetup(true)}
+                  className={`px-2 py-1 rounded transition-colors text-xs toolbar-view-button ${
+                    sprintMode ? "active" : ""
+                  }`}
+                  title="Word Sprint Timer"
+                >
+                  ⏱️
+                </button>
+                <button
+                  onClick={() => setShowStreakTracker(true)}
+                  className="px-2 py-1 rounded transition-colors text-xs toolbar-view-button"
+                  title="Writing Streak Tracker"
+                >
+                  🔥
+                </button>
+                <button
+                  onClick={() => setShowVoiceToText(!showVoiceToText)}
+                  className={`px-2 py-1 rounded transition-colors text-xs toolbar-view-button ${
+                    showVoiceToText ? "active" : ""
+                  }`}
+                  title="Voice-to-Text"
+                >
+                  🎤
+                </button>
+
                 {/* Character Management (Tier 3 only) */}
                 {isProfessionalTier && onOpenCharacterManager && (
                   <>
@@ -9044,6 +9078,140 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
             Stop Sprint
           </button>
         </div>
+      )}
+
+      {/* Sprint Setup Modal */}
+      {showSprintSetup && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[2000]"
+          onClick={() => setShowSprintSetup(false)}
+        >
+          <div
+            className="bg-white rounded-xl shadow-xl max-w-sm w-full mx-4 overflow-hidden"
+            style={{ border: "2px solid #e0c392" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-4 bg-gradient-to-r from-[#fef5e7] to-[#fff7ed] border-b border-[#e0c392]">
+              <h3 className="text-lg font-semibold text-[#2c3e50] flex items-center gap-2">
+                <span>⏱️</span> Word Sprint Timer
+              </h3>
+            </div>
+            <div className="p-6">
+              <p className="text-sm text-gray-600 mb-4">
+                Set a timer and write without stopping. Track your words per
+                minute!
+              </p>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Sprint Duration
+              </label>
+              <div className="flex gap-2 mb-6">
+                {[5, 10, 15, 20, 30].map((mins) => (
+                  <button
+                    key={mins}
+                    onClick={() => setSprintDuration(mins)}
+                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                      sprintDuration === mins
+                        ? "bg-[#10b981] text-white ring-2 ring-[#10b981] ring-offset-2"
+                        : "bg-[#f7e6d0] text-[#2c3e50] hover:bg-[#eddcc5] border border-[#e0c392]"
+                    }`}
+                  >
+                    {mins}m
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => {
+                  startSprint();
+                  setShowSprintSetup(false);
+                }}
+                className="w-full px-4 py-2 bg-[#10b981] text-white rounded-lg hover:bg-[#059669] font-medium"
+              >
+                Start Sprint 🚀
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Writing Streak Tracker */}
+      {showStreakTracker && (
+        <WritingStreakTracker
+          currentWordCount={statistics.words}
+          onClose={() => setShowStreakTracker(false)}
+        />
+      )}
+
+      {/* Voice-to-Text */}
+      {showVoiceToText && (
+        <>
+          {/* Click-outside overlay */}
+          <div
+            className="fixed inset-0 z-[1099]"
+            onClick={() => setShowVoiceToText(false)}
+          />
+          <VoiceToText
+            isActive={showVoiceToText}
+            onToggle={() => setShowVoiceToText(!showVoiceToText)}
+            onTextGenerated={(text, hasHtml) => {
+              console.log(
+                "Voice text received in editor:",
+                text,
+                "hasHtml:",
+                hasHtml
+              );
+
+              // Insert the voice text using paginated editor's execCommand
+              if (paginatedEditorRef.current) {
+                paginatedEditorRef.current.focus();
+
+                // Special handling for new paragraph - create actual paragraph element
+                if (text.includes("<br><br>")) {
+                  // Split on the paragraph break marker
+                  const parts = text.split("<br><br>\u200B");
+                  parts.forEach((part, index) => {
+                    if (index > 0) {
+                      // Insert a new paragraph by pressing Enter twice (simulates paragraph break)
+                      document.execCommand("insertParagraph", false);
+                    }
+                    if (part.trim()) {
+                      // Check if part has other HTML
+                      if (/<[^>]+>/.test(part)) {
+                        paginatedEditorRef.current!.execCommand(
+                          "insertHTML",
+                          part
+                        );
+                      } else {
+                        paginatedEditorRef.current!.execCommand(
+                          "insertText",
+                          part
+                        );
+                      }
+                    }
+                  });
+                } else if (hasHtml) {
+                  paginatedEditorRef.current.execCommand("insertHTML", text);
+                } else {
+                  paginatedEditorRef.current.execCommand("insertText", text);
+                }
+                // Sync back to editorRef
+                if (editorRef.current) {
+                  editorRef.current.innerHTML =
+                    paginatedEditorRef.current.getContent();
+                }
+                handleInput();
+              } else if (editorRef.current) {
+                // Fallback for non-paginated editor
+                editorRef.current.focus();
+                if (hasHtml) {
+                  document.execCommand("insertHTML", false, text);
+                } else {
+                  document.execCommand("insertText", false, text);
+                }
+                handleInput();
+              }
+            }}
+          />
+        </>
       )}
 
       {/* Bookmark Modal */}

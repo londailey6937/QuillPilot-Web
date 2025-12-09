@@ -50,11 +50,13 @@ export function WritersReferenceModal({
     nameGenerator: "Character Name Generator (Fantasy, Romance, Sci-Fi)",
     worldBuilding: "World-Building Notebook (Settings, Lore, Maps)",
     researchNotes: "Writer's Notes (Research, Ideas)",
+    quickNotes: "Quick Notes (📝 Floating Panel, Jot Ideas)",
     moodBoard: "Image Mood Board (Visual Inspiration, Atmosphere)",
-    productivity: "Productivity Features (Focus, Sprint, Timer, Goals)",
+    productivity:
+      "Productivity Features (Sprint Timer, Writing Streak, Voice-to-Text)",
     chapterLibrary: "Document Store (Save, Organize, Manage)",
     characters: "Character Management (Profiles, Tracking, Arcs)",
-    export: "Export Options (PDF, DOCX, HTML, Save)",
+    export: "Save As Options (PDF, DOCX, HTML, Markdown, TXT)",
     tips: "Tips & Best Practices (Writing, Workflow)",
     shortcuts: "Keyboard Shortcuts (Hotkeys, Commands)",
     related: "📚 Related Resources",
@@ -348,7 +350,7 @@ export function WritersReferenceModal({
               without interrupting your flow.
             </div>
 
-            <h3>17 Advanced Writing Tools</h3>
+            <h3>16 Advanced Writing Tools</h3>
             <p style={{ marginBottom: "1rem" }}>
               Access powerful analysis and productivity tools from the Advanced
               Tools Rail on the right:
@@ -2041,6 +2043,64 @@ export function WritersReferenceModal({
           </div>
         );
 
+      case "quickNotes":
+        return (
+          <div className="writers-ref-content">
+            <h2>📝 Quick Notes</h2>
+            <p>
+              A floating notes panel accessible anytime in Writer Mode - jot
+              down ideas without leaving your document.
+            </p>
+
+            <h3>How to Access</h3>
+            <ol>
+              <li>
+                Click the <strong>📝 button</strong> in the bottom-right corner
+              </li>
+              <li>
+                Or press <strong>Cmd/Ctrl + Shift + N</strong>
+              </li>
+              <li>Panel floats over your work - drag to reposition</li>
+            </ol>
+
+            <h3>Features</h3>
+            <ul>
+              <li>
+                <strong>Color-coded notes:</strong> Each note gets a unique
+                color
+              </li>
+              <li>
+                <strong>Insert into text:</strong> Click a note to insert at
+                cursor
+              </li>
+              <li>
+                <strong>Copy to clipboard:</strong> Quick copy any note
+              </li>
+              <li>
+                <strong>Delete when done:</strong> Remove notes you've used
+              </li>
+              <li>
+                <strong>Full panel access:</strong> Click "Open Full Notes
+                Panel" for Research Notes
+              </li>
+            </ul>
+
+            <h3>Best Uses</h3>
+            <ul>
+              <li>Sudden plot ideas while writing</li>
+              <li>Character name alternatives</li>
+              <li>Dialogue snippets to use later</li>
+              <li>Research reminders</li>
+              <li>Scene transitions to try</li>
+            </ul>
+
+            <div className="tip-box">
+              <strong>💡 Tip:</strong> Quick Notes stays visible even in Focus
+              Mode, so you can always capture ideas without breaking your flow!
+            </div>
+          </div>
+        );
+
       case "moodBoard":
         return (
           <div className="writers-ref-content">
@@ -2187,10 +2247,101 @@ export function WritersReferenceModal({
             <p>
               <strong>Supported Browsers:</strong> Chrome, Edge, Safari
             </p>
+
+            <h4>Voice Commands</h4>
+            <table className="ref-table">
+              <thead>
+                <tr>
+                  <th>Say</th>
+                  <th>Output</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>"period" or "full stop"</td>
+                  <td>.</td>
+                </tr>
+                <tr>
+                  <td>"comma"</td>
+                  <td>,</td>
+                </tr>
+                <tr>
+                  <td>"question mark"</td>
+                  <td>?</td>
+                </tr>
+                <tr>
+                  <td>"exclamation" or "exclamation mark"</td>
+                  <td>!</td>
+                </tr>
+                <tr>
+                  <td>"colon"</td>
+                  <td>:</td>
+                </tr>
+                <tr>
+                  <td>"semicolon"</td>
+                  <td>;</td>
+                </tr>
+                <tr>
+                  <td>"quote" or "open quote"</td>
+                  <td>"</td>
+                </tr>
+                <tr>
+                  <td>"end quote" or "close quote"</td>
+                  <td>"</td>
+                </tr>
+                <tr>
+                  <td>"apostrophe"</td>
+                  <td>'</td>
+                </tr>
+                <tr>
+                  <td>"hyphen"</td>
+                  <td>-</td>
+                </tr>
+                <tr>
+                  <td>"dash"</td>
+                  <td>—</td>
+                </tr>
+                <tr>
+                  <td>"new line"</td>
+                  <td>Line break</td>
+                </tr>
+                <tr>
+                  <td>"new paragraph"</td>
+                  <td>Paragraph break</td>
+                </tr>
+                <tr>
+                  <td>"open paren"</td>
+                  <td>(</td>
+                </tr>
+                <tr>
+                  <td>"close paren"</td>
+                  <td>)</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h4>Tips</h4>
             <ul>
-              <li>Say "period" or "comma" for punctuation</li>
-              <li>Say "new paragraph" for line breaks</li>
+              <li>Speak clearly and at a normal pace</li>
               <li>Works best in quiet environments</li>
+              <li>Auto-capitalizes after sentence-ending punctuation</li>
+            </ul>
+
+            <h4>Enable Microphone Access</h4>
+            <ul>
+              <li>
+                <strong>🍎 Mac:</strong> System Settings → Privacy & Security →
+                Microphone → Toggle ON for your browser
+              </li>
+              <li>
+                <strong>🪟 Windows:</strong> Settings → Privacy & Security →
+                Microphone → Allow apps to access your microphone → Toggle ON
+                for your browser
+              </li>
+              <li>
+                <strong>🌐 Browser:</strong> Click the lock/info icon in address
+                bar → Site settings → Microphone → Allow
+              </li>
             </ul>
           </div>
         );
@@ -2441,18 +2592,18 @@ export function WritersReferenceModal({
       case "export":
         return (
           <div className="writers-ref-content">
-            <h2>Export Options</h2>
+            <h2>Save As Options</h2>
 
             <div
               className="tip-box"
               style={{ background: "#fff7ed", borderColor: "#ef8432" }}
             >
-              <strong>🆕 New:</strong> All exports now open a "Save As" dialog
-              so you can choose where to save your files (Chrome/Edge). No more
-              hunting in Downloads!
+              <strong>💡 Tip:</strong> Your browser's file picker lets you
+              choose exactly where to save your files. Pick the folder, name
+              your file, and you're done!
             </div>
 
-            <h3>📄 PDF Export</h3>
+            <h3>📄 PDF (Manuscript Format)</h3>
             <p>
               <strong>Manuscript Format</strong> (for submissions):
             </p>
@@ -2477,7 +2628,7 @@ export function WritersReferenceModal({
               scores and top recommendations.
             </p>
 
-            <h3>📥 DOCX Export</h3>
+            <h3>📥 DOCX (Word Document)</h3>
             <ul>
               <li>Microsoft Word compatible</li>
               <li>Preserves all formatting</li>
@@ -2485,7 +2636,7 @@ export function WritersReferenceModal({
               <li>Ready for further editing</li>
             </ul>
 
-            <h3>🌐 HTML Export</h3>
+            <h3>🌐 HTML (Web Page)</h3>
             <ul>
               <li>Self-contained file</li>
               <li>Opens in any browser</li>
@@ -2493,7 +2644,22 @@ export function WritersReferenceModal({
               <li>Includes analysis callouts</li>
             </ul>
 
-            <h3>📊 JSON Export</h3>
+            <h3>📝 Markdown (.md)</h3>
+            <ul>
+              <li>Plain text with formatting syntax</li>
+              <li>Perfect for GitHub, Obsidian, and note-taking apps</li>
+              <li>Lightweight and portable</li>
+              <li>Great for version control</li>
+            </ul>
+
+            <h3>📄 Plain Text (.txt)</h3>
+            <ul>
+              <li>Simple text, no formatting</li>
+              <li>Maximum compatibility</li>
+              <li>Works everywhere</li>
+            </ul>
+
+            <h3>📊 JSON (Project Backup)</h3>
             <ul>
               <li>Complete analysis data</li>
               <li>Machine-readable format</li>
@@ -2534,7 +2700,9 @@ export function WritersReferenceModal({
             <h3>Performance Tips</h3>
             <ul>
               <li>Save versions before major edits</li>
-              <li>Export regularly as backup</li>
+              <li>
+                Save regularly as backup (use JSON for full project backup)
+              </li>
               <li>For very large documents (50k+ words), work in chapters</li>
               <li>Close unused Advanced Tool panels</li>
             </ul>
@@ -2988,6 +3156,14 @@ export function WritersReferenceModal({
           padding-left: 1.5rem;
           line-height: 1.8;
           color: #000000;
+        }
+
+        .writers-ref-content ol {
+          list-style-type: decimal;
+        }
+
+        .writers-ref-content ul {
+          list-style-type: disc;
         }
 
         .writers-ref-content li {

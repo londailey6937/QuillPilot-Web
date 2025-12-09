@@ -128,35 +128,6 @@ export function ReferenceLibraryModal({
                   flag common words as character names (e.g., "Will" as a name
                   vs. "will" as a helping verb).
                 </p>
-                <p
-                  style={{
-                    marginBottom: "1rem",
-                    lineHeight: "1.6",
-                    color: "#000000",
-                  }}
-                >
-                  You can <strong>Report False Positives</strong> directly from
-                  the element list. Look for the flag icon{" "}
-                  <span
-                    style={{ display: "inline-block", verticalAlign: "middle" }}
-                  >
-                    <svg
-                      width="12"
-                      height="12"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
-                      <line x1="4" y1="22" x2="4" y2="15"></line>
-                    </svg>
-                  </span>{" "}
-                  on any element pill to flag it for review. This helps us
-                  refine our genre libraries and improve accuracy for everyone.
-                </p>
               </section>
             </div>
           </div>

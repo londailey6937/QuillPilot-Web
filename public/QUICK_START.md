@@ -4,7 +4,7 @@ Welcome to QuillPilot! This guide will help you get started with your AI-powered
 
 ---
 
-## 🚀 Getting Started in 3 Steps
+## 🚀 Getting Started
 
 ### Step 1: Upload Your Document
 
@@ -15,20 +15,18 @@ Welcome to QuillPilot! This guide will help you get started with your AI-powered
    - `.md` / `.markdown` - Markdown files
 3. Your document will load instantly
 
-### Step 2: Choose Your Mode
+### Step 2: Write or Edit
 
-Two modes are available:
+Use the paginated editor to write or edit your document. All tiers can:
 
-- **📊 Analysis Mode** - Get AI feedback on your writing
-- **✍️ Writer Mode** - Focus on writing with live feedback (Premium/Professional tiers)
+- Write and edit in the visual editor
+- Use AI templates for structured content
+- Format text with the toolbar
 
-### Step 3: Analyze & Export
+### Step 3: Analyze & Save (Premium/Professional)
 
 1. Click **"🔍 Analyze"** to get AI-powered feedback
-2. Export your work:
-   - **📥 DOCX** - Microsoft Word format
-   - **📄 PDF** - Professional manuscript format
-   - **🌐 HTML** - Web-ready format
+2. Click **"💾 Save"** to save your work in multiple formats
 
 ---
 
@@ -36,23 +34,47 @@ Two modes are available:
 
 ### Top Navigation Bar
 
-- **Access Tier Selector** - Choose your subscription level
+- **Your Tier Badge** - Shows your current subscription level (Free/Premium/Professional)
 - **Dark Mode Toggle (🌙/☀️)** - Switch between light and dark themes
-- **User Menu** - Access account settings and saved documents
+- **User Menu** - Access account settings and log out
+
+> **Note:** Your tier level is determined at sign-up and syncs from your account. To change tiers, upgrade your subscription.
 
 ### Main Toolbar (After Upload)
 
-- **🗑️ Clear** - Start with a new document
-- **📥 Export DOCX** - Save as Word document
-- **📄 Export PDF** - Export in manuscript format
-- **🌐 Export HTML** - Save as webpage
-- **🔍 Analyze** - Run AI analysis on your document
+- **🗑️ New** - Clear and start with a new document
+- **📁 Upload** - Load a document from your computer
+- **💾 Save** - Save your work (opens format picker)
+- **🔍 Analyze** - Run AI analysis on your document (Premium/Professional)
 
 ### Writer Mode Tools (Professional Tier)
 
-- **Page Format Controls** - Adjust margins and indentation
+- **Page Format Controls** - Adjust margins, indentation, and paper size
 - **Character Manager** - Track characters and relationships
-- **Template Library** - Use story templates
+- **16 Advanced Writing Tools** - AI Assistant, Dialogue Enhancer, Beat Sheet, and more
+
+---
+
+## 💾 Saving Your Work
+
+Click **"💾 Save"** to open the save dialog with these format options:
+
+| Format                      | Extension | Best For                           |
+| --------------------------- | --------- | ---------------------------------- |
+| **Shunn Manuscript Format** | `.pdf`    | Agent/publisher submissions        |
+| **Word Document**           | `.docx`   | Full formatting preserved          |
+| **PDF**                     | `.pdf`    | Print-ready documents              |
+| **Plain Text**              | `.txt`    | Simple text, maximum compatibility |
+| **Web Page**                | `.html`   | Online sharing                     |
+| **Markdown**                | `.md`     | GitHub, Obsidian, note-taking apps |
+| **QuillPilot Project**      | `.json`   | Full backup with analysis data     |
+
+### Save Tips
+
+- **Use Shunn Manuscript Format** for submissions to publishers and agents
+- **Use DOCX** for sharing with editors who use Microsoft Word
+- **Use JSON** to back up your document with all analysis data included
+- Your browser's file picker lets you choose where to save
 
 ---
 
@@ -101,21 +123,22 @@ QuillPilot analyzes your writing across 10 learning science principles:
    - `Code blocks`
 4. Ready to analyze!
 
-### How to Export a Professional Manuscript
+### How to Save as Shunn Manuscript Format
 
 1. Complete your writing/editing
-2. Click the **📄 PDF** button in the toolbar
-3. Your manuscript exports with:
+2. Click **"💾 Save"**
+3. Select **"Shunn Manuscript Format"**
+4. Configure your manuscript settings (author name, title, contact info)
+5. Your manuscript saves with:
    - Courier font (12pt)
    - Double-spaced lines
    - 1.25" left/right margins
    - Automatic page numbering
-   - Optional analysis summary
-4. Perfect for agent/publisher submissions!
+6. Perfect for agent/publisher submissions!
 
 ### How to Use Dark Mode
 
-1. Look for the **🌙/☀️** button in the top right
+1. Look for the **🌙/☀️** button in the top navigation
 2. Click to toggle between light and dark themes
 3. Your preference is saved automatically
 4. Great for late-night writing sessions!
@@ -132,44 +155,47 @@ QuillPilot analyzes your writing across 10 learning science principles:
    - Relationships to other characters
 4. Insert character mentions directly in your text
 
-### How to Track Your Writing Progress
+### How to Use Writer Mode (Professional Tier)
 
-1. Upload a document
-2. Your word count updates automatically
-3. Check reading time estimation
-4. View chapter structure breakdown
-5. Monitor complexity metrics
+Writer Mode provides a focused writing environment with advanced tools:
+
+1. Ensure you have a Professional subscription
+2. Click **"✍️ Writer Mode"** in the toolbar
+3. Access features like:
+   - Page format controls
+   - Character manager
+   - 16 Advanced Writing Tools (via the floating ✨ button)
+4. Click **"📊 Analysis Mode"** to return to analysis view
 
 ---
 
 ## 💡 Pro Tips
 
-### For First-Time Users
+### For Free Tier Users
 
-- Start with the Free tier to test features
-- Upload a sample chapter (200 pages max on Free)
-- Try both Analysis and Writer modes
-- Export to see formatting options
+- Upload documents up to 200 pages
+- Use AI templates for structured writing prompts
+- Try the paginated editor for a Word-like experience
 
 ### For Premium Users
 
+- Full 10-principle analysis
+- Save in all formats (DOCX, PDF, HTML, JSON, TXT, MD)
+- Upload documents up to 650 pages
 - Use custom genre profiles for specialized feedback
-- Export analysis reports for revision planning
-- Create custom concept libraries for series work
-- Track character arcs across multiple books
 
 ### For Professional Users
 
-- Organize large projects with unlimited uploads
-- Use scene management for complex plots
-- Set daily writing goals to build momentum
-- Collaborate with writing partners (Studio tier)
+- All Premium features plus Writer Mode
+- 16 Advanced Writing Tools (AI Assistant, Beat Sheet, POV Checker, etc.)
+- Upload documents up to 1000 pages
+- Character management and world-building tools
 
 ### Writing Best Practices
 
 1. **Write First, Analyze Later** - Don't let analysis block creativity
 2. **Use Analysis for Revision** - Focus on top 3-5 recommendations
-3. **Export Regularly** - Keep backup copies in multiple formats
+3. **Save Regularly** - Keep backup copies in multiple formats
 4. **Track Progress** - Monitor word count and completion milestones
 
 ---
@@ -188,11 +214,11 @@ QuillPilot analyzes your writing across 10 learning science principles:
 - **Wait for completion:** Don't refresh the page during analysis
 - **Check connection:** Ensure stable internet for cloud processing
 
-### "Export Not Working"
+### "Save Not Working"
 
 - **Document loaded:** Make sure a document is uploaded
 - **Browser compatibility:** Use modern browsers (Chrome, Firefox, Safari, Edge)
-- **Pop-up blockers:** Disable for export downloads
+- **Pop-up blockers:** Disable for file picker dialogs
 
 ### "Characters Not Saving"
 
@@ -233,7 +259,6 @@ QuillPilot analyzes your writing across 10 learning science principles:
   - Free tier: 72 hours
   - Premium: 48 hours
   - Professional: 24 hours
-  - Studio: 4 hours
 
 ---
 
@@ -271,21 +296,21 @@ QuillPilot adapts analysis for your genre:
 
 ## 🚀 Next Steps
 
-### New Users
+### Free Tier Users
 
 1. ✅ Upload your first document
-2. ✅ Run an analysis
-3. ✅ Try dark mode
-4. ✅ Export in different formats
-5. ⬜ Explore premium features (upgrade when ready)
+2. ✅ Try the paginated editor
+3. ✅ Use an AI template
+4. ✅ Try dark mode
+5. ⬜ Upgrade to Premium for analysis and saving
 
 ### Premium/Professional Users
 
-1. ✅ Set up character profiles
-2. ✅ Create custom genre settings
-3. ✅ Use revision history
-4. ✅ Organize multiple projects
-5. ⬜ Join writing community (coming soon)
+1. ✅ Run an analysis
+2. ✅ Save in different formats
+3. ✅ Set up character profiles (Professional)
+4. ✅ Explore the 16 Advanced Writing Tools (Professional)
+5. ✅ Use Shunn Manuscript Format for submissions
 
 ---
 

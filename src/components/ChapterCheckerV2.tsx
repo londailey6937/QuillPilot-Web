@@ -1689,7 +1689,7 @@ export const ChapterCheckerV2: React.FC = () => {
 
   // Save to specific format with File System Access API (user chooses location)
   const handleSaveAs = async (
-    format: "docx" | "pdf" | "html" | "json" | "txt"
+    format: "docx" | "pdf" | "html" | "json" | "txt" | "md"
   ) => {
     if (!chapterData) {
       alert("No document to save");
@@ -1845,6 +1845,50 @@ export const ChapterCheckerV2: React.FC = () => {
           // Fallback
           const { saveAs } = await import("file-saver");
           saveAs(blob, `${baseFileName}.txt`);
+          break;
+        }
+        case "md": {
+          // Convert HTML to Markdown using turndown
+          const TurndownService = (await import("turndown")).default;
+          const turndown = new TurndownService({
+            headingStyle: "atx",
+            codeBlockStyle: "fenced",
+          });
+
+          // Convert HTML content to Markdown, or use plain text if no HTML
+          let markdownContent: string;
+          if (richHtmlContent) {
+            markdownContent = turndown.turndown(richHtmlContent);
+          } else {
+            // For plain text, just use it directly with minimal formatting
+            markdownContent = currentChapterText;
+          }
+
+          const blob = new Blob([markdownContent], { type: "text/markdown" });
+
+          // Try File System Access API first
+          if ("showSaveFilePicker" in window) {
+            try {
+              const handle = await (window as any).showSaveFilePicker({
+                suggestedName: `${baseFileName}.md`,
+                types: [
+                  {
+                    description: "Markdown Document",
+                    accept: { "text/markdown": [".md"] },
+                  },
+                ],
+              });
+              const writable = await handle.createWritable();
+              await writable.write(blob);
+              await writable.close();
+              return;
+            } catch (err: any) {
+              if (err.name === "AbortError") return;
+            }
+          }
+          // Fallback
+          const { saveAs } = await import("file-saver");
+          saveAs(blob, `${baseFileName}.md`);
           break;
         }
       }
@@ -2962,6 +3006,41 @@ export const ChapterCheckerV2: React.FC = () => {
                   </div>
                   <div style={{ fontSize: "12px", color: "#64748b" }}>
                     Full backup with analysis data
+                  </div>
+                </div>
+              </button>
+
+              <button
+                onClick={() => handleSaveAs("md")}
+                style={{
+                  padding: "14px 16px",
+                  backgroundColor: "#fff",
+                  color: "#2c3e50",
+                  border: "1.5px solid #e0c392",
+                  borderRadius: "10px",
+                  cursor: "pointer",
+                  fontSize: "14px",
+                  fontWeight: 500,
+                  textAlign: "left",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "12px",
+                  transition: "all 0.2s",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = "#f7e6d0";
+                  e.currentTarget.style.borderColor = "#ef8432";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = "#fff";
+                  e.currentTarget.style.borderColor = "#e0c392";
+                }}
+              >
+                <span style={{ fontSize: "20px" }}>📑</span>
+                <div>
+                  <div style={{ fontWeight: 600 }}>Markdown (.md)</div>
+                  <div style={{ fontSize: "12px", color: "#64748b" }}>
+                    For GitHub, Obsidian, notes
                   </div>
                 </div>
               </button>

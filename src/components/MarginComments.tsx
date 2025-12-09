@@ -299,351 +299,360 @@ export const MarginComments: React.FC<MarginCommentsProps> = ({
   }
 
   return (
-    <aside
-      className="margin-comments-panel hide-scrollbar"
-      style={{
-        position: "absolute",
-        right: "-280px",
-        top: 0,
-        bottom: 0,
-        width: "260px",
-        overflowY: "auto",
-        padding: "8px",
-        scrollbarWidth: "none",
-      }}
-    >
-      {/* Header */}
+    <>
+      {/* Click-outside overlay to close panel */}
       <div
+        onClick={onToggle}
         style={{
-          position: "sticky",
-          top: 0,
-          background:
-            "linear-gradient(180deg, #fef5e7 0%, #fef5e7 90%, transparent 100%)",
-          paddingBottom: "8px",
-          zIndex: 10,
+          position: "fixed",
+          inset: 0,
+          zIndex: 999,
+        }}
+      />
+      <aside
+        className="margin-comments-panel hide-scrollbar"
+        style={{
+          position: "fixed",
+          right: "16px",
+          top: "160px",
+          bottom: "140px",
+          width: "280px",
+          overflowY: "auto",
+          padding: "12px",
+          scrollbarWidth: "none",
+          background: "linear-gradient(135deg, #fef5e7 0%, #fdf3e3 100%)",
+          borderRadius: "12px",
+          border: "1px solid #e0c392",
+          boxShadow: "0 8px 32px rgba(0, 0, 0, 0.15)",
+          zIndex: 1000,
         }}
       >
+        {/* Header */}
         <div
           style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: "8px",
+            position: "sticky",
+            top: "-12px",
+            background: "#fef5e7",
+            paddingBottom: "8px",
+            paddingTop: "4px",
+            marginTop: "-12px",
+            marginLeft: "-12px",
+            marginRight: "-12px",
+            paddingLeft: "12px",
+            paddingRight: "12px",
+            borderBottom: "1px solid #e0c392",
+            zIndex: 10,
           }}
         >
-          <span
+          <div
             style={{
-              fontSize: "11px",
-              fontWeight: 600,
-              color: "#92400e",
-              textTransform: "uppercase",
-              letterSpacing: "0.5px",
-            }}
-          >
-            💬 Comments {unresolvedCount > 0 && `(${unresolvedCount})`}
-          </span>
-          <button
-            onClick={onToggle}
-            style={{
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              fontSize: "14px",
-              color: "#6b7280",
-              padding: "2px",
-            }}
-            title="Hide comments"
-          >
-            ✕
-          </button>
-        </div>
-
-        {/* Add comment prompt */}
-        {selectionInfo && !showAddComment && (
-          <button
-            onClick={() => {
-              setShowAddComment(true);
-              setTimeout(() => commentInputRef.current?.focus(), 50);
-            }}
-            style={{
-              width: "100%",
-              padding: "8px 12px",
-              background: "linear-gradient(135deg, #ef8432 0%, #f97316 100%)",
-              color: "#fff",
-              border: "none",
-              borderRadius: "8px",
-              fontSize: "12px",
-              fontWeight: 500,
-              cursor: "pointer",
               display: "flex",
               alignItems: "center",
-              gap: "6px",
+              justifyContent: "space-between",
               marginBottom: "8px",
             }}
           >
-            <span>+</span>
-            <span>Add comment on "{selectionInfo.text.slice(0, 20)}..."</span>
-          </button>
-        )}
-
-        {/* Add comment form */}
-        {showAddComment && selectionInfo && (
-          <div
-            style={{
-              background: "#fff",
-              border: "1px solid #e0c392",
-              borderRadius: "10px",
-              padding: "10px",
-              marginBottom: "8px",
-            }}
-          >
-            <div
+            <span
               style={{
-                fontSize: "10px",
-                color: "#6b7280",
-                marginBottom: "6px",
+                fontSize: "11px",
+                fontWeight: 600,
+                color: "#92400e",
+                textTransform: "uppercase",
+                letterSpacing: "0.5px",
               }}
             >
-              On: "{selectionInfo.text.slice(0, 40)}
-              {selectionInfo.text.length > 40 ? "..." : ""}"
-            </div>
-            <textarea
-              ref={commentInputRef}
-              value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
-              placeholder="Add your comment..."
+              💬 Comments {unresolvedCount > 0 && `(${unresolvedCount})`}
+            </span>
+          </div>
+
+          {/* Add comment prompt */}
+          {selectionInfo && !showAddComment && (
+            <button
+              onClick={() => {
+                setShowAddComment(true);
+                setTimeout(() => commentInputRef.current?.focus(), 50);
+              }}
               style={{
                 width: "100%",
-                padding: "8px",
-                border: "1px solid #e0c392",
-                borderRadius: "6px",
-                fontSize: "12px",
-                resize: "none",
-                minHeight: "60px",
-                fontFamily: "inherit",
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-                  addComment();
-                }
-                if (e.key === "Escape") {
-                  setShowAddComment(false);
-                  setNewComment("");
-                }
-              }}
-            />
-            {/* Color picker */}
-            <div
-              style={{
-                display: "flex",
-                gap: "4px",
-                margin: "8px 0",
-              }}
-            >
-              {COMMENT_COLORS.map((c) => (
-                <button
-                  key={c.value}
-                  onClick={() => setSelectedColor(c.value)}
-                  style={{
-                    width: "20px",
-                    height: "20px",
-                    borderRadius: "4px",
-                    background: c.value,
-                    border:
-                      selectedColor === c.value
-                        ? `2px solid ${c.border}`
-                        : "1px solid #e0c392",
-                    cursor: "pointer",
-                  }}
-                  title={c.name}
-                />
-              ))}
-            </div>
-            <div style={{ display: "flex", gap: "6px" }}>
-              <button
-                onClick={addComment}
-                disabled={!newComment.trim()}
-                style={{
-                  flex: 1,
-                  padding: "6px",
-                  background: newComment.trim() ? "#ef8432" : "#e2e8f0",
-                  color: newComment.trim() ? "#fff" : "#9ca3af",
-                  border: "none",
-                  borderRadius: "6px",
-                  fontSize: "11px",
-                  fontWeight: 500,
-                  cursor: newComment.trim() ? "pointer" : "not-allowed",
-                }}
-              >
-                Add (⌘↵)
-              </button>
-              <button
-                onClick={() => {
-                  setShowAddComment(false);
-                  setNewComment("");
-                }}
-                style={{
-                  padding: "6px 10px",
-                  background: "#fef5e7",
-                  color: "#6b7280",
-                  border: "1px solid #e0c392",
-                  borderRadius: "6px",
-                  fontSize: "11px",
-                  cursor: "pointer",
-                }}
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Comments list */}
-      <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-        {sortedComments.length === 0 ? (
-          <div
-            style={{
-              textAlign: "center",
-              padding: "24px 12px",
-              color: "#6b7280",
-            }}
-          >
-            <div
-              style={{ fontSize: "24px", marginBottom: "8px", opacity: 0.5 }}
-            >
-              💬
-            </div>
-            <p style={{ fontSize: "11px", lineHeight: 1.5 }}>
-              Select text in your document to add a comment
-            </p>
-          </div>
-        ) : (
-          sortedComments.map((comment) => (
-            <div
-              key={comment.id}
-              onClick={() => {
-                setActiveCommentId(
-                  activeCommentId === comment.id ? null : comment.id
-                );
-                scrollToHighlight(comment.highlightId);
-              }}
-              style={{
-                background: activeCommentId === comment.id ? "#fff" : "#fefdf9",
-                border: `1px solid ${
-                  activeCommentId === comment.id ? "#ef8432" : "#f5d1ab"
-                }`,
-                borderLeft: `3px solid ${comment.color}`,
+                padding: "8px 12px",
+                background: "linear-gradient(135deg, #ef8432 0%, #f97316 100%)",
+                color: "#fff",
+                border: "none",
                 borderRadius: "8px",
-                padding: "10px",
+                fontSize: "12px",
+                fontWeight: 500,
                 cursor: "pointer",
-                transition: "all 0.15s ease",
-                opacity: comment.resolved ? 0.6 : 1,
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+                marginBottom: "8px",
               }}
             >
-              {/* Highlighted text preview */}
+              <span>+</span>
+              <span>Add comment on "{selectionInfo.text.slice(0, 20)}..."</span>
+            </button>
+          )}
+
+          {/* Add comment form */}
+          {showAddComment && selectionInfo && (
+            <div
+              style={{
+                background: "#fff",
+                border: "1px solid #e0c392",
+                borderRadius: "10px",
+                padding: "10px",
+                marginBottom: "8px",
+              }}
+            >
               <div
                 style={{
                   fontSize: "10px",
                   color: "#6b7280",
-                  marginBottom: "4px",
-                  fontStyle: "italic",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                "{comment.highlightText.slice(0, 30)}
-                {comment.highlightText.length > 30 ? "..." : ""}"
-              </div>
-
-              {/* Comment text */}
-              <div
-                style={{
-                  fontSize: "12px",
-                  color: "#2c3e50",
-                  lineHeight: 1.4,
                   marginBottom: "6px",
-                  textDecoration: comment.resolved ? "line-through" : "none",
                 }}
               >
-                {comment.text}
+                On: "{selectionInfo.text.slice(0, 40)}
+                {selectionInfo.text.length > 40 ? "..." : ""}"
               </div>
-
-              {/* Meta info */}
+              <textarea
+                ref={commentInputRef}
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                placeholder="Add your comment..."
+                style={{
+                  width: "100%",
+                  padding: "8px",
+                  border: "1px solid #e0c392",
+                  borderRadius: "6px",
+                  fontSize: "12px",
+                  resize: "none",
+                  minHeight: "60px",
+                  fontFamily: "inherit",
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                    addComment();
+                  }
+                  if (e.key === "Escape") {
+                    setShowAddComment(false);
+                    setNewComment("");
+                  }
+                }}
+              />
+              {/* Color picker */}
               <div
                 style={{
                   display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  fontSize: "10px",
-                  color: "#9ca3af",
+                  gap: "4px",
+                  margin: "8px 0",
                 }}
               >
-                <span>
-                  {comment.author} · {formatTime(comment.timestamp)}
-                </span>
-                {comment.resolved && (
-                  <span style={{ color: "#10b981" }}>✓ Resolved</span>
-                )}
+                {COMMENT_COLORS.map((c) => (
+                  <button
+                    key={c.value}
+                    onClick={() => setSelectedColor(c.value)}
+                    style={{
+                      width: "20px",
+                      height: "20px",
+                      borderRadius: "4px",
+                      background: c.value,
+                      border:
+                        selectedColor === c.value
+                          ? `2px solid ${c.border}`
+                          : "1px solid #e0c392",
+                      cursor: "pointer",
+                    }}
+                    title={c.name}
+                  />
+                ))}
               </div>
+              <div style={{ display: "flex", gap: "6px" }}>
+                <button
+                  onClick={addComment}
+                  disabled={!newComment.trim()}
+                  style={{
+                    flex: 1,
+                    padding: "6px",
+                    background: newComment.trim() ? "#ef8432" : "#e2e8f0",
+                    color: newComment.trim() ? "#fff" : "#9ca3af",
+                    border: "none",
+                    borderRadius: "6px",
+                    fontSize: "11px",
+                    fontWeight: 500,
+                    cursor: newComment.trim() ? "pointer" : "not-allowed",
+                  }}
+                >
+                  Add (⌘↵)
+                </button>
+                <button
+                  onClick={() => {
+                    setShowAddComment(false);
+                    setNewComment("");
+                  }}
+                  style={{
+                    padding: "6px 10px",
+                    background: "#fef5e7",
+                    color: "#6b7280",
+                    border: "1px solid #e0c392",
+                    borderRadius: "6px",
+                    fontSize: "11px",
+                    cursor: "pointer",
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
 
-              {/* Actions - shown when active */}
-              {activeCommentId === comment.id && (
+        {/* Comments list */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+          {sortedComments.length === 0 ? (
+            <div
+              style={{
+                textAlign: "center",
+                padding: "24px 12px",
+                color: "#6b7280",
+              }}
+            >
+              <div
+                style={{ fontSize: "24px", marginBottom: "8px", opacity: 0.5 }}
+              >
+                💬
+              </div>
+              <p style={{ fontSize: "11px", lineHeight: 1.5 }}>
+                Select text in your document to add a comment
+              </p>
+            </div>
+          ) : (
+            sortedComments.map((comment) => (
+              <div
+                key={comment.id}
+                onClick={() => {
+                  setActiveCommentId(
+                    activeCommentId === comment.id ? null : comment.id
+                  );
+                  scrollToHighlight(comment.highlightId);
+                }}
+                style={{
+                  background:
+                    activeCommentId === comment.id ? "#fff" : "#fefdf9",
+                  border: `1px solid ${
+                    activeCommentId === comment.id ? "#ef8432" : "#f5d1ab"
+                  }`,
+                  borderLeft: `3px solid ${comment.color}`,
+                  borderRadius: "8px",
+                  padding: "10px",
+                  cursor: "pointer",
+                  transition: "all 0.15s ease",
+                  opacity: comment.resolved ? 0.6 : 1,
+                }}
+              >
+                {/* Highlighted text preview */}
+                <div
+                  style={{
+                    fontSize: "10px",
+                    color: "#6b7280",
+                    marginBottom: "4px",
+                    fontStyle: "italic",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  "{comment.highlightText.slice(0, 30)}
+                  {comment.highlightText.length > 30 ? "..." : ""}"
+                </div>
+
+                {/* Comment text */}
+                <div
+                  style={{
+                    fontSize: "12px",
+                    color: "#2c3e50",
+                    lineHeight: 1.4,
+                    marginBottom: "6px",
+                    textDecoration: comment.resolved ? "line-through" : "none",
+                  }}
+                >
+                  {comment.text}
+                </div>
+
+                {/* Meta info */}
                 <div
                   style={{
                     display: "flex",
-                    gap: "6px",
-                    marginTop: "8px",
-                    paddingTop: "8px",
-                    borderTop: "1px solid #f5d1ab",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    fontSize: "10px",
+                    color: "#9ca3af",
                   }}
                 >
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleResolved(comment.id);
-                    }}
-                    style={{
-                      flex: 1,
-                      padding: "4px 8px",
-                      background: comment.resolved ? "#fef5e7" : "#dcfce7",
-                      color: comment.resolved ? "#6b7280" : "#166534",
-                      border: "1px solid",
-                      borderColor: comment.resolved ? "#e0c392" : "#86efac",
-                      borderRadius: "4px",
-                      fontSize: "10px",
-                      cursor: "pointer",
-                    }}
-                  >
-                    {comment.resolved ? "Reopen" : "✓ Resolve"}
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (confirm("Delete this comment?")) {
-                        deleteComment(comment.id);
-                      }
-                    }}
-                    style={{
-                      padding: "4px 8px",
-                      background: "#fef2f2",
-                      color: "#dc2626",
-                      border: "1px solid #fecaca",
-                      borderRadius: "4px",
-                      fontSize: "10px",
-                      cursor: "pointer",
-                    }}
-                  >
-                    Delete
-                  </button>
+                  <span>
+                    {comment.author} · {formatTime(comment.timestamp)}
+                  </span>
+                  {comment.resolved && (
+                    <span style={{ color: "#10b981" }}>✓ Resolved</span>
+                  )}
                 </div>
-              )}
-            </div>
-          ))
-        )}
-      </div>
-    </aside>
+
+                {/* Actions - shown when active */}
+                {activeCommentId === comment.id && (
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: "6px",
+                      marginTop: "8px",
+                      paddingTop: "8px",
+                      borderTop: "1px solid #f5d1ab",
+                    }}
+                  >
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleResolved(comment.id);
+                      }}
+                      style={{
+                        flex: 1,
+                        padding: "4px 8px",
+                        background: comment.resolved ? "#fef5e7" : "#dcfce7",
+                        color: comment.resolved ? "#6b7280" : "#166534",
+                        border: "1px solid",
+                        borderColor: comment.resolved ? "#e0c392" : "#86efac",
+                        borderRadius: "4px",
+                        fontSize: "10px",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {comment.resolved ? "Reopen" : "✓ Resolve"}
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (confirm("Delete this comment?")) {
+                          deleteComment(comment.id);
+                        }
+                      }}
+                      style={{
+                        padding: "4px 8px",
+                        background: "#fef2f2",
+                        color: "#dc2626",
+                        border: "1px solid #fecaca",
+                        borderRadius: "4px",
+                        fontSize: "10px",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))
+          )}
+        </div>
+      </aside>
+    </>
   );
 };
 

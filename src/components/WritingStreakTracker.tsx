@@ -156,264 +156,225 @@ export const WritingStreakTracker: React.FC<WritingStreakTrackerProps> = ({
 
   return (
     <div
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: "rgba(0, 0, 0, 0.5)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: 2000,
-      }}
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[2000]"
       onClick={onClose}
     >
       <div
+        className="bg-white rounded-xl shadow-xl max-w-xl w-full mx-4 overflow-hidden"
         style={{
-          backgroundColor: "#fff",
-          borderRadius: "16px",
-          padding: "32px",
-          maxWidth: "600px",
-          width: "90%",
+          border: "2px solid #e0c392",
           maxHeight: "80vh",
-          overflow: "auto",
-          boxShadow: "0 20px 60px rgba(0, 0, 0, 0.3)",
+          overflowY: "auto",
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: "24px",
-          }}
-        >
-          <h2
+        <div className="p-4 bg-gradient-to-r from-[#fef5e7] to-[#fff7ed] border-b border-[#e0c392]">
+          <h2 className="text-xl font-bold text-[#2c3e50] flex items-center gap-2">
+            <span>🔥</span> Writing Streak
+          </h2>
+        </div>
+        <div className="p-6">
+          {/* Stats Grid */}
+          <div
             style={{
-              fontSize: "24px",
-              fontWeight: 700,
-              color: "#2c3e50",
-              margin: 0,
+              display: "grid",
+              gridTemplateColumns: "repeat(2, 1fr)",
+              gap: "16px",
+              marginBottom: "24px",
             }}
           >
-            🔥 Writing Streak
-          </h2>
-          {onClose && (
-            <button
-              onClick={onClose}
+            <div
               style={{
-                background: "none",
-                border: "none",
-                fontSize: "24px",
-                cursor: "pointer",
-                color: "#95a5a6",
+                padding: "20px",
+                backgroundColor: "#fef5e7",
+                borderRadius: "12px",
+                border: "2px solid #e0c392",
               }}
             >
-              ×
-            </button>
-          )}
-        </div>
-
-        {/* Stats Grid */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(2, 1fr)",
-            gap: "16px",
-            marginBottom: "24px",
-          }}
-        >
-          <div
-            style={{
-              padding: "20px",
-              backgroundColor: "#fff3cd",
-              borderRadius: "12px",
-              border: "2px solid #ffc107",
-            }}
-          >
-            <div
-              style={{ fontSize: "32px", fontWeight: 700, color: "#f59e0b" }}
-            >
-              {currentStreak}
+              <div
+                style={{ fontSize: "32px", fontWeight: 700, color: "#ef8432" }}
+              >
+                {currentStreak}
+              </div>
+              <div
+                style={{ fontSize: "14px", color: "#2c3e50", marginTop: "4px" }}
+              >
+                Current Streak
+              </div>
             </div>
+
             <div
-              style={{ fontSize: "14px", color: "#2c3e50", marginTop: "4px" }}
+              style={{
+                padding: "20px",
+                backgroundColor: "#fef5e7",
+                borderRadius: "12px",
+                border: "2px solid #e0c392",
+              }}
             >
-              Current Streak
+              <div
+                style={{ fontSize: "32px", fontWeight: 700, color: "#ef8432" }}
+              >
+                {longestStreak}
+              </div>
+              <div
+                style={{ fontSize: "14px", color: "#2c3e50", marginTop: "4px" }}
+              >
+                Longest Streak
+              </div>
+            </div>
+
+            <div
+              style={{
+                padding: "20px",
+                backgroundColor: "#fef5e7",
+                borderRadius: "12px",
+                border: "2px solid #e0c392",
+              }}
+            >
+              <div
+                style={{ fontSize: "32px", fontWeight: 700, color: "#10b981" }}
+              >
+                {totalWords.toLocaleString()}
+              </div>
+              <div
+                style={{ fontSize: "14px", color: "#2c3e50", marginTop: "4px" }}
+              >
+                Total Words
+              </div>
+            </div>
+
+            <div
+              style={{
+                padding: "20px",
+                backgroundColor: "#fef5e7",
+                borderRadius: "12px",
+                border: "2px solid #e0c392",
+              }}
+            >
+              <div
+                style={{ fontSize: "32px", fontWeight: 700, color: "#2c3e50" }}
+              >
+                {avgWordsPerDay.toLocaleString()}
+              </div>
+              <div
+                style={{ fontSize: "14px", color: "#2c3e50", marginTop: "4px" }}
+              >
+                Avg Words/Day
+              </div>
             </div>
           </div>
 
-          <div
-            style={{
-              padding: "20px",
-              backgroundColor: "#e7f5ff",
-              borderRadius: "12px",
-              border: "2px solid #339af0",
-            }}
-          >
-            <div
-              style={{ fontSize: "32px", fontWeight: 700, color: "#1971c2" }}
+          {/* Last 7 Days Calendar */}
+          <div style={{ marginBottom: "24px" }}>
+            <h3
+              style={{
+                fontSize: "16px",
+                fontWeight: 600,
+                color: "#2c3e50",
+                marginBottom: "12px",
+              }}
             >
-              {longestStreak}
-            </div>
+              Last 7 Days
+            </h3>
             <div
-              style={{ fontSize: "14px", color: "#2c3e50", marginTop: "4px" }}
+              style={{
+                display: "flex",
+                gap: "8px",
+                justifyContent: "space-between",
+              }}
             >
-              Longest Streak
+              {last7Days.map((day) => (
+                <div
+                  key={day.date}
+                  style={{
+                    flex: 1,
+                    textAlign: "center",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: "12px",
+                      color: "#6c757d",
+                      marginBottom: "4px",
+                    }}
+                  >
+                    {day.day}
+                  </div>
+                  <div
+                    style={{
+                      width: "100%",
+                      height: "60px",
+                      backgroundColor: day.hasActivity ? "#10b981" : "#f7e6d0",
+                      borderRadius: "8px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: "12px",
+                      fontWeight: 600,
+                      color: day.hasActivity ? "#fff" : "#9ca3af",
+                      border: day.hasActivity ? "none" : "1px solid #e0c392",
+                    }}
+                    title={`${day.wordCount} words`}
+                  >
+                    {day.hasActivity ? "✓" : "-"}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 
-          <div
+          {/* Save Today Button */}
+          <button
+            onClick={saveTodaySession}
             style={{
-              padding: "20px",
-              backgroundColor: "#d3f9d8",
-              borderRadius: "12px",
-              border: "2px solid #51cf66",
-            }}
-          >
-            <div
-              style={{ fontSize: "32px", fontWeight: 700, color: "#2f9e44" }}
-            >
-              {totalWords.toLocaleString()}
-            </div>
-            <div
-              style={{ fontSize: "14px", color: "#2c3e50", marginTop: "4px" }}
-            >
-              Total Words
-            </div>
-          </div>
-
-          <div
-            style={{
-              padding: "20px",
-              backgroundColor: "#ffe3e3",
-              borderRadius: "12px",
-              border: "2px solid #fa5252",
-            }}
-          >
-            <div
-              style={{ fontSize: "32px", fontWeight: 700, color: "#c92a2a" }}
-            >
-              {avgWordsPerDay.toLocaleString()}
-            </div>
-            <div
-              style={{ fontSize: "14px", color: "#2c3e50", marginTop: "4px" }}
-            >
-              Avg Words/Day
-            </div>
-          </div>
-        </div>
-
-        {/* Last 7 Days Calendar */}
-        <div style={{ marginBottom: "24px" }}>
-          <h3
-            style={{
+              width: "100%",
+              padding: "14px",
+              backgroundColor: "#10b981",
+              color: "white",
+              border: "none",
+              borderRadius: "8px",
               fontSize: "16px",
               fontWeight: 600,
-              color: "#2c3e50",
-              marginBottom: "12px",
+              cursor: "pointer",
+              transition: "background-color 0.2s",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = "#059669";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = "#10b981";
             }}
           >
-            Last 7 Days
-          </h3>
+            Record Today's Session ({currentWordCount} words)
+          </button>
+
+          {/* Motivational Message */}
           <div
             style={{
-              display: "flex",
-              gap: "8px",
-              justifyContent: "space-between",
+              marginTop: "20px",
+              padding: "16px",
+              backgroundColor: "#f7e6d0",
+              borderRadius: "8px",
+              fontSize: "14px",
+              color: "#2c3e50",
+              textAlign: "center",
+              fontStyle: "italic",
+              border: "1px solid #e0c392",
             }}
           >
-            {last7Days.map((day) => (
-              <div
-                key={day.date}
-                style={{
-                  flex: 1,
-                  textAlign: "center",
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: "12px",
-                    color: "#6c757d",
-                    marginBottom: "4px",
-                  }}
-                >
-                  {day.day}
-                </div>
-                <div
-                  style={{
-                    width: "100%",
-                    height: "60px",
-                    backgroundColor: day.hasActivity ? "#51cf66" : "#e9ecef",
-                    borderRadius: "8px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: "12px",
-                    fontWeight: 600,
-                    color: day.hasActivity ? "#fff" : "#adb5bd",
-                  }}
-                  title={`${day.wordCount} words`}
-                >
-                  {day.hasActivity ? "✓" : "-"}
-                </div>
-              </div>
-            ))}
+            {currentStreak === 0 &&
+              "Start your streak today! Every word counts."}
+            {currentStreak > 0 &&
+              currentStreak < 3 &&
+              "Great start! Keep it going!"}
+            {currentStreak >= 3 &&
+              currentStreak < 7 &&
+              "You're on fire! 🔥 Building momentum!"}
+            {currentStreak >= 7 &&
+              currentStreak < 30 &&
+              "Amazing streak! You're a writing machine!"}
+            {currentStreak >= 30 && "Legendary! You're unstoppable! 🚀"}
           </div>
-        </div>
-
-        {/* Save Today Button */}
-        <button
-          onClick={saveTodaySession}
-          style={{
-            width: "100%",
-            padding: "14px",
-            backgroundColor: "#10b981",
-            color: "white",
-            border: "none",
-            borderRadius: "8px",
-            fontSize: "16px",
-            fontWeight: 600,
-            cursor: "pointer",
-            transition: "background-color 0.2s",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = "#059669";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = "#10b981";
-          }}
-        >
-          Record Today's Session ({currentWordCount} words)
-        </button>
-
-        {/* Motivational Message */}
-        <div
-          style={{
-            marginTop: "20px",
-            padding: "16px",
-            backgroundColor: "#f8f9fa",
-            borderRadius: "8px",
-            fontSize: "14px",
-            color: "#495057",
-            textAlign: "center",
-            fontStyle: "italic",
-          }}
-        >
-          {currentStreak === 0 && "Start your streak today! Every word counts."}
-          {currentStreak > 0 &&
-            currentStreak < 3 &&
-            "Great start! Keep it going!"}
-          {currentStreak >= 3 &&
-            currentStreak < 7 &&
-            "You're on fire! 🔥 Building momentum!"}
-          {currentStreak >= 7 &&
-            currentStreak < 30 &&
-            "Amazing streak! You're a writing machine!"}
-          {currentStreak >= 30 && "Legendary! You're unstoppable! 🚀"}
         </div>
       </div>
     </div>

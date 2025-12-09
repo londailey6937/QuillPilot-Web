@@ -1215,12 +1215,6 @@ Our analysis engine uses a sophisticated **Two-Pass Logic** to ensure both accur
 1. **Strict Match (Pass 1):** We first look for the exact, canonical name of the concept (e.g., "Real option exercise rule"). This ensures the most specific terminology is recognized.
 2. **Flexible Match (Pass 2):** If the exact name isn't found, we scan for approved aliases and variations (e.g., "exercise rule"). This captures natural language usage while mapping it back to the core concept.
 
-### False Positive Reporting
-
-Language is complex, and sometimes a word might be matched out of context (e.g., "Bond" as a name vs. "Bond" as a financial instrument).
-
-You can now **Report False Positives** directly from the concept list. Look for the flag icon on any concept pill to flag it for review. This helps us refine our libraries and improve accuracy for everyone.
-
 ---
 
 ## Access Tiers & Features

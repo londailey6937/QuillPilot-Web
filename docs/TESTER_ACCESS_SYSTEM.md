@@ -2,137 +2,170 @@
 
 ## Overview
 
-QuillPilot uses a tester-based access control system that allows designated users (testers) to access all features for testing, while regular users see the UI but cannot use premium/professional features yet.
+QuillPilot uses a **tier-based access control system** where user access is determined by their `access_level` in Supabase. There is no separate "tester email" whitelist - testers are simply users with their `access_level` set to `professional` in the database.
 
 ## How It Works
 
+### Access Tiers
+
+| Tier             | Access Level   | Features                                                |
+| ---------------- | -------------- | ------------------------------------------------------- |
+| **Free**         | `free`         | Basic spacing & dual-coding analysis, 200 page limit    |
+| **Premium**      | `premium`      | Full 10-principle analysis, all exports, 650 page limit |
+| **Professional** | `professional` | All Premium features + Writer Mode, 1000 page limit     |
+
 ### For Testers (Full Access)
 
-- **Email**: `londailey6937@gmail.com` (primary admin/developer)
-- **Capabilities**:
-  - Can manually switch between Free/Premium/Professional tiers using the dropdown
-  - Can use ALL features regardless of tier setting
-  - Can run full 10-principle analysis
-  - Can export to DOCX and HTML
-  - Can access Writer Mode
-  - Tier switching works locally for testing different user experiences
+To grant full testing access to a user:
 
-### For Regular Users (Restricted)
+1. Go to Supabase Dashboard → Table Editor → `user_profiles`
+2. Find the user by email
+3. Set `access_level` to `professional`
+4. User now has full access to all features
 
-- **Access**: Free tier features only
-- **Restrictions**:
-  - Can see Premium and Professional UI elements
-  - **Cannot** run premium/professional analysis (blocked with "coming soon" message)
-  - **Cannot** export documents (blocked with "coming soon" message)
-  - **Cannot** use Writer Mode (blocked with "coming soon" message)
-  - Tier dropdown is visible but premium/professional features are non-functional
+**Current testers:**
 
-## Adding Additional Testers
+- `londailey6937@gmail.com` - Primary admin/developer
+- `lonwdailey@icloud.com` - Alternate account (access_level: professional)
 
-To grant full testing access to another user, add their email to the `TESTER_EMAILS` array in `types.ts`:
+### For Regular Users
 
-```typescript
-export const TESTER_EMAILS = [
-  "londailey6937@gmail.com", // Primary admin/developer
-  "newtester@example.com", // Add new tester emails here
-];
-```
+- **Free tier**: Limited analysis, no exports
+- **Premium tier**: Full analysis + exports (DOCX, PDF, HTML, JSON, TXT, MD)
+- **Professional tier**: All features including Writer Mode
+
+## Export Formats Available
+
+Premium and Professional users can export to:
+
+| Format             | Extension | Description                      |
+| ------------------ | --------- | -------------------------------- |
+| Word Document      | `.docx`   | Full formatting preserved        |
+| PDF                | `.pdf`    | Print-ready format               |
+| Web Page           | `.html`   | Open in any browser              |
+| Plain Text         | `.txt`    | Simple text, no formatting       |
+| Markdown           | `.md`     | For GitHub, Obsidian, notes apps |
+| QuillPilot Project | `.json`   | Full backup with analysis data   |
 
 ## Implementation Details
 
 ### Core Files
 
-1. **`types.ts`** (lines 12-41):
+1. **`types.ts`**:
 
-   - `TESTER_EMAILS` array - list of authorized tester emails
-   - `isTesterEmail()` - checks if an email has tester access
-   - `canUseFeature()` - determines if user can actually use a feature
+   - `AccessLevel` type: `"free" | "premium" | "professional"`
+   - `canUseFeature()` - checks if user tier meets required tier
+   - `ACCESS_TIERS` - defines features available at each tier
 
 2. **`ChapterCheckerV2.tsx`**:
-   - Import tester functions (line 17)
-   - Profile loading with tester detection (lines 587-642)
-   - Feature restrictions in:
-     - `handleAnalyzeChapter` (line 1228-1238)
-     - `handleExportDocx` (line 1470-1485)
-     - `handleExportHtml` (line 1520-1535)
-     - Writer Mode button (line 2071-2081)
+   - Profile loading from Supabase (`user_profiles.access_level`)
+   - Feature restrictions based on `ACCESS_TIERS[accessLevel]`
+   - Export handler checks `features.exportResults`
 
 ### Feature Gates
 
-Each restricted feature checks:
+Features are gated by checking the user's access tier:
 
 ```typescript
-const isTester = isTesterEmail(userProfile?.email);
-if (!isTester) {
-  alert(
-    "🔒 [Feature] is coming soon!\\n\\n" +
-      "This feature is currently available only to testers.\\n\\n" +
-      "Full functionality will be available in the next release."
-  );
+const features = ACCESS_TIERS[accessLevel];
+if (!features.exportResults) {
+  alert("🔒 Save features require a Premium or Professional subscription.");
   return;
 }
 ```
 
-### Automatic Tier Sync
+### Access Tier Configuration
 
-- **Testers**: Can manually change tiers via dropdown for testing
-- **Non-testers**: Access level automatically syncs from Supabase `user_profiles.access_level`
-- Auth listener at lines 610-642 handles automatic updates when subscriptions change
+From `types.ts`:
+
+```typescript
+export const ACCESS_TIERS: Record<AccessLevel, AccessFeatures> = {
+  free: {
+    spacingAnalysis: true,
+    dualCodingAnalysis: true,
+    fullAnalysis: false,
+    exportResults: false,
+    writerMode: false,
+    maxPages: 200,
+  },
+  premium: {
+    spacingAnalysis: true,
+    dualCodingAnalysis: true,
+    fullAnalysis: true,
+    exportResults: true,
+    writerMode: false,
+    maxPages: 650,
+  },
+  professional: {
+    spacingAnalysis: true,
+    dualCodingAnalysis: true,
+    fullAnalysis: true,
+    exportResults: true,
+    writerMode: true,
+    maxPages: 1000,
+  },
+};
+```
+
+## Adding New Testers
+
+### Via Supabase Dashboard
+
+1. User signs up or logs into QuillPilot
+2. Admin goes to Supabase Dashboard
+3. Navigate to Table Editor → `user_profiles`
+4. Find user by email
+5. Edit row, set `access_level` to `professional`
+6. Save changes
+
+### Via SQL
+
+```sql
+UPDATE user_profiles
+SET access_level = 'professional'
+WHERE email = 'newtester@example.com';
+```
 
 ## User Experience
 
-### Tester Login Flow
+### Login Flow
 
-1. Login with tester email (`londailey6937@gmail.com`)
-2. Console shows: `🔓 Tester access granted: londailey6937@gmail.com`
-3. All features unlocked
-4. Can use dropdown to test different tier experiences
+1. User logs in with email
+2. App fetches profile from `user_profiles` table
+3. `access_level` determines available features
+4. Console shows: `📋 Profile loaded, access_level: professional`
 
-### Regular User Flow
+### Feature Access
 
-1. Login with any other email
-2. Access level syncs from Supabase profile
-3. Can see Premium/Professional UI elements
-4. Clicking restricted features shows "coming soon" alert
-5. Only Free tier features are functional
-
-## Testing Different Tiers
-
-As a tester, you can test each tier's user experience:
-
-1. **Test Free Tier**:
-
-   - Switch dropdown to "Free"
-   - Upload should work up to 200 pages
-   - Analysis button should show upgrade prompt
-   - No export or Writer Mode buttons
-
-2. **Test Premium Tier**:
-
-   - Switch dropdown to "Premium"
-   - Upload works up to 650 pages
-   - Full analysis runs (tester bypass)
-   - Export buttons work (tester bypass)
-   - No Writer Mode button
-
-3. **Test Professional Tier**:
-   - Switch dropdown to "Professional"
-   - Upload works up to 1000 pages
-   - All features work (tester bypass)
-   - Writer Mode button visible and functional
-
-## Future Release Plan
-
-When ready to launch premium/professional features:
-
-1. Remove tester checks from feature functions
-2. Keep tier-based feature gating from `ACCESS_TIERS`
-3. Regular users with premium/professional subscriptions will automatically get access
-4. Tester system can remain for internal testing of new features
+| Feature                    | Free           | Premium        | Professional    |
+| -------------------------- | -------------- | -------------- | --------------- |
+| Upload documents           | ✅ (200 pages) | ✅ (650 pages) | ✅ (1000 pages) |
+| Spacing analysis           | ✅             | ✅             | ✅              |
+| Dual-coding analysis       | ✅             | ✅             | ✅              |
+| Full 10-principle analysis | ❌             | ✅             | ✅              |
+| Export (all formats)       | ❌             | ✅             | ✅              |
+| Writer Mode                | ❌             | ❌             | ✅              |
+| AI Templates               | ✅             | ✅             | ✅              |
 
 ## Security Notes
 
-- Tester emails are checked case-insensitive
-- Feature restrictions are client-side (UI blocking only)
-- Server-side validation should be added for production
+- Access levels are stored in Supabase `user_profiles` table
+- Client-side feature gating is for UX (hiding/showing features)
 - Supabase RLS policies control actual database access
+- Feature checks happen before any action is performed
+
+## Troubleshooting
+
+### User can't access features they should have
+
+1. Check Supabase `user_profiles` for their `access_level`
+2. Check browser console for profile loading messages
+3. Ensure user is logged in (not anonymous session)
+4. Try logging out and back in to refresh profile
+
+### "No profile found" error
+
+User exists in auth but not in `user_profiles` table. Either:
+
+- Create profile manually in Supabase
+- Or trigger profile creation by having user complete signup flow

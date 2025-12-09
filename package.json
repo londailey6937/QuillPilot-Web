@@ -22,6 +22,7 @@
     "@syncfusion/ej2-base": "^31.2.12",
     "@syncfusion/ej2-react-documenteditor": "^31.2.12",
     "@types/html-to-docx": "^1.8.0",
+    "@types/turndown": "^5.0.6",
     "docx": "^9.5.1",
     "file-saver": "^2.0.5",
     "html-to-docx": "^1.8.0",
@@ -32,6 +33,7 @@
     "react-dom": "^18.2.0",
     "react-is": "^19.2.0",
     "recharts": "^2.10.3",
+    "turndown": "^7.2.2",
     "use-immer": "^0.11.0",
     "wmf": "^1.0.2",
     "zustand": "^4.4.4"

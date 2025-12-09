@@ -60,9 +60,9 @@ export function QuickStartModal({
                     numbered lists at 1 or continue from a previous list
                   </li>
                   <li>
-                    <strong>📁 Save to Any Folder:</strong> PDF, HTML, DOCX, and
-                    Shunn Manuscript exports now open a "Save As" dialog so you
-                    can choose where to save your files (Chrome/Edge)
+                    <strong>📁 Save to Any Folder:</strong> Your browser's file
+                    picker lets you choose exactly where to save your files
+                    (Chrome/Edge)
                   </li>
                   <li>
                     <strong>📐 Justify Alignment:</strong> New ☰ button for
@@ -416,7 +416,7 @@ export function QuickStartModal({
                 </ul>
 
                 <h5 style={{ color: "#000000", marginTop: "1.5rem" }}>
-                  17 Advanced Writing Tools (Professional Tier)
+                  16 Advanced Writing Tools (Professional Tier)
                 </h5>
                 <p
                   style={{
@@ -722,6 +722,28 @@ export function QuickStartModal({
                   </ol>
                 </div>
 
+                <div
+                  style={{
+                    background: "#fef5e7",
+                    borderLeft: "4px solid #ef8432",
+                    padding: "1rem 1.5rem",
+                    margin: "1rem 0",
+                    borderRadius: "0 0.5rem 0.5rem 0",
+                  }}
+                >
+                  <h5 style={{ margin: "0 0 0.5rem 0", color: "#ef8432" }}>
+                    How to Export as Markdown
+                  </h5>
+                  <ol style={{ paddingLeft: "1.5rem", margin: 0 }}>
+                    <li>
+                      Click the <strong>"📝 MD"</strong> button
+                    </li>
+                    <li>Plain text with formatting syntax</li>
+                    <li>Perfect for GitHub, Obsidian, and note-taking apps</li>
+                    <li>Lightweight and portable format</li>
+                  </ol>
+                </div>
+
                 <h5
                   style={{
                     color: "#000000",
@@ -895,7 +917,7 @@ export function QuickStartModal({
                   <li>Start writing in the clean, distraction-free editor</li>
                   <li>Get real-time feedback as you type</li>
                   <li>
-                    Access 17 Advanced Writing Tools via the floating button
+                    Access 16 Advanced Writing Tools via the floating button
                     (bottom right)
                   </li>
                 </ol>
@@ -1401,14 +1423,8 @@ export function QuickStartModal({
                     <strong>unlimited uploads</strong>
                   </li>
                   <li>
-                    Use <strong>revision history</strong> to track changes over
-                    time
-                  </li>
-                  <li>
-                    Set <strong>daily writing goals</strong> to build momentum
-                  </li>
-                  <li>
-                    Export in <strong>manuscript format</strong> for submissions
+                    Save as <strong>Shunn Manuscript Format</strong> for
+                    agent/publisher submissions
                   </li>
                   <li>
                     Leverage <strong>Character Manager</strong> for complex
@@ -1634,21 +1650,6 @@ export function QuickStartModal({
               </div>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            style={{
-              background: "transparent",
-              border: "none",
-              fontSize: "2rem",
-              color: "#000000",
-              cursor: "pointer",
-              padding: "0.5rem",
-              lineHeight: 1,
-            }}
-            title="Close"
-          >
-            ×
-          </button>
         </div>
 
         {/* Content Area */}
