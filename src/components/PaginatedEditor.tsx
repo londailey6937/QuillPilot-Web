@@ -549,6 +549,50 @@ export const PaginatedEditor = forwardRef<
       return (node as Element).classList?.contains("column-container") || false;
     };
 
+    /**
+     * Check if an element is a section container (template .sec class)
+     * These need special handling to keep headings with their first field
+     */
+    const isSectionContainer = (node: Node): boolean => {
+      if (node.nodeType !== Node.ELEMENT_NODE) return false;
+      return (node as Element).classList?.contains("sec") || false;
+    };
+
+    /**
+     * Copy style tags from original element to a cloned container
+     * This ensures CSS styles are preserved when splitting template content
+     */
+    const copyStyleTags = (
+      originalElement: Element,
+      targetContainer: Element
+    ): void => {
+      const styleTags = originalElement.querySelectorAll(":scope > style");
+      styleTags.forEach((styleTag) => {
+        targetContainer.insertBefore(
+          styleTag.cloneNode(true),
+          targetContainer.firstChild
+        );
+      });
+    };
+
+    /**
+     * Check if an element is a heading that should stay with following content
+     */
+    const isOrphanableHeading = (node: Node): boolean => {
+      if (node.nodeType !== Node.ELEMENT_NODE) return false;
+      const el = node as Element;
+      const tagName = el.tagName?.toUpperCase();
+      // H1-H6 headings, or h2 inside a .sec container
+      return (
+        tagName === "H1" ||
+        tagName === "H2" ||
+        tagName === "H3" ||
+        tagName === "H4" ||
+        tagName === "H5" ||
+        tagName === "H6"
+      );
+    };
+
     const splitContentAtHeight = useCallback(
       (html: string, maxHeight: number): [string, string] => {
         // Note: Page breaks are already handled by splitAtPageBreaks()
@@ -560,7 +604,8 @@ export const PaginatedEditor = forwardRef<
         const remainingNodes: Node[] = [];
         let foundSplit = false;
 
-        for (const node of nodes) {
+        for (let i = 0; i < nodes.length; i++) {
+          const node = nodes[i];
           if (foundSplit) {
             remainingNodes.push(deepCloneNode(node));
             continue;
@@ -576,6 +621,19 @@ export const PaginatedEditor = forwardRef<
           } else {
             // This node causes overflow
 
+            // ORPHAN PREVENTION: If the last fitting node is a heading,
+            // move it to the next page to keep it with following content
+            if (fittingNodes.length > 0) {
+              const lastFitting = fittingNodes[fittingNodes.length - 1];
+              if (isOrphanableHeading(lastFitting)) {
+                // Move the heading to remaining nodes
+                const orphanedHeading = fittingNodes.pop();
+                if (orphanedHeading) {
+                  remainingNodes.push(orphanedHeading);
+                }
+              }
+            }
+
             // SPECIAL HANDLING: Column containers cannot be split
             // They must be moved entirely to the next page
             if (isColumnContainer(node)) {
@@ -588,8 +646,301 @@ export const PaginatedEditor = forwardRef<
               continue;
             }
 
+            // SPECIAL HANDLING: Section containers (.sec) with headings
+            // Try to keep sections together, but if a section is larger than a page,
+            // we need to split it while keeping the heading with at least some content
+            if (isSectionContainer(node)) {
+              const element = node as Element;
+              const children = Array.from(element.children);
+
+              // Find if there's a heading
+              const headingIndex = children.findIndex((c) =>
+                c.tagName?.match(/^H[1-6]$/i)
+              );
+              const minChildren = headingIndex >= 0 ? 2 : 1; // heading + 1 field minimum
+
+              // Find how many children we can fit
+              let fittingChildCount = 0;
+              for (let c = 0; c < children.length; c++) {
+                const testSection = element.cloneNode(false) as Element;
+                for (let j = 0; j <= c; j++) {
+                  testSection.appendChild(children[j].cloneNode(true));
+                }
+                const testHtml = nodesToHtml([...fittingNodes, testSection]);
+                const h = measureHeight(testHtml);
+                if (h <= maxHeight) {
+                  fittingChildCount = c + 1;
+                } else {
+                  break;
+                }
+              }
+
+              // If we can't fit the minimum (heading + first field), move entire section
+              if (fittingChildCount < minChildren) {
+                remainingNodes.push(deepCloneNode(node));
+                foundSplit = true;
+                continue;
+              }
+
+              // If all children fit, just add the whole section
+              if (fittingChildCount >= children.length) {
+                fittingNodes.push(deepCloneNode(node));
+                // Don't set foundSplit - continue processing other nodes
+              } else {
+                // Split section by children - heading stays with fitting part
+                const fittingSection = element.cloneNode(false) as Element;
+                for (let j = 0; j < fittingChildCount; j++) {
+                  fittingSection.appendChild(children[j].cloneNode(true));
+                }
+                fittingNodes.push(fittingSection);
+
+                // Create remaining part with only non-heading children
+                const remainingSection = element.cloneNode(false) as Element;
+                for (let j = fittingChildCount; j < children.length; j++) {
+                  remainingSection.appendChild(children[j].cloneNode(true));
+                }
+                if (remainingSection.children.length > 0) {
+                  remainingNodes.push(remainingSection);
+                }
+                foundSplit = true;
+              }
+              continue;
+            }
+
             if (isBlockElement(node)) {
               const element = node as Element;
+
+              // Check if this block contains .sec children (template sections)
+              // If so, split by sections, allowing partial section splits when needed
+              const secChildren = Array.from(
+                element.querySelectorAll(":scope > .sec")
+              );
+              if (secChildren.length > 0) {
+                // This is a container with section children
+                // Get all children but track which ones are .sec sections
+                const allChildren = Array.from(element.children);
+
+                // Separate non-sec header elements from sec elements
+                const nonSecChildren: Element[] = [];
+                const secOnlyChildren: Element[] = [];
+                for (const child of allChildren) {
+                  if (
+                    child.tagName === "STYLE" ||
+                    child.classList?.contains("sec")
+                  ) {
+                    if (child.classList?.contains("sec")) {
+                      secOnlyChildren.push(child);
+                    }
+                  } else {
+                    nonSecChildren.push(child); // header, etc - only in first page
+                  }
+                }
+
+                let fittingChildCount = 0;
+                let partialSectionData: {
+                  index: number;
+                  fittingCount: number;
+                  children: Element[];
+                } | null = null;
+
+                // Test how many SECTIONS (not all children) we can fit
+                // Include non-sec children only in the first test
+                for (let c = 0; c < secOnlyChildren.length; c++) {
+                  const child = secOnlyChildren[c];
+
+                  // Test if we can fit this complete section
+                  const testContainer = element.cloneNode(false) as Element;
+                  copyStyleTags(element, testContainer);
+                  // Add header elements to first page only
+                  for (const nsc of nonSecChildren) {
+                    testContainer.appendChild(nsc.cloneNode(true));
+                  }
+                  // Add sections up to and including c
+                  for (let j = 0; j <= c; j++) {
+                    testContainer.appendChild(
+                      secOnlyChildren[j].cloneNode(true)
+                    );
+                  }
+                  const testHtml = nodesToHtml([
+                    ...fittingNodes,
+                    testContainer,
+                  ]);
+                  const h = measureHeight(testHtml);
+
+                  if (h <= maxHeight) {
+                    fittingChildCount = c + 1;
+                  } else {
+                    // This section doesn't fit completely - try partial fit
+                    const secChildElements = Array.from(child.children);
+                    const hasHeading = secChildElements.some((sc) =>
+                      (sc as Element).tagName?.match(/^H[1-6]$/i)
+                    );
+                    const minSecChildren = hasHeading ? 2 : 1;
+
+                    // Find how many section children we can fit
+                    let fittingSecChildren = 0;
+                    for (let sc = 0; sc < secChildElements.length; sc++) {
+                      const partialSec = child.cloneNode(false) as Element;
+                      for (let j = 0; j <= sc; j++) {
+                        partialSec.appendChild(
+                          secChildElements[j].cloneNode(true)
+                        );
+                      }
+                      const partialContainer = element.cloneNode(
+                        false
+                      ) as Element;
+                      copyStyleTags(element, partialContainer);
+                      // Add header elements
+                      for (const nsc of nonSecChildren) {
+                        partialContainer.appendChild(nsc.cloneNode(true));
+                      }
+                      // Add previous complete sections
+                      for (let j = 0; j < c; j++) {
+                        partialContainer.appendChild(
+                          secOnlyChildren[j].cloneNode(true)
+                        );
+                      }
+                      partialContainer.appendChild(partialSec);
+                      const partialHtml = nodesToHtml([
+                        ...fittingNodes,
+                        partialContainer,
+                      ]);
+                      const partialH = measureHeight(partialHtml);
+                      if (partialH <= maxHeight) {
+                        fittingSecChildren = sc + 1;
+                      } else {
+                        break;
+                      }
+                    }
+
+                    // Only allow partial split if we can fit minimum content
+                    if (fittingSecChildren >= minSecChildren) {
+                      partialSectionData = {
+                        index: c,
+                        fittingCount: fittingSecChildren,
+                        children: secChildElements as Element[],
+                      };
+                    }
+                    break; // Stop checking more sections
+                  }
+                }
+
+                // Build the fitting and remaining containers
+                if (partialSectionData) {
+                  // We have a partial section split
+                  const fittingContainer = element.cloneNode(false) as Element;
+                  copyStyleTags(element, fittingContainer);
+
+                  // Add header elements (only on first page)
+                  for (const nsc of nonSecChildren) {
+                    fittingContainer.appendChild(nsc.cloneNode(true));
+                  }
+
+                  // Add all complete sections before the partial one
+                  for (let j = 0; j < partialSectionData.index; j++) {
+                    fittingContainer.appendChild(
+                      secOnlyChildren[j].cloneNode(true)
+                    );
+                  }
+
+                  // Add partial section
+                  const partialChild =
+                    secOnlyChildren[partialSectionData.index];
+                  const fittingSec = partialChild.cloneNode(false) as Element;
+                  for (let j = 0; j < partialSectionData.fittingCount; j++) {
+                    fittingSec.appendChild(
+                      partialSectionData.children[j].cloneNode(true)
+                    );
+                  }
+                  fittingContainer.appendChild(fittingSec);
+                  fittingNodes.push(fittingContainer);
+
+                  // Build remaining container - MUST copy style tags for CSS to work
+                  // NO header elements on subsequent pages
+                  const remainingContainer = element.cloneNode(
+                    false
+                  ) as Element;
+                  copyStyleTags(element, remainingContainer);
+
+                  // Add remaining part of partial section (without heading)
+                  if (
+                    partialSectionData.fittingCount <
+                    partialSectionData.children.length
+                  ) {
+                    const remainingSec = partialChild.cloneNode(
+                      false
+                    ) as Element;
+                    for (
+                      let j = partialSectionData.fittingCount;
+                      j < partialSectionData.children.length;
+                      j++
+                    ) {
+                      remainingSec.appendChild(
+                        partialSectionData.children[j].cloneNode(true)
+                      );
+                    }
+                    remainingContainer.appendChild(remainingSec);
+                  }
+
+                  // Add all sections after the partial one
+                  for (
+                    let j = partialSectionData.index + 1;
+                    j < secOnlyChildren.length;
+                    j++
+                  ) {
+                    remainingContainer.appendChild(
+                      secOnlyChildren[j].cloneNode(true)
+                    );
+                  }
+
+                  if (remainingContainer.children.length > 0) {
+                    remainingNodes.push(remainingContainer);
+                  }
+                  foundSplit = true;
+                  continue;
+                } else if (fittingChildCount > 0) {
+                  // Create fitting container with complete sections
+                  const fittingContainer = element.cloneNode(false) as Element;
+                  copyStyleTags(element, fittingContainer);
+                  // Add header elements (only on first page)
+                  for (const nsc of nonSecChildren) {
+                    fittingContainer.appendChild(nsc.cloneNode(true));
+                  }
+                  for (let j = 0; j < fittingChildCount; j++) {
+                    fittingContainer.appendChild(
+                      secOnlyChildren[j].cloneNode(true)
+                    );
+                  }
+                  fittingNodes.push(fittingContainer);
+
+                  // Create remaining container with the rest - MUST copy style tags
+                  // NO header elements on subsequent pages
+                  if (fittingChildCount < secOnlyChildren.length) {
+                    const remainingContainer = element.cloneNode(
+                      false
+                    ) as Element;
+                    copyStyleTags(element, remainingContainer);
+                    for (
+                      let j = fittingChildCount;
+                      j < secOnlyChildren.length;
+                      j++
+                    ) {
+                      remainingContainer.appendChild(
+                        secOnlyChildren[j].cloneNode(true)
+                      );
+                    }
+                    remainingNodes.push(remainingContainer);
+                  }
+                  foundSplit = true;
+                  continue;
+                } else {
+                  // Can't fit any sections - push whole container to remaining
+                  remainingNodes.push(deepCloneNode(node));
+                  foundSplit = true;
+                  continue;
+                }
+              }
+
               const totalWords = countWords(element);
 
               if (totalWords > 1) {
@@ -953,9 +1304,38 @@ export const PaginatedEditor = forwardRef<
         text: fullHtml.replace(/<[^>]*>/g, ""),
       });
 
+      // Check if we're currently editing inside a template field (.cf)
+      // If so, skip the setPages call to avoid losing cursor position
+      const selection = window.getSelection();
+      const isInTemplateField =
+        selection?.anchorNode &&
+        (selection.anchorNode.parentElement?.classList.contains("cf") ||
+          selection.anchorNode.parentElement?.closest(".cf") ||
+          (selection.anchorNode as Element)?.classList?.contains("cf"));
+
+      // IMPORTANT: Update pages state with current DOM content to prevent
+      // React from overwriting DOM edits on re-render
+      // BUT skip this if we're in a template field to preserve cursor
+      if (!isInTemplateField) {
+        setPages((prevPages) => {
+          return prevPages.map((page) => {
+            const ref = pageRefs.current.get(page.id);
+            if (ref) {
+              return { ...page, content: ref.innerHTML };
+            }
+            return page;
+          });
+        });
+      }
+
       // Check if repagination is actually needed
       // Only repaginate if content might have overflowed or pages need rebalancing
       const needsRepagination = () => {
+        // Skip repagination entirely when editing template fields
+        if (isInTemplateField) {
+          return false;
+        }
+
         // Always repaginate if there are page breaks in content
         if (fullHtml.includes("page-break")) {
           return true;
@@ -1152,6 +1532,33 @@ export const PaginatedEditor = forwardRef<
       },
       [pages, onExternalKeyDown]
     );
+
+    const clearSampleField = useCallback((cfField: HTMLElement | null) => {
+      if (cfField && cfField.hasAttribute("data-sample")) {
+        cfField.textContent = "";
+        cfField.removeAttribute("data-sample");
+
+        // Place cursor in the now-empty field so the user can keep typing
+        const range = document.createRange();
+        const sel = window.getSelection();
+        range.selectNodeContents(cfField);
+        range.collapse(true);
+        sel?.removeAllRanges();
+        sel?.addRange(range);
+
+        // Don't call handleInput() here - just update pages state directly
+        // to avoid repagination which would lose cursor position
+        setPages((prevPages) => {
+          return prevPages.map((page) => {
+            const ref = pageRefs.current.get(page.id);
+            if (ref) {
+              return { ...page, content: ref.innerHTML };
+            }
+            return page;
+          });
+        });
+      }
+    }, []);
 
     const handlePaste = useCallback(
       (e: React.ClipboardEvent) => {
@@ -3193,9 +3600,64 @@ export const PaginatedEditor = forwardRef<
                   onInput={() => handleInput()}
                   onKeyDown={(e) => handleKeyDown(e, index)}
                   onPaste={(e) => handlePaste(e)}
-                  onFocus={() => {
+                  onFocus={(e: React.FocusEvent<HTMLDivElement>) => {
                     internalChangeRef.current = true;
                     setActivePageIndex(index);
+
+                    const target = e.target as HTMLElement;
+                    const cfField = target.classList.contains("cf")
+                      ? target
+                      : (target.closest(".cf") as HTMLElement | null);
+                    clearSampleField(cfField);
+                  }}
+                  onClick={(e) => {
+                    // Handle button clicks for template actions (onclick attrs don't work in contentEditable)
+                    const target = e.target as HTMLElement;
+
+                    // Check if clicked element is a button or inside a button
+                    const button =
+                      target.tagName === "BUTTON"
+                        ? target
+                        : target.closest("button");
+                    if (button) {
+                      const onclickAttr = button.getAttribute("onclick");
+                      if (onclickAttr) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        // Parse and dispatch the event
+                        if (onclickAttr.includes("saveCharacterTemplate")) {
+                          window.dispatchEvent(
+                            new CustomEvent("saveCharacterTemplate")
+                          );
+                        } else if (
+                          onclickAttr.includes("addCharacterRelationship")
+                        ) {
+                          window.dispatchEvent(
+                            new CustomEvent("addCharacterRelationship")
+                          );
+                        } else if (onclickAttr.includes("addCharacterAlias")) {
+                          window.dispatchEvent(
+                            new CustomEvent("addCharacterAlias")
+                          );
+                        }
+                        return;
+                      }
+                    }
+
+                    // Handle sample text clearing for template fields
+                    // Check both direct target and closest .cf parent (for clicks on text within the field)
+                    const cfField = target.classList.contains("cf")
+                      ? target
+                      : (target.closest(".cf") as HTMLElement | null);
+
+                    console.log(
+                      "[PaginatedEditor] Click on cf field:",
+                      cfField?.id,
+                      "has data-sample:",
+                      cfField?.hasAttribute("data-sample")
+                    );
+
+                    clearSampleField(cfField);
                   }}
                   onDoubleClick={(e) => {
                     const target = e.target as HTMLElement;

@@ -477,7 +477,10 @@ export const ChapterCheckerV2: React.FC = () => {
   const [fileName, setFileName] = useState("");
   const [fileType, setFileType] = useState("");
   const [isTemplateMode, setIsTemplateMode] = useState(false);
-  const [showTemplateSelector, setShowTemplateSelector] = useState(false);
+  const [editingCharacterId, setEditingCharacterId] = useState<string | null>(
+    null
+  ); // Track which character is being edited in template
+  // Template selector removed - Character Template now in CharacterManager
   const [showClaudeKeyDialog, setShowClaudeKeyDialog] = useState(false);
   const [claudeApiKey, setClaudeApiKey] = useState("");
   const [isProcessingClaude, setIsProcessingClaude] = useState(false);
@@ -935,6 +938,255 @@ export const ChapterCheckerV2: React.FC = () => {
       );
     };
   }, []);
+
+  // Listen for save character template button click (both custom event and direct click)
+  useEffect(() => {
+    const handleSaveCharacterTemplate = () => {
+      // There are duplicate IDs in the DOM - one from React state (stale) and one from 
+      // the live contenteditable. We need to get the LAST one which is the live edit.
+      const getField = (id: string): HTMLElement | null => {
+        const all = document.querySelectorAll(`#${id}`);
+        if (all.length === 0) return null;
+        // Return the LAST element - that's the live contenteditable one
+        return all[all.length - 1] as HTMLElement;
+      };
+
+      const nameField = getField("character-name");
+      const backgroundField = getField("character-background");
+      const traitsField = getField("character-traits");
+      const goalsField = getField("character-goals");
+      const conflictsField = getField("character-conflicts");
+      const arcField = getField("character-arc");
+      const notesField = getField("character-notes");
+
+      // Get text content from each field
+      const characterName =
+        nameField?.textContent?.trim() || "Unnamed Character";
+      const background = backgroundField?.textContent?.trim() || "";
+      const traitsText = traitsField?.textContent?.trim() || "";
+      const goals = goalsField?.textContent?.trim() || "";
+      const conflicts = conflictsField?.textContent?.trim() || "";
+      const arc = arcField?.textContent?.trim() || "";
+      const notes = notesField?.textContent?.trim() || "";
+
+      // DEBUG
+      alert(`Notes field text: "${notes.substring(0, 50)}..."`);
+      // Check if name is still default
+      const nameIsDefault = characterName === "Alex Ross Applegate";
+
+      // DEBUG: Show actual values being saved
+      alert(
+        `VALUES:\nname: "${characterName.substring(
+          0,
+          30
+        )}"\nnotes: "${notes.substring(0, 50)}..."`
+      );
+
+      console.log("  conflicts:", conflicts);
+      console.log("  arc:", arc);
+      console.log("  notes:", notes);
+
+      // Parse traits from comma-separated text
+      const traits = traitsText
+        ? traitsText
+            .split(/[,;]/)
+            .map((t) => t.trim())
+            .filter((t) => t.length > 0 && t.length < 50)
+        : [];
+
+      // Get aliases from the aliases list
+      const aliasesList = document.getElementById("aliases-list");
+      const linkedNames: string[] = [];
+      if (aliasesList) {
+        aliasesList.querySelectorAll("div").forEach((div) => {
+          const alias = div.textContent?.trim();
+          if (alias && alias !== "No aliases defined yet.") {
+            linkedNames.push(alias);
+          }
+        });
+      }
+
+      // Check if we're editing an existing character
+      if (editingCharacterId) {
+        // Update the existing character
+        const updatedCharacters = characters.map((c) => {
+          if (c.id === editingCharacterId) {
+            return {
+              ...c,
+              name: nameIsDefault ? c.name : characterName,
+              background: background || c.background,
+              traits: traits.length > 0 ? traits : c.traits,
+              goals: goals || c.goals,
+              conflicts: conflicts || c.conflicts,
+              arc: arc || c.arc,
+              linkedNames: linkedNames.length > 0 ? linkedNames : c.linkedNames,
+              notes: notes || c.notes,
+              updatedAt: new Date().toISOString(),
+            };
+          }
+          return c;
+        });
+        setCharacters(updatedCharacters);
+        try {
+          localStorage.setItem(
+            "quillpilot_characters",
+            JSON.stringify(updatedCharacters)
+          );
+        } catch (error) {
+          console.error("Failed to save characters:", error);
+        }
+        setSaveMessage(
+          `✅ Character "${
+            nameIsDefault
+              ? characters.find((c) => c.id === editingCharacterId)?.name
+              : characterName
+          }" updated!`
+        );
+      } else {
+        // Create a new character with data from the template
+        const newCharacter: Character = {
+          id: `char-${Date.now()}`,
+          name: nameIsDefault ? "Unnamed Character" : characterName,
+          role: "supporting",
+          traits,
+          background,
+          goals,
+          conflicts,
+          arc,
+          relationships: [],
+          linkedNames,
+          notes,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+
+        // Add to characters list and save to localStorage
+        const updatedCharacters = [...characters, newCharacter];
+        setCharacters(updatedCharacters);
+        try {
+          localStorage.setItem(
+            "quillpilot_characters",
+            JSON.stringify(updatedCharacters)
+          );
+        } catch (error) {
+          console.error("Failed to save characters:", error);
+        }
+        setSaveMessage(`✅ Character "${characterName}" saved!`);
+      }
+
+      // Set editor to blank document (not null, which shows "Ready to Write" page)
+      setChapterText("");
+      setChapterData({
+        html: "",
+        plainText: "",
+        originalPlainText: "",
+        isHybridDocx: false,
+        imageCount: 0,
+        editorHtml: "",
+      });
+      setIsTemplateMode(false);
+      setEditingCharacterId(null);
+      bumpDocumentInstanceKey();
+
+      setTimeout(() => setSaveMessage(null), 3000);
+    };
+
+    // Handler for adding a relationship
+    const handleAddRelationship = () => {
+      const relationshipName = prompt(
+        "Enter the character name for this relationship:"
+      );
+      if (!relationshipName?.trim()) return;
+
+      const relationshipType = prompt(
+        "Enter relationship type (ally, enemy, family, romantic, mentor, rival, neutral):"
+      );
+      if (!relationshipType?.trim()) return;
+
+      const relationshipDesc = prompt("Describe this relationship (optional):");
+
+      // Find the relationships list in the DOM and add to it
+      const relList = document.querySelector("#relationships-list");
+      if (relList) {
+        // Remove the "No relationships" placeholder if present
+        const placeholder = relList.querySelector("p");
+        if (placeholder) placeholder.remove();
+
+        const newRelDiv = document.createElement("div");
+        newRelDiv.style.cssText =
+          "padding: 4px 8px; background: #fff7ed; border: 1px solid #e0c392; border-radius: 4px; margin-bottom: 4px; font-size: 13px;";
+        newRelDiv.innerHTML = `<strong>${relationshipName}</strong> - ${relationshipType}${
+          relationshipDesc ? `: ${relationshipDesc}` : ""
+        }`;
+        relList.appendChild(newRelDiv);
+      }
+    };
+
+    // Handler for adding an alias
+    const handleAddAlias = () => {
+      const alias = prompt("Enter an alternative name or alias:");
+      if (!alias?.trim()) return;
+
+      // Find the aliases list in the DOM and add to it
+      const aliasesList = document.querySelector("#aliases-list");
+      if (aliasesList) {
+        // Remove the "No aliases" placeholder if present
+        const placeholder = aliasesList.querySelector("p");
+        if (placeholder) placeholder.remove();
+
+        const newAliasDiv = document.createElement("div");
+        newAliasDiv.style.cssText =
+          "padding: 4px 8px; background: #fff7ed; border: 1px solid #e0c392; border-radius: 4px; margin-bottom: 4px; font-size: 13px;";
+        newAliasDiv.textContent = alias;
+        aliasesList.appendChild(newAliasDiv);
+      }
+    };
+
+    window.addEventListener(
+      "saveCharacterTemplate",
+      handleSaveCharacterTemplate
+    );
+    window.addEventListener("addCharacterRelationship", handleAddRelationship);
+    window.addEventListener("addCharacterAlias", handleAddAlias);
+
+    // Also add document click handler as fallback for buttons in contenteditable="false" areas
+    const handleDocumentClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const button =
+        target.tagName === "BUTTON" ? target : target.closest("button");
+      if (button) {
+        const onclickAttr = button.getAttribute("onclick");
+        if (onclickAttr?.includes("saveCharacterTemplate")) {
+          e.preventDefault();
+          e.stopPropagation();
+          handleSaveCharacterTemplate();
+        } else if (onclickAttr?.includes("addCharacterRelationship")) {
+          e.preventDefault();
+          e.stopPropagation();
+          handleAddRelationship();
+        } else if (onclickAttr?.includes("addCharacterAlias")) {
+          e.preventDefault();
+          e.stopPropagation();
+          handleAddAlias();
+        }
+      }
+    };
+
+    document.addEventListener("click", handleDocumentClick, true);
+
+    return () => {
+      window.removeEventListener(
+        "saveCharacterTemplate",
+        handleSaveCharacterTemplate
+      );
+      window.removeEventListener(
+        "addCharacterRelationship",
+        handleAddRelationship
+      );
+      window.removeEventListener("addCharacterAlias", handleAddAlias);
+      document.removeEventListener("click", handleDocumentClick, true);
+    };
+  }, [characters, editingCharacterId]);
 
   const handleDocumentScrollDepthChange = (hasScrolled: boolean) => {
     setContentScrolled(hasScrolled);
@@ -2293,8 +2545,7 @@ export const ChapterCheckerV2: React.FC = () => {
                       color: "#2c3e50",
                     }}
                   >
-                    For Fiction • Nonfiction • Novels • Short Stories • Poetry •
-                    Screenplays
+                    For Fiction • Nonfiction • Poetry • Screenplays
                   </p>
                 </div>
               </div>
@@ -2572,78 +2823,6 @@ export const ChapterCheckerV2: React.FC = () => {
           </div>
         </header>
       </div>
-
-      {pendingAutosave && (
-        <div
-          style={{
-            padding: "14px 18px",
-            borderBottom: "1px solid #f5d1ab",
-            background: "linear-gradient(120deg, #fff7ed, #fef3c7)",
-            display: "flex",
-            flexWrap: "wrap",
-            gap: "12px",
-            alignItems: "center",
-          }}
-        >
-          <div style={{ flex: "1 1 320px", minWidth: "220px" }}>
-            <div
-              style={{ fontWeight: 700, color: "#92400e", fontSize: "14px" }}
-            >
-              📝 Auto-saved work detected
-            </div>
-            <p
-              style={{
-                margin: "4px 0 0",
-                fontSize: "13px",
-                color: "#7c2d12",
-                lineHeight: 1.5,
-              }}
-            >
-              Last saved {autosaveTimestampLabel || "recently"} · File name:{" "}
-              <strong>{pendingAutosave.fileName || "untitled"}</strong>
-            </p>
-          </div>
-          <div
-            style={{
-              display: "flex",
-              gap: "8px",
-              flexWrap: "wrap",
-              justifyContent: "flex-end",
-              alignItems: "center",
-            }}
-          >
-            <button
-              onClick={handleRestoreAutosave}
-              style={{
-                padding: "8px 16px",
-                borderRadius: "999px",
-                border: "none",
-                backgroundColor: "#f97316",
-                color: "#fff",
-                fontWeight: 600,
-                cursor: "pointer",
-                boxShadow: "0 1px 2px rgba(0,0,0,0.15)",
-              }}
-            >
-              Restore work
-            </button>
-            <button
-              onClick={handleDismissAutosave}
-              style={{
-                padding: "8px 16px",
-                borderRadius: "999px",
-                border: "1px solid #f97316",
-                backgroundColor: "#fff",
-                color: "#9a3412",
-                fontWeight: 600,
-                cursor: "pointer",
-              }}
-            >
-              Dismiss
-            </button>
-          </div>
-        </div>
-      )}
 
       <NavigationMenu
         isOpen={isNavigationOpen}
@@ -3081,6 +3260,161 @@ export const ChapterCheckerV2: React.FC = () => {
           characters={characters}
           onSave={handleSaveCharacters}
           onClose={() => setIsCharacterManagerOpen(false)}
+          onOpenTemplate={(templateHtml, characterId) => {
+            // If editing an existing character, pre-fill the template with their data
+            let finalHtml = templateHtml;
+            if (characterId) {
+              const existingChar = characters.find((c) => c.id === characterId);
+              if (existingChar) {
+                // Always use field-by-field population (templateHtml causes duplicates)
+                const tempDiv = document.createElement("div");
+                tempDiv.innerHTML = templateHtml;
+
+                // Pre-fill the character name using the specific ID
+                const nameField = tempDiv.querySelector("#character-name");
+                if (nameField && existingChar.name) {
+                  nameField.textContent = existingChar.name;
+                  nameField.removeAttribute("data-sample");
+                }
+
+                // Pre-fill background if exists
+                const backgroundField = tempDiv.querySelector(
+                  "#character-background"
+                );
+                if (backgroundField && existingChar.background) {
+                  backgroundField.textContent = existingChar.background;
+                  backgroundField.removeAttribute("data-sample");
+                }
+
+                // Pre-fill traits if exists
+                const traitsField = tempDiv.querySelector("#character-traits");
+                if (
+                  traitsField &&
+                  existingChar.traits &&
+                  existingChar.traits.length > 0
+                ) {
+                  traitsField.textContent = existingChar.traits.join(", ");
+                  traitsField.removeAttribute("data-sample");
+                }
+
+                // Pre-fill goals if exists
+                const goalsField = tempDiv.querySelector("#character-goals");
+                if (goalsField && existingChar.goals) {
+                  goalsField.textContent = existingChar.goals;
+                  goalsField.removeAttribute("data-sample");
+                }
+
+                // Pre-fill conflicts if exists
+                const conflictsField = tempDiv.querySelector(
+                  "#character-conflicts"
+                );
+                if (conflictsField && existingChar.conflicts) {
+                  conflictsField.textContent = existingChar.conflicts;
+                  conflictsField.removeAttribute("data-sample");
+                }
+
+                // Pre-fill arc if exists
+                const arcField = tempDiv.querySelector("#character-arc");
+                if (arcField && existingChar.arc) {
+                  arcField.textContent = existingChar.arc;
+                  arcField.removeAttribute("data-sample");
+                }
+
+                // Pre-fill notes if exists
+                const notesField = tempDiv.querySelector("#character-notes");
+                if (notesField && existingChar.notes) {
+                  notesField.textContent = existingChar.notes;
+                  notesField.removeAttribute("data-sample");
+                }
+
+                // Pre-fill relationships if any
+                if (
+                  existingChar.relationships &&
+                  existingChar.relationships.length > 0
+                ) {
+                  const relList = tempDiv.querySelector("#relationships-list");
+                  if (relList) {
+                    const relHtml = existingChar.relationships
+                      .map((rel) => {
+                        const relChar = characters.find(
+                          (c) => c.id === rel.characterId
+                        );
+                        return `<div style="padding: 4px 8px; background: #fff7ed; border: 1px solid #e0c392; border-radius: 4px; margin-bottom: 4px; font-size: 13px;"><strong>${
+                          relChar?.name || "Unknown"
+                        }</strong> - ${rel.type}${
+                          rel.description ? `: ${rel.description}` : ""
+                        }</div>`;
+                      })
+                      .join("");
+                    relList.innerHTML = relHtml;
+                  }
+                }
+
+                // Pre-fill aliases if any
+                if (
+                  existingChar.linkedNames &&
+                  existingChar.linkedNames.length > 0
+                ) {
+                  const aliasesList = tempDiv.querySelector("#aliases-list");
+                  if (aliasesList) {
+                    const aliasesHtml = existingChar.linkedNames
+                      .map(
+                        (alias) =>
+                          `<div style="padding: 4px 8px; background: #fff7ed; border: 1px solid #e0c392; border-radius: 4px; margin-bottom: 4px; font-size: 13px;">${alias}</div>`
+                      )
+                      .join("");
+                    aliasesList.innerHTML = aliasesHtml;
+                  }
+                }
+
+                finalHtml = tempDiv.innerHTML;
+              }
+              setEditingCharacterId(characterId);
+            } else {
+              setEditingCharacterId(null);
+            }
+
+            // Load the template into the editor
+            const plainTextContent = finalHtml.replace(/<[^>]*>/g, "");
+            setChapterText(plainTextContent);
+            setChapterData((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    plainText: plainTextContent,
+                    editorHtml: finalHtml,
+                    originalPlainText: plainTextContent,
+                  }
+                : {
+                    html: finalHtml,
+                    plainText: plainTextContent,
+                    originalPlainText: plainTextContent,
+                    isHybridDocx: true,
+                    imageCount: 0,
+                    editorHtml: finalHtml,
+                  }
+            );
+            setIsTemplateMode(true);
+            bumpDocumentInstanceKey();
+            setIsCharacterManagerOpen(false);
+
+            // Scroll to top of editor after template loads
+            setTimeout(() => {
+              const editorContainer = document.querySelector(
+                ".paginated-pages-stack"
+              );
+              if (editorContainer) {
+                editorContainer.scrollTop = 0;
+              }
+              // Also try the editor shell container
+              const editorShell = document.querySelector(
+                '[style*="overflow-y: auto"]'
+              );
+              if (editorShell) {
+                (editorShell as HTMLElement).scrollTop = 0;
+              }
+            }, 100);
+          }}
         />
       )}
 
@@ -3433,40 +3767,6 @@ export const ChapterCheckerV2: React.FC = () => {
                                   />
                                 </svg>
                               </button>
-                              {viewMode === "writer" &&
-                                accessLevel === "professional" && (
-                                  <button
-                                    onClick={() =>
-                                      setShowTemplateSelector(true)
-                                    }
-                                    style={{
-                                      padding: "4px 10px",
-                                      backgroundColor: "#fef5e7",
-                                      color: "#2c3e50",
-                                      border: "1.5px solid #e0c392",
-                                      borderRadius: "8px",
-                                      cursor: "pointer",
-                                      fontSize: "11px",
-                                      fontWeight: "600",
-                                      transition: "all 0.2s",
-                                      whiteSpace: "nowrap",
-                                      display: "flex",
-                                      alignItems: "center",
-                                      justifyContent: "center",
-                                    }}
-                                    onMouseEnter={(e) => {
-                                      e.currentTarget.style.backgroundColor =
-                                        "#f7e6d0";
-                                    }}
-                                    onMouseLeave={(e) => {
-                                      e.currentTarget.style.backgroundColor =
-                                        "#fef5e7";
-                                    }}
-                                    title="Generate AI Template"
-                                  >
-                                    🪄
-                                  </button>
-                                )}
 
                               {viewMode === "writer" && (
                                 <button
@@ -4611,34 +4911,6 @@ export const ChapterCheckerV2: React.FC = () => {
                       {!ACCESS_TIERS[accessLevel].exportResults && "🔒"}
                     </button>
 
-                    {/* Generate AI Template - only in Writer Mode */}
-                    {viewMode === "writer" && analysis && (
-                      <button
-                        onClick={() => setShowTemplateSelector(true)}
-                        style={{
-                          width: "100%",
-                          padding: "8px",
-                          backgroundColor: "white",
-                          color: "#2c3e50",
-                          border: "1.5px solid #e0c392",
-                          borderRadius: "20px",
-                          cursor: "pointer",
-                          fontSize: "14px",
-                          fontWeight: "600",
-                          marginBottom: "16px",
-                          transition: "background-color 0.2s",
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = "#f7e6d0";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = "white";
-                        }}
-                      >
-                        ✨ Generate AI Template
-                      </button>
-                    )}
-
                     {viewMode === "analysis" ? (
                       <>
                         {!ACCESS_TIERS[accessLevel].fullAnalysis && (
@@ -5086,242 +5358,6 @@ export const ChapterCheckerV2: React.FC = () => {
                 Create Domain
               </button>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Template Selector Dialog */}
-      {showTemplateSelector && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(0, 0, 0, 0.6)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 1500,
-            padding: "20px",
-          }}
-          onClick={() => setShowTemplateSelector(false)}
-        >
-          <div
-            style={{
-              backgroundColor: "#fef5e7",
-              borderRadius: "16px",
-              padding: "32px",
-              maxWidth: "700px",
-              width: "100%",
-              maxHeight: "90vh",
-              overflow: "auto",
-              boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
-              border: "1px solid #e0c392",
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div style={{ marginBottom: "24px" }}>
-              <h2
-                style={{
-                  margin: "0 0 8px 0",
-                  fontSize: "24px",
-                  fontWeight: "700",
-                  color: "#111827",
-                }}
-              >
-                🤖 Generate AI Template
-              </h2>
-              <p
-                style={{
-                  margin: 0,
-                  fontSize: "14px",
-                  color: "#111827",
-                  lineHeight: "1.6",
-                }}
-              >
-                Choose a template type below. You can manually fill in the
-                template or use Claude AI to auto-generate content.
-              </p>
-            </div>
-
-            {/* Template Grid */}
-            <div
-              style={{
-                display: "grid",
-                gap: "16px",
-                marginBottom: "24px",
-              }}
-            >
-              {TEMPLATE_LIBRARY.map((template) => (
-                <div
-                  key={template.id}
-                  style={{
-                    padding: "20px",
-                    backgroundColor: "#fef5e7",
-                    border: "1.5px solid #e0c392",
-                    borderRadius: "20px",
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "flex-start",
-                      gap: "16px",
-                      marginBottom: "16px",
-                    }}
-                  >
-                    <span style={{ fontSize: "32px" }}>{template.icon}</span>
-                    <div style={{ flex: 1 }}>
-                      <h3
-                        style={{
-                          margin: "0 0 6px 0",
-                          fontSize: "18px",
-                          fontWeight: "600",
-                          color: "#111827",
-                        }}
-                      >
-                        {template.name}
-                      </h3>
-                      <p
-                        style={{
-                          margin: 0,
-                          fontSize: "14px",
-                          color: "#111827",
-                          lineHeight: "1.5",
-                        }}
-                      >
-                        {template.description}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div style={{ display: "flex", gap: "8px" }}>
-                    <button
-                      onClick={() => {
-                        // Use empty analysis if none exists - templates should still work
-                        const safeAnalysis = analysis || {
-                          principles: [],
-                          wordCount: currentChapterText.split(/\s+/).length,
-                          sentenceCount:
-                            currentChapterText.split(/[.!?]+/).length,
-                        };
-
-                        const generatedTemplate = template.generateTemplate(
-                          safeAnalysis,
-                          currentChapterText
-                        );
-
-                        console.log(
-                          "[TEMPLATE DEBUG] Generated HTML:",
-                          generatedTemplate.substring(0, 500)
-                        );
-
-                        const plainTextContent = generatedTemplate.replace(
-                          /<[^>]*>/g,
-                          ""
-                        );
-
-                        setChapterText(plainTextContent);
-                        setChapterData((prev) =>
-                          prev
-                            ? {
-                                ...prev,
-                                plainText: plainTextContent,
-                                editorHtml: generatedTemplate,
-                                originalPlainText: plainTextContent,
-                              }
-                            : {
-                                html: generatedTemplate,
-                                plainText: plainTextContent,
-                                originalPlainText: plainTextContent,
-                                isHybridDocx: true,
-                                imageCount: 0,
-                                editorHtml: generatedTemplate,
-                              }
-                        );
-
-                        setIsTemplateMode(true);
-                        setShowTemplateSelector(false);
-
-                        // Force editor to remount with new content
-                        bumpDocumentInstanceKey();
-                      }}
-                      style={{
-                        flex: 1,
-                        padding: "10px",
-                        backgroundColor: "#fef5e7",
-                        color: "#111827",
-                        border: "1.5px solid #e0c392",
-                        borderRadius: "20px",
-                        fontSize: "13px",
-                        fontWeight: "600",
-                        cursor: "pointer",
-                        transition: "background-color 0.2s",
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = "#f7e6d0";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = "#fef5e7";
-                      }}
-                    >
-                      📝 Manual Template
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        setSelectedTemplateForClaude(template);
-                        setShowTemplateSelector(false);
-                        setShowClaudeKeyDialog(true);
-                      }}
-                      style={{
-                        flex: 1,
-                        padding: "10px",
-                        backgroundColor: "#ef8432",
-                        color: "white",
-                        border: "1.5px solid #ef8432",
-                        borderRadius: "20px",
-                        fontSize: "13px",
-                        fontWeight: "600",
-                        cursor: "pointer",
-                        transition: "all 0.2s",
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = "#d97326";
-                        e.currentTarget.style.borderColor = "#d97326";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = "#ef8432";
-                        e.currentTarget.style.borderColor = "#ef8432";
-                      }}
-                    >
-                      🤖 Generate with Claude AI
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Cancel Button */}
-            <button
-              onClick={() => setShowTemplateSelector(false)}
-              style={{
-                width: "100%",
-                padding: "12px",
-                backgroundColor: "#f2ebe3",
-                color: "#111827",
-                border: "1.5px solid #111827",
-                borderRadius: "20px",
-                fontSize: "14px",
-                fontWeight: "600",
-                cursor: "pointer",
-              }}
-            >
-              Cancel
-            </button>
           </div>
         </div>
       )}

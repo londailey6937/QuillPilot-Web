@@ -605,6 +605,7 @@ export interface Character {
   relationships: CharacterRelationship[]; // Connections to other characters
   linkedNames: string[]; // Alternative names/aliases used in text (e.g., "John", "Johnny", "Mr. Smith")
   notes: string; // Free-form writer notes
+  templateHtml?: string; // Full character template HTML for restoration
   createdAt: string;
   updatedAt: string;
 }

@@ -1,16 +1,19 @@
 import React, { useState } from "react";
 import { Character, CharacterRole, CharacterRelationship } from "../types";
+import { getTemplateById } from "@/utils/templateLibrary";
 
 interface CharacterManagerProps {
   characters: Character[];
   onSave: (characters: Character[]) => void;
   onClose: () => void;
+  onOpenTemplate?: (templateHtml: string, characterId?: string) => void; // Callback to open template in editor, with optional character ID for editing
 }
 
 export const CharacterManager: React.FC<CharacterManagerProps> = ({
   characters,
   onSave,
   onClose,
+  onOpenTemplate,
 }) => {
   const [editingCharacter, setEditingCharacter] = useState<Character | null>(
     null
@@ -272,20 +275,6 @@ export const CharacterManager: React.FC<CharacterManagerProps> = ({
           <h2 style={{ margin: 0, fontSize: "24px", color: "#2c3e50" }}>
             Character Manager
           </h2>
-          <button
-            onClick={onClose}
-            style={{
-              background: "none",
-              border: "none",
-              fontSize: "24px",
-              cursor: "pointer",
-              color: "#6b7280",
-              padding: "4px 8px",
-            }}
-            title="Close"
-          >
-            ×
-          </button>
         </div>
 
         {/* Content */}
@@ -764,7 +753,18 @@ export const CharacterManager: React.FC<CharacterManagerProps> = ({
                   Characters ({localCharacters.length})
                 </h3>
                 <button
-                  onClick={handleAddNew}
+                  onClick={() => {
+                    if (onOpenTemplate) {
+                      const template = getTemplateById("fiction");
+                      if (template) {
+                        const templateHtml = template.generateTemplate({}, "");
+                        onOpenTemplate(templateHtml);
+                        onClose();
+                      }
+                    } else {
+                      handleAddNew();
+                    }
+                  }}
                   style={{
                     padding: "10px 20px",
                     backgroundColor: "#ef8432",
@@ -774,8 +774,9 @@ export const CharacterManager: React.FC<CharacterManagerProps> = ({
                     cursor: "pointer",
                     fontSize: "16px",
                   }}
+                  title="Create a new character using the detailed character template"
                 >
-                  + Add Character
+                  + New Character
                 </button>
               </div>
 
@@ -790,8 +791,13 @@ export const CharacterManager: React.FC<CharacterManagerProps> = ({
                   <div style={{ fontSize: "48px", marginBottom: "16px" }}>
                     📝
                   </div>
-                  <p style={{ margin: 0, fontSize: "16px" }}>
-                    No characters yet. Click "Add Character" to get started.
+                  <p style={{ margin: "0 0 16px 0", fontSize: "16px" }}>
+                    No characters yet. Click <strong>+ New Character</strong> to
+                    create one using the detailed character template.
+                  </p>
+                  <p style={{ margin: 0, fontSize: "14px", color: "#92400e" }}>
+                    The template includes sections for identity, origin, skills,
+                    psychology, relationships, and more.
                   </p>
                 </div>
               ) : (
@@ -864,7 +870,21 @@ export const CharacterManager: React.FC<CharacterManagerProps> = ({
                       </div>
                       <div style={{ display: "flex", gap: "8px" }}>
                         <button
-                          onClick={() => handleEdit(character)}
+                          onClick={() => {
+                            if (onOpenTemplate) {
+                              const template = getTemplateById("fiction");
+                              if (template) {
+                                const templateHtml = template.generateTemplate(
+                                  {},
+                                  ""
+                                );
+                                onOpenTemplate(templateHtml, character.id);
+                                onClose();
+                              }
+                            } else {
+                              handleEdit(character);
+                            }
+                          }}
                           style={{
                             padding: "6px 12px",
                             backgroundColor: "#ef8432",
@@ -901,30 +921,15 @@ export const CharacterManager: React.FC<CharacterManagerProps> = ({
         </div>
 
         {/* Footer Actions */}
-        {!editingCharacter && (
+        {!editingCharacter && localCharacters.length > 0 && (
           <div
             style={{
               padding: "24px",
               borderTop: "2px solid #e0c392",
               display: "flex",
               justifyContent: "flex-end",
-              gap: "12px",
             }}
           >
-            <button
-              onClick={onClose}
-              style={{
-                padding: "10px 20px",
-                backgroundColor: "#fef5e7",
-                color: "#2c3e50",
-                border: "2px solid #e0c392",
-                borderRadius: "6px",
-                cursor: "pointer",
-                fontSize: "16px",
-              }}
-            >
-              Cancel
-            </button>
             <button
               onClick={handleSaveAll}
               style={{

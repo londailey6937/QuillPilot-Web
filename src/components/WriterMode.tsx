@@ -324,24 +324,6 @@ export const WriterMode: React.FC<WriterModeProps> = ({
                 ? "▶"
                 : "▶ Show Analysis"}
             </button>
-            {analysisResult && (
-              <button
-                className="px-3 md:px-4 py-2 bg-white text-gray-600 rounded-full border-2 border-gray-600 hover:border-gray-700 hover:text-gray-700 transition-colors text-sm md:text-base whitespace-nowrap disabled:bg-gray-100 disabled:border-gray-300 disabled:text-gray-400 disabled:cursor-not-allowed"
-                onClick={generateAITemplate}
-                disabled={isGeneratingTemplate}
-              >
-                {isGeneratingTemplate ? (
-                  <span className="flex items-center gap-2">
-                    <span className="animate-spin">⚙️</span>
-                    {isCompactView ? "..." : "Generating..."}
-                  </span>
-                ) : (
-                  <span>
-                    {isCompactView ? "🤖 Template" : "🤖 Generate AI Template"}
-                  </span>
-                )}
-              </button>
-            )}
             <button
               className="px-3 md:px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm md:text-base whitespace-nowrap"
               onClick={handleExportDocx}

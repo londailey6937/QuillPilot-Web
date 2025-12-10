@@ -15,14 +15,14 @@ export interface Template {
 }
 
 /**
- * Character Development Template
+ * Character Template
  * Focused on creating deep, compelling characters with complete arcs
  * Professional writer layout with minimal padding
  * Labels/headings are NOT editable; only placeholder fields are editable
  */
 const fictionTemplate: Template = {
   id: "fiction",
-  name: "Character Development",
+  name: "Character Template",
   description:
     "For developing rich, multi-dimensional characters with complete character arcs",
   icon: "👤",
@@ -30,32 +30,25 @@ const fictionTemplate: Template = {
   generateTemplate: (analysis, chapterText) => {
     let template = `<div class="template-content" style="font-family: 'Georgia', serif; line-height: 1.6; max-width: 720px; margin: 0 auto;"><style>
 .template-content, .template-content * { text-indent: 0 !important; }
-.cf { width: 100%; padding: 4px 6px; border: 1px solid #d1d5db; border-radius: 2px; background: #fff; font-size: 13px; color: #888; font-style: italic; margin-top: 2px; min-height: 24px; cursor: pointer; }
+.cf { width: 100%; padding: 4px 6px; border: 1px solid #d1d5db; border-radius: 4px; background: #fff; font-size: 13px; color: #888; font-style: italic; margin-top: 2px; min-height: 24px; cursor: pointer; }
 .cf:focus { outline: none; border-color: #ef8432; background: #fff; color: #111; font-style: normal; }
-.sec { border-left: 2px solid #ef8432; padding: 4px 8px; margin-bottom: 8px; }
-.sec h2 { margin: 0 0 4px 0; font-size: 13px; font-weight: 600; color: #92400e; text-transform: uppercase; letter-spacing: 0.5px; }
+.sec { border-left: 2px solid #ef8432; padding: 4px 8px; margin-bottom: 8px; break-inside: avoid-column; }
+.sec h2 { margin: 0 0 4px 0; font-size: 13px; font-weight: 600; color: #92400e; text-transform: uppercase; letter-spacing: 0.5px; break-after: avoid; }
 .fld { margin-bottom: 4px; }
+.fld:first-of-type { break-before: avoid; }
 .lbl { display: block; font-size: 11px; font-weight: 600; color: #374151; user-select: none; pointer-events: none; }
-</style>
-<script>
-document.addEventListener('click', function(e) {
-  if (e.target.classList.contains('cf') && e.target.dataset.sample) {
-    e.target.textContent = '';
-    delete e.target.dataset.sample;
-  }
-});
-</script>`;
+</style>`;
 
-    // Header - NOT editable, no background, with border
-    template += `<div contenteditable="false" style="padding: 6px 10px; border: 2px solid #c9a97c; border-radius: 3px; margin-bottom: 10px; user-select: none;">
-<h1 style="margin: 0; font-size: 16px; font-weight: 700; color: #111;">Character Development Template</h1>
-<p style="margin: 2px 0 0 0; font-size: 11px; color: #555;">Click any field to clear sample text and enter your own.</p>
+    // Header - NOT editable, no padding, rounded corners
+    template += `<div contenteditable="false" style="padding: 0; border: 2px solid #c9a97c; border-radius: 8px; margin-bottom: 10px; user-select: none;">
+<h1 style="margin: 0; padding: 4px 10px 0 10px; font-size: 16px; font-weight: 700; color: #111;">Character Template</h1>
+<p style="margin: 0; padding: 0 10px 4px 10px; font-size: 11px; color: #555;">Click any field to clear sample text and enter your own.</p>
 </div>`;
 
     // Character Identity
     template += `<div class="sec">
 <h2 contenteditable="false">Character Identity</h2>
-<div class="fld"><span class="lbl" contenteditable="false">Character's Full Name</span><div class="cf" contenteditable="true" data-sample="true">Alex Ross Applegate</div></div>
+<div class="fld"><span class="lbl" contenteditable="false">Character's Full Name</span><div class="cf" id="character-name" contenteditable="true" data-sample="true">Alex Ross Applegate</div></div>
 <div class="fld"><span class="lbl" contenteditable="false">Age & Life Stage</span><div class="cf" contenteditable="true" data-sample="true">Mid 20s—at the peak of physical capability yet still discovering the emotional depths of his calling. Old enough to have accumulated hard-won experience, young enough to still be shaped by it.</div></div>
 <div class="fld"><span class="lbl" contenteditable="false">Occupation & Role in Story World</span><div class="cf" contenteditable="true" data-sample="true">Operative for a Covert Organization—the Agency. Alex exists in the liminal space between citizen and shadow, tasked with operations that never make the news yet shape the course of nations. His work demands he become whoever the mission requires while holding fast to his core identity.</div></div>
 <div class="fld"><span class="lbl" contenteditable="false">Education & Intellectual Foundation</span><div class="cf" contenteditable="true" data-sample="true">B.S. Applied Mathematics, M.S. Linguistics. His academic background wasn't merely academic—it was strategic, forming the foundation of his multifaceted abilities. Mathematics taught him to see patterns in chaos; linguistics gave him the keys to infiltrate any culture, any circle, any conversation.</div></div>
@@ -65,7 +58,7 @@ document.addEventListener('click', function(e) {
     // Origin & Formation
     template += `<div class="sec">
 <h2 contenteditable="false">Origin & Formation</h2>
-<div class="fld"><span class="lbl" contenteditable="false">Background & Origin Story</span><div class="cf" contenteditable="true" data-sample="true">Alex's background is shrouded in secrecy due to his work with the Agency. He was trained by his uncle, the only surviving member of the British School of Assassins, at a young age due to his exceptional intellect, resourcefulness, and unwavering commitment to extensive and rigorous training, equipping him with the skills necessary to navigate the shadowy world of espionage. Raised in a family with military history, Alex always knew he was destined for a life far from ordinary. After excelling in his training, he was fast-tracked into special operations where he quickly made a name for himself.</div></div>
+<div class="fld"><span class="lbl" contenteditable="false">Background & Origin Story</span><div class="cf" id="character-background" contenteditable="true" data-sample="true">Alex's background is shrouded in secrecy due to his work with the Agency. He was trained by his uncle, the only surviving member of the British School of Assassins, at a young age due to his exceptional intellect, resourcefulness, and unwavering commitment to extensive and rigorous training, equipping him with the skills necessary to navigate the shadowy world of espionage. Raised in a family with military history, Alex always knew he was destined for a life far from ordinary. After excelling in his training, he was fast-tracked into special operations where he quickly made a name for himself.</div></div>
 <div class="fld"><span class="lbl" contenteditable="false">Formative Years & Early Development</span><div class="cf" contenteditable="true" data-sample="true">In a world filled with ordinary lives, Alex's trajectory was anything but. At an age where most children were engrossed in games and school plays, he was tapped on the shoulder by destiny—or rather, by a covert intelligence program that saw something extraordinary in him. It all began with an unusual education. Instead of the standard subjects, his curriculum was meticulously designed around the arcane arts of intelligence and espionage. By the age of ten, Alex was fluent in multiple foreign languages, adept at breaking codes, and writing complex computer programs. While his peers played with toys, Alex was engrossed in blueprints and engineering puzzles.</div></div>
 <div class="fld"><span class="lbl" contenteditable="false">Training & Physical Discipline</span><div class="cf" contenteditable="true" data-sample="true">As he grew, so did his skillset. His after-school hours, which would've been filled with games and mischief for any other child, were dominated by rigorous martial arts training. Aikido and Ba Qua not only strengthened his body but sharpened his mind, teaching him the importance of balance, agility, and precision. With every move, Alex learned to anticipate and counteract, turning defense into offense in a heartbeat. His prowess wasn't limited to physical combat. Alex was schooled in the intricacies of the human psyche, learning to detect the minutest shifts in body language, the subtleties of tone and facial expressions.</div></div>
 <div class="fld"><span class="lbl" contenteditable="false">World Experience & Cultural Mastery</span><div class="cf" contenteditable="true" data-sample="true">He was a sponge, absorbing everything from history to politics, from law to economics. His education wasn't confined within the four walls of a classroom. Alex traveled the world, experiencing cultures, learning etiquettes, and mastering local accents. Whether it was the dance of Spain or the customs of Japan, Alex could seamlessly fit in, a chameleon in every setting. His teenage years were marked with adrenaline. Guided by veteran agents, Alex undertook staged missions, navigating real-world challenges and facing dangers that would send chills down anyone's spine.</div></div>
@@ -83,7 +76,7 @@ document.addEventListener('click', function(e) {
     // Personality Architecture
     template += `<div class="sec">
 <h2 contenteditable="false">Personality Architecture</h2>
-<div class="fld"><span class="lbl" contenteditable="false">Core Personality Traits</span><div class="cf" contenteditable="true" data-sample="true">Reserved, intelligent, resourceful, driven by a sense of justice. Alex was not just a spy; he was a symbol of unparalleled commitment and dedication. Despite his many talents, what set Alex apart was his unwavering sense of purpose. He knew his mission—protecting the interests of his nation, even at the cost of his personal life.</div></div>
+<div class="fld"><span class="lbl" contenteditable="false">Core Personality Traits</span><div class="cf" id="character-traits" contenteditable="true" data-sample="true">Reserved, intelligent, resourceful, driven by a sense of justice. Alex was not just a spy; he was a symbol of unparalleled commitment and dedication. Despite his many talents, what set Alex apart was his unwavering sense of purpose. He knew his mission—protecting the interests of his nation, even at the cost of his personal life.</div></div>
 <div class="fld"><span class="lbl" contenteditable="false">Operating Principles & Code</span><div class="cf" contenteditable="true" data-sample="true">1. Never do business with friends or relatives. 2. Two can keep a secret if one of them is dead. 3. Never do the expected. 4. Always monitor a situation from afar. 5. Never leave any evidence behind. 6. Planning is imperative. Make a plan, but plan for the unexpected. Each rule shaped his actions, ensuring his survival in a game where the cost of failure was death.</div></div>
 <div class="fld"><span class="lbl" contenteditable="false">Inner Life & Private Struggles</span><div class="cf" contenteditable="true" data-sample="true">Beneath the layers of aliases and disguises, the heart of a young boy who once dreamt of a simpler life still beat. Every so often, in the quiet of the night, Alex would reminisce about the paths not taken, the life he could've had. But he never let regret overshadow his duty. Yet, even as he danced through gunfire, sped through narrow alleys, or deceived enemies, there was a solitary truth Alex held onto: the line between right and wrong was often blurred in his line of work. Moral dilemmas were frequent visitors, and choices were seldom black and white.</div></div>
 <div class="fld"><span class="lbl" contenteditable="false">Adaptability & Social Masks</span><div class="cf" contenteditable="true" data-sample="true">The world around him was a chessboard, and he was both the player and the pawn. Whether it was infiltrating elite circles in Monaco or tracking arms dealers in the alleys of Marrakech, Alex's adaptability was his greatest asset. High society balls or underground fight clubs, there wasn't an environment he couldn't dominate. With every passing year, the real Alex became harder to find. Layers of identities were created, each supported by a web of fabricated stories and documents, enabling him to dive deep undercover, often losing himself to become someone entirely different.</div></div>
@@ -103,43 +96,72 @@ document.addEventListener('click', function(e) {
 <h2 contenteditable="false">Psychology & Inner Need</h2>
 <div class="fld"><span class="lbl" contenteditable="false">Ghost (Backstory Wound)</span><div class="cf" contenteditable="true" data-sample="true">Haunted by Dana's loss and operating in the espionage world. The narrative of "The Silent Operator" is one of duality—the man and the myth, the operative and the individual. Alex Ross Applegate, a prodigy turned legend, was both the player and the pawn in a game much larger than himself.</div></div>
 <div class="fld"><span class="lbl" contenteditable="false">Core Weakness & Psychological Need</span><div class="cf" contenteditable="true" data-sample="true">Isolated and emotionally guarded, needs to open up to others. His early grooming in the world of espionage made him understand the impermanence of relationships. Friendships were fleeting, love was a luxury, and trust was the rarest of commodities. Yet, beneath the layers of aliases and disguises, the heart of a young boy who once dreamt of a simpler life still beat.</div></div>
-<div class="fld"><span class="lbl" contenteditable="false">False Belief & Moral Complexity</span><div class="cf" contenteditable="true" data-sample="true">The line between right and wrong was often blurred in his line of work. Moral dilemmas were frequent visitors, and choices were seldom black and white. In the grand tapestry of global geopolitics, Alex was but a thread, albeit a crucial one. Through his eyes, the world was a complex puzzle, ever-changing and unpredictable.</div></div>
-<div class="fld"><span class="lbl" contenteditable="false">What Grounds the Character</span><div class="cf" contenteditable="true" data-sample="true">In the world of espionage, where the stakes were always high, Alex found solace in the small moments—the scent of a familiar perfume reminding him of a long-lost love, the laughter of children bringing back memories of a childhood left behind, or the taste of a home-cooked meal evoking feelings of a family he once had. For Alex, the mission was clear, the path set. No matter where destiny took him, he was ready, always one step ahead, always in the shadows, watching, waiting, and acting for the greater good.</div></div>
+<div class="fld"><span class="lbl" contenteditable="false">False Belief & Moral Complexity</span><div class="cf" contenteditable="true" data-sample="true">He believed he could keep his personal and professional lives separate. The line between right and wrong was often blurred in his line of work. Moral dilemmas were frequent visitors, and choices were seldom black and white. Every mission brought him face-to-face with the gray areas of morality.</div></div>
+<div class="fld"><span class="lbl" contenteditable="false">What Grounds the Character</span><div class="cf" contenteditable="true" data-sample="true">His sense of duty, his relationship with Allison, and Max. Despite the chaos, these were the constants that kept him tethered to his humanity. They reminded him why he fought, why he sacrificed, and ultimately, what he was protecting.</div></div>
 </div>`;
 
     // 22-Step Character Arc
     template += `<div class="sec">
 <h2 contenteditable="false">22-Step Character Arc</h2>
-<div class="fld"><span class="lbl" contenteditable="false">1. Self-Revelation, Need & Desire</span><div class="cf" contenteditable="true" data-sample="true">Alex realizes he needs to confront his past to move forward. The weight of unresolved history prevents him from fully engaging with his present and future.</div></div>
-<div class="fld"><span class="lbl" contenteditable="false">2. Ghost & Story World</span><div class="cf" contenteditable="true" data-sample="true">Haunted by Dana's loss and operating in the espionage world. This ghost shapes every decision, every relationship, every moment of vulnerability he allows himself.</div></div>
-<div class="fld"><span class="lbl" contenteditable="false">3. Weakness & Need</span><div class="cf" contenteditable="true" data-sample="true">Isolated and emotionally guarded, needs to open up to others. His protective walls have become his prison.</div></div>
-<div class="fld"><span class="lbl" contenteditable="false">4. Inciting Event</span><div class="cf" contenteditable="true" data-sample="true">Receives a cryptic message about Dana. The past he thought buried refuses to stay dead.</div></div>
-<div class="fld"><span class="lbl" contenteditable="false">5. Desire</span><div class="cf" contenteditable="true" data-sample="true">To uncover the truth about Dana's mission. This external goal masks his deeper need for closure and redemption.</div></div>
-<div class="fld"><span class="lbl" contenteditable="false">6. Ally</span><div class="cf" contenteditable="true" data-sample="true">Kiko from his past; a reminder of his vulnerabilities. The ally serves as a mirror, reflecting both his strengths and his blind spots.</div></div>
-<div class="fld"><span class="lbl" contenteditable="false">7. Opponent</span><div class="cf" contenteditable="true" data-sample="true">The mysterious forces behind Dana's disappearance. The opponent represents everything Alex fears—the cost of caring in a world that punishes connection.</div></div>
-<div class="fld"><span class="lbl" contenteditable="false">8. Fake-Ally Opponent</span><div class="cf" contenteditable="true" data-sample="true">A colleague in the Agency who secretly opposes him. Trust, always fragile, becomes impossible when those closest harbor hidden agendas.</div></div>
-<div class="fld"><span class="lbl" contenteditable="false">9. First Revelation & Decision</span><div class="cf" contenteditable="true" data-sample="true">Discovers Dana might be alive; decides to find her. Hope, that dangerous emotion he'd learned to suppress, resurfaces with devastating force.</div></div>
-<div class="fld"><span class="lbl" contenteditable="false">10. Plan</span><div class="cf" contenteditable="true" data-sample="true">To use his skills to trace Dana's last mission. He applies his tradecraft to personal ends, crossing lines he once held sacred.</div></div>
-<div class="fld"><span class="lbl" contenteditable="false">11. Opponent's Plan & Counterattack</span><div class="cf" contenteditable="true" data-sample="true">The Agency tries to stop him, fearing exposure. The institution that made him now seeks to unmake his pursuit of truth.</div></div>
-<div class="fld"><span class="lbl" contenteditable="false">12. Drive</span><div class="cf" contenteditable="true" data-sample="true">Pushes forward despite warnings, using his surveillance expertise. Each step deeper into the mystery takes him further from safety and closer to transformation.</div></div>
-<div class="fld"><span class="lbl" contenteditable="false">13. Attack by Ally</span><div class="cf" contenteditable="true" data-sample="true">Kiko criticizes him for his obsession with Dana. The truth hurts most when spoken by those who truly see us.</div></div>
-<div class="fld"><span class="lbl" contenteditable="false">14. Apparent Defeat</span><div class="cf" contenteditable="true" data-sample="true">Believes Dana is dead after a misleading lead. The lowest point reveals what he truly values—and what he's willing to sacrifice.</div></div>
-<div class="fld"><span class="lbl" contenteditable="false">15. Second Revelation & Decision</span><div class="cf" contenteditable="true" data-sample="true">Learns that Dana was on a covert mission against the Agency. The truth reframes everything—enemies become allies, loyalty becomes betrayal.</div></div>
-<div class="fld"><span class="lbl" contenteditable="false">16. Audience Revelation</span><div class="cf" contenteditable="true" data-sample="true">Dana is working undercover to expose corruption. The reader sees what Alex cannot yet grasp—that love and duty need not be opposing forces.</div></div>
-<div class="fld"><span class="lbl" contenteditable="false">17. Third Revelation & Decision</span><div class="cf" contenteditable="true" data-sample="true">Decides to go rogue to help Dana. He chooses relationship over institution, humanity over protocol.</div></div>
-<div class="fld"><span class="lbl" contenteditable="false">18. Gate, Gauntlet, Visit to Death</span><div class="cf" contenteditable="true" data-sample="true">Confronts the corrupt officials at the risk of his life. He faces literal and symbolic death—the death of his old self, his old beliefs, his old limitations.</div></div>
-<div class="fld"><span class="lbl" contenteditable="false">19. Battle</span><div class="cf" contenteditable="true" data-sample="true">A physical and ideological battle against the Agency's corruption. The external conflict crystallizes the internal transformation.</div></div>
-<div class="fld"><span class="lbl" contenteditable="false">20. Self-Revelation</span><div class="cf" contenteditable="true" data-sample="true">Realizes his love for Dana is his strength, not weakness. What he thought made him vulnerable actually makes him formidable.</div></div>
-<div class="fld"><span class="lbl" contenteditable="false">21. Moral Decision</span><div class="cf" contenteditable="true" data-sample="true">Chooses to leave the Agency and fight for the truth with Dana. He acts on his new understanding, cementing his transformation through irrevocable choice.</div></div>
-<div class="fld"><span class="lbl" contenteditable="false">22. New Equilibrium</span><div class="cf" contenteditable="true" data-sample="true">Lives a life balancing between love and vigilance against corruption. He has integrated his need for connection with his skills and purpose, achieving wholeness.</div></div>
+<div class="fld"><span class="lbl" contenteditable="false">1. Self-Revelation, Need & Desire</span><div class="cf" contenteditable="true" data-sample="true">What does the character realize they need?</div></div>
+<div class="fld"><span class="lbl" contenteditable="false">2. Ghost & Story World</span><div class="cf" contenteditable="true" data-sample="true">What haunts them and what world do they inhabit?</div></div>
+<div class="fld"><span class="lbl" contenteditable="false">3. Weakness & Need</span><div class="cf" id="character-conflicts" contenteditable="true" data-sample="true">What is their weakness and psychological need?</div></div>
+<div class="fld"><span class="lbl" contenteditable="false">4. Inciting Event</span><div class="cf" contenteditable="true" data-sample="true">What event disrupts their world?</div></div>
+<div class="fld"><span class="lbl" contenteditable="false">5. Desire</span><div class="cf" id="character-goals" contenteditable="true" data-sample="true">What do they want to achieve?</div></div>
+<div class="fld"><span class="lbl" contenteditable="false">6. Ally</span><div class="cf" contenteditable="true" data-sample="true">Who helps them on their journey?</div></div>
+<div class="fld"><span class="lbl" contenteditable="false">7. Opponent</span><div class="cf" contenteditable="true" data-sample="true">Who or what opposes them?</div></div>
+<div class="fld"><span class="lbl" contenteditable="false">8. Fake-Ally Opponent</span><div class="cf" contenteditable="true" data-sample="true">Who pretends to help but secretly opposes?</div></div>
+<div class="fld"><span class="lbl" contenteditable="false">9. First Revelation & Decision</span><div class="cf" contenteditable="true" data-sample="true">What do they learn and decide?</div></div>
+<div class="fld"><span class="lbl" contenteditable="false">10. Plan</span><div class="cf" contenteditable="true" data-sample="true">What is their plan to achieve their goal?</div></div>
+<div class="fld"><span class="lbl" contenteditable="false">11. Opponent's Plan & Counterattack</span><div class="cf" contenteditable="true" data-sample="true">How does the opponent fight back?</div></div>
+<div class="fld"><span class="lbl" contenteditable="false">12. Drive</span><div class="cf" contenteditable="true" data-sample="true">How do they push forward despite obstacles?</div></div>
+<div class="fld"><span class="lbl" contenteditable="false">13. Attack by Ally</span><div class="cf" contenteditable="true" data-sample="true">How does an ally challenge or criticize them?</div></div>
+<div class="fld"><span class="lbl" contenteditable="false">14. Apparent Defeat</span><div class="cf" contenteditable="true" data-sample="true">What is their lowest point?</div></div>
+<div class="fld"><span class="lbl" contenteditable="false">15. Second Revelation & Decision</span><div class="cf" contenteditable="true" data-sample="true">What new truth do they discover?</div></div>
+<div class="fld"><span class="lbl" contenteditable="false">16. Audience Revelation</span><div class="cf" contenteditable="true" data-sample="true">What does the reader learn that the character doesn't?</div></div>
+<div class="fld"><span class="lbl" contenteditable="false">17. Third Revelation & Decision</span><div class="cf" contenteditable="true" data-sample="true">What final truth changes everything?</div></div>
+<div class="fld"><span class="lbl" contenteditable="false">18. Gate, Gauntlet, Visit to Death</span><div class="cf" contenteditable="true" data-sample="true">What final test do they face?</div></div>
+<div class="fld"><span class="lbl" contenteditable="false">19. Battle</span><div class="cf" contenteditable="true" data-sample="true">What is the climactic confrontation?</div></div>
+<div class="fld"><span class="lbl" contenteditable="false">20. Self-Revelation</span><div class="cf" id="character-arc" contenteditable="true" data-sample="true">What do they finally understand about themselves?</div></div>
+<div class="fld"><span class="lbl" contenteditable="false">21. Moral Decision</span><div class="cf" contenteditable="true" data-sample="true">What choice proves their transformation?</div></div>
+<div class="fld"><span class="lbl" contenteditable="false">22. New Equilibrium</span><div class="cf" contenteditable="true" data-sample="true">What is their new normal?</div></div>
 </div>`;
 
     // Thematic Resonance
     template += `<div class="sec">
 <h2 contenteditable="false">Thematic Resonance</h2>
-<div class="fld"><span class="lbl" contenteditable="false">Central Theme & Duality</span><div class="cf" contenteditable="true" data-sample="true">The narrative is one of duality—the man and the myth, the operative and the individual. Alex Ross Applegate's life was a tapestry of shadows and secrets, intricately woven since his childhood. Each chapter of his life, each assignment he undertook, was a step in an eternal dance—a dance of intellect, of power, of survival. It is here, in the silence of his actions, that the true essence of Alex Ross Applegate—the silent operator—comes to light, a beacon in the darkness of a world fraught with secrets and lies.</div></div>
-<div class="fld"><span class="lbl" contenteditable="false">Legacy & Reputation</span><div class="cf" contenteditable="true" data-sample="true">As years passed, the young prodigy turned into a legend within the intelligence community. Stories of his exploits were whispered in the corridors of power, often with a mix of admiration and envy. Yet, to the world outside, he remained a ghost, a myth, a nameless hero guarding the shadows. Alex was not just a spy; he was an embodiment of human potential, a testament to what one could achieve with the right training, guidance, and determination.</div></div>
-<div class="fld"><span class="lbl" contenteditable="false">Existential Purpose</span><div class="cf" contenteditable="true" data-sample="true">In the grand tapestry of global geopolitics, Alex was but a thread, albeit a crucial one. Through his eyes, the world was a complex puzzle, ever-changing and unpredictable. But for Alex, the mission was clear, the path set. No matter where destiny took him, he was ready, always one step ahead, always in the shadows, watching, waiting, and acting for the greater good.</div></div>
+<div class="fld"><span class="lbl" contenteditable="false">Central Theme & Duality</span><div class="cf" contenteditable="true" data-sample="true">What central theme does this character embody?</div></div>
+<div class="fld"><span class="lbl" contenteditable="false">Legacy & Reputation</span><div class="cf" contenteditable="true" data-sample="true">What legacy do they leave? How are they remembered?</div></div>
+<div class="fld"><span class="lbl" contenteditable="false">Existential Purpose</span><div class="cf" contenteditable="true" data-sample="true">What is their ultimate purpose or meaning?</div></div>
+</div>`;
+
+    // Relationships Section
+    template += `<div class="sec">
+<h2 contenteditable="false">Relationships</h2>
+<div id="relationships-list" style="margin-bottom: 8px;">
+<p style="color: #6b7280; font-style: italic; font-size: 13px; margin: 4px 0;">No relationships defined yet.</p>
+</div>
+<button onclick="window.dispatchEvent(new CustomEvent('addCharacterRelationship'))" style="padding: 6px 12px; background-color: #fef5e7; color: #2c3e50; border: 2px solid #e0c392; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">+ Add Relationship</button>
+</div>`;
+
+    // Alternative Names / Aliases Section
+    template += `<div class="sec">
+<h2 contenteditable="false">Alternative Names / Aliases</h2>
+<div id="aliases-list" style="margin-bottom: 8px;">
+<p style="color: #6b7280; font-style: italic; font-size: 13px; margin: 4px 0;">No aliases defined yet.</p>
+</div>
+<button onclick="window.dispatchEvent(new CustomEvent('addCharacterAlias'))" style="padding: 6px 12px; background-color: #fef5e7; color: #2c3e50; border: 2px solid #e0c392; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">+ Add Name</button>
+</div>`;
+
+    // Notes Section
+    template += `<div class="sec">
+<h2 contenteditable="false">Notes</h2>
+<div class="fld"><div class="cf" id="character-notes" contenteditable="true" data-sample="true" style="min-height: 80px;">Add any additional notes about this character here...</div></div>
+</div>`;
+
+    // Save Button
+    template += `<div contenteditable="false" style="padding: 16px 0; text-align: center; user-select: none;">
+<button onclick="window.dispatchEvent(new CustomEvent('saveCharacterTemplate'))" style="padding: 10px 24px; background-color: #ef8432; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 600;">Save Character & Close</button>
 </div>`;
 
     template += `</div>`;
