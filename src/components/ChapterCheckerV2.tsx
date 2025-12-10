@@ -55,6 +55,13 @@ import type { Genre } from "@/data/genreRegistry";
 import { detectGenre, getAvailableGenres } from "@/data/genreRegistry";
 import type { ConceptDefinition } from "@/data/conceptLibraryRegistry";
 import {
+  analyzeAllCharacterArcs,
+  CharacterArcProgress,
+  CHARACTER_ARC_STEPS,
+  getStepColor,
+  POSITION_LABELS,
+} from "@/utils/characterAnalyzer";
+import {
   supabase,
   getCurrentUser,
   getUserProfile,
@@ -606,6 +613,12 @@ export const ChapterCheckerV2: React.FC = () => {
     CharacterMapping[]
   >([]);
   const [isCharacterManagerOpen, setIsCharacterManagerOpen] = useState(false);
+
+  // Character Arc Analysis (22-Step) - Tier 3
+  const [characterArcAnalysis, setCharacterArcAnalysis] = useState<
+    CharacterArcProgress[]
+  >([]);
+  const [isCharacterArcExpanded, setIsCharacterArcExpanded] = useState(false);
 
   // Header/Footer settings for export (received from editor)
   const [headerFooterSettings, setHeaderFooterSettings] = useState<{
@@ -1799,6 +1812,20 @@ export const ChapterCheckerV2: React.FC = () => {
 
         if (e.data.type === "complete") {
           setAnalysis(e.data.result);
+
+          // Run Character Arc Analysis (22-Step) for Tier 3
+          if (accessLevel === "professional") {
+            const textToAnalyze =
+              chapterData?.plainText ?? chapterData?.originalPlainText ?? "";
+            const arcResults = analyzeAllCharacterArcs(
+              textToAnalyze,
+              characters
+            );
+            setCharacterArcAnalysis(arcResults);
+            console.log(
+              `[CharacterArc] Analyzed ${arcResults.length} characters`
+            );
+          }
 
           // Extract general concepts if domain is "none"
           if (selectedDomain === "none") {
@@ -4889,6 +4916,315 @@ export const ChapterCheckerV2: React.FC = () => {
                       {progress}
                     </div>
                   )}
+
+                  {/* Character Arc Analysis (22-Step) - Tier 3 */}
+                  {accessLevel === "professional" &&
+                    analysis &&
+                    characterArcAnalysis.length > 0 && (
+                      <div
+                        style={{
+                          marginTop: "12px",
+                          padding: "12px",
+                          backgroundColor: "white",
+                          borderRadius: "16px",
+                          border: "1.5px solid #e0c392",
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            cursor: "pointer",
+                          }}
+                          onClick={() =>
+                            setIsCharacterArcExpanded(!isCharacterArcExpanded)
+                          }
+                        >
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "8px",
+                            }}
+                          >
+                            <span style={{ fontSize: "16px" }}>🎭</span>
+                            <span
+                              style={{
+                                fontWeight: 600,
+                                color: "#2c3e50",
+                                fontSize: "14px",
+                              }}
+                            >
+                              Character Arc Analysis
+                            </span>
+                            <span
+                              style={{
+                                backgroundColor: "#dbeafe",
+                                color: "#1e40af",
+                                padding: "2px 8px",
+                                borderRadius: "10px",
+                                fontSize: "11px",
+                                fontWeight: 500,
+                              }}
+                            >
+                              22-Step
+                            </span>
+                          </div>
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "8px",
+                            }}
+                          >
+                            <span
+                              style={{
+                                fontSize: "11px",
+                                color: "#64748b",
+                              }}
+                            >
+                              {characterArcAnalysis.length} character
+                              {characterArcAnalysis.length !== 1 ? "s" : ""}
+                            </span>
+                            <span
+                              style={{ color: "#64748b", fontSize: "12px" }}
+                            >
+                              {isCharacterArcExpanded ? "▼" : "▶"}
+                            </span>
+                          </div>
+                        </div>
+
+                        {isCharacterArcExpanded && (
+                          <div style={{ marginTop: "12px" }}>
+                            {characterArcAnalysis.map((charArc, idx) => (
+                              <div
+                                key={charArc.characterId || idx}
+                                style={{
+                                  padding: "10px",
+                                  backgroundColor: "#fef5e7",
+                                  borderRadius: "12px",
+                                  marginBottom:
+                                    idx < characterArcAnalysis.length - 1
+                                      ? "8px"
+                                      : 0,
+                                  border: "1px solid #e0c392",
+                                }}
+                              >
+                                {/* Character Header */}
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "space-between",
+                                    marginBottom: "8px",
+                                  }}
+                                >
+                                  <div
+                                    style={{
+                                      display: "flex",
+                                      alignItems: "center",
+                                      gap: "8px",
+                                    }}
+                                  >
+                                    <span
+                                      style={{
+                                        fontWeight: 600,
+                                        color: "#111827",
+                                        fontSize: "14px",
+                                      }}
+                                    >
+                                      {charArc.characterName}
+                                    </span>
+                                    <span
+                                      style={{
+                                        backgroundColor: getStepColor(
+                                          charArc.currentPhase
+                                        ),
+                                        color: "white",
+                                        padding: "2px 8px",
+                                        borderRadius: "10px",
+                                        fontSize: "10px",
+                                        fontWeight: 500,
+                                      }}
+                                    >
+                                      {POSITION_LABELS[charArc.currentPhase]}
+                                    </span>
+                                  </div>
+                                  <span
+                                    style={{
+                                      fontSize: "12px",
+                                      fontWeight: 600,
+                                      color:
+                                        charArc.completionPercentage >= 60
+                                          ? "#10b981"
+                                          : charArc.completionPercentage >= 30
+                                          ? "#f59e0b"
+                                          : "#ef4444",
+                                    }}
+                                  >
+                                    {charArc.completionPercentage}% complete
+                                  </span>
+                                </div>
+
+                                {/* Trait Pills */}
+                                {charArc.traits.length > 0 && (
+                                  <div
+                                    style={{
+                                      display: "flex",
+                                      flexWrap: "wrap",
+                                      gap: "4px",
+                                      marginBottom: "8px",
+                                    }}
+                                  >
+                                    {charArc.traits
+                                      .slice(0, 5)
+                                      .map((trait, tIdx) => (
+                                        <span
+                                          key={tIdx}
+                                          style={{
+                                            backgroundColor: "#dbeafe",
+                                            color: "#1e40af",
+                                            padding: "2px 6px",
+                                            borderRadius: "8px",
+                                            fontSize: "10px",
+                                          }}
+                                        >
+                                          {trait}
+                                        </span>
+                                      ))}
+                                    {charArc.traits.length > 5 && (
+                                      <span
+                                        style={{
+                                          color: "#64748b",
+                                          fontSize: "10px",
+                                        }}
+                                      >
+                                        +{charArc.traits.length - 5} more
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
+
+                                {/* Arc Progress Bar */}
+                                <div
+                                  style={{
+                                    height: "6px",
+                                    backgroundColor: "#e5e7eb",
+                                    borderRadius: "3px",
+                                    marginBottom: "8px",
+                                    overflow: "hidden",
+                                  }}
+                                >
+                                  <div
+                                    style={{
+                                      height: "100%",
+                                      width: `${charArc.completionPercentage}%`,
+                                      background: `linear-gradient(90deg, ${getStepColor(
+                                        "beginning"
+                                      )}, ${getStepColor(
+                                        "middle"
+                                      )}, ${getStepColor("end")})`,
+                                      borderRadius: "3px",
+                                      transition: "width 0.3s ease",
+                                    }}
+                                  />
+                                </div>
+
+                                {/* Arc Summary */}
+                                <p
+                                  style={{
+                                    margin: 0,
+                                    fontSize: "11px",
+                                    color: "#64748b",
+                                    lineHeight: 1.4,
+                                  }}
+                                >
+                                  {charArc.arcSummary}
+                                </p>
+
+                                {/* Detected Steps Preview */}
+                                {charArc.detectedSteps.length > 0 && (
+                                  <div style={{ marginTop: "8px" }}>
+                                    <div
+                                      style={{
+                                        fontSize: "10px",
+                                        color: "#64748b",
+                                        marginBottom: "4px",
+                                        fontWeight: 500,
+                                      }}
+                                    >
+                                      Detected arc steps:
+                                    </div>
+                                    <div
+                                      style={{
+                                        display: "flex",
+                                        flexWrap: "wrap",
+                                        gap: "4px",
+                                      }}
+                                    >
+                                      {charArc.detectedSteps
+                                        .filter((s) => s.confidence >= 25)
+                                        .slice(0, 6)
+                                        .map((detected, dIdx) => (
+                                          <span
+                                            key={dIdx}
+                                            title={`${detected.step.name}: ${detected.step.description}`}
+                                            style={{
+                                              backgroundColor: getStepColor(
+                                                detected.step.storyPosition
+                                              ),
+                                              color: "white",
+                                              padding: "2px 6px",
+                                              borderRadius: "6px",
+                                              fontSize: "9px",
+                                              cursor: "help",
+                                              opacity:
+                                                detected.confidence >= 50
+                                                  ? 1
+                                                  : 0.7,
+                                            }}
+                                          >
+                                            {detected.step.shortName}
+                                          </span>
+                                        ))}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+
+                            {/* Link to Character Manager */}
+                            <button
+                              onClick={() => setIsCharacterManagerOpen(true)}
+                              style={{
+                                marginTop: "8px",
+                                width: "100%",
+                                padding: "8px",
+                                backgroundColor: "#fef5e7",
+                                color: "#ef8432",
+                                border: "1.5px solid #ef8432",
+                                borderRadius: "12px",
+                                fontSize: "12px",
+                                fontWeight: 600,
+                                cursor: "pointer",
+                                transition: "background-color 0.2s",
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor =
+                                  "#f7e6d0";
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor =
+                                  "#fef5e7";
+                              }}
+                            >
+                              Open Character Manager to Edit Traits
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
                 </div>
 
                 {/* Analysis Results */}

@@ -1629,3 +1629,266 @@ function analyzeWithAutoDetection(text: string): CharacterAnalysisResult {
     recommendations,
   };
 }
+
+// ============================================================================
+// 22-STEP CHARACTER ARC ANALYSIS
+// ============================================================================
+
+import {
+  CHARACTER_ARC_STEPS,
+  ArcStep,
+  getStepColor,
+  POSITION_LABELS,
+} from "@/data/characterArcSteps";
+
+export interface CharacterArcProgress {
+  characterId: string;
+  characterName: string;
+  traits: string[];
+  detectedSteps: DetectedArcStep[];
+  currentPhase: ArcStep["storyPosition"];
+  completionPercentage: number;
+  arcSummary: string;
+}
+
+export interface DetectedArcStep {
+  step: ArcStep;
+  confidence: number; // 0-100
+  evidenceSnippets: string[];
+  position: number; // position in text where detected
+}
+
+/**
+ * Analyze a character's progression through the 22-step arc
+ */
+export function analyzeCharacterArc(
+  characterName: string,
+  characterTraits: string[],
+  text: string,
+  linkedNames: string[] = []
+): CharacterArcProgress {
+  const allNames = [characterName, ...linkedNames].filter(Boolean);
+  const textLower = text.toLowerCase();
+  const detectedSteps: DetectedArcStep[] = [];
+
+  // Split text into sections for position-based analysis
+  const textLength = text.length;
+  const sections = {
+    beginning: text.slice(0, textLength * 0.2),
+    early: text.slice(textLength * 0.2, textLength * 0.35),
+    middle: text.slice(textLength * 0.35, textLength * 0.6),
+    late: text.slice(textLength * 0.6, textLength * 0.8),
+    climax: text.slice(textLength * 0.8, textLength * 0.9),
+    end: text.slice(textLength * 0.9),
+  };
+
+  // For each arc step, check if the character shows evidence of it
+  CHARACTER_ARC_STEPS.forEach((step) => {
+    let confidence = 0;
+    const evidenceSnippets: string[] = [];
+    let position = 0;
+
+    // Check for keywords near character mentions
+    allNames.forEach((name) => {
+      const nameLower = name.toLowerCase();
+
+      // Search for character name in text
+      let searchStart = 0;
+      while (true) {
+        const nameIndex = textLower.indexOf(nameLower, searchStart);
+        if (nameIndex === -1) break;
+
+        // Get context around the mention (200 chars before and after)
+        const contextStart = Math.max(0, nameIndex - 200);
+        const contextEnd = Math.min(text.length, nameIndex + name.length + 200);
+        const context = text.slice(contextStart, contextEnd).toLowerCase();
+
+        // Check for step keywords in context
+        step.keywords.forEach((keyword) => {
+          if (context.includes(keyword.toLowerCase())) {
+            confidence += 10;
+            // Extract a snippet around the keyword
+            const keywordIndex = context.indexOf(keyword.toLowerCase());
+            if (keywordIndex !== -1) {
+              const snippetStart = Math.max(0, keywordIndex - 50);
+              const snippetEnd = Math.min(
+                context.length,
+                keywordIndex + keyword.length + 50
+              );
+              const snippet = text
+                .slice(contextStart + snippetStart, contextStart + snippetEnd)
+                .trim();
+              if (snippet.length > 20 && !evidenceSnippets.includes(snippet)) {
+                evidenceSnippets.push(snippet);
+              }
+            }
+            if (position === 0) position = nameIndex;
+          }
+        });
+
+        searchStart = nameIndex + 1;
+      }
+    });
+
+    // Boost confidence if found in the expected story section
+    const expectedSection = sections[step.storyPosition];
+    if (expectedSection) {
+      allNames.forEach((name) => {
+        if (expectedSection.toLowerCase().includes(name.toLowerCase())) {
+          step.keywords.forEach((keyword) => {
+            if (expectedSection.toLowerCase().includes(keyword.toLowerCase())) {
+              confidence += 5;
+            }
+          });
+        }
+      });
+    }
+
+    // Check for trait-related evidence
+    characterTraits.forEach((trait) => {
+      const traitLower = trait.toLowerCase();
+      // Some traits correlate with certain arc steps
+      const traitStepCorrelations: Record<number, string[]> = {
+        3: ["fearful", "hesitant", "cautious", "reluctant"], // Refusal
+        8: ["brave", "determined", "resilient"], // Ordeal
+        11: ["transformed", "changed", "reborn"], // Resurrection
+        13: ["insecure", "flawed", "mistaken"], // The Lie
+        19: ["defeated", "hopeless", "lost"], // All Is Lost
+        21: ["decisive", "courageous", "determined"], // Climactic Decision
+      };
+      if (traitStepCorrelations[step.id]?.some((t) => traitLower.includes(t))) {
+        confidence += 15;
+      }
+    });
+
+    // Cap confidence at 100
+    confidence = Math.min(100, confidence);
+
+    // Only include steps with reasonable confidence
+    if (confidence >= 15 || evidenceSnippets.length > 0) {
+      detectedSteps.push({
+        step,
+        confidence,
+        evidenceSnippets: evidenceSnippets.slice(0, 3), // Limit to 3 snippets
+        position,
+      });
+    }
+  });
+
+  // Sort detected steps by story position and confidence
+  detectedSteps.sort((a, b) => {
+    const posOrder = {
+      beginning: 0,
+      early: 1,
+      middle: 2,
+      late: 3,
+      climax: 4,
+      end: 5,
+    };
+    if (posOrder[a.step.storyPosition] !== posOrder[b.step.storyPosition]) {
+      return posOrder[a.step.storyPosition] - posOrder[b.step.storyPosition];
+    }
+    return b.confidence - a.confidence;
+  });
+
+  // Determine current phase based on highest confidence steps
+  let currentPhase: ArcStep["storyPosition"] = "beginning";
+  if (detectedSteps.length > 0) {
+    // Find the latest phase with high confidence
+    const highConfidenceSteps = detectedSteps.filter((s) => s.confidence >= 30);
+    if (highConfidenceSteps.length > 0) {
+      const latestStep = highConfidenceSteps.reduce((latest, current) => {
+        const posOrder = {
+          beginning: 0,
+          early: 1,
+          middle: 2,
+          late: 3,
+          climax: 4,
+          end: 5,
+        };
+        return posOrder[current.step.storyPosition] >
+          posOrder[latest.step.storyPosition]
+          ? current
+          : latest;
+      });
+      currentPhase = latestStep.step.storyPosition;
+    }
+  }
+
+  // Calculate completion percentage
+  const totalSteps = CHARACTER_ARC_STEPS.length;
+  const detectedCount = detectedSteps.filter((s) => s.confidence >= 25).length;
+  const completionPercentage = Math.round((detectedCount / totalSteps) * 100);
+
+  // Generate arc summary
+  let arcSummary = "";
+  if (completionPercentage < 20) {
+    arcSummary = `${characterName}'s arc is just beginning. Consider developing their journey further.`;
+  } else if (completionPercentage < 40) {
+    arcSummary = `${characterName} is in the early stages of transformation. Key arc beats are emerging.`;
+  } else if (completionPercentage < 60) {
+    arcSummary = `${characterName}'s arc is developing well through the middle stages.`;
+  } else if (completionPercentage < 80) {
+    arcSummary = `${characterName} is approaching their transformation climax.`;
+  } else {
+    arcSummary = `${characterName} shows a complete character arc with strong transformation.`;
+  }
+
+  return {
+    characterId: characterName.toLowerCase().replace(/\s+/g, "-"),
+    characterName,
+    traits: characterTraits,
+    detectedSteps,
+    currentPhase,
+    completionPercentage,
+    arcSummary,
+  };
+}
+
+/**
+ * Analyze all characters and their arc progressions
+ */
+export function analyzeAllCharacterArcs(
+  text: string,
+  savedCharacters?: Character[]
+): CharacterArcProgress[] {
+  const results: CharacterArcProgress[] = [];
+
+  // First, analyze saved characters if provided
+  if (savedCharacters && savedCharacters.length > 0) {
+    savedCharacters.forEach((char) => {
+      const progress = analyzeCharacterArc(
+        char.name,
+        char.traits || [],
+        text,
+        char.linkedNames || []
+      );
+      // Use the saved character ID
+      progress.characterId = char.id;
+      results.push(progress);
+    });
+  }
+
+  // Also detect characters from text analysis
+  const textAnalysis = analyzeCharacters(text);
+
+  // Add any detected characters not already in saved characters
+  textAnalysis.characters.forEach((detected) => {
+    const alreadyIncluded = results.some(
+      (r) => r.characterName.toLowerCase() === detected.name.toLowerCase()
+    );
+    if (!alreadyIncluded && detected.role !== "minor") {
+      const progress = analyzeCharacterArc(detected.name, [], text, []);
+      results.push(progress);
+    }
+  });
+
+  // Sort by completion percentage
+  results.sort((a, b) => b.completionPercentage - a.completionPercentage);
+
+  return results;
+}
+
+// Re-export arc step utilities for use elsewhere
+export { CHARACTER_ARC_STEPS, getStepColor, POSITION_LABELS };
+export type { ArcStep };

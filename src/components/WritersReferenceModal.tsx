@@ -2496,10 +2496,36 @@ export function WritersReferenceModal({
           <div className="writers-ref-content">
             <h2>Character Management</h2>
 
+            <div
+              style={{
+                background: "linear-gradient(135deg, #fff7ed 0%, #fef5e7 100%)",
+                border: "2px solid #ef8432",
+                borderRadius: "8px",
+                padding: "1rem 1.5rem",
+                marginBottom: "1.5rem",
+              }}
+            >
+              <h3
+                style={{
+                  color: "#ef8432",
+                  marginTop: 0,
+                  marginBottom: "0.5rem",
+                }}
+              >
+                🎭 22-Step Character Arc Analysis
+              </h3>
+              <p style={{ margin: 0, lineHeight: 1.6 }}>
+                QuillPilot analyzes your characters against the comprehensive{" "}
+                <strong>22-Step Character Arc</strong> framework, tracking their
+                journey from Ordinary World to New Equilibrium. Each character's
+                progression is measured across key story beats.
+              </p>
+            </div>
+
             <h3>Adding Characters</h3>
             <ol>
               <li>Click the 👥 Manage Characters button in Writer Mode</li>
-              <li>Click "Add Character"</li>
+              <li>Click "Add Character" or use the Character Template</li>
               <li>
                 Fill in details:
                 <ul>
@@ -2511,18 +2537,147 @@ export function WritersReferenceModal({
                     etc.
                   </li>
                   <li>
-                    <strong>Physical traits:</strong> Appearance details
+                    <strong>Traits:</strong> Personality qualities
+                    (comma-separated)
                   </li>
                   <li>
-                    <strong>Personality traits:</strong> Character qualities
+                    <strong>Background:</strong> Character backstory
                   </li>
                   <li>
-                    <strong>Arc notes:</strong> How they change
+                    <strong>Goals:</strong> What the character wants
                   </li>
                   <li>
-                    <strong>Relationships:</strong> Connections to other
-                    characters
+                    <strong>Conflicts:</strong> Internal/external obstacles
                   </li>
+                  <li>
+                    <strong>Arc:</strong> How they change throughout the story
+                  </li>
+                </ul>
+              </li>
+            </ol>
+
+            <h3>Character Trait Pills</h3>
+            <div
+              style={{
+                background: "#f0f9ff",
+                border: "1px solid #3b82f6",
+                borderRadius: "8px",
+                padding: "1rem",
+                marginBottom: "1rem",
+              }}
+            >
+              <p style={{ margin: "0 0 0.5rem 0" }}>
+                <strong>How to format traits:</strong> Enter traits as{" "}
+                <strong>comma-separated</strong> values in the Traits field.
+              </p>
+              <p
+                style={{
+                  margin: "0 0 0.5rem 0",
+                  fontFamily: "monospace",
+                  fontSize: "14px",
+                }}
+              >
+                Example: <code>brave, intelligent, resourceful, loyal</code>
+              </p>
+              <p style={{ margin: 0 }}>
+                Each trait becomes a{" "}
+                <span
+                  style={{
+                    backgroundColor: "#dbeafe",
+                    color: "#1e40af",
+                    padding: "2px 6px",
+                    borderRadius: "8px",
+                    fontSize: "12px",
+                  }}
+                >
+                  blue pill
+                </span>{" "}
+                that appears in:
+              </p>
+              <ul style={{ marginTop: "0.5rem", marginBottom: 0 }}>
+                <li>Character Manager list view</li>
+                <li>Character Arc Analysis panel</li>
+                <li>Analysis results dashboard</li>
+              </ul>
+            </div>
+            <div className="tip-box">
+              <strong>⚠️ Important:</strong> Avoid long phrases as traits. Keep
+              each trait to 1-3 words for clean display. "Loyal" ✓ "Loyal to a
+              fault even at the cost of personal life" ✗
+            </div>
+
+            <h3>The 22-Step Character Arc</h3>
+            <p>
+              After running analysis, QuillPilot detects which arc steps appear
+              in your manuscript for each character:
+            </p>
+            <table className="ref-table">
+              <thead>
+                <tr>
+                  <th>Phase</th>
+                  <th>Steps</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td style={{ backgroundColor: "#d1fae5" }}>Act 1 - Setup</td>
+                  <td>1-3, 13-16</td>
+                  <td>
+                    Ordinary World, Call to Adventure, Refusal, The Lie, The
+                    Want, The Wound
+                  </td>
+                </tr>
+                <tr>
+                  <td style={{ backgroundColor: "#dbeafe" }}>Act 1 - Rising</td>
+                  <td>4-6, 17</td>
+                  <td>
+                    Meeting Mentor, Crossing Threshold, Tests & Allies, Point of
+                    No Return
+                  </td>
+                </tr>
+                <tr>
+                  <td style={{ backgroundColor: "#fef3c7" }}>
+                    Act 2 - Midpoint
+                  </td>
+                  <td>7-9, 18</td>
+                  <td>Approach to Cave, The Ordeal, Reward, Midpoint Shift</td>
+                </tr>
+                <tr>
+                  <td style={{ backgroundColor: "#fee2e2" }}>Act 2 - Crisis</td>
+                  <td>10, 19-20</td>
+                  <td>Road Back, All Is Lost, Dark Night of the Soul</td>
+                </tr>
+                <tr>
+                  <td style={{ backgroundColor: "#ede9fe" }}>Act 3 - Climax</td>
+                  <td>11, 21</td>
+                  <td>Resurrection, Climactic Decision</td>
+                </tr>
+                <tr>
+                  <td style={{ backgroundColor: "#cffafe" }}>
+                    Act 3 - Resolution
+                  </td>
+                  <td>12, 15, 22</td>
+                  <td>Return with Elixir, The Need, New Equilibrium</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h3>Using Arc Analysis</h3>
+            <ol>
+              <li>Create characters in the Character Manager with traits</li>
+              <li>Write or upload your manuscript</li>
+              <li>Run analysis from the Analysis Controls panel</li>
+              <li>
+                Expand the "Character Arc Analysis" section to see results
+              </li>
+              <li>
+                Each character shows:
+                <ul>
+                  <li>Current story phase (Act 1, 2, or 3)</li>
+                  <li>Completion percentage across all 22 steps</li>
+                  <li>Trait pills from their profile</li>
+                  <li>Detected arc steps with confidence indicators</li>
                 </ul>
               </li>
             </ol>
@@ -2584,7 +2739,8 @@ export function WritersReferenceModal({
 
             <div className="tip-box">
               <strong>💡 Tip:</strong> Link important character moments—first
-              appearances, key decisions, transformation points.
+              appearances, key decisions, transformation points. This improves
+              arc detection accuracy.
             </div>
           </div>
         );
