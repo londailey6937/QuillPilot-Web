@@ -962,27 +962,23 @@ export const ChapterCheckerV2: React.FC = () => {
       // Get text content from each field
       const characterName =
         nameField?.textContent?.trim() || "Unnamed Character";
-      const background = backgroundField?.textContent?.trim() || "";
-      const traitsText = traitsField?.textContent?.trim() || "";
-      const goals = goalsField?.textContent?.trim() || "";
-      const conflicts = conflictsField?.textContent?.trim() || "";
-      const arc = arcField?.textContent?.trim() || "";
-      const notes = notesField?.textContent?.trim() || "";
+      const backgroundRaw = backgroundField?.textContent?.trim() || "";
+      const traitsRaw = traitsField?.textContent?.trim() || "";
+      const goalsRaw = goalsField?.textContent?.trim() || "";
+      const conflictsRaw = conflictsField?.textContent?.trim() || "";
+      const arcRaw = arcField?.textContent?.trim() || "";
+      const notesRaw = notesField?.textContent?.trim() || "";
 
-      // Check if name is still default
+      // Check if values are still default sample text - if so, treat as empty
       const nameIsDefault = characterName === "Alex Ross Applegate";
+      const background = backgroundRaw.startsWith("Alex's background is shrouded") ? "" : backgroundRaw;
+      const traitsText = traitsRaw.startsWith("Reserved, intelligent, resourceful") ? "" : traitsRaw;
+      const goals = goalsRaw === "What do they want to achieve?" ? "" : goalsRaw;
+      const conflicts = conflictsRaw === "What is their weakness and psychological need?" ? "" : conflictsRaw;
+      const arc = arcRaw === "What do they finally understand about themselves?" ? "" : arcRaw;
+      const notes = notesRaw === "Add any additional notes about this character here..." ? "" : notesRaw;
 
-      // DEBUG: Show actual values being saved
-      alert(
-        `VALUES:\nname: "${characterName.substring(
-          0,
-          30
-        )}"\nnotes: "${notes.substring(0, 50)}..."`
-      );
-
-      console.log("  conflicts:", conflicts);
-      console.log("  arc:", arc);
-      console.log("  notes:", notes);
+      console.log("[CharSave] Saving - background:", background.substring(0, 30), "goals:", goals, "notes:", notes);
 
       // Parse traits from comma-separated text
       const traits = traitsText
