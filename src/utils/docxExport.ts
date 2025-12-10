@@ -44,7 +44,7 @@ export type ExportMode = "writer" | "analysis";
 
 /**
  * Extract document title from HTML content
- * Looks for: 1) book-title class, 2) first H1, 3) title-content class, 4) first heading
+ * Looks for: 1) doc-title class, 2) book-title class, 3) first H1, 4) title-content class, 5) first heading
  */
 function extractDocumentTitle(html: string | null | undefined): string | null {
   if (!html) return null;
@@ -53,13 +53,19 @@ function extractDocumentTitle(html: string | null | undefined): string | null {
   const parser = new DOMParser();
   const doc = parser.parseFromString(html, "text/html");
 
-  // Priority 1: Look for book-title class
+  // Priority 1: Look for doc-title class (user-applied title style)
+  const docTitle = doc.querySelector(".doc-title");
+  if (docTitle?.textContent?.trim()) {
+    return docTitle.textContent.trim();
+  }
+
+  // Priority 2: Look for book-title class
   const bookTitle = doc.querySelector(".book-title");
   if (bookTitle?.textContent?.trim()) {
     return bookTitle.textContent.trim();
   }
 
-  // Priority 2: Look for first H1
+  // Priority 3: Look for first H1
   const h1 = doc.querySelector("h1");
   if (h1?.textContent?.trim()) {
     return h1.textContent.trim();
@@ -151,15 +157,23 @@ export const exportToDocx = async ({
   const fileNameTitle = sanitizeText(fileName.replace(/\.[^/.]+$/, ""));
   const documentTitle = extractedTitle || fileNameTitle || "Untitled Document";
 
-  // Add title
-  paragraphs.push(
-    new Paragraph({
-      text: documentTitle,
-      heading: HeadingLevel.TITLE,
-      alignment: AlignmentType.CENTER,
-      spacing: { after: 400 },
-    })
-  );
+  // Check if HTML already contains a title element (doc-title, book-title, or h1)
+  // If so, don't add a duplicate title - it will come through convertHtmlToParagraphs
+  const htmlHasTitle = html
+    ? /class="[^"]*(?:doc-title|book-title)[^"]*"|<h1[^>]*>/i.test(html)
+    : false;
+
+  // Only add title if the HTML doesn't already have one
+  if (!htmlHasTitle) {
+    paragraphs.push(
+      new Paragraph({
+        text: documentTitle,
+        heading: HeadingLevel.TITLE,
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 400 },
+      })
+    );
+  }
 
   // Parse HTML and convert to paragraphs FIRST so we can calculate page numbers
   const htmlParagraphs = await convertHtmlToParagraphs(htmlContent);

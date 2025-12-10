@@ -18,6 +18,7 @@ export interface BlockStyle {
   borderLeftColor?: string;
   color?: string;
   backgroundColor?: string;
+  textTransform?: "none" | "uppercase" | "lowercase" | "capitalize";
 }
 
 export interface StyleTemplate {
@@ -91,6 +92,8 @@ export interface DocumentStylesState {
   "executive-summary": BlockStyle;
   "front-matter": BlockStyle;
   "scene-break": BlockStyle;
+  "character-name": BlockStyle;
+  location: BlockStyle;
   afterword: BlockStyle;
   shot: BlockStyle;
   lyric: BlockStyle;

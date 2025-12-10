@@ -82,7 +82,7 @@ const PRINCIPLE_NAME_MAP: Record<string, string> = {
 
 /**
  * Character Arc Trajectory Chart
- * Shows emotional journey of major characters across story progression
+ * Shows 22-Step Character Arc progression for major characters
  */
 const CharacterArcTrajectory: React.FC<{ characterAnalysis: any }> = ({
   characterAnalysis,
@@ -100,18 +100,88 @@ const CharacterArcTrajectory: React.FC<{ characterAnalysis: any }> = ({
     return null;
   }
 
-  // Prepare data for line chart
-  const trajectoryData = [
-    { stage: "Early", position: 0 },
-    { stage: "Middle", position: 50 },
-    { stage: "Late", position: 100 },
+  // 22-Step Arc phases for X-axis
+  const arcPhases = [
+    { name: "Beginning", position: 0, steps: "1-3" },
+    { name: "Early", position: 20, steps: "4-7" },
+    { name: "Middle", position: 45, steps: "8-14" },
+    { name: "Late", position: 70, steps: "15-18" },
+    { name: "Climax/End", position: 90, steps: "19-22" },
   ];
 
-  // Add each character's trajectory to the data
+  // Prepare data for line chart based on detected arc steps or default trajectory
+  const trajectoryData = arcPhases.map((phase) => ({
+    stage: phase.name,
+    position: phase.position,
+    steps: phase.steps,
+  }));
+
+  // Add each character's arc progression to the data
   majorCharacters.forEach((char: any) => {
-    trajectoryData[0][char.name] = char.emotionalTrajectory.early;
-    trajectoryData[1][char.name] = char.emotionalTrajectory.middle;
-    trajectoryData[2][char.name] = char.emotionalTrajectory.late;
+    // Use arc analysis if available, otherwise fall back to emotional trajectory
+    if (char.detectedSteps && char.detectedSteps.length > 0) {
+      // Calculate progression based on detected 22-step arc
+      const stepsInBeginning = char.detectedSteps.filter(
+        (s: any) => s.step?.storyPosition === "beginning"
+      ).length;
+      const stepsInEarly = char.detectedSteps.filter(
+        (s: any) => s.step?.storyPosition === "early"
+      ).length;
+      const stepsInMiddle = char.detectedSteps.filter(
+        (s: any) => s.step?.storyPosition === "middle"
+      ).length;
+      const stepsInLate = char.detectedSteps.filter(
+        (s: any) =>
+          s.step?.storyPosition === "late" || s.step?.storyPosition === "climax"
+      ).length;
+      const stepsInEnd = char.detectedSteps.filter(
+        (s: any) => s.step?.storyPosition === "end"
+      ).length;
+
+      // Calculate cumulative arc progress (0-100)
+      const totalDetected = char.detectedSteps.length;
+      const maxStepsPerPhase = 5; // Approximate max steps per phase
+
+      trajectoryData[0][char.name] = Math.min(
+        100,
+        (stepsInBeginning / maxStepsPerPhase) * 100
+      );
+      trajectoryData[1][char.name] = Math.min(
+        100,
+        ((stepsInBeginning + stepsInEarly) / (maxStepsPerPhase * 2)) * 100
+      );
+      trajectoryData[2][char.name] = Math.min(
+        100,
+        ((stepsInBeginning + stepsInEarly + stepsInMiddle) /
+          (maxStepsPerPhase * 3)) *
+          100
+      );
+      trajectoryData[3][char.name] = Math.min(
+        100,
+        ((totalDetected - stepsInEnd) / (maxStepsPerPhase * 4)) * 100
+      );
+      trajectoryData[4][char.name] = Math.min(100, (totalDetected / 22) * 100);
+    } else if (char.emotionalTrajectory) {
+      // Fall back to old emotional trajectory if 22-step not available
+      trajectoryData[0][char.name] = char.emotionalTrajectory.early || 30;
+      trajectoryData[1][char.name] =
+        ((char.emotionalTrajectory.early || 30) +
+          (char.emotionalTrajectory.middle || 50)) /
+        2;
+      trajectoryData[2][char.name] = char.emotionalTrajectory.middle || 50;
+      trajectoryData[3][char.name] =
+        ((char.emotionalTrajectory.middle || 50) +
+          (char.emotionalTrajectory.late || 70)) /
+        2;
+      trajectoryData[4][char.name] = char.emotionalTrajectory.late || 70;
+    } else {
+      // Default progression if no data
+      trajectoryData[0][char.name] = 20;
+      trajectoryData[1][char.name] = 35;
+      trajectoryData[2][char.name] = 50;
+      trajectoryData[3][char.name] = 70;
+      trajectoryData[4][char.name] = 85;
+    }
   });
 
   // Color palette for characters
@@ -124,12 +194,22 @@ const CharacterArcTrajectory: React.FC<{ characterAnalysis: any }> = ({
     palette.navy,
   ];
 
+  // Phase colors for 22-step arc
+  const phaseColors: Record<string, string> = {
+    beginning: "#10b981",
+    early: "#3b82f6",
+    middle: "#f59e0b",
+    late: "#ef4444",
+    climax: "#8b5cf6",
+    end: "#ec4899",
+  };
+
   return (
     <div className="viz-card character-arc-trajectory">
-      <h3>Character Emotional Arcs</h3>
+      <h3>Character Arc Analysis (22-Step)</h3>
       <p className="section-subtitle">
-        Emotional trajectory of major characters across the manuscript (0 =
-        negative, 50 = neutral, 100 = positive)
+        Character development progression through the 22-step arc framework.
+        Higher values indicate more detected arc steps in each phase.
       </p>
       <ResponsiveContainer width="100%" height={350}>
         <LineChart data={trajectoryData}>
@@ -139,7 +219,7 @@ const CharacterArcTrajectory: React.FC<{ characterAnalysis: any }> = ({
             stroke="#ccc"
             tick={{ fill: "#ccc", fontSize: 14 }}
             label={{
-              value: "Story Progression",
+              value: "Story Arc Phases (Steps 1-22)",
               position: "insideBottom",
               offset: -5,
               style: { fill: "#fff", fontSize: 14, fontWeight: 500 },
@@ -150,7 +230,7 @@ const CharacterArcTrajectory: React.FC<{ characterAnalysis: any }> = ({
             tick={{ fill: "#ccc", fontSize: 14 }}
             domain={[0, 100]}
             label={{
-              value: "Emotional Sentiment",
+              value: "Arc Completion %",
               angle: -90,
               position: "insideLeft",
               style: { fill: "#fff", fontSize: 14, fontWeight: 500 },
@@ -163,6 +243,10 @@ const CharacterArcTrajectory: React.FC<{ characterAnalysis: any }> = ({
               borderRadius: "8px",
             }}
             labelStyle={{ color: "#fff" }}
+            formatter={(value: number, name: string) => [
+              `${Math.round(value)}% arc detected`,
+              name,
+            ]}
           />
           <Legend
             wrapperStyle={{ paddingTop: "20px" }}
@@ -184,7 +268,7 @@ const CharacterArcTrajectory: React.FC<{ characterAnalysis: any }> = ({
               strokeWidth={2}
               dot={{ r: 5 }}
               activeDot={{ r: 7 }}
-              name={`${char.name} (${char.arcType})`}
+              name={`${char.name} (${char.arcType || char.role})`}
             />
           ))}
         </LineChart>
@@ -198,12 +282,52 @@ const CharacterArcTrajectory: React.FC<{ characterAnalysis: any }> = ({
             ></span>
             <strong>{char.name}</strong>
             <span className="character-role">({char.role})</span>
-            <span className="character-arc-type">Arc: {char.arcType}</span>
-            <span className="character-development">
-              Development: {char.developmentScore}/100
+            <span className="character-arc-type">
+              Arc: {char.arcType || "Growth"}
             </span>
+            {char.detectedSteps && (
+              <span className="character-development">
+                Steps Detected: {char.detectedSteps.length}/22
+              </span>
+            )}
+            {!char.detectedSteps && char.developmentScore !== undefined && (
+              <span className="character-development">
+                Development: {char.developmentScore}/100
+              </span>
+            )}
           </div>
         ))}
+      </div>
+      {/* 22-Step Legend */}
+      <div
+        style={{
+          marginTop: "16px",
+          padding: "12px",
+          backgroundColor: "rgba(255,255,255,0.05)",
+          borderRadius: "8px",
+          fontSize: "12px",
+        }}
+      >
+        <div style={{ fontWeight: 600, marginBottom: "8px", color: "#fff" }}>
+          22-Step Character Arc Phases:
+        </div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+          {Object.entries(phaseColors).map(([phase, color]) => (
+            <span
+              key={phase}
+              style={{
+                backgroundColor: color,
+                color: "white",
+                padding: "2px 8px",
+                borderRadius: "10px",
+                fontSize: "10px",
+                textTransform: "capitalize",
+              }}
+            >
+              {phase}
+            </span>
+          ))}
+        </div>
       </div>
     </div>
   );

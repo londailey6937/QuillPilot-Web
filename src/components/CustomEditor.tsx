@@ -65,6 +65,7 @@ interface CustomEditorProps {
   characters?: Character[];
   onCharacterLink?: (textOccurrence: string, characterId: string) => void;
   onOpenCharacterManager?: () => void;
+  onEditCharacter?: (characterId: string) => void;
   isProfessionalTier?: boolean;
   onLayoutChange?: (layout: { width: number; left: number }) => void;
   // Help callback for opening tool-specific help
@@ -85,6 +86,8 @@ interface CustomEditorProps {
   onPageCountChange?: (count: number) => void;
   // Callback to open chapter library
   onOpenChapterLibrary?: () => void;
+  // Ref callback to get insertAtCursor function
+  onEditorReady?: (editor: { insertAtCursor: (html: string) => void }) => void;
 }
 
 const INCH_IN_PX = 96;
@@ -172,6 +175,30 @@ const BLOCK_TYPE_SECTIONS: BlockTypeMenuSection[] = [
     ],
   },
   {
+    key: "book",
+    label: "Book Publishing",
+    accent: palette.border,
+    background: "#eddcc5",
+    items: [
+      { value: "book-title", label: "Book Title" },
+      { value: "subtitle", label: "Subtitle" },
+      { value: "paragraph", label: "Body Text" },
+      { value: "chapter-heading", label: "Chapter Heading" },
+      { value: "part-title", label: "Part Title" },
+      { value: "title", label: "Section Title" },
+      { value: "character-name", label: "Character Name" },
+      { value: "location", label: "Location" },
+      { value: "epigraph", label: "Epigraph" },
+      { value: "dedication", label: "Dedication" },
+      { value: "acknowledgments", label: "Acknowledgments" },
+      { value: "copyright", label: "Copyright Notice" },
+      { value: "verse", label: "Verse / Poetry" },
+      { value: "front-matter", label: "Front Matter" },
+      { value: "scene-break", label: "Scene Break" },
+      { value: "afterword", label: "Afterword" },
+    ],
+  },
+  {
     key: "academic",
     label: "Academic",
     accent: "#8b5cf6",
@@ -206,28 +233,6 @@ const BLOCK_TYPE_SECTIONS: BlockTypeMenuSection[] = [
       { value: "memo-heading", label: "Memo Heading" },
       { value: "subject-line", label: "Subject Line" },
       { value: "executive-summary", label: "Executive Summary" },
-    ],
-  },
-  {
-    key: "book",
-    label: "Book Publishing",
-    accent: palette.border,
-    background: "#eddcc5",
-    items: [
-      { value: "book-title", label: "Book Title" },
-      { value: "subtitle", label: "Subtitle" },
-      { value: "paragraph", label: "Body Text" },
-      { value: "chapter-heading", label: "Chapter Heading" },
-      { value: "part-title", label: "Part Title" },
-      { value: "title", label: "Section Title" },
-      { value: "epigraph", label: "Epigraph" },
-      { value: "dedication", label: "Dedication" },
-      { value: "acknowledgments", label: "Acknowledgments" },
-      { value: "copyright", label: "Copyright Notice" },
-      { value: "verse", label: "Verse / Poetry" },
-      { value: "front-matter", label: "Front Matter" },
-      { value: "scene-break", label: "Scene Break" },
-      { value: "afterword", label: "Afterword" },
     ],
   },
   {
@@ -1044,6 +1049,25 @@ const buildDefaultDocumentStyles = (): DocumentStylesState => ({
     marginBottom: 1.5,
     firstLineIndent: 0,
   },
+  "character-name": {
+    fontSize: 16,
+    fontStyle: "normal",
+    fontWeight: "bold",
+    textAlign: "left",
+    marginTop: 0.5,
+    marginBottom: 0.2,
+    firstLineIndent: 0,
+    textTransform: "uppercase",
+  },
+  location: {
+    fontSize: 16,
+    fontStyle: "italic",
+    fontWeight: "normal",
+    textAlign: "left",
+    marginTop: 0.5,
+    marginBottom: 0.3,
+    firstLineIndent: 0,
+  },
   afterword: {
     fontSize: 16,
     fontStyle: "italic",
@@ -1242,6 +1266,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   characters = [],
   onCharacterLink,
   onOpenCharacterManager,
+  onEditCharacter,
   isProfessionalTier = false,
   onLayoutChange,
   onOpenHelp,
@@ -1249,6 +1274,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   documentTools,
   onPageCountChange,
   onOpenChapterLibrary,
+  onEditorReady,
 }) => {
   const editorRef = useRef<HTMLDivElement>(null); // Currently unused - needs refactoring to work with PaginatedEditor
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -1464,6 +1490,17 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   // True pagination mode (always enabled - uses PaginatedEditor)
   const paginatedEditorRef = useRef<PaginatedEditorRef>(null);
   const selectionSyncLockRef = useRef(false);
+
+  // Notify parent when editor is ready with insertAtCursor function
+  useEffect(() => {
+    if (onEditorReady && paginatedEditorRef.current) {
+      onEditorReady({
+        insertAtCursor: (html: string) => {
+          paginatedEditorRef.current?.insertAtCursor(html);
+        },
+      });
+    }
+  }, [onEditorReady]);
 
   // Internal margin state for True Pagination mode (when parent doesn't manage state)
   const [internalLeftMargin, setInternalLeftMargin] = useState(leftMargin);
@@ -4523,6 +4560,8 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
         "executive-summary",
         "front-matter",
         "scene-break",
+        "character-name",
+        "location",
         "afterword",
         "press-lead",
         "nut-graf",
@@ -4614,6 +4653,8 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           "executive-summary": "executive-summary",
           "front-matter": "front-matter",
           "scene-break": "scene-break",
+          "character-name": "character-name",
+          location: "location",
           afterword: "afterword",
           "press-lead": "press-lead",
           "nut-graf": "nut-graf",
@@ -5082,6 +5123,8 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
             "executive-summary": "executive-summary",
             "front-matter": "front-matter",
             "scene-break": "scene-break",
+            "character-name": "character-name",
+            location: "location",
             afterword: "afterword",
             "press-lead": "press-lead",
             "nut-graf": "nut-graf",
@@ -5146,6 +5189,8 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               subtitle: "Subtitle",
               "chapter-heading": "Chapter 1",
               "part-title": "Part One",
+              "character-name": "CHARACTER NAME",
+              location: "Location",
             };
 
             const className = styleMap[styleTag] || "";
@@ -7137,62 +7182,62 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           }
           ${
             documentStyles.paragraph?.color
-              ? `.custom-editor-container .paginated-page-content p:not(.book-title):not(.doc-title):not(.chapter-heading):not(.subtitle):not(.doc-subtitle):not(.quote):not(.intense-quote) { color: ${documentStyles.paragraph.color} !important; }`
+              ? `.custom-editor-container .paginated-page-content p:not(.book-title):not(.doc-title):not(.chapter-heading):not(.subtitle):not(.doc-subtitle):not(.quote):not(.intense-quote):not(.character-name):not(.location) { color: ${documentStyles.paragraph.color} !important; }`
               : ""
           }
           ${
             documentStyles.paragraph?.backgroundColor
-              ? `.custom-editor-container .paginated-page-content p:not(.book-title):not(.doc-title):not(.chapter-heading):not(.subtitle):not(.doc-subtitle):not(.quote):not(.intense-quote) { background-color: ${documentStyles.paragraph.backgroundColor} !important; }`
+              ? `.custom-editor-container .paginated-page-content p:not(.book-title):not(.doc-title):not(.chapter-heading):not(.subtitle):not(.doc-subtitle):not(.quote):not(.intense-quote):not(.character-name):not(.location) { background-color: ${documentStyles.paragraph.backgroundColor} !important; }`
               : ""
           }
           ${
             documentStyles.paragraph?.fontSize
-              ? `.custom-editor-container .paginated-page-content p:not(.book-title):not(.doc-title):not(.chapter-heading):not(.subtitle):not(.doc-subtitle):not(.quote):not(.intense-quote) { font-size: ${documentStyles.paragraph.fontSize}pt !important; }`
+              ? `.custom-editor-container .paginated-page-content p:not(.book-title):not(.doc-title):not(.chapter-heading):not(.subtitle):not(.doc-subtitle):not(.quote):not(.intense-quote):not(.character-name):not(.location) { font-size: ${documentStyles.paragraph.fontSize}pt !important; }`
               : ""
           }
           ${
             documentStyles.paragraph?.fontFamily
-              ? `.custom-editor-container .paginated-page-content p:not(.book-title):not(.doc-title):not(.chapter-heading):not(.subtitle):not(.doc-subtitle):not(.quote):not(.intense-quote) { font-family: ${documentStyles.paragraph.fontFamily} !important; }`
+              ? `.custom-editor-container .paginated-page-content p:not(.book-title):not(.doc-title):not(.chapter-heading):not(.subtitle):not(.doc-subtitle):not(.quote):not(.intense-quote):not(.character-name):not(.location) { font-family: ${documentStyles.paragraph.fontFamily} !important; }`
               : ""
           }
           ${
             documentStyles.paragraph?.fontWeight
-              ? `.custom-editor-container .paginated-page-content p:not(.book-title):not(.doc-title):not(.chapter-heading):not(.subtitle):not(.doc-subtitle):not(.quote):not(.intense-quote) { font-weight: ${documentStyles.paragraph.fontWeight} !important; }`
+              ? `.custom-editor-container .paginated-page-content p:not(.book-title):not(.doc-title):not(.chapter-heading):not(.subtitle):not(.doc-subtitle):not(.quote):not(.intense-quote):not(.character-name):not(.location) { font-weight: ${documentStyles.paragraph.fontWeight} !important; }`
               : ""
           }
           ${
             documentStyles.paragraph?.fontStyle
-              ? `.custom-editor-container .paginated-page-content p:not(.book-title):not(.doc-title):not(.chapter-heading):not(.subtitle):not(.doc-subtitle):not(.quote):not(.intense-quote) { font-style: ${documentStyles.paragraph.fontStyle} !important; }`
+              ? `.custom-editor-container .paginated-page-content p:not(.book-title):not(.doc-title):not(.chapter-heading):not(.subtitle):not(.doc-subtitle):not(.quote):not(.intense-quote):not(.character-name):not(.location) { font-style: ${documentStyles.paragraph.fontStyle} !important; }`
               : ""
           }
           ${
             documentStyles.paragraph?.textAlign
-              ? `.custom-editor-container .paginated-page-content p:not(.book-title):not(.doc-title):not(.chapter-heading):not(.subtitle):not(.doc-subtitle):not(.quote):not(.intense-quote) { text-align: ${documentStyles.paragraph.textAlign} !important; }`
+              ? `.custom-editor-container .paginated-page-content p:not(.book-title):not(.doc-title):not(.chapter-heading):not(.subtitle):not(.doc-subtitle):not(.quote):not(.intense-quote):not(.character-name):not(.location) { text-align: ${documentStyles.paragraph.textAlign} !important; }`
               : ""
           }
           ${
             documentStyles.paragraph?.marginTop
-              ? `.custom-editor-container .paginated-page-content p:not(.book-title):not(.doc-title):not(.chapter-heading):not(.subtitle):not(.doc-subtitle):not(.quote):not(.intense-quote) { margin-top: ${documentStyles.paragraph.marginTop}em !important; }`
+              ? `.custom-editor-container .paginated-page-content p:not(.book-title):not(.doc-title):not(.chapter-heading):not(.subtitle):not(.doc-subtitle):not(.quote):not(.intense-quote):not(.character-name):not(.location) { margin-top: ${documentStyles.paragraph.marginTop}em !important; }`
               : ""
           }
           ${
             documentStyles.paragraph?.marginBottom
-              ? `.custom-editor-container .paginated-page-content p:not(.book-title):not(.doc-title):not(.chapter-heading):not(.subtitle):not(.doc-subtitle):not(.quote):not(.intense-quote) { margin-bottom: ${documentStyles.paragraph.marginBottom}em !important; }`
+              ? `.custom-editor-container .paginated-page-content p:not(.book-title):not(.doc-title):not(.chapter-heading):not(.subtitle):not(.doc-subtitle):not(.quote):not(.intense-quote):not(.character-name):not(.location) { margin-bottom: ${documentStyles.paragraph.marginBottom}em !important; }`
               : ""
           }
           ${
             documentStyles.paragraph?.lineHeight
-              ? `.custom-editor-container .paginated-page-content p:not(.book-title):not(.doc-title):not(.chapter-heading):not(.subtitle):not(.doc-subtitle):not(.quote):not(.intense-quote) { line-height: ${documentStyles.paragraph.lineHeight} !important; }`
+              ? `.custom-editor-container .paginated-page-content p:not(.book-title):not(.doc-title):not(.chapter-heading):not(.subtitle):not(.doc-subtitle):not(.quote):not(.intense-quote):not(.character-name):not(.location) { line-height: ${documentStyles.paragraph.lineHeight} !important; }`
               : ""
           }
           ${
             documentStyles.heading1?.color
-              ? `.custom-editor-container .paginated-page-content h1:not(.chapter-heading) { color: ${documentStyles.heading1.color} !important; }`
+              ? `.custom-editor-container .paginated-page-content h1:not(.chapter-heading):not(.doc-title) { color: ${documentStyles.heading1.color} !important; }`
               : ""
           }
           ${
             documentStyles.heading1?.backgroundColor
-              ? `.custom-editor-container .paginated-page-content h1:not(.chapter-heading) { background-color: ${documentStyles.heading1.backgroundColor} !important; }`
+              ? `.custom-editor-container .paginated-page-content h1:not(.chapter-heading):not(.doc-title) { background-color: ${documentStyles.heading1.backgroundColor} !important; }`
               : ""
           }
           ${
@@ -7214,6 +7259,24 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
             documentStyles.blockquote?.backgroundColor
               ? `.custom-editor-container .paginated-page-content blockquote, .custom-editor-container .paginated-page-content .quote, .custom-editor-container .paginated-page-content .intense-quote { background-color: ${documentStyles.blockquote.backgroundColor} !important; }`
               : ""
+          }
+          /* Character Name and Location styles - high specificity */
+          .custom-editor-container .paginated-page-content p.character-name {
+            font-size: 16px !important;
+            font-weight: bold !important;
+            font-style: normal !important;
+            text-transform: uppercase !important;
+            margin-top: 0.5em !important;
+            margin-bottom: 0.2em !important;
+            text-indent: 0 !important;
+          }
+          .custom-editor-container .paginated-page-content p.location {
+            font-size: 16px !important;
+            font-style: italic !important;
+            font-weight: normal !important;
+            margin-top: 0.5em !important;
+            margin-bottom: 0.3em !important;
+            text-indent: 0 !important;
           }
         `}
       </style>
@@ -7371,6 +7434,8 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                           verse: "Verse",
                           "front-matter": "Front Matter",
                           "scene-break": "Scene Break",
+                          "character-name": "Character Name",
+                          location: "Location",
                           afterword: "Afterword",
                           "scene-heading": "Scene Heading",
                           action: "Action",
@@ -10700,8 +10765,14 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                               className="text-[9px] text-[#6b7280] flex-shrink-0"
                               style={{
                                 opacity: 0.6,
-                                fontWeight: item.level === 0 ? 600 : 400,
-                                color: item.level === 0 ? "#ef8432" : undefined,
+                                fontWeight:
+                                  item.level === 0 || item.prefix === "Ch"
+                                    ? 600
+                                    : 400,
+                                color:
+                                  item.level === 0 || item.prefix === "Ch"
+                                    ? "#ef8432"
+                                    : undefined,
                               }}
                             >
                               {item.prefix || `H${item.level}`}
@@ -11117,11 +11188,13 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                     .map((char) => (
                       <div
                         key={char.id}
-                        className="flex items-center gap-2 px-2 py-1.5 rounded-lg text-[10px]"
+                        className="flex items-center gap-2 px-2 py-1.5 rounded-lg text-[10px] cursor-pointer hover:bg-[#f7e6d0] transition-colors"
                         style={{
                           backgroundColor: "#fefdf9",
                           border: "1px solid #f5d1ab",
                         }}
+                        onClick={() => onEditCharacter?.(char.id)}
+                        title={`Click to edit ${char.name}`}
                       >
                         <span className="text-sm">
                           {char.role === "protagonist"
@@ -11142,6 +11215,9 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                             {char.role.replace("-", " ")}
                           </div>
                         </div>
+                        <span className="text-[10px] opacity-40 hover:opacity-100">
+                          ✏️
+                        </span>
                       </div>
                     ))}
                   {characters.length > 5 && (

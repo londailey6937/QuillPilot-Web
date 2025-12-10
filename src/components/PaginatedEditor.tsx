@@ -61,6 +61,7 @@ export interface PaginatedEditorRef {
   getScrollContainer: () => HTMLDivElement | null;
   getPagesContainer: () => HTMLDivElement | null;
   setSkipNextRepagination: (skip: boolean) => void;
+  insertAtCursor: (html: string) => void;
 }
 
 export interface PaginatedEditorProps {
@@ -1313,20 +1314,19 @@ export const PaginatedEditor = forwardRef<
           selection.anchorNode.parentElement?.closest(".cf") ||
           (selection.anchorNode as Element)?.classList?.contains("cf"));
 
-      // IMPORTANT: Update pages state with current DOM content to prevent
-      // React from overwriting DOM edits on re-render
-      // BUT skip this if we're in a template field to preserve cursor
-      if (!isInTemplateField) {
-        setPages((prevPages) => {
-          return prevPages.map((page) => {
-            const ref = pageRefs.current.get(page.id);
-            if (ref) {
-              return { ...page, content: ref.innerHTML };
-            }
-            return page;
-          });
-        });
-      }
+      // IMPORTANT: We must NOT call setPages during normal typing because:
+      // 1. setPages triggers React re-render
+      // 2. React re-applies dangerouslySetInnerHTML
+      // 3. This destroys the cursor position
+      //
+      // Instead, we let the DOM be the source of truth during editing.
+      // The pages state will be synced on:
+      // - repagination (when overflow detected)
+      // - getContent() calls
+      // - blur events
+      //
+      // This is safe because dangerouslySetInnerHTML only applies on mount
+      // or when page.content changes - and we're not changing it here.
 
       // Check if repagination is actually needed
       // Only repaginate if content might have overflowed or pages need rebalancing
@@ -1534,17 +1534,28 @@ export const PaginatedEditor = forwardRef<
     );
 
     const clearSampleField = useCallback((cfField: HTMLElement | null) => {
-      if (cfField && cfField.hasAttribute("data-sample")) {
+      if (!cfField) return;
+
+      if (cfField.hasAttribute("data-sample")) {
+        // Field has sample data - clear it and focus
         cfField.textContent = "";
         cfField.removeAttribute("data-sample");
 
-        // Place cursor in the now-empty field so the user can keep typing
-        const range = document.createRange();
-        const sel = window.getSelection();
-        range.selectNodeContents(cfField);
-        range.collapse(true);
-        sel?.removeAllRanges();
-        sel?.addRange(range);
+        // Focus the field first
+        cfField.focus();
+
+        // Use double requestAnimationFrame for more reliable cursor placement
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            const range = document.createRange();
+            const sel = window.getSelection();
+            range.selectNodeContents(cfField);
+            range.collapse(true);
+            sel?.removeAllRanges();
+            sel?.addRange(range);
+            cfField.focus(); // Re-focus after setting selection
+          });
+        });
 
         // Don't call handleInput() here - just update pages state directly
         // to avoid repagination which would lose cursor position
@@ -1555,6 +1566,38 @@ export const PaginatedEditor = forwardRef<
               return { ...page, content: ref.innerHTML };
             }
             return page;
+          });
+        });
+      } else {
+        // Field already cleared or has user content - just ensure focus and cursor
+        cfField.focus();
+
+        // Place cursor at end of content (or start if empty)
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            const range = document.createRange();
+            const sel = window.getSelection();
+
+            if (cfField.childNodes.length > 0) {
+              // Has content - place cursor at end
+              const lastChild =
+                cfField.childNodes[cfField.childNodes.length - 1];
+              if (lastChild.nodeType === Node.TEXT_NODE) {
+                range.setStart(lastChild, lastChild.textContent?.length || 0);
+                range.setEnd(lastChild, lastChild.textContent?.length || 0);
+              } else {
+                range.selectNodeContents(cfField);
+                range.collapse(false); // collapse to end
+              }
+            } else {
+              // Empty field - place cursor at start
+              range.selectNodeContents(cfField);
+              range.collapse(true);
+            }
+
+            sel?.removeAllRanges();
+            sel?.addRange(range);
+            cfField.focus(); // Re-focus after setting selection
           });
         });
       }
@@ -1676,8 +1719,74 @@ export const PaginatedEditor = forwardRef<
           // When skip is false, clear the window immediately
           skipUntilRef.current = skip ? Date.now() + 100 : 0;
         },
+        insertAtCursor: (html: string) => {
+          // Focus the active page first
+          const activePageId = pages[activePageIndex]?.id || pages[0]?.id;
+          const targetPage = pageRefs.current.get(activePageId);
+          if (targetPage) {
+            targetPage.focus();
+          }
+
+          // Get current selection
+          const selection = window.getSelection();
+          if (selection && selection.rangeCount > 0) {
+            const range = selection.getRangeAt(0);
+            // Check if we're inside one of our page elements
+            const container = range.commonAncestorContainer;
+            const isInEditor = Array.from(pageRefs.current.values()).some(
+              (pageEl) => pageEl && pageEl.contains(container)
+            );
+
+            if (isInEditor) {
+              // Delete any selected content and insert new HTML
+              range.deleteContents();
+              const tempDiv = document.createElement("div");
+              tempDiv.innerHTML = html;
+              const fragment = document.createDocumentFragment();
+              let lastNode: Node | null = null;
+              while (tempDiv.firstChild) {
+                lastNode = fragment.appendChild(tempDiv.firstChild);
+              }
+              range.insertNode(fragment);
+
+              // Move cursor to end of inserted content
+              if (lastNode) {
+                range.setStartAfter(lastNode);
+                range.setEndAfter(lastNode);
+                selection.removeAllRanges();
+                selection.addRange(range);
+              }
+            } else {
+              // Not in editor - append to end of last page
+              const lastPageEl = pageRefs.current.get(
+                pages[pages.length - 1]?.id
+              );
+              if (lastPageEl) {
+                lastPageEl.innerHTML += html;
+              }
+            }
+          } else {
+            // No selection - append to end of last page
+            const lastPageEl = pageRefs.current.get(
+              pages[pages.length - 1]?.id
+            );
+            if (lastPageEl) {
+              lastPageEl.innerHTML += html;
+            }
+          }
+
+          // Trigger repagination
+          setTimeout(() => {
+            const fullHtml = collectAllContent();
+            onChange?.({
+              html: fullHtml,
+              text: fullHtml.replace(/<[^>]*>/g, ""),
+            });
+            repaginate(fullHtml, true);
+          }, 0);
+        },
       }),
-      [collectAllContent, repaginate, pages, activePageIndex]
+      [collectAllContent, repaginate, pages, activePageIndex, onChange]
     );
 
     // ========================================================================

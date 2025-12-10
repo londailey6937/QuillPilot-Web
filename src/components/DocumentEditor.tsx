@@ -48,6 +48,7 @@ interface DocumentEditorProps {
   characters?: Character[];
   onCharacterLink?: (textOccurrence: string, characterId: string) => void;
   onOpenCharacterManager?: () => void;
+  onEditCharacter?: (characterId: string) => void;
   isProfessionalTier?: boolean;
   onEditorLayoutChange?: (layout: { width: number; left: number }) => void;
   // Help callback for opening tool-specific help
@@ -57,6 +58,8 @@ interface DocumentEditorProps {
   // Document tools to render between toolbars
   documentTools?: React.ReactNode;
   onOpenChapterLibrary?: () => void;
+  // Ref callback to get insertAtCursor function
+  onEditorReady?: (editor: { insertAtCursor: (html: string) => void }) => void;
 }
 
 export const DocumentEditor: React.FC<DocumentEditorProps> = ({
@@ -86,12 +89,14 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
   characters,
   onCharacterLink,
   onOpenCharacterManager,
+  onEditCharacter,
   isProfessionalTier = false,
   onEditorLayoutChange,
   onOpenHelp,
   onHeaderFooterChange,
   documentTools,
   onOpenChapterLibrary,
+  onEditorReady,
 }) => {
   // Determine initial content: prefer HTML if available, otherwise text
   const startContent = htmlContent || initialText;
@@ -130,12 +135,14 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
         characters={characters}
         onCharacterLink={onCharacterLink}
         onOpenCharacterManager={onOpenCharacterManager}
+        onEditCharacter={onEditCharacter}
         isProfessionalTier={isProfessionalTier}
         onLayoutChange={onEditorLayoutChange}
         onOpenHelp={onOpenHelp}
         onHeaderFooterChange={onHeaderFooterChange}
         documentTools={documentTools}
         onOpenChapterLibrary={onOpenChapterLibrary}
+        onEditorReady={onEditorReady}
         style={{ flex: 1, minHeight: 0 }}
       />
     </div>

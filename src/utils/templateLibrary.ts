@@ -49,6 +49,17 @@ const fictionTemplate: Template = {
     template += `<div class="sec">
 <h2 contenteditable="false">Character Identity</h2>
 <div class="fld"><span class="lbl" contenteditable="false">Character's Full Name</span><div class="cf" id="character-name" contenteditable="true" data-sample="true">Alex Ross Applegate</div></div>
+<div class="fld"><span class="lbl" contenteditable="false">Role in Story</span><select id="character-role" style="width: 100%; padding: 4px 6px; border: 1px solid #d1d5db; border-radius: 4px; background: #fff; font-size: 13px; color: #111; margin-top: 2px; min-height: 24px; cursor: pointer;">
+<option value="protagonist">Protagonist</option>
+<option value="antagonist">Antagonist</option>
+<option value="deuteragonist">Deuteragonist (Secondary Lead)</option>
+<option value="love-interest">Love Interest</option>
+<option value="mentor">Mentor</option>
+<option value="sidekick">Sidekick</option>
+<option value="foil">Foil</option>
+<option value="supporting" selected>Supporting Character</option>
+<option value="minor">Minor Character</option>
+</select></div>
 <div class="fld"><span class="lbl" contenteditable="false">Age & Life Stage</span><div class="cf" contenteditable="true" data-sample="true">Mid 20s—at the peak of physical capability yet still discovering the emotional depths of his calling. Old enough to have accumulated hard-won experience, young enough to still be shaped by it.</div></div>
 <div class="fld"><span class="lbl" contenteditable="false">Occupation & Role in Story World</span><div class="cf" contenteditable="true" data-sample="true">Operative for a Covert Organization—the Agency. Alex exists in the liminal space between citizen and shadow, tasked with operations that never make the news yet shape the course of nations. His work demands he become whoever the mission requires while holding fast to his core identity.</div></div>
 <div class="fld"><span class="lbl" contenteditable="false">Education & Intellectual Foundation</span><div class="cf" contenteditable="true" data-sample="true">B.S. Applied Mathematics, M.S. Linguistics. His academic background wasn't merely academic—it was strategic, forming the foundation of his multifaceted abilities. Mathematics taught him to see patterns in chaos; linguistics gave him the keys to infiltrate any culture, any circle, any conversation.</div></div>
@@ -153,10 +164,10 @@ const fictionTemplate: Template = {
 <button onclick="window.dispatchEvent(new CustomEvent('addCharacterAlias'))" style="padding: 6px 12px; background-color: #fef5e7; color: #2c3e50; border: 2px solid #e0c392; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">+ Add Name</button>
 </div>`;
 
-    // Notes Section
+    // Notes Section - auto-expands as user types
     template += `<div class="sec">
 <h2 contenteditable="false">Notes</h2>
-<div class="fld"><div class="cf" id="character-notes" contenteditable="true" data-sample="true" style="min-height: 80px;">Add any additional notes about this character here...</div></div>
+<div class="fld"><div class="cf" id="character-notes" contenteditable="true" data-sample="true" style="min-height: 120px; max-height: none; overflow: visible;">Add any additional notes about this character here...</div></div>
 </div>`;
 
     // Save Button

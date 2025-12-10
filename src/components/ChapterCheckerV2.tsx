@@ -50,6 +50,7 @@ import {
   ACCESS_TIERS,
   Character,
   CharacterMapping,
+  CharacterRole,
 } from "../../types";
 import type { Genre } from "@/data/genreRegistry";
 import { detectGenre, getAvailableGenres } from "@/data/genreRegistry";
@@ -78,7 +79,11 @@ import AnalysisWorker from "@/workers/analysisWorker?worker";
 import { buildTierOneAnalysisSummary } from "@/utils/tierOneAnalysis";
 // Dynamic imports for export functions (code-splitting)
 import type { ManuscriptSettings } from "@/utils/pdfExport";
-import { TEMPLATE_LIBRARY, type Template } from "@/utils/templateLibrary";
+import {
+  TEMPLATE_LIBRARY,
+  type Template,
+  getTemplateById,
+} from "@/utils/templateLibrary";
 import {
   processClaudePrompts,
   getStoredClaudeKey,
@@ -483,7 +488,24 @@ export const ChapterCheckerV2: React.FC = () => {
   const [documentInstanceKey, setDocumentInstanceKey] = useState(0);
   const [fileName, setFileName] = useState("");
   const [fileType, setFileType] = useState("");
+  // Store file handle and format for "re-save" functionality (File System Access API)
+  const savedFileHandleRef = useRef<FileSystemFileHandle | null>(null);
+  const savedFormatRef = useRef<
+    "docx" | "pdf" | "html" | "json" | "txt" | "md" | null
+  >(null);
+  // Refs to track current values for keyboard shortcuts (avoid stale closures)
+  const chapterDataRef = useRef(chapterData);
+  // Keep refs in sync with state
+  useEffect(() => {
+    chapterDataRef.current = chapterData;
+  }, [chapterData]);
   const [isTemplateMode, setIsTemplateMode] = useState(false);
+  // Preserve document state when entering template mode
+  const preTemplateDocumentRef = useRef<{
+    chapterText: string | null;
+    chapterData: typeof chapterData;
+    fileName: string;
+  } | null>(null);
   const [editingCharacterId, setEditingCharacterId] = useState<string | null>(
     null
   ); // Track which character is being edited in template
@@ -602,6 +624,9 @@ export const ChapterCheckerV2: React.FC = () => {
     setCustomConcepts([]);
     setIsTemplateMode(false);
     setPendingAutosave(null);
+    // Clear saved file handle and format so next save prompts for new location
+    savedFileHandleRef.current = null;
+    savedFormatRef.current = null;
     if (typeof window !== "undefined") {
       localStorage.removeItem("quillpilot_autosave");
       localStorage.removeItem("quillpilot_autosave_skip");
@@ -619,6 +644,11 @@ export const ChapterCheckerV2: React.FC = () => {
     CharacterArcProgress[]
   >([]);
   const [isCharacterArcExpanded, setIsCharacterArcExpanded] = useState(false);
+
+  // Ref to store editor's insertAtCursor function
+  const editorInsertRef = useRef<{
+    insertAtCursor: (html: string) => void;
+  } | null>(null);
 
   // Header/Footer settings for export (received from editor)
   const [headerFooterSettings, setHeaderFooterSettings] = useState<{
@@ -652,6 +682,13 @@ export const ChapterCheckerV2: React.FC = () => {
     chapterData?.originalPlainText ??
     "";
   const currentChapterText = chapterText ?? "";
+  // Ref to track currentChapterText for keyboard shortcuts (avoid stale closures)
+  const currentChapterTextRef = useRef(currentChapterText);
+  useEffect(() => {
+    currentChapterTextRef.current = currentChapterText;
+  }, [currentChapterText]);
+  // Ref to track handleUnifiedSave for keyboard shortcuts (avoid stale closures)
+  const handleUnifiedSaveRef = useRef<() => Promise<void>>(async () => {});
   const wordCount = useMemo(
     () => countWordsQuick(statisticsText),
     [statisticsText]
@@ -902,29 +939,23 @@ export const ChapterCheckerV2: React.FC = () => {
     }
   }, [chapterData]);
 
-  // Load characters from localStorage (Tier 3)
+  // Characters are now only loaded from documents (JSON files), not from localStorage
+  // This prevents deleted characters from reappearing across sessions
+  // One-time cleanup of old localStorage character data
   useEffect(() => {
-    if (accessLevel === "professional") {
-      try {
-        const savedCharacters = localStorage.getItem("quillpilot_characters");
-        const savedMappings = localStorage.getItem(
-          "quillpilot_character_mappings"
-        );
-
-        if (savedCharacters) {
-          const parsed = JSON.parse(savedCharacters);
-          setCharacters(Array.isArray(parsed) ? parsed : []);
-        }
-
-        if (savedMappings) {
-          const parsed = JSON.parse(savedMappings);
-          setCharacterMappings(Array.isArray(parsed) ? parsed : []);
-        }
-      } catch (error) {
-        console.error("Error loading characters:", error);
+    try {
+      if (localStorage.getItem("quillpilot_characters")) {
+        localStorage.removeItem("quillpilot_characters");
+        console.log("🧹 Cleaned up old localStorage character data");
       }
+      if (localStorage.getItem("quillpilot_character_mappings")) {
+        localStorage.removeItem("quillpilot_character_mappings");
+        console.log("🧹 Cleaned up old localStorage character mappings");
+      }
+    } catch (error) {
+      // Ignore cleanup errors
     }
-  }, [accessLevel]);
+  }, []);
 
   // Listen for jump-to-position events (from dual coding buttons, etc.)
   useEffect(() => {
@@ -984,6 +1015,10 @@ export const ChapterCheckerV2: React.FC = () => {
         nameField?.textContent?.trim() || "Unnamed Character";
       const nameIsDefault = characterName === "Alex Ross Applegate";
 
+      // Get the role from dropdown
+      const roleSelect = getField("character-role") as HTMLSelectElement | null;
+      const role = (roleSelect?.value as CharacterRole) || "supporting";
+
       // Get a few key fields for the Character object (for display in manager)
       const backgroundField = getField("character-background");
       const traitsField = getField("character-traits");
@@ -1040,6 +1075,7 @@ export const ChapterCheckerV2: React.FC = () => {
             return {
               ...c,
               name: nameIsDefault ? c.name : characterName,
+              role: role,
               background: background || c.background,
               traits: traits.length > 0 ? traits : c.traits,
               goals: goals || c.goals,
@@ -1054,14 +1090,7 @@ export const ChapterCheckerV2: React.FC = () => {
           return c;
         });
         setCharacters(updatedCharacters);
-        try {
-          localStorage.setItem(
-            "quillpilot_characters",
-            JSON.stringify(updatedCharacters)
-          );
-        } catch (error) {
-          console.error("Failed to save characters:", error);
-        }
+        // Characters will be persisted when document is saved (JSON format)
         setSaveMessage(
           `✅ Character "${
             nameIsDefault
@@ -1074,7 +1103,7 @@ export const ChapterCheckerV2: React.FC = () => {
         const newCharacter: Character = {
           id: `char-${Date.now()}`,
           name: nameIsDefault ? "Unnamed Character" : characterName,
-          role: "supporting",
+          role: role,
           traits,
           background,
           goals,
@@ -1088,30 +1117,33 @@ export const ChapterCheckerV2: React.FC = () => {
           updatedAt: new Date().toISOString(),
         };
 
-        // Add to characters list and save to localStorage
+        // Add to characters list - will be persisted when document is saved
         const updatedCharacters = [...characters, newCharacter];
         setCharacters(updatedCharacters);
-        try {
-          localStorage.setItem(
-            "quillpilot_characters",
-            JSON.stringify(updatedCharacters)
-          );
-        } catch (error) {
-          console.error("Failed to save characters:", error);
-        }
+        // Characters will be persisted when document is saved (JSON format)
         setSaveMessage(`✅ Character "${characterName}" saved!`);
       }
 
-      // Set editor to blank document (not null, which shows "Ready to Write" page)
-      setChapterText("");
-      setChapterData({
-        html: "",
-        plainText: "",
-        originalPlainText: "",
-        isHybridDocx: false,
-        imageCount: 0,
-        editorHtml: "",
-      });
+      // Restore the previous document if we had one, otherwise set to blank
+      if (preTemplateDocumentRef.current) {
+        const preserved = preTemplateDocumentRef.current;
+        setChapterText(preserved.chapterText);
+        setChapterData(preserved.chapterData);
+        setFileName(preserved.fileName);
+        preTemplateDocumentRef.current = null; // Clear the preserved state
+      } else {
+        // No previous document - set editor to blank
+        setChapterText("");
+        setChapterData({
+          html: "",
+          plainText: "",
+          originalPlainText: "",
+          isHybridDocx: false,
+          imageCount: 0,
+          editorHtml: "",
+        });
+      }
+
       setIsTemplateMode(false);
       setEditingCharacterId(null);
       bumpDocumentInstanceKey();
@@ -1269,7 +1301,14 @@ export const ChapterCheckerV2: React.FC = () => {
       fileType,
       format,
       imageCount,
+      characters: loadedCharacters,
+      characterMappings: loadedMappings,
     } = payload;
+
+    // Clear saved file handle and format for new document
+    // (so next save prompts for location, not overwriting previous file)
+    savedFileHandleRef.current = null;
+    savedFormatRef.current = null;
 
     const normalizedPlainText = plainText?.trim().length
       ? plainText.trim()
@@ -1303,6 +1342,54 @@ export const ChapterCheckerV2: React.FC = () => {
     setFileType(fileType);
     setError(null);
     setAnalysis(null); // Clear previous analysis
+
+    // Set the extracted title ref to the incoming filename to prevent
+    // handleEditorContentChange from extracting and overwriting it
+    lastExtractedTitleRef.current = incomingName;
+
+    // Remember the format of the loaded file for subsequent saves
+    // This allows Cmd+S to save in the same format without dialog
+    if (fileType) {
+      const formatMap: Record<
+        string,
+        "docx" | "txt" | "json" | "md" | "html" | "pdf" | null
+      > = {
+        docx: "docx",
+        txt: "txt",
+        text: "txt", // DocumentUploader may pass "text" instead of "txt"
+        json: "json",
+        md: "md",
+        markdown: "md", // In case markdown extension is passed
+        html: "html",
+        pdf: null, // PDF can't be edited, so don't set as save format
+      };
+      const detectedFormat = formatMap[fileType.toLowerCase()];
+      if (detectedFormat) {
+        savedFormatRef.current = detectedFormat;
+        console.log(
+          `💾 File format detected: ${detectedFormat} - Cmd+S will save in this format`
+        );
+      } else {
+        console.warn(`⚠️ Unknown file type: ${fileType} - save format not set`);
+      }
+    }
+
+    // Load characters from document if present, otherwise clear
+    if (loadedCharacters && Array.isArray(loadedCharacters)) {
+      setCharacters(loadedCharacters);
+      console.log(
+        `👤 Loaded ${loadedCharacters.length} character(s) from document`
+      );
+    } else {
+      setCharacters([]); // Clear characters when loading a new document without characters
+    }
+
+    // Load character mappings from document if present, otherwise clear
+    if (loadedMappings && Array.isArray(loadedMappings)) {
+      setCharacterMappings(loadedMappings);
+    } else {
+      setCharacterMappings([]);
+    }
 
     const hasHtmlContent = format === "html" && content.trim().length > 0;
     console.log(
@@ -1357,6 +1444,27 @@ export const ChapterCheckerV2: React.FC = () => {
     }
   };
 
+  // Handler for inserting uploaded document content at cursor position
+  const handleInsertAtCursor = (payload: UploadedDocumentPayload) => {
+    const { content, format } = payload;
+
+    if (editorInsertRef.current) {
+      // Insert HTML content at cursor
+      const htmlContent =
+        format === "html"
+          ? content
+          : `<p>${content.replace(/\n/g, "</p><p>")}</p>`;
+      editorInsertRef.current.insertAtCursor(htmlContent);
+      console.log("📥 Inserted document content at cursor position");
+    } else {
+      console.warn("❌ Editor insert function not available");
+      // Fallback to appending if editor ref not available
+      alert(
+        "Please click in the document first to set cursor position, then try again."
+      );
+    }
+  };
+
   const handleTextChange = (newText: string) => {
     setChapterText(newText);
     // Don't clear HTML content when text changes in plain text mode
@@ -1395,8 +1503,9 @@ export const ChapterCheckerV2: React.FC = () => {
 
     // Extract book title from HTML if present
     // Use more flexible regex to handle inner elements and whitespace
+    // Check for both book-title and doc-title classes on p or h1 elements
     const bookTitleMatch = content.html.match(
-      /<p[^>]*class="[^"]*book-title[^"]*"[^>]*>([\s\S]*?)<\/p>/i
+      /<(?:p|h1)[^>]*class="[^"]*(?:book-title|doc-title)[^"]*"[^>]*>([\s\S]*?)<\/(?:p|h1)>/i
     );
     if (bookTitleMatch && bookTitleMatch[1]) {
       // Strip HTML tags and clean up whitespace
@@ -1528,17 +1637,13 @@ export const ChapterCheckerV2: React.FC = () => {
   };
 
   // Character management handlers (Tier 3)
+  // Characters are saved to the document on file save, not to localStorage
   const handleSaveCharacters = (updatedCharacters: Character[]) => {
     setCharacters(updatedCharacters);
-    try {
-      localStorage.setItem(
-        "quillpilot_characters",
-        JSON.stringify(updatedCharacters)
-      );
-    } catch (error) {
-      console.error("Failed to save characters:", error);
-      alert("Failed to save characters. Please try again.");
-    }
+    // Characters will be persisted when document is saved (JSON format includes characters)
+    console.log(
+      `📝 Characters updated: ${updatedCharacters.length} character(s)`
+    );
   };
 
   const handleCharacterLink = (textOccurrence: string, characterId: string) => {
@@ -1972,13 +2077,200 @@ export const ChapterCheckerV2: React.FC = () => {
       setIsAnalyzing(false);
     }
   };
-  // Unified Save function - opens Save dialog for format selection
-  const handleUnifiedSave = () => {
-    if (!chapterData) {
+  // Unified Save function - auto-saves to previous location/format, or opens dialog for first save
+  const handleUnifiedSave = async () => {
+    // Use refs to get current values (avoids stale closures in keyboard handlers)
+    let currentData = chapterDataRef.current;
+    let currentText = currentChapterTextRef.current;
+
+    // Fallback: if state is empty, try to get content directly from editor DOM
+    if (!currentData && !currentText.trim()) {
+      const editorContent = document.querySelector(".paginated-page-content");
+      if (editorContent) {
+        const domText = editorContent.textContent?.trim() || "";
+        const domHtml = editorContent.innerHTML || "";
+        if (domText) {
+          currentText = domText;
+          currentData = {
+            html: domHtml,
+            plainText: domText,
+            originalPlainText: domText,
+            isHybridDocx: false,
+            imageCount: 0,
+            editorHtml: domHtml,
+          };
+          console.log(
+            "[Save] Retrieved content from DOM:",
+            domText.substring(0, 100)
+          );
+        }
+      }
+    }
+
+    // Extract and update title from document content before saving
+    // This ensures specs panel reflects any doc-title style applied
+    const htmlToCheck = currentData?.editorHtml || currentData?.html || "";
+    if (htmlToCheck) {
+      const titleMatch = htmlToCheck.match(
+        /<(?:p|h[1-6])[^>]*class="[^"]*(?:book-title|doc-title)[^"]*"[^>]*>([\s\S]*?)<\/(?:p|h[1-6])>/i
+      );
+      if (titleMatch && titleMatch[1]) {
+        const extractedTitle = titleMatch[1]
+          .replace(/<[^>]*>/g, "")
+          .replace(/&nbsp;/g, " ")
+          .replace(/\s+/g, " ")
+          .trim();
+        if (
+          extractedTitle &&
+          extractedTitle !== "Book Title" &&
+          extractedTitle.length > 0 &&
+          extractedTitle !== lastExtractedTitleRef.current
+        ) {
+          lastExtractedTitleRef.current = extractedTitle;
+          setFileName(extractedTitle);
+        }
+      }
+    }
+
+    // Check if there's content to save - either chapterData or currentChapterText
+    if (!currentData && !currentText.trim()) {
       alert("No document to save");
       return;
     }
+
+    // If we have a saved file handle (for txt/json/md) and format, try quick save first
+    if (savedFileHandleRef.current && savedFormatRef.current) {
+      try {
+        await handleQuickSave();
+        return;
+      } catch (err) {
+        // If quick save fails (e.g., permission denied), fall through
+        console.warn("Quick save failed:", err);
+      }
+    }
+
+    // If we have a previously saved format (but no handle, like for docx/pdf/html),
+    // save directly with that format (will show OS file picker with same filename)
+    if (savedFormatRef.current) {
+      console.log(
+        `💾 Quick save in ${savedFormatRef.current} format (no dialog)`
+      );
+      await handleSaveAs(savedFormatRef.current);
+      return;
+    }
+
+    // First save - show format selection dialog
+    console.log("💾 First save - showing format selection dialog");
     setIsSaveDialogOpen(true);
+  };
+  // Keep ref updated so keyboard shortcut always uses latest version
+  useEffect(() => {
+    handleUnifiedSaveRef.current = handleUnifiedSave;
+  });
+
+  // Quick save to previously saved file handle (no dialog)
+  const handleQuickSave = async () => {
+    if (
+      !savedFileHandleRef.current ||
+      !savedFormatRef.current ||
+      !chapterData
+    ) {
+      throw new Error("No saved file handle");
+    }
+
+    const format = savedFormatRef.current;
+    const rawFileName = fileName || "untitled-document";
+    const baseFileName = rawFileName.replace(/\.[^/.]+$/, "");
+    const richHtmlContent =
+      chapterData.editorHtml ??
+      (chapterData.isHybridDocx ? chapterData.html : null) ??
+      null;
+    const isWriterMode = viewMode === "writer";
+
+    let blob: Blob;
+
+    switch (format) {
+      case "docx": {
+        const { exportToDocx } = await import("@/utils/docxExport");
+        const fallbackAnalysis = isWriterMode
+          ? null
+          : analysis ??
+            buildTierOneAnalysisSummary({
+              plainText: chapterData.plainText || currentChapterText,
+              htmlContent: richHtmlContent,
+            });
+        // exportToDocx handles its own saving, so we need to create blob manually
+        const { Document, Packer, Paragraph, TextRun } = await import("docx");
+        const doc = new Document({
+          sections: [
+            {
+              properties: {},
+              children: [
+                new Paragraph({ children: [new TextRun(currentChapterText)] }),
+              ],
+            },
+          ],
+        });
+        blob = await Packer.toBlob(doc);
+        break;
+      }
+      case "json": {
+        const jsonData = {
+          name: baseFileName,
+          content: currentChapterText,
+          editorHtml: richHtmlContent,
+          analysis: analysis,
+          characters: characters,
+          characterMappings: characterMappings,
+          savedAt: new Date().toISOString(),
+        };
+        blob = new Blob([JSON.stringify(jsonData, null, 2)], {
+          type: "application/json",
+        });
+        break;
+      }
+      case "txt": {
+        blob = new Blob([currentChapterText], { type: "text/plain" });
+        break;
+      }
+      case "md": {
+        const TurndownService = (await import("turndown")).default;
+        const turndown = new TurndownService({
+          headingStyle: "atx",
+          codeBlockStyle: "fenced",
+        });
+        const markdownContent = richHtmlContent
+          ? turndown.turndown(richHtmlContent)
+          : currentChapterText;
+        blob = new Blob([markdownContent], { type: "text/markdown" });
+        break;
+      }
+      case "html": {
+        const fallbackAnalysis =
+          analysis ??
+          buildTierOneAnalysisSummary({
+            plainText: chapterData.plainText || currentChapterText,
+            htmlContent: richHtmlContent,
+          });
+        // For HTML, create a simple blob
+        blob = new Blob([richHtmlContent || currentChapterText], {
+          type: "text/html",
+        });
+        break;
+      }
+      case "pdf": {
+        // PDF requires special handling - fall back to dialog
+        throw new Error("PDF quick save not supported");
+      }
+      default:
+        throw new Error(`Unsupported format: ${format}`);
+    }
+
+    // Write to saved handle
+    const writable = await savedFileHandleRef.current.createWritable();
+    await writable.write(blob);
+    await writable.close();
+    console.log(`💾 Quick saved to ${format}`);
   };
 
   // Save to specific format with File System Access API (user chooses location)
@@ -2002,7 +2294,9 @@ export const ChapterCheckerV2: React.FC = () => {
 
     setIsSaveDialogOpen(false);
 
-    const baseFileName = fileName || "untitled-document";
+    // Strip extension from fileName if present (e.g., "MyStory.docx" -> "MyStory")
+    const rawFileName = fileName || "untitled-document";
+    const baseFileName = rawFileName.replace(/\.[^/.]+$/, "");
     const richHtmlContent =
       chapterData.editorHtml ??
       (chapterData.isHybridDocx ? chapterData.html : null) ??
@@ -2076,12 +2370,14 @@ export const ChapterCheckerV2: React.FC = () => {
           break;
         }
         case "json": {
-          // Save as JSON with all document data
+          // Save as JSON with all document data including characters
           const jsonData = {
             name: baseFileName,
             content: currentChapterText,
             editorHtml: richHtmlContent,
             analysis: analysis,
+            characters: characters,
+            characterMappings: characterMappings,
             savedAt: new Date().toISOString(),
           };
           const blob = new Blob([JSON.stringify(jsonData, null, 2)], {
@@ -2103,6 +2399,9 @@ export const ChapterCheckerV2: React.FC = () => {
               const writable = await handle.createWritable();
               await writable.write(blob);
               await writable.close();
+              // Store handle for quick re-save
+              savedFileHandleRef.current = handle;
+              savedFormatRef.current = "json";
               return;
             } catch (err: any) {
               if (err.name === "AbortError") return;
@@ -2131,6 +2430,9 @@ export const ChapterCheckerV2: React.FC = () => {
               const writable = await handle.createWritable();
               await writable.write(blob);
               await writable.close();
+              // Store handle for quick re-save
+              savedFileHandleRef.current = handle;
+              savedFormatRef.current = "txt";
               return;
             } catch (err: any) {
               if (err.name === "AbortError") return;
@@ -2175,6 +2477,9 @@ export const ChapterCheckerV2: React.FC = () => {
               const writable = await handle.createWritable();
               await writable.write(blob);
               await writable.close();
+              // Store handle for quick re-save
+              savedFileHandleRef.current = handle;
+              savedFormatRef.current = "md";
               return;
             } catch (err: any) {
               if (err.name === "AbortError") return;
@@ -2186,6 +2491,8 @@ export const ChapterCheckerV2: React.FC = () => {
           break;
         }
       }
+      // Store the format for quick re-save (even if we couldn't store a handle)
+      savedFormatRef.current = format;
     } catch (err) {
       alert(
         "Error saving: " +
@@ -2431,15 +2738,17 @@ export const ChapterCheckerV2: React.FC = () => {
       ) {
         e.preventDefault();
         e.stopPropagation();
-        console.log("💾 Save dialog opened via keyboard shortcut");
-        handleUnifiedSave();
+        console.log("💾 Save triggered via keyboard shortcut");
+        // Use ref to get latest version of the function (avoids stale closure)
+        handleUnifiedSaveRef.current();
       }
     };
 
     // Use capture phase to ensure we intercept before browser default
+    // No dependencies needed since we use refs for all dynamic values
     window.addEventListener("keydown", handleKeyDown, true);
     return () => window.removeEventListener("keydown", handleKeyDown, true);
-  }, [fileName, firstLineIndent]);
+  }, []);
 
   // Show loading screen while profile is being fetched to prevent UI jerk
 
@@ -3331,6 +3640,14 @@ export const ChapterCheckerV2: React.FC = () => {
                     nameField.removeAttribute("data-sample");
                   }
 
+                  // Pre-fill the role dropdown
+                  const roleSelect = tempDiv.querySelector(
+                    "#character-role"
+                  ) as HTMLSelectElement | null;
+                  if (roleSelect && existingChar.role) {
+                    roleSelect.value = existingChar.role;
+                  }
+
                   // Pre-fill background if exists
                   const backgroundField = tempDiv.querySelector(
                     "#character-background"
@@ -3434,6 +3751,16 @@ export const ChapterCheckerV2: React.FC = () => {
 
             // Load the template into the editor
             const plainTextContent = finalHtml.replace(/<[^>]*>/g, "");
+
+            // Preserve current document state before entering template mode
+            if (!isTemplateMode && chapterData) {
+              preTemplateDocumentRef.current = {
+                chapterText,
+                chapterData,
+                fileName,
+              };
+            }
+
             setChapterText(plainTextContent);
             setChapterData((prev) =>
               prev
@@ -3598,6 +3925,52 @@ export const ChapterCheckerV2: React.FC = () => {
                       onOpenCharacterManager={() =>
                         setIsCharacterManagerOpen(true)
                       }
+                      onEditCharacter={(characterId) => {
+                        // Edit character - open template with this character
+                        const char = characters.find(
+                          (c) => c.id === characterId
+                        );
+                        if (!char) return;
+                        const template = getTemplateById("fiction");
+                        if (template) {
+                          let finalHtml = template.generateTemplate({}, "");
+                          if (char.templateHtml) {
+                            finalHtml = char.templateHtml;
+                          }
+                          setEditingCharacterId(char.id);
+                          const plainTextContent = finalHtml.replace(
+                            /<[^>]*>/g,
+                            ""
+                          );
+                          if (!isTemplateMode && chapterData) {
+                            preTemplateDocumentRef.current = {
+                              chapterText,
+                              chapterData,
+                              fileName,
+                            };
+                          }
+                          setChapterText(plainTextContent);
+                          setChapterData((prev) =>
+                            prev
+                              ? {
+                                  ...prev,
+                                  plainText: plainTextContent,
+                                  editorHtml: finalHtml,
+                                  originalPlainText: plainTextContent,
+                                }
+                              : {
+                                  html: finalHtml,
+                                  plainText: plainTextContent,
+                                  originalPlainText: plainTextContent,
+                                  isHybridDocx: true,
+                                  imageCount: 0,
+                                  editorHtml: finalHtml,
+                                }
+                          );
+                          setIsTemplateMode(true);
+                          bumpDocumentInstanceKey();
+                        }
+                      }}
                       isProfessionalTier={accessLevel === "professional"}
                       concepts={
                         analysis?.conceptGraph?.concepts?.map(
@@ -3655,10 +4028,14 @@ export const ChapterCheckerV2: React.FC = () => {
                       onExitTemplateMode={() => setIsTemplateMode(false)}
                       onHeaderFooterChange={setHeaderFooterSettings}
                       onOpenHelp={openHelpSection}
+                      onEditorReady={(editor) => {
+                        editorInsertRef.current = editor;
+                      }}
                       documentTools={
                         <>
                           <DocumentUploader
                             onDocumentLoad={handleDocumentLoad}
+                            onInsertAtCursor={handleInsertAtCursor}
                             disabled={isAnalyzing}
                             accessLevel={accessLevel}
                           />
@@ -3712,7 +4089,7 @@ export const ChapterCheckerV2: React.FC = () => {
                           {!isAnalyzing && (
                             <>
                               <button
-                                onClick={() => setIsSaveDialogOpen(true)}
+                                onClick={handleUnifiedSave}
                                 style={{
                                   padding: "4px 10px",
                                   backgroundColor: "#fef5e7",
@@ -4914,6 +5291,219 @@ export const ChapterCheckerV2: React.FC = () => {
                       }}
                     >
                       {progress}
+                    </div>
+                  )}
+
+                  {/* Characters Panel - Professional Tier */}
+                  {accessLevel === "professional" && (
+                    <div
+                      style={{
+                        marginTop: "12px",
+                        padding: "12px",
+                        backgroundColor: "white",
+                        borderRadius: "16px",
+                        border: "1.5px solid #e0c392",
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          marginBottom: characters.length > 0 ? "10px" : "0",
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "8px",
+                          }}
+                        >
+                          <span style={{ fontSize: "16px" }}>👤</span>
+                          <span
+                            style={{
+                              fontWeight: 600,
+                              color: "#2c3e50",
+                              fontSize: "14px",
+                            }}
+                          >
+                            Characters
+                          </span>
+                          {characters.length > 0 && (
+                            <span
+                              style={{
+                                backgroundColor: "#fef3c7",
+                                color: "#92400e",
+                                padding: "2px 8px",
+                                borderRadius: "10px",
+                                fontSize: "11px",
+                                fontWeight: 500,
+                              }}
+                            >
+                              {characters.length}
+                            </span>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => setIsCharacterManagerOpen(true)}
+                          style={{
+                            padding: "4px 10px",
+                            backgroundColor: "#ef8432",
+                            color: "white",
+                            border: "none",
+                            borderRadius: "12px",
+                            fontSize: "11px",
+                            fontWeight: 600,
+                            cursor: "pointer",
+                          }}
+                        >
+                          + New
+                        </button>
+                      </div>
+                      {characters.length > 0 && (
+                        <div
+                          style={{
+                            display: "flex",
+                            flexWrap: "wrap",
+                            gap: "8px",
+                          }}
+                        >
+                          {characters.map((char) => (
+                            <div
+                              key={char.id}
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "6px",
+                                backgroundColor: "#fef5e7",
+                                border: "1px solid #e0c392",
+                                borderRadius: "20px",
+                                padding: "6px 10px",
+                                fontSize: "12px",
+                              }}
+                            >
+                              <span
+                                style={{
+                                  fontWeight: 600,
+                                  color: "#2c3e50",
+                                  maxWidth: "100px",
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                  whiteSpace: "nowrap",
+                                }}
+                              >
+                                {char.name}
+                              </span>
+                              {char.role && (
+                                <span
+                                  style={{
+                                    fontSize: "10px",
+                                    color: "#64748b",
+                                    backgroundColor: "white",
+                                    padding: "2px 6px",
+                                    borderRadius: "8px",
+                                  }}
+                                >
+                                  {char.role}
+                                </span>
+                              )}
+                              <button
+                                onClick={() => {
+                                  // Edit character - open template with this character
+                                  const template = getTemplateById("fiction");
+                                  if (template) {
+                                    const templateHtml =
+                                      template.generateTemplate({}, "");
+                                    // Load template and set editing character
+                                    let finalHtml = templateHtml;
+                                    if (char.templateHtml) {
+                                      finalHtml = char.templateHtml;
+                                    }
+                                    setEditingCharacterId(char.id);
+                                    const plainTextContent = finalHtml.replace(
+                                      /<[^>]*>/g,
+                                      ""
+                                    );
+                                    if (!isTemplateMode && chapterData) {
+                                      preTemplateDocumentRef.current = {
+                                        chapterText,
+                                        chapterData,
+                                        fileName,
+                                      };
+                                    }
+                                    setChapterText(plainTextContent);
+                                    setChapterData((prev) =>
+                                      prev
+                                        ? {
+                                            ...prev,
+                                            plainText: plainTextContent,
+                                            editorHtml: finalHtml,
+                                            originalPlainText: plainTextContent,
+                                          }
+                                        : {
+                                            html: finalHtml,
+                                            plainText: plainTextContent,
+                                            originalPlainText: plainTextContent,
+                                            isHybridDocx: true,
+                                            imageCount: 0,
+                                            editorHtml: finalHtml,
+                                          }
+                                    );
+                                    setIsTemplateMode(true);
+                                    bumpDocumentInstanceKey();
+                                  }
+                                }}
+                                title="Edit character"
+                                style={{
+                                  background: "none",
+                                  border: "none",
+                                  padding: "2px",
+                                  cursor: "pointer",
+                                  fontSize: "12px",
+                                  opacity: 0.6,
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.opacity = "1";
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.opacity = "0.6";
+                                }}
+                              >
+                                ✏️
+                              </button>
+                              <button
+                                onClick={() => {
+                                  if (
+                                    confirm(`Delete character "${char.name}"?`)
+                                  ) {
+                                    setCharacters((prev) =>
+                                      prev.filter((c) => c.id !== char.id)
+                                    );
+                                  }
+                                }}
+                                title="Delete character"
+                                style={{
+                                  background: "none",
+                                  border: "none",
+                                  padding: "2px",
+                                  cursor: "pointer",
+                                  fontSize: "12px",
+                                  opacity: 0.6,
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.opacity = "1";
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.opacity = "0.6";
+                                }}
+                              >
+                                🗑️
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
 

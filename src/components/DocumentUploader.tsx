@@ -81,6 +81,10 @@ function enhanceDocumentFormatting(html: string): string {
   let foundBodyText = false; // Track when we've passed title/front matter
   let consecutiveShortLines = 0; // Track clusters of short lines (front matter)
 
+  // Check if document already has a doc-title - if so, don't add book-title
+  const hasExistingDocTitle = doc.querySelector(".doc-title") !== null;
+  let hasBookTitleAlready = doc.querySelector(".book-title") !== null;
+
   paragraphs.forEach((p, index) => {
     const text = p.textContent?.trim() || "";
     const hasImage = p.querySelector("img") !== null;
@@ -155,8 +159,16 @@ function enhanceDocumentFormatting(html: string): string {
         (p as HTMLElement).style.textIndent = "0";
 
         // Check for main title (largest/first bold text)
-        if (hasOnlyBold && index < 5 && !hasDocTitle) {
+        // Only add book-title if we don't already have a doc-title or book-title
+        if (
+          hasOnlyBold &&
+          index < 5 &&
+          !hasDocTitle &&
+          !hasExistingDocTitle &&
+          !hasBookTitleAlready
+        ) {
           p.classList.add("book-title");
+          hasBookTitleAlready = true; // Only mark the first one
         }
       } else if (text.length > 150) {
         // Long paragraph = body text has started
@@ -234,20 +246,25 @@ export interface UploadedDocumentPayload {
   plainText: string;
   imageCount: number;
   isScreenplay?: boolean;
+  characters?: any[];
+  characterMappings?: any[];
 }
 
 interface DocumentUploaderProps {
   onDocumentLoad: (payload: UploadedDocumentPayload) => void;
+  onInsertAtCursor?: (payload: UploadedDocumentPayload) => void;
   disabled?: boolean;
   accessLevel?: AccessLevel;
 }
 
 export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
   onDocumentLoad,
+  onInsertAtCursor,
   disabled = false,
   accessLevel = "free",
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const insertFileInputRef = useRef<HTMLInputElement>(null);
   const lastIncrementTime = useRef<number>(0);
   const [isProcessing, setIsProcessing] = React.useState(false);
   const [hasScreenplay, setHasScreenplay] = React.useState(false);
@@ -487,12 +504,19 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
     }
   };
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    isInsertMode: boolean = false
+  ) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Check upload limit before processing
-    if (!checkUploadLimit()) {
+    // Determine which callback to use
+    const callback =
+      isInsertMode && onInsertAtCursor ? onInsertAtCursor : onDocumentLoad;
+
+    // Check upload limit before processing (skip for insert mode)
+    if (!isInsertMode && !checkUploadLimit()) {
       // Reset file input
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
@@ -529,9 +553,9 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
           })
           .join("\n");
 
-        incrementUploadCount();
+        if (!isInsertMode) incrementUploadCount();
 
-        onDocumentLoad({
+        callback({
           fileName,
           fileType: "text",
           format: "html",
@@ -592,9 +616,9 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
           .replace(/_/g, "")
           .replace(/`/g, "");
 
-        incrementUploadCount();
+        if (!isInsertMode) incrementUploadCount();
 
-        onDocumentLoad({
+        callback({
           fileName,
           fileType: "markdown",
           format: "html",
@@ -607,6 +631,52 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
           fileInputRef.current.value = "";
         }
         return;
+      }
+
+      // Handle JSON files (QuillPilot saved documents)
+      if (fileType === "json") {
+        const text = await file.text();
+        try {
+          const jsonData = JSON.parse(text);
+
+          // Extract content from QuillPilot JSON format
+          const content = jsonData.editorHtml || jsonData.content || "";
+          const plainText = jsonData.content || "";
+          const characters = Array.isArray(jsonData.characters)
+            ? jsonData.characters
+            : [];
+          const characterMappings = Array.isArray(jsonData.characterMappings)
+            ? jsonData.characterMappings
+            : [];
+
+          console.log(
+            `📄 Loading JSON document with ${characters.length} character(s)`
+          );
+
+          if (!isInsertMode) incrementUploadCount();
+
+          callback({
+            fileName: jsonData.name || fileName.replace(/\.json$/, ""),
+            fileType: "json",
+            format: content.includes("<") ? "html" : "text",
+            content: content,
+            plainText: plainText,
+            imageCount: 0,
+            characters,
+            characterMappings,
+          });
+
+          if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+          }
+          return;
+        } catch (parseError) {
+          console.error("Failed to parse JSON file:", parseError);
+          alert(
+            "Failed to parse JSON file. Please ensure it's a valid QuillPilot document."
+          );
+          return;
+        }
       }
 
       if (fileType === "docx") {
@@ -947,14 +1017,15 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
         };
 
         // Document loaded successfully
-        console.log("✅ Document processed, calling onDocumentLoad", {
+        console.log("✅ Document processed, calling callback", {
           fileName,
           contentLength: payload.content.length,
           plainTextLength: payload.plainText.length,
+          isInsertMode,
         });
         setHasScreenplay(screenplayResult.isScreenplay);
-        incrementUploadCount();
-        onDocumentLoad(payload);
+        if (!isInsertMode) incrementUploadCount();
+        callback(payload);
       } else if (fileType === "txt") {
         const textContent = await file.text();
 
@@ -1015,13 +1086,14 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
           isScreenplay: screenplayResult.isScreenplay,
         };
 
-        console.log("✅ TXT document processed, calling onDocumentLoad", {
+        console.log("✅ TXT document processed, calling callback", {
           fileName,
           contentLength: textContent.length,
+          isInsertMode,
         });
         setHasScreenplay(screenplayResult.isScreenplay);
-        incrementUploadCount();
-        onDocumentLoad(payload);
+        if (!isInsertMode) incrementUploadCount();
+        callback(payload);
       } else {
         alert(
           "Please upload a .docx or .txt file.\n\n" +
@@ -1068,21 +1140,26 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
+      if (insertFileInputRef.current) {
+        insertFileInputRef.current.value = "";
+      }
     }
   };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+      {/* Hidden file input - uses insert mode when onInsertAtCursor is provided */}
       <input
-        ref={fileInputRef}
+        ref={onInsertAtCursor ? insertFileInputRef : fileInputRef}
         type="file"
-        accept=".docx,.txt,.md,.markdown,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown"
-        onChange={handleFileChange}
+        accept=".docx,.txt,.md,.markdown,.json,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown,application/json"
+        onChange={(e) => handleFileChange(e, !!onInsertAtCursor)}
         disabled={disabled}
         style={{ display: "none" }}
         id="document-upload-input"
       />
       <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+        {/* Upload button - inserts at cursor when onInsertAtCursor is provided */}
         <label
           htmlFor="document-upload-input"
           style={{
@@ -1110,6 +1187,11 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
               e.currentTarget.style.backgroundColor = "#fef5e7";
             }
           }}
+          title={
+            onInsertAtCursor
+              ? "Upload and insert file content at cursor position"
+              : "Upload document"
+          }
         >
           {isProcessing ? (
             <>

@@ -1535,6 +1535,29 @@ p {
   color: #111827;
 }
 
+.editor-content p.character-name,
+.paginated-page-content p.character-name {
+  font-size: 16px !important;
+  font-weight: bold !important;
+  text-transform: uppercase !important;
+  margin-top: 0.5em !important;
+  margin-bottom: 0.2em !important;
+  text-indent: 0 !important;
+  color: #111827;
+  font-style: normal !important;
+}
+
+.editor-content p.location,
+.paginated-page-content p.location {
+  font-size: 16px !important;
+  font-style: italic !important;
+  font-weight: normal !important;
+  margin-top: 0.5em !important;
+  margin-bottom: 0.3em !important;
+  text-indent: 0 !important;
+  color: #111827;
+}
+
 .editor-content p.afterword {
   font-size: 16px;
   font-style: italic;
@@ -1673,7 +1696,8 @@ p {
   text-align: center !important;
 }
 
-.editor-content h1 {
+/* Generic h1 styling - exclude doc-title which has its own styling */
+.editor-content h1:not(.doc-title) {
   color: #111827;
 }
 
