@@ -942,7 +942,7 @@ export const ChapterCheckerV2: React.FC = () => {
   // Listen for save character template button click (both custom event and direct click)
   useEffect(() => {
     const handleSaveCharacterTemplate = () => {
-      // There are duplicate IDs in the DOM - one from React state (stale) and one from 
+      // There are duplicate IDs in the DOM - one from React state (stale) and one from
       // the live contenteditable. We need to get the LAST one which is the live edit.
       const getField = (id: string): HTMLElement | null => {
         const all = document.querySelectorAll(`#${id}`);
@@ -969,8 +969,6 @@ export const ChapterCheckerV2: React.FC = () => {
       const arc = arcField?.textContent?.trim() || "";
       const notes = notesField?.textContent?.trim() || "";
 
-      // DEBUG
-      alert(`Notes field text: "${notes.substring(0, 50)}..."`);
       // Check if name is still default
       const nameIsDefault = characterName === "Alex Ross Applegate";
 
