@@ -942,45 +942,57 @@ export const ChapterCheckerV2: React.FC = () => {
   // Listen for save character template button click (both custom event and direct click)
   useEffect(() => {
     const handleSaveCharacterTemplate = () => {
-      // There are duplicate IDs in the DOM - one from React state (stale) and one from
-      // the live contenteditable. We need to get the LAST one which is the live edit.
+      // Collect the ENTIRE template HTML from paginated pages
+      // IMPORTANT: Only get pages from inside the paginated-pages-stack (the actual editor)
+      const pagesStack = document.querySelector(".paginated-pages-stack");
+      if (!pagesStack) {
+        console.error("[CharSave] No paginated-pages-stack found");
+        return;
+      }
+
+      const containers = pagesStack.querySelectorAll(".paginated-page-content");
+      let fullTemplateHtml = "";
+      containers.forEach((container) => {
+        fullTemplateHtml += container.innerHTML;
+      });
+
+      // Helper to get field from the LAST container (live contenteditable content)
       const getField = (id: string): HTMLElement | null => {
-        const all = document.querySelectorAll(`#${id}`);
-        if (all.length === 0) return null;
-        // Return the LAST element - that's the live contenteditable one
-        return all[all.length - 1] as HTMLElement;
+        for (let i = containers.length - 1; i >= 0; i--) {
+          const field = containers[i].querySelector(`#${id}`) as HTMLElement;
+          if (field) return field;
+        }
+        return null;
       };
 
+      // Get the character name for display purposes
       const nameField = getField("character-name");
+      const characterName =
+        nameField?.textContent?.trim() || "Unnamed Character";
+      const nameIsDefault = characterName === "Alex Ross Applegate";
+
+      // Get a few key fields for the Character object (for display in manager)
       const backgroundField = getField("character-background");
       const traitsField = getField("character-traits");
+      const notesField = getField("character-notes");
       const goalsField = getField("character-goals");
       const conflictsField = getField("character-conflicts");
       const arcField = getField("character-arc");
-      const notesField = getField("character-notes");
 
-      // Get text content from each field
-      const characterName =
-        nameField?.textContent?.trim() || "Unnamed Character";
-      const backgroundRaw = backgroundField?.textContent?.trim() || "";
-      const traitsRaw = traitsField?.textContent?.trim() || "";
-      const goalsRaw = goalsField?.textContent?.trim() || "";
-      const conflictsRaw = conflictsField?.textContent?.trim() || "";
-      const arcRaw = arcField?.textContent?.trim() || "";
+      const background = backgroundField?.textContent?.trim() || "";
+      const traitsText = traitsField?.textContent?.trim() || "";
       const notesRaw = notesField?.textContent?.trim() || "";
+      const goals = goalsField?.textContent?.trim() || "";
+      const conflicts = conflictsField?.textContent?.trim() || "";
+      const arc = arcField?.textContent?.trim() || "";
 
-      // Check if values are still default sample text - if so, treat as empty
-      const nameIsDefault = characterName === "Alex Ross Applegate";
-      const background = backgroundRaw.startsWith("Alex's background is shrouded") ? "" : backgroundRaw;
-      const traitsText = traitsRaw.startsWith("Reserved, intelligent, resourceful") ? "" : traitsRaw;
-      const goals = goalsRaw === "What do they want to achieve?" ? "" : goalsRaw;
-      const conflicts = conflictsRaw === "What is their weakness and psychological need?" ? "" : conflictsRaw;
-      const arc = arcRaw === "What do they finally understand about themselves?" ? "" : arcRaw;
-      const notes = notesRaw === "Add any additional notes about this character here..." ? "" : notesRaw;
+      // Clean notes if it's the default placeholder
+      const notes =
+        notesRaw === "Add any additional notes about this character here..."
+          ? ""
+          : notesRaw;
 
-      console.log("[CharSave] Saving - background:", background.substring(0, 30), "goals:", goals, "notes:", notes);
-
-      // Parse traits from comma-separated text
+      // Parse traits for display
       const traits = traitsText
         ? traitsText
             .split(/[,;]/)
@@ -988,11 +1000,11 @@ export const ChapterCheckerV2: React.FC = () => {
             .filter((t) => t.length > 0 && t.length < 50)
         : [];
 
-      // Get aliases from the aliases list
-      const aliasesList = document.getElementById("aliases-list");
+      // Get aliases
+      const aliasesListEl = getField("aliases-list");
       const linkedNames: string[] = [];
-      if (aliasesList) {
-        aliasesList.querySelectorAll("div").forEach((div) => {
+      if (aliasesListEl) {
+        aliasesListEl.querySelectorAll("div").forEach((div) => {
           const alias = div.textContent?.trim();
           if (alias && alias !== "No aliases defined yet.") {
             linkedNames.push(alias);
@@ -1000,9 +1012,16 @@ export const ChapterCheckerV2: React.FC = () => {
         });
       }
 
+      console.log(
+        "[CharSave] Saving full template HTML, length:",
+        fullTemplateHtml.length,
+        "name:",
+        characterName
+      );
+
       // Check if we're editing an existing character
       if (editingCharacterId) {
-        // Update the existing character
+        // Update the existing character - include templateHtml for full restoration
         const updatedCharacters = characters.map((c) => {
           if (c.id === editingCharacterId) {
             return {
@@ -1015,6 +1034,7 @@ export const ChapterCheckerV2: React.FC = () => {
               arc: arc || c.arc,
               linkedNames: linkedNames.length > 0 ? linkedNames : c.linkedNames,
               notes: notes || c.notes,
+              templateHtml: fullTemplateHtml, // Save the ENTIRE template
               updatedAt: new Date().toISOString(),
             };
           }
@@ -1050,6 +1070,7 @@ export const ChapterCheckerV2: React.FC = () => {
           relationships: [],
           linkedNames,
           notes,
+          templateHtml: fullTemplateHtml, // Save the ENTIRE template
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         };
@@ -3255,113 +3276,129 @@ export const ChapterCheckerV2: React.FC = () => {
           onSave={handleSaveCharacters}
           onClose={() => setIsCharacterManagerOpen(false)}
           onOpenTemplate={(templateHtml, characterId) => {
-            // If editing an existing character, pre-fill the template with their data
+            // If editing an existing character, use their saved templateHtml if available
             let finalHtml = templateHtml;
             if (characterId) {
               const existingChar = characters.find((c) => c.id === characterId);
               if (existingChar) {
-                // Always use field-by-field population (templateHtml causes duplicates)
-                const tempDiv = document.createElement("div");
-                tempDiv.innerHTML = templateHtml;
+                // If we have saved templateHtml, use it directly (preserves ALL fields)
+                if (existingChar.templateHtml) {
+                  console.log(
+                    "[CharLoad] Using saved templateHtml for:",
+                    existingChar.name
+                  );
+                  finalHtml = existingChar.templateHtml;
+                } else {
+                  // Fallback: field-by-field population for old characters without templateHtml
+                  console.log(
+                    "[CharLoad] No templateHtml, using field-by-field for:",
+                    existingChar.name
+                  );
+                  const tempDiv = document.createElement("div");
+                  tempDiv.innerHTML = templateHtml;
 
-                // Pre-fill the character name using the specific ID
-                const nameField = tempDiv.querySelector("#character-name");
-                if (nameField && existingChar.name) {
-                  nameField.textContent = existingChar.name;
-                  nameField.removeAttribute("data-sample");
-                }
-
-                // Pre-fill background if exists
-                const backgroundField = tempDiv.querySelector(
-                  "#character-background"
-                );
-                if (backgroundField && existingChar.background) {
-                  backgroundField.textContent = existingChar.background;
-                  backgroundField.removeAttribute("data-sample");
-                }
-
-                // Pre-fill traits if exists
-                const traitsField = tempDiv.querySelector("#character-traits");
-                if (
-                  traitsField &&
-                  existingChar.traits &&
-                  existingChar.traits.length > 0
-                ) {
-                  traitsField.textContent = existingChar.traits.join(", ");
-                  traitsField.removeAttribute("data-sample");
-                }
-
-                // Pre-fill goals if exists
-                const goalsField = tempDiv.querySelector("#character-goals");
-                if (goalsField && existingChar.goals) {
-                  goalsField.textContent = existingChar.goals;
-                  goalsField.removeAttribute("data-sample");
-                }
-
-                // Pre-fill conflicts if exists
-                const conflictsField = tempDiv.querySelector(
-                  "#character-conflicts"
-                );
-                if (conflictsField && existingChar.conflicts) {
-                  conflictsField.textContent = existingChar.conflicts;
-                  conflictsField.removeAttribute("data-sample");
-                }
-
-                // Pre-fill arc if exists
-                const arcField = tempDiv.querySelector("#character-arc");
-                if (arcField && existingChar.arc) {
-                  arcField.textContent = existingChar.arc;
-                  arcField.removeAttribute("data-sample");
-                }
-
-                // Pre-fill notes if exists
-                const notesField = tempDiv.querySelector("#character-notes");
-                if (notesField && existingChar.notes) {
-                  notesField.textContent = existingChar.notes;
-                  notesField.removeAttribute("data-sample");
-                }
-
-                // Pre-fill relationships if any
-                if (
-                  existingChar.relationships &&
-                  existingChar.relationships.length > 0
-                ) {
-                  const relList = tempDiv.querySelector("#relationships-list");
-                  if (relList) {
-                    const relHtml = existingChar.relationships
-                      .map((rel) => {
-                        const relChar = characters.find(
-                          (c) => c.id === rel.characterId
-                        );
-                        return `<div style="padding: 4px 8px; background: #fff7ed; border: 1px solid #e0c392; border-radius: 4px; margin-bottom: 4px; font-size: 13px;"><strong>${
-                          relChar?.name || "Unknown"
-                        }</strong> - ${rel.type}${
-                          rel.description ? `: ${rel.description}` : ""
-                        }</div>`;
-                      })
-                      .join("");
-                    relList.innerHTML = relHtml;
+                  // Pre-fill the character name using the specific ID
+                  const nameField = tempDiv.querySelector("#character-name");
+                  if (nameField && existingChar.name) {
+                    nameField.textContent = existingChar.name;
+                    nameField.removeAttribute("data-sample");
                   }
-                }
 
-                // Pre-fill aliases if any
-                if (
-                  existingChar.linkedNames &&
-                  existingChar.linkedNames.length > 0
-                ) {
-                  const aliasesList = tempDiv.querySelector("#aliases-list");
-                  if (aliasesList) {
-                    const aliasesHtml = existingChar.linkedNames
-                      .map(
-                        (alias) =>
-                          `<div style="padding: 4px 8px; background: #fff7ed; border: 1px solid #e0c392; border-radius: 4px; margin-bottom: 4px; font-size: 13px;">${alias}</div>`
-                      )
-                      .join("");
-                    aliasesList.innerHTML = aliasesHtml;
+                  // Pre-fill background if exists
+                  const backgroundField = tempDiv.querySelector(
+                    "#character-background"
+                  );
+                  if (backgroundField && existingChar.background) {
+                    backgroundField.textContent = existingChar.background;
+                    backgroundField.removeAttribute("data-sample");
                   }
-                }
 
-                finalHtml = tempDiv.innerHTML;
+                  // Pre-fill traits if exists
+                  const traitsField =
+                    tempDiv.querySelector("#character-traits");
+                  if (
+                    traitsField &&
+                    existingChar.traits &&
+                    existingChar.traits.length > 0
+                  ) {
+                    traitsField.textContent = existingChar.traits.join(", ");
+                    traitsField.removeAttribute("data-sample");
+                  }
+
+                  // Pre-fill goals if exists
+                  const goalsField = tempDiv.querySelector("#character-goals");
+                  if (goalsField && existingChar.goals) {
+                    goalsField.textContent = existingChar.goals;
+                    goalsField.removeAttribute("data-sample");
+                  }
+
+                  // Pre-fill conflicts if exists
+                  const conflictsField = tempDiv.querySelector(
+                    "#character-conflicts"
+                  );
+                  if (conflictsField && existingChar.conflicts) {
+                    conflictsField.textContent = existingChar.conflicts;
+                    conflictsField.removeAttribute("data-sample");
+                  }
+
+                  // Pre-fill arc if exists
+                  const arcField = tempDiv.querySelector("#character-arc");
+                  if (arcField && existingChar.arc) {
+                    arcField.textContent = existingChar.arc;
+                    arcField.removeAttribute("data-sample");
+                  }
+
+                  // Pre-fill notes if exists
+                  const notesField = tempDiv.querySelector("#character-notes");
+                  if (notesField && existingChar.notes) {
+                    notesField.textContent = existingChar.notes;
+                    notesField.removeAttribute("data-sample");
+                  }
+
+                  // Pre-fill relationships if any
+                  if (
+                    existingChar.relationships &&
+                    existingChar.relationships.length > 0
+                  ) {
+                    const relList = tempDiv.querySelector(
+                      "#relationships-list"
+                    );
+                    if (relList) {
+                      const relHtml = existingChar.relationships
+                        .map((rel) => {
+                          const relChar = characters.find(
+                            (c) => c.id === rel.characterId
+                          );
+                          return `<div style="padding: 4px 8px; background: #fff7ed; border: 1px solid #e0c392; border-radius: 4px; margin-bottom: 4px; font-size: 13px;"><strong>${
+                            relChar?.name || "Unknown"
+                          }</strong> - ${rel.type}${
+                            rel.description ? `: ${rel.description}` : ""
+                          }</div>`;
+                        })
+                        .join("");
+                      relList.innerHTML = relHtml;
+                    }
+                  }
+
+                  // Pre-fill aliases if any
+                  if (
+                    existingChar.linkedNames &&
+                    existingChar.linkedNames.length > 0
+                  ) {
+                    const aliasesList = tempDiv.querySelector("#aliases-list");
+                    if (aliasesList) {
+                      const aliasesHtml = existingChar.linkedNames
+                        .map(
+                          (alias) =>
+                            `<div style="padding: 4px 8px; background: #fff7ed; border: 1px solid #e0c392; border-radius: 4px; margin-bottom: 4px; font-size: 13px;">${alias}</div>`
+                        )
+                        .join("");
+                      aliasesList.innerHTML = aliasesHtml;
+                    }
+                  }
+
+                  finalHtml = tempDiv.innerHTML;
+                }
               }
               setEditingCharacterId(characterId);
             } else {

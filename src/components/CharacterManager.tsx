@@ -78,6 +78,8 @@ export const CharacterManager: React.FC<CharacterManagerProps> = ({
     ) {
       const updated = localCharacters.filter((c) => c.id !== characterId);
       setLocalCharacters(updated);
+      // Immediately persist the deletion
+      onSave(updated);
     }
   };
 
