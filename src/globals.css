@@ -1733,3 +1733,21 @@ p {
     transform: translateX(0);
   }
 }
+
+/* Column layout styles - ensure content stays within columns */
+.column-container {
+  overflow: visible;
+}
+
+.column-content {
+  overflow: hidden;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.column-content p,
+.column-content div {
+  max-width: 100%;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}

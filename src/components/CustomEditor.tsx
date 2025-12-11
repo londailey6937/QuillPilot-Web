@@ -3524,11 +3524,11 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
       // Add drag handle bar - draggable="true" on the handle itself
       columnsHtml += `<div class="column-drag-handle" draggable="true" style="display: flex; align-items: center; justify-content: center; padding: 4px 8px; background: #f0e6d3; border-radius: 4px; cursor: grab; font-size: 11px; color: #8b7355; user-select: none;">⋮⋮ Drag to move | Click for options</div>`;
 
-      // Columns row
-      columnsHtml += `<div style="display: flex; gap: 20px;">`;
+      // Columns row - use overflow hidden to contain content
+      columnsHtml += `<div style="display: flex; gap: 20px; overflow: hidden;">`;
 
       for (let i = 0; i < numColumns; i++) {
-        columnsHtml += `<div class="column-content" contenteditable="true" style="flex: 1; min-width: 0; padding: 10px; border: 1px solid #e8dcc8; border-radius: 4px; background: white; min-height: 100px; box-sizing: border-box;"><p>Column ${
+        columnsHtml += `<div class="column-content" contenteditable="true" style="flex: 1; min-width: 0; padding: 10px; border: 1px solid #e8dcc8; border-radius: 4px; background: white; min-height: 100px; box-sizing: border-box; overflow: hidden; word-wrap: break-word; overflow-wrap: break-word;"><p>Column ${
           i + 1
         } content...</p></div>`;
       }
@@ -3991,21 +3991,53 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   }, []);
 
   const snapshotCurrentSelection = useCallback(() => {
-    if (typeof window === "undefined" || !editorRef.current) {
+    if (typeof window === "undefined") {
+      console.log("[snapshotCurrentSelection] window undefined");
       return null;
     }
 
     const selection = window.getSelection();
-    if (
-      selection &&
-      selection.rangeCount > 0 &&
-      editorRef.current.contains(selection.anchorNode)
-    ) {
+    console.log("[snapshotCurrentSelection] Selection:", selection);
+    console.log(
+      "[snapshotCurrentSelection] rangeCount:",
+      selection?.rangeCount
+    );
+    console.log(
+      "[snapshotCurrentSelection] anchorNode:",
+      selection?.anchorNode
+    );
+
+    if (!selection || selection.rangeCount === 0) {
+      console.log("[snapshotCurrentSelection] No selection to snapshot");
+      return null;
+    }
+
+    // Check if selection is in editorRef (hidden sync editor)
+    const isInEditorRef = editorRef.current?.contains(selection.anchorNode);
+    console.log("[snapshotCurrentSelection] isInEditorRef:", isInEditorRef);
+
+    // Check if selection is in paginated editor
+    const scrollContainer = paginatedEditorRef.current?.getScrollContainer();
+    const pageElements =
+      paginatedEditorRef.current?.getPageContentElements() || [];
+    const isInPaginatedEditor =
+      scrollContainer?.contains(selection.anchorNode) ||
+      pageElements.some((el) => el.contains(selection.anchorNode));
+    console.log(
+      "[snapshotCurrentSelection] isInPaginatedEditor:",
+      isInPaginatedEditor
+    );
+
+    if (isInEditorRef || isInPaginatedEditor) {
       const snapshot = selection.getRangeAt(0).cloneRange();
       lastSelectionRangeRef.current = snapshot;
+      console.log("[snapshotCurrentSelection] Saved snapshot:", snapshot);
       return snapshot;
     }
 
+    console.log(
+      "[snapshotCurrentSelection] Selection not in editor, not saving"
+    );
     return null;
   }, []);
 
@@ -4021,6 +4053,44 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
         selection.anchorNode.nodeType === Node.TEXT_NODE
           ? selection.anchorNode.parentElement
           : (selection.anchorNode as HTMLElement);
+
+      // Detect text alignment from the current block element
+      let alignNode: HTMLElement | null = node;
+      while (
+        alignNode &&
+        !alignNode.classList?.contains("paginated-page-content")
+      ) {
+        const tagName = alignNode.tagName?.toUpperCase();
+        if (
+          [
+            "P",
+            "H1",
+            "H2",
+            "H3",
+            "H4",
+            "H5",
+            "H6",
+            "DIV",
+            "BLOCKQUOTE",
+            "LI",
+          ].includes(tagName)
+        ) {
+          const computedStyle = window.getComputedStyle(alignNode);
+          const textAlign =
+            alignNode.style.textAlign || computedStyle.textAlign;
+          if (textAlign === "center") {
+            setTextAlign("center");
+          } else if (textAlign === "right") {
+            setTextAlign("right");
+          } else if (textAlign === "justify") {
+            setTextAlign("justify");
+          } else {
+            setTextAlign("left");
+          }
+          break;
+        }
+        alignNode = alignNode.parentElement;
+      }
 
       // List of custom style classes to detect
       const customStyleClasses = [
@@ -4524,6 +4594,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
       // Custom paragraph styles (not native HTML tags)
       const customParagraphStyles = [
         "paragraph", // Reset to normal paragraph
+        "body-text", // Body text with indent
         "title",
         "subtitle",
         "book-title",
@@ -5902,114 +5973,108 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
     formatText("removeFormat");
   }, [formatText]);
 
-  // Text alignment
+  // Text alignment - directly manipulate DOM for reliable results
   const alignText = useCallback(
     (alignment: string) => {
+      console.log("[alignText] Called with alignment:", alignment);
+
+      // First ensure we have focus and restore selection
+      if (lastSelectionRangeRef.current) {
+        const sel = window.getSelection();
+        if (sel) {
+          sel.removeAllRanges();
+          sel.addRange(lastSelectionRangeRef.current.cloneRange());
+        }
+      }
+
       const selection = window.getSelection();
       if (!selection || selection.rangeCount === 0) {
+        console.warn("[alignText] No selection available");
         return;
       }
 
-      // Save the current selection range
-      const savedRange = selection.getRangeAt(0).cloneRange();
-      const savedAnchorNode = selection.anchorNode;
-      const savedAnchorOffset = selection.anchorOffset;
-
       // Find the block element containing the selection
       let node: Node | null = selection.anchorNode;
-      let blockElement: HTMLElement | null = null;
+      if (node?.nodeType === Node.TEXT_NODE) {
+        node = node.parentNode;
+      }
 
-      // Traverse up to find the containing paragraph, div, or heading
-      while (
-        node &&
-        node !== paginatedEditorRef.current?.getScrollContainer()
-      ) {
+      // Walk up to find a block element (P, H1-H6, DIV, etc.)
+      let blockElement: HTMLElement | null = null;
+      while (node && node !== document.body) {
         if (node.nodeType === Node.ELEMENT_NODE) {
-          const element = node as HTMLElement;
-          const tagName = element.tagName.toUpperCase();
+          const el = node as HTMLElement;
+          const tag = el.tagName.toUpperCase();
+
+          // Skip container elements
+          if (
+            el.classList.contains("paginated-page-content") ||
+            el.classList.contains("editor-content") ||
+            el.getAttribute("contenteditable") === "true"
+          ) {
+            break;
+          }
+
+          // Found a block element
           if (
             [
               "P",
-              "DIV",
               "H1",
               "H2",
               "H3",
               "H4",
               "H5",
               "H6",
+              "DIV",
               "LI",
               "BLOCKQUOTE",
-            ].includes(tagName)
+            ].includes(tag)
           ) {
-            blockElement = element;
+            // For DIV, only accept non-container divs
+            if (tag === "DIV" && !el.classList.contains("column-content")) {
+              node = node.parentNode;
+              continue;
+            }
+            blockElement = el;
+            console.log("[alignText] Found block element:", tag);
             break;
           }
         }
         node = node.parentNode;
       }
 
-      // If we found a block element, apply text-align style directly
       if (blockElement) {
+        // Directly set the text-align style
         blockElement.style.textAlign = alignment;
+        console.log("[alignText] Set text-align to:", alignment);
 
-        // Also handle images within the block
-        const img = blockElement.querySelector("img");
-        if (img instanceof HTMLElement) {
-          if (alignment === "center") {
-            img.style.margin = "1rem auto";
-            img.style.display = "block";
-          } else if (alignment === "left") {
-            img.style.margin = "1rem 0";
-            img.style.display = "block";
-          } else if (alignment === "right") {
-            img.style.marginLeft = "auto";
-            img.style.marginRight = "0";
-            img.style.display = "block";
-          }
-        }
+        // Update state
+        setTextAlign(alignment);
 
-        // Update content and notify parent
+        // Trigger repagination and content update
         if (paginatedEditorRef.current) {
           const html = paginatedEditorRef.current.getContent();
           const text = html.replace(/<[^>]*>/g, "");
           onUpdate?.({ html, text });
         }
         handleInput();
-
-        // Restore selection after a brief delay
-        setTimeout(() => {
-          try {
-            const newSelection = window.getSelection();
-            if (
-              newSelection &&
-              savedAnchorNode &&
-              document.contains(savedAnchorNode)
-            ) {
-              newSelection.removeAllRanges();
-              const newRange = document.createRange();
-              newRange.setStart(savedAnchorNode, savedAnchorOffset);
-              newRange.collapse(true);
-              newSelection.addRange(newRange);
-            }
-          } catch (e) {
-            console.warn("[alignText] Could not restore selection:", e);
-          }
-        }, 10);
-
-        setTextAlign(alignment);
       } else {
-        // Fallback: use execCommand for cases where we can't find a block element
-        const command =
+        console.warn(
+          "[alignText] Could not find block element, trying execCommand"
+        );
+        // Fallback to execCommand
+        const cmd =
           alignment === "justify"
             ? "justifyFull"
             : `justify${
                 alignment.charAt(0).toUpperCase() + alignment.slice(1)
               }`;
-        formatText(command);
+        document.execCommand(cmd, false);
         setTextAlign(alignment);
+        handleInput();
       }
     },
-    [formatText, handleInput, onUpdate]
+    [handleInput, onUpdate]
   );
 
   // Insert image with optimization
@@ -6028,7 +6093,8 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           format: "webp",
         });
 
-        const imgHtml = `<img src="${optimizedSrc}" loading="lazy" decoding="async" style="max-width: 100%; height: auto; display: block; margin: 0.5rem 0;" />`;
+        // Wrap image in its own paragraph so it doesn't share space with text
+        const imgHtml = `<p style="text-align: center; margin: 1rem 0; padding: 8px;"><img src="${optimizedSrc}" loading="lazy" decoding="async" style="max-width: calc(100% - 16px); height: auto; display: block; margin: 0 auto; border: 2px solid #e0c392; border-radius: 4px;" /></p>`;
 
         // Small delay then restore selection and insert
         setTimeout(() => {
@@ -6061,7 +6127,8 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
         // Fallback to original image if optimization fails
         const reader = new FileReader();
         reader.onload = (event) => {
-          const imgHtml = `<img src="${event.target?.result}" loading="lazy" decoding="async" style="max-width: 100%; height: auto; display: block; margin: 0.5rem 0;" />`;
+          // Wrap image in its own paragraph so it doesn't share space with text
+          const imgHtml = `<p style="text-align: center; margin: 1rem 0; padding: 8px;"><img src="${event.target?.result}" loading="lazy" decoding="async" style="max-width: calc(100% - 16px); height: auto; display: block; margin: 0 auto; border: 2px solid #e0c392; border-radius: 4px;" /></p>`;
           document.execCommand("insertHTML", false, imgHtml);
           handleInput();
         };
@@ -6254,7 +6321,8 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
             format: "webp",
           })
             .then((optimizedSrc) => {
-              const imgHtml = `<img src="${optimizedSrc}" loading="lazy" decoding="async" style="max-width: 100%; height: auto; display: block; margin: 1rem 0;" />`;
+              // Wrap pasted image in its own paragraph so it doesn't share space with text
+              const imgHtml = `<p style="text-align: center; margin: 1rem 0; padding: 8px;"><img src="${optimizedSrc}" loading="lazy" decoding="async" style="max-width: calc(100% - 16px); height: auto; display: block; margin: 0 auto; border: 2px solid #e0c392; border-radius: 4px;" /></p>`;
               document.execCommand("insertHTML", false, imgHtml);
               // Sync changes to editorRef if paste happened in paginated editor
               setTimeout(() => {
@@ -6269,7 +6337,8 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               // Fallback to original if optimization fails
               const reader = new FileReader();
               reader.onload = (event) => {
-                const imgHtml = `<img src="${event.target?.result}" loading="lazy" decoding="async" style="max-width: 100%; height: auto; display: block; margin: 1rem 0;" />`;
+                // Wrap pasted image in its own paragraph so it doesn't share space with text
+                const imgHtml = `<p style="text-align: center; margin: 1rem 0; padding: 8px;"><img src="${event.target?.result}" loading="lazy" decoding="async" style="max-width: calc(100% - 16px); height: auto; display: block; margin: 0 auto; border: 2px solid #e0c392; border-radius: 4px;" /></p>`;
                 document.execCommand("insertHTML", false, imgHtml);
                 handleInput();
               };
@@ -7212,7 +7281,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           }
           ${
             documentStyles.paragraph?.textAlign
-              ? `.custom-editor-container .paginated-page-content p:not(.book-title):not(.doc-title):not(.chapter-heading):not(.subtitle):not(.doc-subtitle):not(.quote):not(.intense-quote):not(.character-name):not(.location) { text-align: ${documentStyles.paragraph.textAlign} !important; }`
+              ? `.custom-editor-container .paginated-page-content p:not(.book-title):not(.doc-title):not(.chapter-heading):not(.subtitle):not(.doc-subtitle):not(.quote):not(.intense-quote):not(.character-name):not(.location):not([style*="text-align"]) { text-align: ${documentStyles.paragraph.textAlign} !important; }`
               : ""
           }
           ${
@@ -7859,13 +7928,52 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                     )
                       return;
 
-                    // Capture the selected text before any DOM changes
-                    const selectedText = selection.toString();
+                    // Check if selection is in a custom paragraph style that shouldn't have font size changed
+                    const anchorNode = selection.anchorNode;
+                    if (anchorNode) {
+                      let checkElement =
+                        anchorNode.nodeType === Node.TEXT_NODE
+                          ? anchorNode.parentElement
+                          : (anchorNode as HTMLElement);
+
+                      // Traverse up to find if we're in a custom styled paragraph
+                      while (
+                        checkElement &&
+                        checkElement !== editorRef.current
+                      ) {
+                        const className = checkElement.className || "";
+                        const tagName = checkElement.tagName?.toLowerCase();
+
+                        // Check for custom paragraph styles that should NOT allow font size changes
+                        // body-text is a styled paragraph type that has fixed formatting
+                        if (
+                          className.includes("body-text") ||
+                          className.includes("first-paragraph") ||
+                          (tagName === "p" &&
+                            (className.includes("doc-title") ||
+                              className.includes("doc-subtitle") ||
+                              className.includes("chapter-heading") ||
+                              className.includes("epigraph") ||
+                              className.includes("lead-paragraph")))
+                        ) {
+                          // Don't allow font size changes on these custom styles
+                          return;
+                        }
+                        checkElement = checkElement.parentElement;
+                      }
+                    }
+
+                    // Save content to history BEFORE making changes
+                    if (paginatedEditorRef.current && editorRef.current) {
+                      const currentContent =
+                        paginatedEditorRef.current.getContent();
+                      saveToHistory(currentContent);
+                    }
+
                     const range = selection.getRangeAt(0);
 
                     // Get the actual computed font size from the selection
                     let actualFontSize = 16;
-                    const anchorNode = selection.anchorNode;
                     if (anchorNode) {
                       const element =
                         anchorNode.nodeType === Node.TEXT_NODE
@@ -7877,32 +7985,6 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                       }
                     }
 
-                    // Create marker nodes to track selection boundaries
-                    const startMarker = document.createElement("span");
-                    startMarker.id = "selection-start-marker-temp";
-                    startMarker.style.display = "none";
-                    const endMarker = document.createElement("span");
-                    endMarker.id = "selection-end-marker-temp";
-                    endMarker.style.display = "none";
-
-                    // Insert markers at selection boundaries
-                    const rangeClone = range.cloneRange();
-                    rangeClone.collapse(false);
-                    rangeClone.insertNode(endMarker);
-                    rangeClone.setStart(
-                      range.startContainer,
-                      range.startOffset
-                    );
-                    rangeClone.collapse(true);
-                    rangeClone.insertNode(startMarker);
-
-                    // Recreate selection between markers
-                    const newRange = document.createRange();
-                    newRange.setStartAfter(startMarker);
-                    newRange.setEndBefore(endMarker);
-                    selection.removeAllRanges();
-                    selection.addRange(newRange);
-
                     const currentSize = Math.round(actualFontSize);
                     const newSize = Math.max(8, currentSize - 1);
                     setFontSize(`${newSize}px`);
@@ -7910,74 +7992,40 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                     // Skip repagination to preserve selection
                     paginatedEditorRef.current?.setSkipNextRepagination(true);
 
-                    // Apply inline style for precise control
-                    document.execCommand("fontSize", false, "7");
+                    // Use a simpler approach: wrap selection in a span with the new font size
+                    // Extract the selection contents
+                    const fragment = range.extractContents();
 
-                    // Find and replace font elements with spans
-                    const fontElements =
-                      document.querySelectorAll('font[size="7"]');
+                    // Create a span with the new font size
+                    const span = document.createElement("span");
+                    span.style.fontSize = `${newSize}px`;
+                    span.appendChild(fragment);
 
-                    fontElements.forEach((el) => {
-                      const span = document.createElement("span");
-                      span.style.fontSize = `${newSize}px`;
-                      while (el.firstChild) {
-                        span.appendChild(el.firstChild);
-                      }
-                      el.parentNode?.replaceChild(span, el);
-                    });
+                    // Insert the span at the cursor position
+                    range.insertNode(span);
 
-                    // Restore selection using markers and then clean up
-                    setTimeout(() => {
-                      const start = document.getElementById(
-                        "selection-start-marker-temp"
+                    // Select the newly inserted span's contents
+                    const newRange = document.createRange();
+                    newRange.selectNodeContents(span);
+                    selection.removeAllRanges();
+                    selection.addRange(newRange);
+                    lastSelectionRangeRef.current = newRange.cloneRange();
+
+                    // Sync content immediately
+                    if (paginatedEditorRef.current && editorRef.current) {
+                      const content = paginatedEditorRef.current.getContent();
+                      editorRef.current.innerHTML = content;
+                      onUpdate?.({
+                        html: content,
+                        text: editorRef.current.innerText,
+                      });
+                      // Save the new state to history immediately (not with timeout)
+                      saveToHistory(content);
+
+                      paginatedEditorRef.current?.setSkipNextRepagination(
+                        false
                       );
-                      const end = document.getElementById(
-                        "selection-end-marker-temp"
-                      );
-
-                      if (start && end && paginatedEditorRef.current) {
-                        try {
-                          const restoreRange = document.createRange();
-                          restoreRange.setStartAfter(start);
-                          restoreRange.setEndBefore(end);
-
-                          const sel = window.getSelection();
-                          if (sel) {
-                            sel.removeAllRanges();
-                            sel.addRange(restoreRange);
-                            lastSelectionRangeRef.current =
-                              restoreRange.cloneRange();
-                          }
-                        } catch (e) {
-                          console.warn("Could not restore selection:", e);
-                        }
-
-                        // Clean up markers
-                        start.remove();
-                        end.remove();
-                      }
-
-                      // Sync content and update history
-                      if (paginatedEditorRef.current && editorRef.current) {
-                        const content = paginatedEditorRef.current.getContent();
-                        editorRef.current.innerHTML = content;
-                        onUpdate?.({
-                          html: content,
-                          text: editorRef.current.innerText,
-                        });
-                        if (saveTimeoutRef.current) {
-                          clearTimeout(saveTimeoutRef.current);
-                        }
-                        saveTimeoutRef.current = setTimeout(() => {
-                          saveToHistory(content);
-                        }, 500);
-
-                        paginatedEditorRef.current?.setSkipNextRepagination(
-                          false
-                        );
-                        paginatedEditorRef.current?.focus();
-                      }
-                    }, 50);
+                    }
                   }}
                   className={`px-1.5 py-1 rounded transition-colors text-xs font-bold ${toolbarInactiveButtonClass}`}
                   title="Decrease Font Size"
@@ -8167,13 +8215,52 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                     )
                       return;
 
-                    // Capture the selected text before any DOM changes
-                    const selectedText = selection.toString();
+                    // Check if selection is in a custom paragraph style that shouldn't have font size changed
+                    const anchorNode = selection.anchorNode;
+                    if (anchorNode) {
+                      let checkElement =
+                        anchorNode.nodeType === Node.TEXT_NODE
+                          ? anchorNode.parentElement
+                          : (anchorNode as HTMLElement);
+
+                      // Traverse up to find if we're in a custom styled paragraph
+                      while (
+                        checkElement &&
+                        checkElement !== editorRef.current
+                      ) {
+                        const className = checkElement.className || "";
+                        const tagName = checkElement.tagName?.toLowerCase();
+
+                        // Check for custom paragraph styles that should NOT allow font size changes
+                        // body-text is a styled paragraph type that has fixed formatting
+                        if (
+                          className.includes("body-text") ||
+                          className.includes("first-paragraph") ||
+                          (tagName === "p" &&
+                            (className.includes("doc-title") ||
+                              className.includes("doc-subtitle") ||
+                              className.includes("chapter-heading") ||
+                              className.includes("epigraph") ||
+                              className.includes("lead-paragraph")))
+                        ) {
+                          // Don't allow font size changes on these custom styles
+                          return;
+                        }
+                        checkElement = checkElement.parentElement;
+                      }
+                    }
+
+                    // Save content to history BEFORE making changes
+                    if (paginatedEditorRef.current && editorRef.current) {
+                      const currentContent =
+                        paginatedEditorRef.current.getContent();
+                      saveToHistory(currentContent);
+                    }
+
                     const range = selection.getRangeAt(0);
 
                     // Get the actual computed font size from the selection
                     let actualFontSize = 16;
-                    const anchorNode = selection.anchorNode;
                     if (anchorNode) {
                       const element =
                         anchorNode.nodeType === Node.TEXT_NODE
@@ -8185,32 +8272,6 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                       }
                     }
 
-                    // Create marker nodes to track selection boundaries
-                    const startMarker = document.createElement("span");
-                    startMarker.id = "selection-start-marker-temp";
-                    startMarker.style.display = "none";
-                    const endMarker = document.createElement("span");
-                    endMarker.id = "selection-end-marker-temp";
-                    endMarker.style.display = "none";
-
-                    // Insert markers at selection boundaries
-                    const rangeClone = range.cloneRange();
-                    rangeClone.collapse(false);
-                    rangeClone.insertNode(endMarker);
-                    rangeClone.setStart(
-                      range.startContainer,
-                      range.startOffset
-                    );
-                    rangeClone.collapse(true);
-                    rangeClone.insertNode(startMarker);
-
-                    // Recreate selection between markers
-                    const newRange = document.createRange();
-                    newRange.setStartAfter(startMarker);
-                    newRange.setEndBefore(endMarker);
-                    selection.removeAllRanges();
-                    selection.addRange(newRange);
-
                     const currentSize = Math.round(actualFontSize);
                     const newSize = Math.min(72, currentSize + 1);
                     setFontSize(`${newSize}px`);
@@ -8218,74 +8279,40 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                     // Skip repagination to preserve selection
                     paginatedEditorRef.current?.setSkipNextRepagination(true);
 
-                    // Apply inline style for precise control
-                    document.execCommand("fontSize", false, "7");
+                    // Use a simpler approach: wrap selection in a span with the new font size
+                    // Extract the selection contents
+                    const fragment = range.extractContents();
 
-                    // Find and replace font elements with spans
-                    const fontElements =
-                      document.querySelectorAll('font[size="7"]');
+                    // Create a span with the new font size
+                    const span = document.createElement("span");
+                    span.style.fontSize = `${newSize}px`;
+                    span.appendChild(fragment);
 
-                    fontElements.forEach((el) => {
-                      const span = document.createElement("span");
-                      span.style.fontSize = `${newSize}px`;
-                      while (el.firstChild) {
-                        span.appendChild(el.firstChild);
-                      }
-                      el.parentNode?.replaceChild(span, el);
-                    });
+                    // Insert the span at the cursor position
+                    range.insertNode(span);
 
-                    // Restore selection using markers and then clean up
-                    setTimeout(() => {
-                      const start = document.getElementById(
-                        "selection-start-marker-temp"
+                    // Select the newly inserted span's contents
+                    const newRange = document.createRange();
+                    newRange.selectNodeContents(span);
+                    selection.removeAllRanges();
+                    selection.addRange(newRange);
+                    lastSelectionRangeRef.current = newRange.cloneRange();
+
+                    // Sync content immediately
+                    if (paginatedEditorRef.current && editorRef.current) {
+                      const content = paginatedEditorRef.current.getContent();
+                      editorRef.current.innerHTML = content;
+                      onUpdate?.({
+                        html: content,
+                        text: editorRef.current.innerText,
+                      });
+                      // Save the new state to history immediately (not with timeout)
+                      saveToHistory(content);
+
+                      paginatedEditorRef.current?.setSkipNextRepagination(
+                        false
                       );
-                      const end = document.getElementById(
-                        "selection-end-marker-temp"
-                      );
-
-                      if (start && end && paginatedEditorRef.current) {
-                        try {
-                          const restoreRange = document.createRange();
-                          restoreRange.setStartAfter(start);
-                          restoreRange.setEndBefore(end);
-
-                          const sel = window.getSelection();
-                          if (sel) {
-                            sel.removeAllRanges();
-                            sel.addRange(restoreRange);
-                            lastSelectionRangeRef.current =
-                              restoreRange.cloneRange();
-                          }
-                        } catch (e) {
-                          console.warn("Could not restore selection:", e);
-                        }
-
-                        // Clean up markers
-                        start.remove();
-                        end.remove();
-                      }
-
-                      // Sync content and update history
-                      if (paginatedEditorRef.current && editorRef.current) {
-                        const content = paginatedEditorRef.current.getContent();
-                        editorRef.current.innerHTML = content;
-                        onUpdate?.({
-                          html: content,
-                          text: editorRef.current.innerText,
-                        });
-                        if (saveTimeoutRef.current) {
-                          clearTimeout(saveTimeoutRef.current);
-                        }
-                        saveTimeoutRef.current = setTimeout(() => {
-                          saveToHistory(content);
-                        }, 500);
-
-                        paginatedEditorRef.current?.setSkipNextRepagination(
-                          false
-                        );
-                        paginatedEditorRef.current?.focus();
-                      }
-                    }, 50);
+                    }
                   }}
                   className={`px-1.5 py-1 rounded transition-colors text-xs font-bold ${toolbarInactiveButtonClass}`}
                   title="Increase Font Size"
@@ -8341,20 +8368,36 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
 
                 <div style={toolbarDividerStyle} aria-hidden="true" />
 
-                {/* Text alignment */}
+                {/* Text alignment - using distinctive SVG icons */}
                 <button
                   onMouseDown={(e) => {
                     e.preventDefault();
+                    snapshotCurrentSelection();
                     alignText("left");
                   }}
-                  className={`px-1.5 py-1 rounded transition-colors text-xs ${toolbarInactiveButtonClass}`}
+                  className={`px-1.5 py-1 rounded transition-colors text-xs ${
+                    textAlign === "left"
+                      ? "bg-[#ef8432] text-white border border-[#ef8432]"
+                      : toolbarInactiveButtonClass
+                  }`}
                   title="Align Left"
                 >
-                  ≡
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 16 16"
+                    fill="currentColor"
+                  >
+                    <rect x="1" y="2" width="14" height="2" rx="0.5" />
+                    <rect x="1" y="6" width="10" height="2" rx="0.5" />
+                    <rect x="1" y="10" width="14" height="2" rx="0.5" />
+                    <rect x="1" y="14" width="8" height="2" rx="0.5" />
+                  </svg>
                 </button>
                 <button
                   onMouseDown={(e) => {
                     e.preventDefault();
+                    snapshotCurrentSelection();
                     alignText("center");
                   }}
                   className={`px-1.5 py-1 rounded transition-colors text-xs ${
@@ -8364,11 +8407,22 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                   }`}
                   title="Center"
                 >
-                  ≡
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 16 16"
+                    fill="currentColor"
+                  >
+                    <rect x="1" y="2" width="14" height="2" rx="0.5" />
+                    <rect x="3" y="6" width="10" height="2" rx="0.5" />
+                    <rect x="1" y="10" width="14" height="2" rx="0.5" />
+                    <rect x="4" y="14" width="8" height="2" rx="0.5" />
+                  </svg>
                 </button>
                 <button
                   onMouseDown={(e) => {
                     e.preventDefault();
+                    snapshotCurrentSelection();
                     alignText("right");
                   }}
                   className={`px-1.5 py-1 rounded transition-colors text-xs ${
@@ -8378,11 +8432,22 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                   }`}
                   title="Align Right"
                 >
-                  ≡
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 16 16"
+                    fill="currentColor"
+                  >
+                    <rect x="1" y="2" width="14" height="2" rx="0.5" />
+                    <rect x="5" y="6" width="10" height="2" rx="0.5" />
+                    <rect x="1" y="10" width="14" height="2" rx="0.5" />
+                    <rect x="7" y="14" width="8" height="2" rx="0.5" />
+                  </svg>
                 </button>
                 <button
                   onMouseDown={(e) => {
                     e.preventDefault();
+                    snapshotCurrentSelection();
                     alignText("justify");
                   }}
                   className={`px-1.5 py-1 rounded transition-colors text-xs ${
@@ -8392,7 +8457,17 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                   }`}
                   title="Justify (full width alignment)"
                 >
-                  ☰
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 16 16"
+                    fill="currentColor"
+                  >
+                    <rect x="1" y="2" width="14" height="2" rx="0.5" />
+                    <rect x="1" y="6" width="14" height="2" rx="0.5" />
+                    <rect x="1" y="10" width="14" height="2" rx="0.5" />
+                    <rect x="1" y="14" width="14" height="2" rx="0.5" />
+                  </svg>
                 </button>
 
                 <div style={toolbarDividerStyle} aria-hidden="true" />
@@ -12311,8 +12386,8 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                 }
 
                 selectedImage.style.float = "left";
-                selectedImage.style.margin = "0 20px 10px 0";
-                selectedImage.style.maxWidth = "50%";
+                selectedImage.style.margin = "0 20px 10px 4px";
+                selectedImage.style.maxWidth = "calc(50% - 4px)";
                 selectedImage.style.display = "";
                 handleInput();
                 setSelectedImage(null);
@@ -12417,8 +12492,8 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                 }
 
                 selectedImage.style.float = "right";
-                selectedImage.style.margin = "0 0 10px 20px";
-                selectedImage.style.maxWidth = "50%";
+                selectedImage.style.margin = "0 4px 10px 20px";
+                selectedImage.style.maxWidth = "calc(50% - 4px)";
                 selectedImage.style.display = "";
                 handleInput();
                 setSelectedImage(null);

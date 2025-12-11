@@ -5586,7 +5586,16 @@ export const ChapterCheckerV2: React.FC = () => {
                         </div>
 
                         {isCharacterArcExpanded && (
-                          <div style={{ marginTop: "12px" }}>
+                          <div
+                            style={{
+                              marginTop: "12px",
+                              maxHeight: "400px",
+                              overflowY: "auto",
+                              scrollbarWidth: "none", // Firefox
+                              msOverflowStyle: "none", // IE/Edge
+                            }}
+                            className="hide-scrollbar"
+                          >
                             {characterArcAnalysis.map((charArc, idx) => (
                               <div
                                 key={charArc.characterId || idx}

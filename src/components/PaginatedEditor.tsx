@@ -2253,7 +2253,7 @@ export const PaginatedEditor = forwardRef<
             }
             ${
               documentStyles?.paragraph?.textAlign
-                ? `.paginated-page-content p:not(.book-title):not(.doc-title):not(.chapter-heading):not(.subtitle):not(.doc-subtitle):not(.quote):not(.intense-quote):not(.lead-paragraph):not(.pullquote) { text-align: ${documentStyles.paragraph.textAlign} !important; }`
+                ? `.paginated-page-content p:not(.book-title):not(.doc-title):not(.chapter-heading):not(.subtitle):not(.doc-subtitle):not(.quote):not(.intense-quote):not(.lead-paragraph):not(.pullquote):not([style*="text-align"]) { text-align: ${documentStyles.paragraph.textAlign} !important; }`
                 : ""
             }
             ${
@@ -3355,17 +3355,20 @@ export const PaginatedEditor = forwardRef<
                 : ""
             }
             /* Image float styles - ensure text wraps around floated images */
+            /* Include small outer margin to prevent border/outline clipping */
             .paginated-page-content img[style*="float: left"],
             .paginated-page-content img[style*="float:left"] {
               float: left !important;
-              margin: 0 20px 10px 0 !important;
+              margin: 0 20px 10px 4px !important;
               shape-outside: margin-box;
+              max-width: calc(50% - 4px) !important;
             }
             .paginated-page-content img[style*="float: right"],
             .paginated-page-content img[style*="float:right"] {
               float: right !important;
-              margin: 0 0 10px 20px !important;
+              margin: 0 4px 10px 20px !important;
               shape-outside: margin-box;
+              max-width: calc(50% - 4px) !important;
             }
             /* Ensure paragraphs don't clear floats - they should wrap around images */
             .paginated-page-content p {
