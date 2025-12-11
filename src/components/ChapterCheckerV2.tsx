@@ -2138,29 +2138,8 @@ export const ChapterCheckerV2: React.FC = () => {
       return;
     }
 
-    // If we have a saved file handle (for txt/json/md) and format, try quick save first
-    if (savedFileHandleRef.current && savedFormatRef.current) {
-      try {
-        await handleQuickSave();
-        return;
-      } catch (err) {
-        // If quick save fails (e.g., permission denied), fall through
-        console.warn("Quick save failed:", err);
-      }
-    }
-
-    // If we have a previously saved format (but no handle, like for docx/pdf/html),
-    // save directly with that format (will show OS file picker with same filename)
-    if (savedFormatRef.current) {
-      console.log(
-        `💾 Quick save in ${savedFormatRef.current} format (no dialog)`
-      );
-      await handleSaveAs(savedFormatRef.current);
-      return;
-    }
-
-    // First save - show format selection dialog
-    console.log("💾 First save - showing format selection dialog");
+    // Always show the format selection dialog (user requested - no quick save bypass)
+    console.log("💾 Showing format selection dialog");
     setIsSaveDialogOpen(true);
   };
   // Keep ref updated so keyboard shortcut always uses latest version

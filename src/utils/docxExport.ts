@@ -2475,18 +2475,37 @@ function convertDualCodingCallout(element: HTMLElement): Paragraph[] {
 async function createImageParagraph(
   element: HTMLElement
 ): Promise<Paragraph | null> {
-  const src = element.getAttribute("src");
+  let src = element.getAttribute("src");
+  console.log("[DOCX Export] createImageParagraph called with src:", src?.substring(0, 100));
   if (!src) {
+    console.log("[DOCX Export] No src attribute found");
     return null;
   }
 
+  // Check if this is a WebP image and convert to PNG if so
+  // The docx library doesn't support WebP format
+  const isWebP = src.includes("image/webp") || src.toLowerCase().endsWith(".webp");
+  if (isWebP) {
+    console.log("[DOCX Export] WebP image detected, converting to PNG...");
+    const convertedSrc = await convertWebPToPng(src);
+    if (convertedSrc) {
+      src = convertedSrc;
+      console.log("[DOCX Export] WebP converted to PNG successfully");
+    } else {
+      console.warn("[DOCX Export] Failed to convert WebP to PNG");
+    }
+  }
+
   const payload = await loadImageData(src);
+  console.log("[DOCX Export] loadImageData result:", payload ? `${payload.data.length} bytes, mimeType: ${payload.mimeType}` : "null");
   if (!payload || payload.data.length === 0) {
+    console.log("[DOCX Export] No payload data, returning null");
     return null;
   }
   const { data, mimeType, byteSignature } = payload;
 
   const dimensions = await getImageDimensions(src);
+  console.log("[DOCX Export] Image dimensions:", dimensions);
 
   // Try to get dimensions from multiple sources
   const widthAttribute = parseInt(element.getAttribute("width") || "", 10);
@@ -2553,9 +2572,56 @@ async function createImageParagraph(
     type: docxImageType,
   });
 
+  console.log("[DOCX Export] ImageRun created successfully, type:", docxImageType);
+
   return new Paragraph({
     children: [imageRun],
     spacing: { after: 200 },
+  });
+}
+
+/**
+ * Convert a WebP image to PNG format using canvas
+ * Returns a PNG data URL or null on failure
+ */
+async function convertWebPToPng(src: string): Promise<string | null> {
+  if (typeof document === "undefined" || typeof Image === "undefined") {
+    return null;
+  }
+
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    
+    img.onload = () => {
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          console.warn("[DOCX Export] Could not get canvas context");
+          resolve(null);
+          return;
+        }
+        
+        ctx.drawImage(img, 0, 0);
+        const pngDataUrl = canvas.toDataURL("image/png");
+        console.log("[DOCX Export] WebP converted to PNG, size:", pngDataUrl.length);
+        resolve(pngDataUrl);
+      } catch (error) {
+        console.warn("[DOCX Export] Failed to convert WebP to PNG:", error);
+        resolve(null);
+      }
+    };
+    
+    img.onerror = (error) => {
+      console.warn("[DOCX Export] Failed to load WebP image:", error);
+      resolve(null);
+    };
+    
+    img.src = src;
   });
 }
 
@@ -2657,9 +2723,14 @@ function determineImageType({
   mimeType?: string | null;
   byteSignature?: Uint8Array;
 }): SupportedImageType | undefined {
+  console.log("[DOCX Export] determineImageType called with mimeType:", mimeType);
   const normalizedMime = mimeType?.toLowerCase() ?? "";
-  if (normalizedMime.includes("png")) return "png";
+  if (normalizedMime.includes("png")) {
+    console.log("[DOCX Export] Detected PNG from mimeType");
+    return "png";
+  }
   if (normalizedMime.includes("jpeg") || normalizedMime.includes("jpg")) {
+    console.log("[DOCX Export] Detected JPG from mimeType");
     return "jpg";
   }
   if (normalizedMime.includes("gif")) return "gif";
@@ -2672,15 +2743,18 @@ function determineImageType({
   if (/\.bmp(?:[?#]|$)/.test(lowerSrc)) return "bmp";
 
   if (byteSignature && byteSignature.length >= 4) {
+    console.log("[DOCX Export] Checking byte signature:", byteSignature.slice(0, 4));
     if (
       byteSignature[0] === 0x89 &&
       byteSignature[1] === 0x50 &&
       byteSignature[2] === 0x4e &&
       byteSignature[3] === 0x47
     ) {
+      console.log("[DOCX Export] Detected PNG from byte signature");
       return "png";
     }
     if (byteSignature[0] === 0xff && byteSignature[1] === 0xd8) {
+      console.log("[DOCX Export] Detected JPG from byte signature");
       return "jpg";
     }
     if (
@@ -2695,6 +2769,7 @@ function determineImageType({
     }
   }
 
+  console.log("[DOCX Export] Could not determine image type, returning undefined");
   return undefined;
 }
 
