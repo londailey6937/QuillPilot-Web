@@ -2284,6 +2284,13 @@ export const ChapterCheckerV2: React.FC = () => {
 
     // Check if user has export access based on subscription
     const features = ACCESS_TIERS[accessLevel];
+    console.log(
+      "[Export] Access level:",
+      accessLevel,
+      "features.exportResults:",
+      features.exportResults
+    );
+
     if (!features.exportResults) {
       alert(
         "🔒 Save features require a Premium or Professional subscription.\n\n" +
@@ -2297,6 +2304,20 @@ export const ChapterCheckerV2: React.FC = () => {
     // Strip extension from fileName if present (e.g., "MyStory.docx" -> "MyStory")
     const rawFileName = fileName || "untitled-document";
     const baseFileName = rawFileName.replace(/\.[^/.]+$/, "");
+    console.log(
+      "[Export] chapterData:",
+      chapterData
+        ? {
+            hasPlainText: !!chapterData.plainText,
+            plainTextLength: chapterData.plainText?.length,
+            hasEditorHtml: !!chapterData.editorHtml,
+            editorHtmlLength: chapterData.editorHtml?.length,
+            hasHtml: !!chapterData.html,
+            isHybridDocx: chapterData.isHybridDocx,
+          }
+        : null
+    );
+
     const richHtmlContent =
       chapterData.editorHtml ??
       (chapterData.isHybridDocx ? chapterData.html : null) ??
@@ -2304,9 +2325,23 @@ export const ChapterCheckerV2: React.FC = () => {
     const isWriterMode = viewMode === "writer";
 
     try {
+      console.log("[Export] Starting export to", format);
+      console.log(
+        "[Export] richHtmlContent length:",
+        richHtmlContent?.length || 0
+      );
+      console.log(
+        "[Export] currentChapterText length:",
+        currentChapterText.length
+      );
+      console.log("[Export] baseFileName:", baseFileName);
+
       switch (format) {
         case "docx": {
+          console.log("[Export] Importing docxExport...");
           const { exportToDocx } = await import("@/utils/docxExport");
+          console.log("[Export] exportToDocx imported successfully");
+
           const fallbackAnalysis = isWriterMode
             ? null
             : analysis ??
@@ -2315,6 +2350,7 @@ export const ChapterCheckerV2: React.FC = () => {
                 htmlContent: richHtmlContent,
               });
 
+          console.log("[Export] Calling exportToDocx...");
           await exportToDocx({
             text: currentChapterText,
             html: richHtmlContent,
@@ -2340,7 +2376,10 @@ export const ChapterCheckerV2: React.FC = () => {
               htmlContent: richHtmlContent,
             });
 
+          console.log("[Export PDF] Importing pdfExport...");
           const { exportToPdf } = await import("@/utils/pdfExport");
+          console.log("[Export PDF] exportToPdf imported successfully");
+          console.log("[Export PDF] Calling exportToPdf...");
           await exportToPdf({
             text: currentChapterText,
             html: richHtmlContent,
@@ -2349,6 +2388,7 @@ export const ChapterCheckerV2: React.FC = () => {
             includeAnalysis: true,
             format: "manuscript",
           });
+          console.log("[Export PDF] exportToPdf completed");
           break;
         }
         case "html": {
@@ -2461,10 +2501,15 @@ export const ChapterCheckerV2: React.FC = () => {
           }
 
           const blob = new Blob([markdownContent], { type: "text/markdown" });
+          console.log(
+            "[Export MD] Markdown content length:",
+            markdownContent.length
+          );
 
           // Try File System Access API first
           if ("showSaveFilePicker" in window) {
             try {
+              console.log("[Export MD] Using File System Access API...");
               const handle = await (window as any).showSaveFilePicker({
                 suggestedName: `${baseFileName}.md`,
                 types: [
@@ -2480,20 +2525,27 @@ export const ChapterCheckerV2: React.FC = () => {
               // Store handle for quick re-save
               savedFileHandleRef.current = handle;
               savedFormatRef.current = "md";
+              console.log(
+                "[Export MD] Save completed via File System Access API"
+              );
               return;
             } catch (err: any) {
+              console.log("[Export MD] File System Access API error:", err);
               if (err.name === "AbortError") return;
             }
           }
           // Fallback
+          console.log("[Export MD] Using saveAs fallback...");
           const { saveAs } = await import("file-saver");
           saveAs(blob, `${baseFileName}.md`);
+          console.log("[Export MD] saveAs called");
           break;
         }
       }
       // Store the format for quick re-save (even if we couldn't store a handle)
       savedFormatRef.current = format;
     } catch (err) {
+      console.error("[Export] Error:", err);
       alert(
         "Error saving: " +
           (err instanceof Error ? err.message : "Unknown error")

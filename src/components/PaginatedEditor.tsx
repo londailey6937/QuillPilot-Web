@@ -487,6 +487,19 @@ export const PaginatedEditor = forwardRef<
       "left" | "right" | "indent" | null
     >(null);
 
+    // Cross-page selection state
+    const crossPageSelectionRef = useRef<{
+      isSelecting: boolean;
+      startPageIndex: number;
+      startNode: Node | null;
+      startOffset: number;
+    }>({
+      isSelecting: false,
+      startPageIndex: -1,
+      startNode: null,
+      startOffset: 0,
+    });
+
     // Notify parent when active page changes
     useEffect(() => {
       onActivePageChange?.(activePageIndex);
@@ -1857,6 +1870,65 @@ export const PaginatedEditor = forwardRef<
       onRightMarginChange,
       onFirstLineIndentChange,
     ]);
+
+    // ========================================================================
+    // Cross-Page Selection Handling
+    // ========================================================================
+
+    // Handle mouse down to start potential cross-page selection
+    const handleCrossPageMouseDown = useCallback(
+      (e: React.MouseEvent, pageIndex: number) => {
+        // Only track for left mouse button
+        if (e.button !== 0) return;
+
+        const selection = window.getSelection();
+        if (!selection) return;
+
+        // Record the starting point for potential cross-page selection
+        const range = selection.getRangeAt(0);
+        crossPageSelectionRef.current = {
+          isSelecting: true,
+          startPageIndex: pageIndex,
+          startNode: range.startContainer,
+          startOffset: range.startOffset,
+        };
+      },
+      []
+    );
+
+    // Handle mouse up to finalize cross-page selection
+    const handleCrossPageMouseUp = useCallback(
+      (e: React.MouseEvent, pageIndex: number) => {
+        const crossPageState = crossPageSelectionRef.current;
+
+        if (
+          !crossPageState.isSelecting ||
+          crossPageState.startPageIndex === pageIndex
+        ) {
+          // Not a cross-page selection, let browser handle it
+          crossPageSelectionRef.current.isSelecting = false;
+          return;
+        }
+
+        // This is a cross-page selection - need to handle it specially
+        const startPageIdx = crossPageState.startPageIndex;
+        const endPageIdx = pageIndex;
+
+        // Ensure start < end for iteration
+        const [firstIdx, lastIdx] =
+          startPageIdx < endPageIdx
+            ? [startPageIdx, endPageIdx]
+            : [endPageIdx, startPageIdx];
+
+        // For now, just ensure we can select within each page but highlight
+        // the selected content across pages visually
+        // True cross-page selection requires a different architecture
+        // (single contentEditable with virtual pages)
+
+        crossPageSelectionRef.current.isSelecting = false;
+      },
+      []
+    );
 
     // ========================================================================
     // Initialization

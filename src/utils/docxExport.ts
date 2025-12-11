@@ -123,185 +123,153 @@ export const exportToDocx = async ({
   footerAlign = "center",
   facingPages = false,
 }: ExportDocxOptions) => {
-  // In writer mode, we export a clean document without analysis
-  const isWriterMode = mode === "writer";
-  const effectiveAnalysis = isWriterMode ? null : analysis;
-  const effectiveIncludeHighlights = isWriterMode ? false : includeHighlights;
-
-  // Build HTML content using shared builder for consistency
-  const htmlContent = buildContentHtml({
-    text,
-    html,
-    analysis: effectiveAnalysis,
-    includeHighlights: effectiveIncludeHighlights,
+  console.log("[exportToDocx] Called with:", {
+    textLength: text?.length,
+    htmlLength: html?.length,
+    fileName,
+    mode,
   });
 
-  // Check if content has a TOC placeholder or multiple headings
-  const hasTocPlaceholder =
-    html?.includes("toc-placeholder") ||
-    htmlContent.includes("toc-placeholder");
-  const headingMatches = htmlContent.match(/<h[1-6][^>]*>/gi) || [];
-  const hasMultipleHeadings = headingMatches.length >= 3;
+  try {
+    // In writer mode, we export a clean document without analysis
+    const isWriterMode = mode === "writer";
+    const effectiveAnalysis = isWriterMode ? null : analysis;
+    const effectiveIncludeHighlights = isWriterMode ? false : includeHighlights;
 
-  // Auto-detect TOC: include if placeholder exists or if there are 3+ headings
-  // DISABLED: TOC generation removed per user request
-  const shouldIncludeToc = false;
-  // const shouldIncludeToc =
-  //   includeToc ?? (hasTocPlaceholder || hasMultipleHeadings);
-
-  // Convert HTML to DOCX paragraphs
-  const paragraphs: Paragraph[] = [];
-
-  // Extract document title from content, fallback to filename, then to "Untitled Document"
-  const extractedTitle = extractDocumentTitle(html);
-  const fileNameTitle = sanitizeText(fileName.replace(/\.[^/.]+$/, ""));
-  const documentTitle = extractedTitle || fileNameTitle || "Untitled Document";
-
-  // Check if HTML already contains a title element (doc-title, book-title, or h1)
-  // If so, don't add a duplicate title - it will come through convertHtmlToParagraphs
-  const htmlHasTitle = html
-    ? /class="[^"]*(?:doc-title|book-title)[^"]*"|<h1[^>]*>/i.test(html)
-    : false;
-
-  // Only add title if the HTML doesn't already have one
-  if (!htmlHasTitle) {
-    paragraphs.push(
-      new Paragraph({
-        text: documentTitle,
-        heading: HeadingLevel.TITLE,
-        alignment: AlignmentType.CENTER,
-        spacing: { after: 400 },
-      })
-    );
-  }
-
-  // Parse HTML and convert to paragraphs FIRST so we can calculate page numbers
-  const htmlParagraphs = await convertHtmlToParagraphs(htmlContent);
-
-  // Add Table of Contents if enabled - using manual TOC with calculated page numbers
-  if (shouldIncludeToc) {
-    // Add TOC title - NOT as a heading so it won't appear in the TOC itself
-    paragraphs.push(
-      new Paragraph({
-        children: [
-          new TextRun({
-            text: "Table of Contents",
-            bold: true,
-            size: 32, // 16pt
-            color: "2c3e50",
-          }),
-        ],
-        spacing: { before: 200, after: 300 },
-      })
+    console.log("[exportToDocx] Building HTML content...");
+    // Build HTML content using shared builder for consistency
+    const htmlContent = buildContentHtml({
+      text,
+      html,
+      analysis: effectiveAnalysis,
+      includeHighlights: effectiveIncludeHighlights,
+    });
+    console.log(
+      "[exportToDocx] HTML content built, length:",
+      htmlContent.length
     );
 
-    // Extract headings from HTML content and calculate their page positions
-    const tocEntries = extractTocEntriesWithPageNumbers(
-      htmlContent,
-      htmlParagraphs
-    );
+    // Check if content has a TOC placeholder or multiple headings
+    const hasTocPlaceholder =
+      html?.includes("toc-placeholder") ||
+      htmlContent.includes("toc-placeholder");
+    const headingMatches = htmlContent.match(/<h[1-6][^>]*>/gi) || [];
+    const hasMultipleHeadings = headingMatches.length >= 3;
 
-    // Add manual TOC entries with calculated page numbers - justified with tab stops
-    // Page width is 8.5" with 1" margins = 6.5" content width = 9360 twips
-    const rightTabPosition = convertInchesToTwip(6.5);
+    // Auto-detect TOC: include if placeholder exists or if there are 3+ headings
+    // DISABLED: TOC generation removed per user request
+    const shouldIncludeToc = false;
+    // const shouldIncludeToc =
+    //   includeToc ?? (hasTocPlaceholder || hasMultipleHeadings);
 
-    for (const entry of tocEntries) {
-      const indent = (entry.level - 1) * 360; // 0.25 inch per level
+    // Convert HTML to DOCX paragraphs
+    const paragraphs: Paragraph[] = [];
+
+    // Extract document title from content, fallback to filename, then to "Untitled Document"
+    const extractedTitle = extractDocumentTitle(html);
+    const fileNameTitle = sanitizeText(fileName.replace(/\.[^/.]+$/, ""));
+    const documentTitle =
+      extractedTitle || fileNameTitle || "Untitled Document";
+    console.log("[exportToDocx] Document title:", documentTitle);
+
+    // Check if HTML already contains a title element (doc-title, book-title, or h1)
+    // If so, don't add a duplicate title - it will come through convertHtmlToParagraphs
+    const htmlHasTitle = html
+      ? /class="[^"]*(?:doc-title|book-title)[^"]*"|<h1[^>]*>/i.test(html)
+      : false;
+
+    // Only add title if the HTML doesn't already have one
+    if (!htmlHasTitle) {
       paragraphs.push(
         new Paragraph({
-          alignment: AlignmentType.LEFT,
-          tabStops: [
-            {
-              type: TabStopType.RIGHT,
-              position: rightTabPosition - indent,
-              leader: LeaderType.DOT,
-            },
-          ],
-          children: [
-            new TextRun({
-              text: entry.text,
-              size: entry.level === 1 ? 24 : entry.level === 2 ? 22 : 20,
-              bold: entry.level === 1,
-            }),
-            new TextRun({
-              text: "\t", // Tab character to trigger the dot leader
-            }),
-            new TextRun({
-              text: `${entry.pageNumber}`,
-              bold: true,
-            }),
-          ],
-          indent: { left: indent },
-          spacing: { after: 120 },
+          text: documentTitle,
+          heading: HeadingLevel.TITLE,
+          alignment: AlignmentType.CENTER,
+          spacing: { after: 400 },
         })
       );
     }
 
-    // Add a page break after TOC
-    paragraphs.push(
-      new Paragraph({
-        children: [new PageBreak()],
-      })
-    );
-  }
+    // Parse HTML and convert to paragraphs FIRST so we can calculate page numbers
+    const htmlParagraphs = await convertHtmlToParagraphs(htmlContent);
 
-  // Add the converted HTML paragraphs
-  paragraphs.push(...htmlParagraphs);
-
-  // Add analysis summary if available (only in analysis mode)
-  if (effectiveAnalysis && effectiveIncludeHighlights) {
-    paragraphs.push(
-      new Paragraph({
-        text: sanitizeText("Analysis Summary"),
-        heading: HeadingLevel.HEADING_1,
-        spacing: { before: 400, after: 200 },
-      })
-    );
-
-    paragraphs.push(
-      new Paragraph({
-        children: [
-          new TextRun({
-            text: sanitizeText(
-              `Overall Score: ${Math.round(effectiveAnalysis.overallScore)}/100`
-            ),
-            bold: true,
-            size: 24,
-          }),
-        ],
-        spacing: { after: 200 },
-      })
-    );
-
-    // Add Spacing and Dual Coding principle details
-    const principleScores = (effectiveAnalysis as any).principleScores || [];
-    const principles = effectiveAnalysis.principles || [];
-    const spacingEvaluation = principles.find(
-      (p) => p.principle === "spacedRepetition"
-    );
-    const dualCodingEvaluation = principles.find(
-      (p) => p.principle === "dualCoding"
-    );
-
-    const spacingPrinciple =
-      principleScores.find(
-        (p: any) =>
-          p.principleId === "spacing" ||
-          p.principle?.toLowerCase().includes("spacing")
-      ) || principles.find((p) => p.principle === "spacedRepetition");
-    const dualCodingPrinciple =
-      principleScores.find(
-        (p: any) =>
-          p.principleId === "dualCoding" ||
-          p.principle?.toLowerCase().includes("dual coding")
-      ) || principles.find((p) => p.principle === "dualCoding");
-
-    if (spacingPrinciple) {
+    // Add Table of Contents if enabled - using manual TOC with calculated page numbers
+    if (shouldIncludeToc) {
+      // Add TOC title - NOT as a heading so it won't appear in the TOC itself
       paragraphs.push(
         new Paragraph({
-          text: sanitizeText("Spacing Analysis"),
-          heading: HeadingLevel.HEADING_2,
-          spacing: { before: 300, after: 150 },
+          children: [
+            new TextRun({
+              text: "Table of Contents",
+              bold: true,
+              size: 32, // 16pt
+              color: "2c3e50",
+            }),
+          ],
+          spacing: { before: 200, after: 300 },
+        })
+      );
+
+      // Extract headings from HTML content and calculate their page positions
+      const tocEntries = extractTocEntriesWithPageNumbers(
+        htmlContent,
+        htmlParagraphs
+      );
+
+      // Add manual TOC entries with calculated page numbers - justified with tab stops
+      // Page width is 8.5" with 1" margins = 6.5" content width = 9360 twips
+      const rightTabPosition = convertInchesToTwip(6.5);
+
+      for (const entry of tocEntries) {
+        const indent = (entry.level - 1) * 360; // 0.25 inch per level
+        paragraphs.push(
+          new Paragraph({
+            alignment: AlignmentType.LEFT,
+            tabStops: [
+              {
+                type: TabStopType.RIGHT,
+                position: rightTabPosition - indent,
+                leader: LeaderType.DOT,
+              },
+            ],
+            children: [
+              new TextRun({
+                text: entry.text,
+                size: entry.level === 1 ? 24 : entry.level === 2 ? 22 : 20,
+                bold: entry.level === 1,
+              }),
+              new TextRun({
+                text: "\t", // Tab character to trigger the dot leader
+              }),
+              new TextRun({
+                text: `${entry.pageNumber}`,
+                bold: true,
+              }),
+            ],
+            indent: { left: indent },
+            spacing: { after: 120 },
+          })
+        );
+      }
+
+      // Add a page break after TOC
+      paragraphs.push(
+        new Paragraph({
+          children: [new PageBreak()],
+        })
+      );
+    }
+
+    // Add the converted HTML paragraphs
+    paragraphs.push(...htmlParagraphs);
+
+    // Add analysis summary if available (only in analysis mode)
+    if (effectiveAnalysis && effectiveIncludeHighlights) {
+      paragraphs.push(
+        new Paragraph({
+          text: sanitizeText("Analysis Summary"),
+          heading: HeadingLevel.HEADING_1,
+          spacing: { before: 400, after: 200 },
         })
       );
 
@@ -309,492 +277,563 @@ export const exportToDocx = async ({
         new Paragraph({
           children: [
             new TextRun({
-              text: sanitizeText(`Score: ${spacingPrinciple.score}/100`),
+              text: sanitizeText(
+                `Overall Score: ${Math.round(
+                  effectiveAnalysis.overallScore
+                )}/100`
+              ),
               bold: true,
+              size: 24,
             }),
           ],
-          spacing: { after: 100 },
+          spacing: { after: 200 },
         })
       );
 
-      // Handle both PrincipleScore (details) and PrincipleEvaluation (findings) types
-      const details =
-        (spacingPrinciple as any).details ||
-        (spacingPrinciple as any).findings?.map((f: any) => f.message) ||
-        [];
+      // Add Spacing and Dual Coding principle details
+      const principleScores = (effectiveAnalysis as any).principleScores || [];
+      const principles = effectiveAnalysis.principles || [];
+      const spacingEvaluation = principles.find(
+        (p) => p.principle === "spacedRepetition"
+      );
+      const dualCodingEvaluation = principles.find(
+        (p) => p.principle === "dualCoding"
+      );
 
-      if (details.length > 0) {
-        details.forEach((detail: string) => {
-          paragraphs.push(
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: sanitizeText(`• ${detail}`),
-                }),
-              ],
-              spacing: { after: 80 },
-            })
-          );
-        });
-      }
+      const spacingPrinciple =
+        principleScores.find(
+          (p: any) =>
+            p.principleId === "spacing" ||
+            p.principle?.toLowerCase().includes("spacing")
+        ) || principles.find((p) => p.principle === "spacedRepetition");
+      const dualCodingPrinciple =
+        principleScores.find(
+          (p: any) =>
+            p.principleId === "dualCoding" ||
+            p.principle?.toLowerCase().includes("dual coding")
+        ) || principles.find((p) => p.principle === "dualCoding");
 
-      const suggestions = (spacingPrinciple as any).suggestions || [];
-
-      if (suggestions.length > 0) {
+      if (spacingPrinciple) {
         paragraphs.push(
           new Paragraph({
-            children: [
-              new TextRun({
-                text: sanitizeText("Suggestions:"),
-                bold: true,
-                italics: true,
-              }),
-            ],
-            spacing: { before: 100, after: 80 },
+            text: sanitizeText("Spacing Analysis"),
+            heading: HeadingLevel.HEADING_2,
+            spacing: { before: 300, after: 150 },
           })
         );
 
-        suggestions.forEach((suggestion: any) => {
-          const suggestionText =
-            typeof suggestion === "string"
-              ? suggestion
-              : suggestion.text || suggestion.message || "";
-          if (suggestionText) {
-            paragraphs.push(
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: sanitizeText(`  → ${suggestionText}`),
-                    color: "2563EB",
-                  }),
-                ],
-                spacing: { after: 80 },
-              })
-            );
-          }
-        });
-      }
-
-      addContextSection(
-        paragraphs,
-        "Spacing context from original text",
-        collectFindingContexts(spacingEvaluation),
-        {
-          fill: "DBEAFE",
-          accent: "1D4ED8",
-        }
-      );
-    }
-
-    if (dualCodingPrinciple) {
-      paragraphs.push(
-        new Paragraph({
-          text: sanitizeText("Dual Coding Analysis"),
-          heading: HeadingLevel.HEADING_2,
-          spacing: { before: 300, after: 150 },
-        })
-      );
-
-      paragraphs.push(
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: sanitizeText(`Score: ${dualCodingPrinciple.score}/100`),
-              bold: true,
-            }),
-          ],
-          spacing: { after: 100 },
-        })
-      );
-
-      // Handle both PrincipleScore (details) and PrincipleEvaluation (findings) types
-      const dcDetails =
-        (dualCodingPrinciple as any).details ||
-        (dualCodingPrinciple as any).findings?.map((f: any) => f.message) ||
-        [];
-
-      if (dcDetails.length > 0) {
-        dcDetails.forEach((detail: string) => {
-          paragraphs.push(
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: sanitizeText(`• ${detail}`),
-                }),
-              ],
-              spacing: { after: 80 },
-            })
-          );
-        });
-      }
-
-      const dcSuggestions = (dualCodingPrinciple as any).suggestions || [];
-
-      if (dcSuggestions.length > 0) {
         paragraphs.push(
           new Paragraph({
             children: [
               new TextRun({
-                text: sanitizeText("Suggestions:"),
-                bold: true,
-                italics: true,
-              }),
-            ],
-            spacing: { before: 100, after: 80 },
-          })
-        );
-
-        dcSuggestions.forEach((suggestion: any) => {
-          const suggestionText =
-            typeof suggestion === "string"
-              ? suggestion
-              : suggestion.text || suggestion.message || "";
-          if (suggestionText) {
-            paragraphs.push(
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: sanitizeText(`  → ${suggestionText}`),
-                    color: "2563EB",
-                  }),
-                ],
-                spacing: { after: 80 },
-              })
-            );
-          }
-        });
-      }
-
-      addContextSection(
-        paragraphs,
-        "Dual-coding context from original text",
-        collectFindingContexts(dualCodingEvaluation),
-        {
-          fill: "FEF9C3",
-          accent: "92400E",
-        }
-      );
-    }
-
-    // Add high-priority recommendations
-    const highPriorityRecs = effectiveAnalysis.recommendations
-      ?.filter((rec: Recommendation) => rec.priority === "high")
-      .slice(0, 3);
-
-    if (highPriorityRecs && highPriorityRecs.length > 0) {
-      paragraphs.push(
-        new Paragraph({
-          text: sanitizeText("Key Recommendations:"),
-          heading: HeadingLevel.HEADING_2,
-          spacing: { before: 200, after: 100 },
-        })
-      );
-
-      highPriorityRecs.forEach((rec: Recommendation) => {
-        paragraphs.push(
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: sanitizeText(`• ${rec.title}: `),
+                text: sanitizeText(`Score: ${spacingPrinciple.score}/100`),
                 bold: true,
               }),
-              new TextRun({ text: sanitizeText(rec.description || "") }),
             ],
             spacing: { after: 100 },
           })
         );
-      });
-    }
 
-    paragraphs.push(
-      new Paragraph({
-        text: sanitizeText("─".repeat(50)),
-        spacing: { before: 400, after: 400 },
-      })
-    );
+        // Handle both PrincipleScore (details) and PrincipleEvaluation (findings) types
+        const details =
+          (spacingPrinciple as any).details ||
+          (spacingPrinciple as any).findings?.map((f: any) => f.message) ||
+          [];
 
-    paragraphs.push(
-      new Paragraph({
-        text: sanitizeText("Edited Chapter Text"),
-        heading: HeadingLevel.HEADING_1,
-        spacing: { after: 200 },
-      })
-    );
-  }
-
-  const trimmedText = text?.trim() ?? "";
-
-  // Note: The HTML content from htmlBuilder already includes analysis summary
-  // and highlighting, so we don't need the old manual building logic anymore.
-  // Just parse the generated HTML directly.
-  // The htmlContent variable already contains everything from buildContentHtml()
-
-  // Skip building paragraphs manually, use the HTML we already generated
-  // (The convertHtmlToParagraphs call above already added them)
-
-  // Helper to convert alignment string to docx AlignmentType
-  const getAlignment = (
-    align: "left" | "center" | "right" | "justify"
-  ): (typeof AlignmentType)[keyof typeof AlignmentType] => {
-    switch (align) {
-      case "left":
-        return AlignmentType.LEFT;
-      case "right":
-        return AlignmentType.RIGHT;
-      case "justify":
-        return AlignmentType.JUSTIFIED;
-      default:
-        return AlignmentType.CENTER;
-    }
-  };
-
-  // Create document with TOC-enabled features and proper page dimensions
-  // Build header children for default (and odd pages if facing)
-  const headerChildren: Paragraph[] = [];
-  const headerChildrenEven: Paragraph[] = []; // For facing pages - even pages
-
-  const buildHeaderParagraph = (
-    alignment: (typeof AlignmentType)[keyof typeof AlignmentType],
-    pageNumOnLeft: boolean
-  ): Paragraph => {
-    const children: TextRun[] = [];
-
-    // Page number on left
-    if (showPageNumbers && pageNumberPosition === "header" && pageNumOnLeft) {
-      children.push(
-        new TextRun({
-          children: [PageNumber.CURRENT],
-          size: 20,
-          color: "6b7280",
-        })
-      );
-      if (headerText) {
-        children.push(new TextRun({ text: "  |  ", color: "9ca3af" }));
-      }
-    }
-
-    // Header text
-    if (headerText) {
-      const headerLines = headerText.split("\n");
-      headerLines.forEach((line, idx) => {
-        if (idx > 0) {
-          children.push(new TextRun({ break: 1 }));
+        if (details.length > 0) {
+          details.forEach((detail: string) => {
+            paragraphs.push(
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: sanitizeText(`• ${detail}`),
+                  }),
+                ],
+                spacing: { after: 80 },
+              })
+            );
+          });
         }
-        children.push(
-          new TextRun({
-            text: line,
-            size: 20,
-            color: "6b7280",
-          })
-        );
-      });
-    }
 
-    // Page number on right
-    if (showPageNumbers && pageNumberPosition === "header" && !pageNumOnLeft) {
-      if (headerText) {
-        children.push(new TextRun({ text: "  |  ", color: "9ca3af" }));
-      }
-      children.push(
-        new TextRun({
-          children: [PageNumber.CURRENT],
-          size: 20,
-          color: "6b7280",
-        })
-      );
-    }
+        const suggestions = (spacingPrinciple as any).suggestions || [];
 
-    return new Paragraph({ alignment, children });
-  };
+        if (suggestions.length > 0) {
+          paragraphs.push(
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: sanitizeText("Suggestions:"),
+                  bold: true,
+                  italics: true,
+                }),
+              ],
+              spacing: { before: 100, after: 80 },
+            })
+          );
 
-  // Default header (also used for odd pages in facing mode)
-  if (headerText || (showPageNumbers && pageNumberPosition === "header")) {
-    const defaultAlign = facingPages
-      ? AlignmentType.RIGHT
-      : getAlignment(headerAlign);
-    headerChildren.push(buildHeaderParagraph(defaultAlign, false));
-  }
-
-  // Even page header (for facing pages - page number on left)
-  if (
-    facingPages &&
-    (headerText || (showPageNumbers && pageNumberPosition === "header"))
-  ) {
-    headerChildrenEven.push(buildHeaderParagraph(AlignmentType.LEFT, true));
-  }
-
-  // Build footer children for default (and odd pages if facing)
-  const footerChildren: Paragraph[] = [];
-  const footerChildrenEven: Paragraph[] = []; // For facing pages - even pages
-
-  const buildFooterParagraph = (
-    alignment: (typeof AlignmentType)[keyof typeof AlignmentType],
-    pageNumOnLeft: boolean
-  ): Paragraph => {
-    const children: TextRun[] = [];
-
-    // Page number on left
-    if (showPageNumbers && pageNumberPosition === "footer" && pageNumOnLeft) {
-      children.push(
-        new TextRun({
-          children: [PageNumber.CURRENT],
-          size: 20,
-          color: "6b7280",
-        })
-      );
-      if (footerText) {
-        children.push(new TextRun({ text: "  |  ", color: "9ca3af" }));
-      }
-    }
-
-    // Footer text
-    if (footerText) {
-      const footerLines = footerText.split("\n");
-      footerLines.forEach((line, idx) => {
-        if (idx > 0) {
-          children.push(new TextRun({ break: 1 }));
+          suggestions.forEach((suggestion: any) => {
+            const suggestionText =
+              typeof suggestion === "string"
+                ? suggestion
+                : suggestion.text || suggestion.message || "";
+            if (suggestionText) {
+              paragraphs.push(
+                new Paragraph({
+                  children: [
+                    new TextRun({
+                      text: sanitizeText(`  → ${suggestionText}`),
+                      color: "2563EB",
+                    }),
+                  ],
+                  spacing: { after: 80 },
+                })
+              );
+            }
+          });
         }
-        children.push(
-          new TextRun({
-            text: line,
-            size: 20,
-            color: "6b7280",
-          })
-        );
-      });
-    }
 
-    // Page number on right
-    if (showPageNumbers && pageNumberPosition === "footer" && !pageNumOnLeft) {
-      if (footerText) {
-        children.push(new TextRun({ text: "  |  ", color: "9ca3af" }));
-      }
-      children.push(
-        new TextRun({
-          children: [PageNumber.CURRENT],
-          size: 20,
-          color: "6b7280",
-        })
-      );
-    }
-
-    return new Paragraph({ alignment, children });
-  };
-
-  // Default footer (also used for odd pages in facing mode)
-  if (footerText || (showPageNumbers && pageNumberPosition === "footer")) {
-    const defaultAlign = facingPages
-      ? AlignmentType.RIGHT
-      : getAlignment(footerAlign);
-    footerChildren.push(buildFooterParagraph(defaultAlign, false));
-  }
-
-  // Even page footer (for facing pages - page number on left)
-  if (
-    facingPages &&
-    (footerText || (showPageNumbers && pageNumberPosition === "footer"))
-  ) {
-    footerChildrenEven.push(buildFooterParagraph(AlignmentType.LEFT, true));
-  }
-
-  const doc = new Document({
-    features: {
-      // Enable update fields on open - this makes Word update the TOC when opened
-      updateFields: true,
-    },
-    sections: [
-      {
-        properties: {
-          // US Letter size: 8.5" x 11"
-          page: {
-            size: {
-              width: convertInchesToTwip(8.5),
-              height: convertInchesToTwip(11),
-            },
-            margin: {
-              top: convertInchesToTwip(1),
-              right: convertInchesToTwip(1),
-              bottom: convertInchesToTwip(1),
-              left: convertInchesToTwip(1),
-              // Mirror margins for facing pages (gutter on inside)
-              ...(facingPages && { gutter: convertInchesToTwip(0.5) }),
-            },
-          },
-        },
-        headers:
-          headerChildren.length > 0 || headerChildrenEven.length > 0
-            ? {
-                default: new Header({
-                  children: headerChildren,
-                }),
-                ...(facingPages && headerChildrenEven.length > 0
-                  ? {
-                      even: new Header({
-                        children: headerChildrenEven,
-                      }),
-                    }
-                  : {}),
-              }
-            : undefined,
-        footers:
-          footerChildren.length > 0 || footerChildrenEven.length > 0
-            ? {
-                default: new Footer({
-                  children: footerChildren,
-                }),
-                ...(facingPages && footerChildrenEven.length > 0
-                  ? {
-                      even: new Footer({
-                        children: footerChildrenEven,
-                      }),
-                    }
-                  : {}),
-              }
-            : undefined,
-        children: paragraphs,
-      },
-    ],
-  });
-
-  // Generate and save - use File System Access API if available for "Save As" dialog
-  const blob = await Packager.toBlob(doc);
-  const downloadName = normalizeDocxFileName(fileName);
-
-  // Try to use the modern File System Access API (Chrome, Edge, Opera)
-  // This gives users a proper "Save As" dialog to choose the location
-  if ("showSaveFilePicker" in window) {
-    try {
-      const handle = await (window as any).showSaveFilePicker({
-        suggestedName: downloadName,
-        types: [
+        addContextSection(
+          paragraphs,
+          "Spacing context from original text",
+          collectFindingContexts(spacingEvaluation),
           {
-            description: "Word Document",
-            accept: {
-              "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
-                [".docx"],
-            },
-          },
-        ],
-      });
-      const writable = await handle.createWritable();
-      await writable.write(blob);
-      await writable.close();
-      return; // Successfully saved with user-chosen location
-    } catch (err: any) {
-      // User cancelled the save dialog, or API not fully supported
-      if (err.name === "AbortError") {
-        return; // User cancelled - don't fall back to download
+            fill: "DBEAFE",
+            accent: "1D4ED8",
+          }
+        );
       }
-      // For other errors, fall back to traditional download
-      console.warn(
-        "File System Access API failed, falling back to download:",
-        err
+
+      if (dualCodingPrinciple) {
+        paragraphs.push(
+          new Paragraph({
+            text: sanitizeText("Dual Coding Analysis"),
+            heading: HeadingLevel.HEADING_2,
+            spacing: { before: 300, after: 150 },
+          })
+        );
+
+        paragraphs.push(
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: sanitizeText(`Score: ${dualCodingPrinciple.score}/100`),
+                bold: true,
+              }),
+            ],
+            spacing: { after: 100 },
+          })
+        );
+
+        // Handle both PrincipleScore (details) and PrincipleEvaluation (findings) types
+        const dcDetails =
+          (dualCodingPrinciple as any).details ||
+          (dualCodingPrinciple as any).findings?.map((f: any) => f.message) ||
+          [];
+
+        if (dcDetails.length > 0) {
+          dcDetails.forEach((detail: string) => {
+            paragraphs.push(
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: sanitizeText(`• ${detail}`),
+                  }),
+                ],
+                spacing: { after: 80 },
+              })
+            );
+          });
+        }
+
+        const dcSuggestions = (dualCodingPrinciple as any).suggestions || [];
+
+        if (dcSuggestions.length > 0) {
+          paragraphs.push(
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: sanitizeText("Suggestions:"),
+                  bold: true,
+                  italics: true,
+                }),
+              ],
+              spacing: { before: 100, after: 80 },
+            })
+          );
+
+          dcSuggestions.forEach((suggestion: any) => {
+            const suggestionText =
+              typeof suggestion === "string"
+                ? suggestion
+                : suggestion.text || suggestion.message || "";
+            if (suggestionText) {
+              paragraphs.push(
+                new Paragraph({
+                  children: [
+                    new TextRun({
+                      text: sanitizeText(`  → ${suggestionText}`),
+                      color: "2563EB",
+                    }),
+                  ],
+                  spacing: { after: 80 },
+                })
+              );
+            }
+          });
+        }
+
+        addContextSection(
+          paragraphs,
+          "Dual-coding context from original text",
+          collectFindingContexts(dualCodingEvaluation),
+          {
+            fill: "FEF9C3",
+            accent: "92400E",
+          }
+        );
+      }
+
+      // Add high-priority recommendations
+      const highPriorityRecs = effectiveAnalysis.recommendations
+        ?.filter((rec: Recommendation) => rec.priority === "high")
+        .slice(0, 3);
+
+      if (highPriorityRecs && highPriorityRecs.length > 0) {
+        paragraphs.push(
+          new Paragraph({
+            text: sanitizeText("Key Recommendations:"),
+            heading: HeadingLevel.HEADING_2,
+            spacing: { before: 200, after: 100 },
+          })
+        );
+
+        highPriorityRecs.forEach((rec: Recommendation) => {
+          paragraphs.push(
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: sanitizeText(`• ${rec.title}: `),
+                  bold: true,
+                }),
+                new TextRun({ text: sanitizeText(rec.description || "") }),
+              ],
+              spacing: { after: 100 },
+            })
+          );
+        });
+      }
+
+      paragraphs.push(
+        new Paragraph({
+          text: sanitizeText("─".repeat(50)),
+          spacing: { before: 400, after: 400 },
+        })
+      );
+
+      paragraphs.push(
+        new Paragraph({
+          text: sanitizeText("Edited Chapter Text"),
+          heading: HeadingLevel.HEADING_1,
+          spacing: { after: 200 },
+        })
       );
     }
-  }
 
-  // Fallback for Safari, Firefox, or if File System Access API fails
-  saveAs(blob, downloadName);
+    const trimmedText = text?.trim() ?? "";
+
+    // Note: The HTML content from htmlBuilder already includes analysis summary
+    // and highlighting, so we don't need the old manual building logic anymore.
+    // Just parse the generated HTML directly.
+    // The htmlContent variable already contains everything from buildContentHtml()
+
+    // Skip building paragraphs manually, use the HTML we already generated
+    // (The convertHtmlToParagraphs call above already added them)
+
+    // Helper to convert alignment string to docx AlignmentType
+    const getAlignment = (
+      align: "left" | "center" | "right" | "justify"
+    ): (typeof AlignmentType)[keyof typeof AlignmentType] => {
+      switch (align) {
+        case "left":
+          return AlignmentType.LEFT;
+        case "right":
+          return AlignmentType.RIGHT;
+        case "justify":
+          return AlignmentType.JUSTIFIED;
+        default:
+          return AlignmentType.CENTER;
+      }
+    };
+
+    // Create document with TOC-enabled features and proper page dimensions
+    // Build header children for default (and odd pages if facing)
+    const headerChildren: Paragraph[] = [];
+    const headerChildrenEven: Paragraph[] = []; // For facing pages - even pages
+
+    const buildHeaderParagraph = (
+      alignment: (typeof AlignmentType)[keyof typeof AlignmentType],
+      pageNumOnLeft: boolean
+    ): Paragraph => {
+      const children: TextRun[] = [];
+
+      // Page number on left
+      if (showPageNumbers && pageNumberPosition === "header" && pageNumOnLeft) {
+        children.push(
+          new TextRun({
+            children: [PageNumber.CURRENT],
+            size: 20,
+            color: "6b7280",
+          })
+        );
+        if (headerText) {
+          children.push(new TextRun({ text: "  |  ", color: "9ca3af" }));
+        }
+      }
+
+      // Header text
+      if (headerText) {
+        const headerLines = headerText.split("\n");
+        headerLines.forEach((line, idx) => {
+          if (idx > 0) {
+            children.push(new TextRun({ break: 1 }));
+          }
+          children.push(
+            new TextRun({
+              text: line,
+              size: 20,
+              color: "6b7280",
+            })
+          );
+        });
+      }
+
+      // Page number on right
+      if (
+        showPageNumbers &&
+        pageNumberPosition === "header" &&
+        !pageNumOnLeft
+      ) {
+        if (headerText) {
+          children.push(new TextRun({ text: "  |  ", color: "9ca3af" }));
+        }
+        children.push(
+          new TextRun({
+            children: [PageNumber.CURRENT],
+            size: 20,
+            color: "6b7280",
+          })
+        );
+      }
+
+      return new Paragraph({ alignment, children });
+    };
+
+    // Default header (also used for odd pages in facing mode)
+    if (headerText || (showPageNumbers && pageNumberPosition === "header")) {
+      const defaultAlign = facingPages
+        ? AlignmentType.RIGHT
+        : getAlignment(headerAlign);
+      headerChildren.push(buildHeaderParagraph(defaultAlign, false));
+    }
+
+    // Even page header (for facing pages - page number on left)
+    if (
+      facingPages &&
+      (headerText || (showPageNumbers && pageNumberPosition === "header"))
+    ) {
+      headerChildrenEven.push(buildHeaderParagraph(AlignmentType.LEFT, true));
+    }
+
+    // Build footer children for default (and odd pages if facing)
+    const footerChildren: Paragraph[] = [];
+    const footerChildrenEven: Paragraph[] = []; // For facing pages - even pages
+
+    const buildFooterParagraph = (
+      alignment: (typeof AlignmentType)[keyof typeof AlignmentType],
+      pageNumOnLeft: boolean
+    ): Paragraph => {
+      const children: TextRun[] = [];
+
+      // Page number on left
+      if (showPageNumbers && pageNumberPosition === "footer" && pageNumOnLeft) {
+        children.push(
+          new TextRun({
+            children: [PageNumber.CURRENT],
+            size: 20,
+            color: "6b7280",
+          })
+        );
+        if (footerText) {
+          children.push(new TextRun({ text: "  |  ", color: "9ca3af" }));
+        }
+      }
+
+      // Footer text
+      if (footerText) {
+        const footerLines = footerText.split("\n");
+        footerLines.forEach((line, idx) => {
+          if (idx > 0) {
+            children.push(new TextRun({ break: 1 }));
+          }
+          children.push(
+            new TextRun({
+              text: line,
+              size: 20,
+              color: "6b7280",
+            })
+          );
+        });
+      }
+
+      // Page number on right
+      if (
+        showPageNumbers &&
+        pageNumberPosition === "footer" &&
+        !pageNumOnLeft
+      ) {
+        if (footerText) {
+          children.push(new TextRun({ text: "  |  ", color: "9ca3af" }));
+        }
+        children.push(
+          new TextRun({
+            children: [PageNumber.CURRENT],
+            size: 20,
+            color: "6b7280",
+          })
+        );
+      }
+
+      return new Paragraph({ alignment, children });
+    };
+
+    // Default footer (also used for odd pages in facing mode)
+    if (footerText || (showPageNumbers && pageNumberPosition === "footer")) {
+      const defaultAlign = facingPages
+        ? AlignmentType.RIGHT
+        : getAlignment(footerAlign);
+      footerChildren.push(buildFooterParagraph(defaultAlign, false));
+    }
+
+    // Even page footer (for facing pages - page number on left)
+    if (
+      facingPages &&
+      (footerText || (showPageNumbers && pageNumberPosition === "footer"))
+    ) {
+      footerChildrenEven.push(buildFooterParagraph(AlignmentType.LEFT, true));
+    }
+
+    const doc = new Document({
+      features: {
+        // Enable update fields on open - this makes Word update the TOC when opened
+        updateFields: true,
+      },
+      sections: [
+        {
+          properties: {
+            // US Letter size: 8.5" x 11"
+            page: {
+              size: {
+                width: convertInchesToTwip(8.5),
+                height: convertInchesToTwip(11),
+              },
+              margin: {
+                top: convertInchesToTwip(1),
+                right: convertInchesToTwip(1),
+                bottom: convertInchesToTwip(1),
+                left: convertInchesToTwip(1),
+                // Mirror margins for facing pages (gutter on inside)
+                ...(facingPages && { gutter: convertInchesToTwip(0.5) }),
+              },
+            },
+          },
+          headers:
+            headerChildren.length > 0 || headerChildrenEven.length > 0
+              ? {
+                  default: new Header({
+                    children: headerChildren,
+                  }),
+                  ...(facingPages && headerChildrenEven.length > 0
+                    ? {
+                        even: new Header({
+                          children: headerChildrenEven,
+                        }),
+                      }
+                    : {}),
+                }
+              : undefined,
+          footers:
+            footerChildren.length > 0 || footerChildrenEven.length > 0
+              ? {
+                  default: new Footer({
+                    children: footerChildren,
+                  }),
+                  ...(facingPages && footerChildrenEven.length > 0
+                    ? {
+                        even: new Footer({
+                          children: footerChildrenEven,
+                        }),
+                      }
+                    : {}),
+                }
+              : undefined,
+          children: paragraphs,
+        },
+      ],
+    });
+
+    // Generate and save - use File System Access API if available for "Save As" dialog
+    console.log("[exportToDocx] Generating blob...");
+    const blob = await Packager.toBlob(doc);
+    console.log("[exportToDocx] Blob generated, size:", blob.size);
+    const downloadName = normalizeDocxFileName(fileName);
+    console.log("[exportToDocx] Download name:", downloadName);
+
+    // Try to use the modern File System Access API (Chrome, Edge, Opera)
+    // This gives users a proper "Save As" dialog to choose the location
+    if ("showSaveFilePicker" in window) {
+      try {
+        console.log("[exportToDocx] Using File System Access API...");
+        const handle = await (window as any).showSaveFilePicker({
+          suggestedName: downloadName,
+          types: [
+            {
+              description: "Word Document",
+              accept: {
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+                  [".docx"],
+              },
+            },
+          ],
+        });
+        const writable = await handle.createWritable();
+        await writable.write(blob);
+        await writable.close();
+        console.log(
+          "[exportToDocx] File saved successfully via File System Access API"
+        );
+        return; // Successfully saved with user-chosen location
+      } catch (err: any) {
+        // User cancelled the save dialog, or API not fully supported
+        if (err.name === "AbortError") {
+          console.log("[exportToDocx] User cancelled save dialog");
+          return; // User cancelled - don't fall back to download
+        }
+        // For other errors, fall back to traditional download
+        console.warn(
+          "File System Access API failed, falling back to download:",
+          err
+        );
+      }
+    }
+
+    // Fallback for Safari, Firefox, or if File System Access API fails
+    console.log("[exportToDocx] Using saveAs fallback...");
+    saveAs(blob, downloadName);
+    console.log("[exportToDocx] saveAs called");
+  } catch (error) {
+    console.error("[exportToDocx] Export failed:", error);
+    throw error;
+  }
 };
 
 // For importing Packager
