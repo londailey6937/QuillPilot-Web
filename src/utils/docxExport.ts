@@ -2476,7 +2476,10 @@ async function createImageParagraph(
   element: HTMLElement
 ): Promise<Paragraph | null> {
   let src = element.getAttribute("src");
-  console.log("[DOCX Export] createImageParagraph called with src:", src?.substring(0, 100));
+  console.log(
+    "[DOCX Export] createImageParagraph called with src:",
+    src?.substring(0, 100)
+  );
   if (!src) {
     console.log("[DOCX Export] No src attribute found");
     return null;
@@ -2484,7 +2487,8 @@ async function createImageParagraph(
 
   // Check if this is a WebP image and convert to PNG if so
   // The docx library doesn't support WebP format
-  const isWebP = src.includes("image/webp") || src.toLowerCase().endsWith(".webp");
+  const isWebP =
+    src.includes("image/webp") || src.toLowerCase().endsWith(".webp");
   if (isWebP) {
     console.log("[DOCX Export] WebP image detected, converting to PNG...");
     const convertedSrc = await convertWebPToPng(src);
@@ -2497,7 +2501,12 @@ async function createImageParagraph(
   }
 
   const payload = await loadImageData(src);
-  console.log("[DOCX Export] loadImageData result:", payload ? `${payload.data.length} bytes, mimeType: ${payload.mimeType}` : "null");
+  console.log(
+    "[DOCX Export] loadImageData result:",
+    payload
+      ? `${payload.data.length} bytes, mimeType: ${payload.mimeType}`
+      : "null"
+  );
   if (!payload || payload.data.length === 0) {
     console.log("[DOCX Export] No payload data, returning null");
     return null;
@@ -2572,7 +2581,10 @@ async function createImageParagraph(
     type: docxImageType,
   });
 
-  console.log("[DOCX Export] ImageRun created successfully, type:", docxImageType);
+  console.log(
+    "[DOCX Export] ImageRun created successfully, type:",
+    docxImageType
+  );
 
   return new Paragraph({
     children: [imageRun],
@@ -2592,35 +2604,38 @@ async function convertWebPToPng(src: string): Promise<string | null> {
   return new Promise((resolve) => {
     const img = new Image();
     img.crossOrigin = "anonymous";
-    
+
     img.onload = () => {
       try {
         const canvas = document.createElement("canvas");
         canvas.width = img.naturalWidth;
         canvas.height = img.naturalHeight;
-        
+
         const ctx = canvas.getContext("2d");
         if (!ctx) {
           console.warn("[DOCX Export] Could not get canvas context");
           resolve(null);
           return;
         }
-        
+
         ctx.drawImage(img, 0, 0);
         const pngDataUrl = canvas.toDataURL("image/png");
-        console.log("[DOCX Export] WebP converted to PNG, size:", pngDataUrl.length);
+        console.log(
+          "[DOCX Export] WebP converted to PNG, size:",
+          pngDataUrl.length
+        );
         resolve(pngDataUrl);
       } catch (error) {
         console.warn("[DOCX Export] Failed to convert WebP to PNG:", error);
         resolve(null);
       }
     };
-    
+
     img.onerror = (error) => {
       console.warn("[DOCX Export] Failed to load WebP image:", error);
       resolve(null);
     };
-    
+
     img.src = src;
   });
 }
@@ -2723,7 +2738,10 @@ function determineImageType({
   mimeType?: string | null;
   byteSignature?: Uint8Array;
 }): SupportedImageType | undefined {
-  console.log("[DOCX Export] determineImageType called with mimeType:", mimeType);
+  console.log(
+    "[DOCX Export] determineImageType called with mimeType:",
+    mimeType
+  );
   const normalizedMime = mimeType?.toLowerCase() ?? "";
   if (normalizedMime.includes("png")) {
     console.log("[DOCX Export] Detected PNG from mimeType");
@@ -2743,7 +2761,10 @@ function determineImageType({
   if (/\.bmp(?:[?#]|$)/.test(lowerSrc)) return "bmp";
 
   if (byteSignature && byteSignature.length >= 4) {
-    console.log("[DOCX Export] Checking byte signature:", byteSignature.slice(0, 4));
+    console.log(
+      "[DOCX Export] Checking byte signature:",
+      byteSignature.slice(0, 4)
+    );
     if (
       byteSignature[0] === 0x89 &&
       byteSignature[1] === 0x50 &&
@@ -2769,7 +2790,9 @@ function determineImageType({
     }
   }
 
-  console.log("[DOCX Export] Could not determine image type, returning undefined");
+  console.log(
+    "[DOCX Export] Could not determine image type, returning undefined"
+  );
   return undefined;
 }
 
