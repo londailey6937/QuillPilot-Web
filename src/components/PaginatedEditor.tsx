@@ -338,6 +338,11 @@ function splitFormattedText(
   // Mark clone2 as a continuation (no first-line indent)
   if (clone2 instanceof HTMLElement) {
     clone2.classList.add("paragraph-continuation");
+    console.log(
+      "[PaginatedEditor] Added paragraph-continuation class to split element:",
+      clone2.tagName,
+      clone2.className
+    );
   }
 
   let wordCount = 0;
@@ -1546,75 +1551,65 @@ export const PaginatedEditor = forwardRef<
       [pages, onExternalKeyDown]
     );
 
-    const clearSampleField = useCallback((cfField: HTMLElement | null) => {
-      if (!cfField) return;
+    const clearSampleField = useCallback(
+      (cfField: HTMLElement | null, shouldPreventDefault?: boolean) => {
+        if (!cfField) return false;
 
-      if (cfField.hasAttribute("data-sample")) {
-        // Field has sample data - clear it and focus
-        cfField.textContent = "";
-        cfField.removeAttribute("data-sample");
+        if (cfField.hasAttribute("data-sample")) {
+          // Store a way to find this field after re-render
+          // Use id if available, otherwise use a temporary marker
+          const fieldId = cfField.id;
+          const tempMarkerId = `temp-focus-marker-${Date.now()}`;
+          if (!fieldId) {
+            cfField.setAttribute("data-temp-focus", tempMarkerId);
+          }
 
-        // Focus the field first
-        cfField.focus();
+          // Field has sample data - clear it
+          cfField.textContent = "";
+          cfField.removeAttribute("data-sample");
 
-        // Use double requestAnimationFrame for more reliable cursor placement
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            const range = document.createRange();
-            const sel = window.getSelection();
-            range.selectNodeContents(cfField);
-            range.collapse(true);
-            sel?.removeAllRanges();
-            sel?.addRange(range);
-            cfField.focus(); // Re-focus after setting selection
-          });
-        });
-
-        // Don't call handleInput() here - just update pages state directly
-        // to avoid repagination which would lose cursor position
-        setPages((prevPages) => {
-          return prevPages.map((page) => {
-            const ref = pageRefs.current.get(page.id);
-            if (ref) {
-              return { ...page, content: ref.innerHTML };
-            }
-            return page;
-          });
-        });
-      } else {
-        // Field already cleared or has user content - just ensure focus and cursor
-        cfField.focus();
-
-        // Place cursor at end of content (or start if empty)
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            const range = document.createRange();
-            const sel = window.getSelection();
-
-            if (cfField.childNodes.length > 0) {
-              // Has content - place cursor at end
-              const lastChild =
-                cfField.childNodes[cfField.childNodes.length - 1];
-              if (lastChild.nodeType === Node.TEXT_NODE) {
-                range.setStart(lastChild, lastChild.textContent?.length || 0);
-                range.setEnd(lastChild, lastChild.textContent?.length || 0);
-              } else {
-                range.selectNodeContents(cfField);
-                range.collapse(false); // collapse to end
+          // Don't call handleInput() here - just update pages state directly
+          // to avoid repagination which would lose cursor position
+          setPages((prevPages) => {
+            return prevPages.map((page) => {
+              const ref = pageRefs.current.get(page.id);
+              if (ref) {
+                return { ...page, content: ref.innerHTML };
               }
+              return page;
+            });
+          });
+
+          // Focus and place cursor - use setTimeout to ensure DOM is ready after React re-render
+          setTimeout(() => {
+            // Re-find the element after React re-render
+            let targetField: HTMLElement | null = null;
+            if (fieldId) {
+              targetField = document.getElementById(fieldId);
             } else {
-              // Empty field - place cursor at start
-              range.selectNodeContents(cfField);
-              range.collapse(true);
+              targetField = document.querySelector(
+                `[data-temp-focus="${tempMarkerId}"]`
+              );
+              targetField?.removeAttribute("data-temp-focus");
             }
 
-            sel?.removeAllRanges();
-            sel?.addRange(range);
-            cfField.focus(); // Re-focus after setting selection
-          });
-        });
-      }
-    }, []);
+            if (targetField && document.body.contains(targetField)) {
+              targetField.focus();
+              const range = document.createRange();
+              const sel = window.getSelection();
+              range.selectNodeContents(targetField);
+              range.collapse(true);
+              sel?.removeAllRanges();
+              sel?.addRange(range);
+            }
+          }, 50);
+
+          return true; // Indicate we handled it
+        }
+        return false; // Indicate we didn't handle it
+      },
+      []
+    );
 
     const handlePaste = useCallback(
       (e: React.ClipboardEvent) => {
@@ -1960,6 +1955,7 @@ export const PaginatedEditor = forwardRef<
       documentStyles?.paragraph?.lineHeight ?? lineHeight;
 
     // Styles for page content
+    // NOTE: text-indent is handled via CSS selectors to allow .paragraph-continuation override
     const contentStyle: React.CSSProperties = {
       position: "absolute",
       top: `${marginTop}px`,
@@ -1972,7 +1968,7 @@ export const PaginatedEditor = forwardRef<
       lineHeight: effectiveLineHeight,
       fontFamily: fontFamily,
       color: "#333",
-      textIndent: `${firstLineIndent}px`,
+      // Don't set textIndent here - it's applied via CSS to allow .paragraph-continuation override
     };
 
     return (
@@ -1999,18 +1995,25 @@ export const PaginatedEditor = forwardRef<
         >
           {`
             .paginated-page-content {
-              text-indent: ${firstLineIndent}px !important;
               line-height: ${effectiveLineHeight} !important;
             }
             .paginated-page-content * {
               line-height: ${effectiveLineHeight} !important;
             }
-            .paginated-page-content p,
-            .paginated-page-content div:not(.page-break) {
+            .paginated-page-content p:not(.paragraph-continuation),
+            .paginated-page-content div:not(.page-break):not(.paragraph-continuation) {
               text-indent: ${firstLineIndent}px !important;
               margin-bottom: 0;
               margin-top: 0;
               line-height: ${effectiveLineHeight} !important;
+            }
+            /* Paragraph continuation - no first-line indent on continued paragraphs */
+            .paginated-page-content p.paragraph-continuation,
+            .paginated-page-content div.paragraph-continuation,
+            p.paragraph-continuation,
+            div.paragraph-continuation,
+            .paragraph-continuation {
+              text-indent: 0px !important;
             }
             /* List styles - proper hanging indent so wrapped text aligns with first line */
             .paginated-page-content ul,
@@ -2107,11 +2110,6 @@ export const PaginatedEditor = forwardRef<
             .paginated-page-content div[style*="text-align:right"],
             .paginated-page-content p[align="right"],
             .paginated-page-content div[align="right"] {
-              text-indent: 0 !important;
-            }
-            .paginated-page-content .paragraph-continuation,
-            .paginated-page-content p.paragraph-continuation,
-            .paginated-page-content div.paragraph-continuation {
               text-indent: 0 !important;
             }
             .paginated-page-content:focus {
@@ -3787,12 +3785,20 @@ export const PaginatedEditor = forwardRef<
                   onFocus={(e: React.FocusEvent<HTMLDivElement>) => {
                     internalChangeRef.current = true;
                     setActivePageIndex(index);
-
+                    // Don't clear sample on focus - let mousedown handle it
+                  }}
+                  onMouseDown={(e) => {
+                    // Handle sample text clearing on mousedown (before focus)
                     const target = e.target as HTMLElement;
                     const cfField = target.classList.contains("cf")
                       ? target
                       : (target.closest(".cf") as HTMLElement | null);
-                    clearSampleField(cfField);
+
+                    if (cfField?.hasAttribute("data-sample")) {
+                      // Prevent default browser focus/selection behavior
+                      e.preventDefault();
+                      clearSampleField(cfField);
+                    }
                   }}
                   onClick={(e) => {
                     // Handle button clicks for template actions (onclick attrs don't work in contentEditable)
@@ -3827,21 +3833,7 @@ export const PaginatedEditor = forwardRef<
                         return;
                       }
                     }
-
-                    // Handle sample text clearing for template fields
-                    // Check both direct target and closest .cf parent (for clicks on text within the field)
-                    const cfField = target.classList.contains("cf")
-                      ? target
-                      : (target.closest(".cf") as HTMLElement | null);
-
-                    console.log(
-                      "[PaginatedEditor] Click on cf field:",
-                      cfField?.id,
-                      "has data-sample:",
-                      cfField?.hasAttribute("data-sample")
-                    );
-
-                    clearSampleField(cfField);
+                    // Sample text clearing is handled by onMouseDown
                   }}
                   onDoubleClick={(e) => {
                     const target = e.target as HTMLElement;

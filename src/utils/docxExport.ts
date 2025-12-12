@@ -2586,10 +2586,79 @@ async function createImageParagraph(
     docxImageType
   );
 
+  // Detect alignment from the image element or its parent
+  const alignment = detectImageAlignment(element);
+  console.log("[DOCX Export] Image alignment detected:", alignment);
+
   return new Paragraph({
     children: [imageRun],
     spacing: { after: 200 },
+    alignment: alignment,
   });
+}
+
+/**
+ * Detect alignment for an image element by checking its style and parent styles
+ */
+function detectImageAlignment(element: HTMLElement): AlignmentType {
+  // Check the image's own style first
+  const imgStyle = element.getAttribute("style") || "";
+
+  // Check for margin: auto (common centering technique)
+  if (imgStyle.includes("margin") && imgStyle.includes("auto")) {
+    return AlignmentType.CENTER;
+  }
+
+  // Check for display: block with margin auto
+  if (imgStyle.includes("display") && imgStyle.includes("block")) {
+    if (
+      imgStyle.includes("margin-left: auto") ||
+      imgStyle.includes("margin: 0 auto") ||
+      imgStyle.includes("margin:0 auto")
+    ) {
+      return AlignmentType.CENTER;
+    }
+  }
+
+  // Check parent elements for text-align
+  let parent = element.parentElement;
+  let depth = 0;
+  const maxDepth = 5; // Don't traverse too far up
+
+  while (parent && depth < maxDepth) {
+    const parentStyle = parent.getAttribute("style") || "";
+    const computedAlign = parentStyle.match(
+      /text-align\s*:\s*(left|center|right|justify)/i
+    );
+
+    if (computedAlign) {
+      const alignValue = computedAlign[1].toLowerCase();
+      console.log("[DOCX Export] Found text-align in parent:", alignValue);
+      switch (alignValue) {
+        case "center":
+          return AlignmentType.CENTER;
+        case "right":
+          return AlignmentType.RIGHT;
+        case "justify":
+          return AlignmentType.JUSTIFIED;
+        case "left":
+        default:
+          return AlignmentType.LEFT;
+      }
+    }
+
+    // Also check for centering classes
+    const parentClass = parent.className || "";
+    if (parentClass.includes("center") || parentClass.includes("text-center")) {
+      return AlignmentType.CENTER;
+    }
+
+    parent = parent.parentElement;
+    depth++;
+  }
+
+  // Default to left alignment
+  return AlignmentType.LEFT;
 }
 
 /**

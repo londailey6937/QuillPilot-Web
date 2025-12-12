@@ -114,28 +114,28 @@ const fictionTemplate: Template = {
     // 22-Step Character Arc
     template += `<div class="sec">
 <h2 contenteditable="false">22-Step Character Arc</h2>
-<div class="fld"><span class="lbl" contenteditable="false">1. Self-Revelation, Need & Desire</span><div class="cf" contenteditable="true" data-sample="true">What does the character realize they need?</div></div>
-<div class="fld"><span class="lbl" contenteditable="false">2. Ghost & Story World</span><div class="cf" contenteditable="true" data-sample="true">What haunts them and what world do they inhabit?</div></div>
-<div class="fld"><span class="lbl" contenteditable="false">3. Weakness & Need</span><div class="cf" id="character-conflicts" contenteditable="true" data-sample="true">What is their weakness and psychological need?</div></div>
-<div class="fld"><span class="lbl" contenteditable="false">4. Inciting Event</span><div class="cf" contenteditable="true" data-sample="true">What event disrupts their world?</div></div>
-<div class="fld"><span class="lbl" contenteditable="false">5. Desire</span><div class="cf" id="character-goals" contenteditable="true" data-sample="true">What do they want to achieve?</div></div>
-<div class="fld"><span class="lbl" contenteditable="false">6. Ally</span><div class="cf" contenteditable="true" data-sample="true">Who helps them on their journey?</div></div>
-<div class="fld"><span class="lbl" contenteditable="false">7. Opponent</span><div class="cf" contenteditable="true" data-sample="true">Who or what opposes them?</div></div>
-<div class="fld"><span class="lbl" contenteditable="false">8. Fake-Ally Opponent</span><div class="cf" contenteditable="true" data-sample="true">Who pretends to help but secretly opposes?</div></div>
-<div class="fld"><span class="lbl" contenteditable="false">9. First Revelation & Decision</span><div class="cf" contenteditable="true" data-sample="true">What do they learn and decide?</div></div>
-<div class="fld"><span class="lbl" contenteditable="false">10. Plan</span><div class="cf" contenteditable="true" data-sample="true">What is their plan to achieve their goal?</div></div>
-<div class="fld"><span class="lbl" contenteditable="false">11. Opponent's Plan & Counterattack</span><div class="cf" contenteditable="true" data-sample="true">How does the opponent fight back?</div></div>
-<div class="fld"><span class="lbl" contenteditable="false">12. Drive</span><div class="cf" contenteditable="true" data-sample="true">How do they push forward despite obstacles?</div></div>
-<div class="fld"><span class="lbl" contenteditable="false">13. Attack by Ally</span><div class="cf" contenteditable="true" data-sample="true">How does an ally challenge or criticize them?</div></div>
-<div class="fld"><span class="lbl" contenteditable="false">14. Apparent Defeat</span><div class="cf" contenteditable="true" data-sample="true">What is their lowest point?</div></div>
-<div class="fld"><span class="lbl" contenteditable="false">15. Second Revelation & Decision</span><div class="cf" contenteditable="true" data-sample="true">What new truth do they discover?</div></div>
-<div class="fld"><span class="lbl" contenteditable="false">16. Audience Revelation</span><div class="cf" contenteditable="true" data-sample="true">What does the reader learn that the character doesn't?</div></div>
-<div class="fld"><span class="lbl" contenteditable="false">17. Third Revelation & Decision</span><div class="cf" contenteditable="true" data-sample="true">What final truth changes everything?</div></div>
-<div class="fld"><span class="lbl" contenteditable="false">18. Gate, Gauntlet, Visit to Death</span><div class="cf" contenteditable="true" data-sample="true">What final test do they face?</div></div>
-<div class="fld"><span class="lbl" contenteditable="false">19. Battle</span><div class="cf" contenteditable="true" data-sample="true">What is the climactic confrontation?</div></div>
-<div class="fld"><span class="lbl" contenteditable="false">20. Self-Revelation</span><div class="cf" id="character-arc" contenteditable="true" data-sample="true">What do they finally understand about themselves?</div></div>
-<div class="fld"><span class="lbl" contenteditable="false">21. Moral Decision</span><div class="cf" contenteditable="true" data-sample="true">What choice proves their transformation?</div></div>
-<div class="fld"><span class="lbl" contenteditable="false">22. New Equilibrium</span><div class="cf" contenteditable="true" data-sample="true">What is their new normal?</div></div>
+<div class="fld"><span class="lbl" contenteditable="false">1. Self-Revelation, Need & Desire</span><div class="cf" contenteditable="true" data-sample="true">Alex realizes he needs to confront his past to move forward.</div></div>
+<div class="fld"><span class="lbl" contenteditable="false">2. Ghost & Story World</span><div class="cf" contenteditable="true" data-sample="true">Haunted by Dana's loss and operating in the espionage world.</div></div>
+<div class="fld"><span class="lbl" contenteditable="false">3. Weakness & Need</span><div class="cf" id="character-conflicts" contenteditable="true" data-sample="true">Isolated and emotionally guarded, needs to open up to others.</div></div>
+<div class="fld"><span class="lbl" contenteditable="false">4. Inciting Event</span><div class="cf" contenteditable="true" data-sample="true">Receives a cryptic message about Dana.</div></div>
+<div class="fld"><span class="lbl" contenteditable="false">5. Desire</span><div class="cf" id="character-goals" contenteditable="true" data-sample="true">To uncover the truth about Dana's mission.</div></div>
+<div class="fld"><span class="lbl" contenteditable="false">6. Ally</span><div class="cf" contenteditable="true" data-sample="true">Kiko from his past; a reminder of his vulnerabilities.</div></div>
+<div class="fld"><span class="lbl" contenteditable="false">7. Opponent</span><div class="cf" contenteditable="true" data-sample="true">The mysterious forces behind Dana's disappearance.</div></div>
+<div class="fld"><span class="lbl" contenteditable="false">8. Fake-Ally Opponent</span><div class="cf" contenteditable="true" data-sample="true">A colleague in the Agency who secretly opposes him.</div></div>
+<div class="fld"><span class="lbl" contenteditable="false">9. First Revelation & Decision</span><div class="cf" contenteditable="true" data-sample="true">Discovers Dana might be alive; decides to find her.</div></div>
+<div class="fld"><span class="lbl" contenteditable="false">10. Plan</span><div class="cf" contenteditable="true" data-sample="true">To use his skills to trace Dana's last mission.</div></div>
+<div class="fld"><span class="lbl" contenteditable="false">11. Opponent's Plan & Main Counterattack</span><div class="cf" contenteditable="true" data-sample="true">The Agency tries to stop him, fearing exposure.</div></div>
+<div class="fld"><span class="lbl" contenteditable="false">12. Drive</span><div class="cf" contenteditable="true" data-sample="true">Pushes forward despite warnings, using his surveillance expertise.</div></div>
+<div class="fld"><span class="lbl" contenteditable="false">13. Attack by Ally</span><div class="cf" contenteditable="true" data-sample="true">Kiko criticizes him for his obsession with Dana.</div></div>
+<div class="fld"><span class="lbl" contenteditable="false">14. Apparent Defeat</span><div class="cf" contenteditable="true" data-sample="true">Believes Dana is dead after a misleading lead.</div></div>
+<div class="fld"><span class="lbl" contenteditable="false">15. Second Revelation & Decision</span><div class="cf" contenteditable="true" data-sample="true">Learns that Dana was on a covert mission against the Agency.</div></div>
+<div class="fld"><span class="lbl" contenteditable="false">16. Audience Revelation</span><div class="cf" contenteditable="true" data-sample="true">Dana is working undercover to expose corruption.</div></div>
+<div class="fld"><span class="lbl" contenteditable="false">17. Third Revelation & Decision</span><div class="cf" contenteditable="true" data-sample="true">Decides to go rogue to help Dana.</div></div>
+<div class="fld"><span class="lbl" contenteditable="false">18. Gate, Gauntlet, Visit to Death</span><div class="cf" contenteditable="true" data-sample="true">Confronts the corrupt officials at the risk of his life.</div></div>
+<div class="fld"><span class="lbl" contenteditable="false">19. Battle</span><div class="cf" contenteditable="true" data-sample="true">A physical and ideological battle against the Agency's corruption.</div></div>
+<div class="fld"><span class="lbl" contenteditable="false">20. Self-Revelation</span><div class="cf" id="character-arc" contenteditable="true" data-sample="true">Realizes his love for Dana is his strength, not weakness.</div></div>
+<div class="fld"><span class="lbl" contenteditable="false">21. Moral Decision</span><div class="cf" contenteditable="true" data-sample="true">Chooses to leave the Agency and fight for the truth with Dana.</div></div>
+<div class="fld"><span class="lbl" contenteditable="false">22. New Equilibrium</span><div class="cf" contenteditable="true" data-sample="true">Lives a life balancing between love and vigilance against corruption.</div></div>
 </div>`;
 
     // Thematic Resonance

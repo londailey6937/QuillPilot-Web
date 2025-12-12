@@ -1093,6 +1093,13 @@ p {
   margin-bottom: 0;
 }
 
+/* Paragraph continuation - no indent when paragraph breaks across pages */
+.editor-content p.body-text.paragraph-continuation,
+.editor-content p.paragraph-continuation,
+.editor-content .paragraph-continuation {
+  text-indent: 0 !important;
+}
+
 .editor-content p.first-paragraph {
   text-indent: 0;
 }
