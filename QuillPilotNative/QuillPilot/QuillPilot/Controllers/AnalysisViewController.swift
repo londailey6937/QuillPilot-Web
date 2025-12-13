@@ -8,10 +8,16 @@
 
 import Cocoa
 
+// Helper class for flipped coordinate system in scroll views
+private class FlippedClipView: NSView {
+    override var isFlipped: Bool { return true }
+}
+
 class AnalysisViewController: NSViewController {
 
     private var scrollView: NSScrollView!
     private var stackView: NSStackView!
+    private var documentView: FlippedClipView!
 
     override func loadView() {
         view = NSView()
@@ -19,7 +25,6 @@ class AnalysisViewController: NSViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-
         setupUI()
     }
 
@@ -33,6 +38,10 @@ class AnalysisViewController: NSViewController {
         scrollView.drawsBackground = true
         scrollView.backgroundColor = NSColor(hex: "#fffaf3") ?? .white
 
+        // Create a flipped document view to host the stack view
+        documentView = FlippedClipView()
+        documentView.wantsLayer = true
+        
         // Create stack view for analysis results
         stackView = NSStackView()
         stackView.orientation = .vertical
@@ -49,14 +58,39 @@ class AnalysisViewController: NSViewController {
         placeholderLabel.maximumNumberOfLines = 0
         stackView.addArrangedSubview(placeholderLabel)
 
-        scrollView.documentView = stackView
+        documentView.addSubview(stackView)
+        scrollView.documentView = documentView
         view.addSubview(scrollView)
 
         view.wantsLayer = true
         view.layer?.backgroundColor = NSColor(hex: "#fffaf3")?.cgColor
+        
+        // Initial layout
+        updateStackViewFrame()
+    }
+    
+    private func updateStackViewFrame() {
+        print("🎨 updateStackViewFrame called")
+        // Make stack view width match scroll view width
+        let scrollWidth = scrollView.contentView.bounds.width
+        print("🎨 scrollView.contentView.bounds.width = \(scrollWidth)")
+        
+        let fittingSize = stackView.fittingSize
+        print("🎨 stackView.fittingSize = \(fittingSize)")
+        
+        stackView.frame = NSRect(x: 0, y: 0, width: scrollWidth, height: fittingSize.height)
+        
+        // Size document view to contain stack view
+        documentView.frame = NSRect(x: 0, y: 0, width: scrollWidth, height: fittingSize.height)
+        
+        print("🎨 Final stackView.frame = \(stackView.frame)")
+        print("🎨 Final documentView.frame = \(documentView.frame)")
     }
 
     func displayResults(_ results: AnalysisResults) {
+        print("📊 displayResults called with wordCount=\(results.wordCount)")
+        print("📊 Current stackView.arrangedSubviews.count = \(stackView.arrangedSubviews.count)")
+        
         // Clear existing results (except header)
         while stackView.arrangedSubviews.count > 1 {
             if let view = stackView.arrangedSubviews.last {
@@ -73,7 +107,6 @@ class AnalysisViewController: NSViewController {
         // Paragraph analysis
         addSectionHeader("📊 Paragraph Analysis")
         addStatistic("Average Length", value: "\(results.averageParagraphLength) words")
-
         if !results.longParagraphs.isEmpty {
             addWarning("⚠️ \(results.longParagraphs.count) paragraph(s) may be too long (>150 words)", color: "#f97316")
         }
@@ -98,6 +131,13 @@ class AnalysisViewController: NSViewController {
             addWarning("Consider adding more sensory details to engage readers", color: "#eab308")
         } else {
             addSuccess("✓ Good use of sensory language")
+        }
+        
+        print("📊 After adding results, stackView.arrangedSubviews.count = \(stackView.arrangedSubviews.count)")
+        
+        // Update layout after adding content - use async to avoid blocking
+        DispatchQueue.main.async { [weak self] in
+            self?.updateStackViewFrame()
         }
     }
 
@@ -134,6 +174,7 @@ class AnalysisViewController: NSViewController {
     private func addSeparator() {
         let separator = NSBox()
         separator.boxType = .separator
+        separator.translatesAutoresizingMaskIntoConstraints = false
         separator.widthAnchor.constraint(equalToConstant: 200).isActive = true
         stackView.addArrangedSubview(separator)
     }

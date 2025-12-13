@@ -2600,7 +2600,9 @@ async function createImageParagraph(
 /**
  * Detect alignment for an image element by checking its style and parent styles
  */
-function detectImageAlignment(element: HTMLElement): AlignmentType {
+function detectImageAlignment(
+  element: HTMLElement
+): (typeof AlignmentType)[keyof typeof AlignmentType] {
   // Check the image's own style first
   const imgStyle = element.getAttribute("style") || "";
 

@@ -3226,11 +3226,9 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
       );
       existingIndicators.forEach((el) => el.remove());
 
-      if (!showSpacingIndicators || !showStyleLabels) {
+      if (!showStyleLabels) {
         // console.log(
-        //   "[Indicators] Early return - showSpacingIndicators:",
-        //   showSpacingIndicators,
-        //   "showStyleLabels:",
+        //   "[Indicators] Early return - showStyleLabels:",
         //   showStyleLabels
         // );
         return;
@@ -6843,7 +6841,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
 
   // Render spacing indicators - small colored dots inside the left margin
   const renderIndicators = () => {
-    if (!showSpacingIndicators || !showStyleLabels) return null;
+    if (!showStyleLabels) return null;
     // In free mode, always show indicators. In paid mode, respect focus mode toggle.
     if (!isFreeMode && focusMode) return null;
 
@@ -6952,7 +6950,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
 
   // Render visual suggestions - small yellow dots inside the right margin
   const renderSuggestions = () => {
-    if (!showVisualSuggestions || !showStyleLabels) return null;
+    if (!showStyleLabels) return null;
     // In free mode, always show suggestions. In paid mode, respect focus mode toggle.
     if (!isFreeMode && focusMode) return null;
 
@@ -7019,7 +7017,6 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
   // Render the analysis legend (positioned in toolbar row)
   const renderAnalysisLegend = () => {
     if (!showStyleLabels) return null;
-    if (!showSpacingIndicators && !showVisualSuggestions) return null;
     if (!isFreeMode && focusMode) return null;
 
     return (
@@ -7039,13 +7036,11 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           boxShadow: "0 4px 12px rgba(239, 132, 50, 0.12)",
         }}
       >
-        {showSpacingIndicators && (
-          <>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "5px",
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "5px",
                 cursor: "help",
               }}
               title="Long Paragraphs: Break up dense text blocks. Aim for 3-5 sentences per paragraph for better readability. Consider splitting at natural thought transitions or adding dialogue breaks."
@@ -7079,14 +7074,12 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               />
               <span>Passive?</span>
             </div>
-          </>
-        )}
-        {showVisualSuggestions && (
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "5px",
+        </div>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "5px",
               cursor: "help",
             }}
             title="Sensory Details: Engage readers by adding specific sensory information—what characters see, hear, smell, taste, or feel. Replace abstract descriptions with concrete images. Example: 'She was upset' → 'Her hands trembled as tears blurred the page.'"
@@ -7101,7 +7094,6 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
             />
             <span>Senses?</span>
           </div>
-        )}
       </div>
     );
   };
@@ -8174,7 +8166,7 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                             color:
                               parseInt(fontSize) === size
                                 ? "#ef8432"
-                                : "#2c3e50",
+                                : "#111827",
                             fontWeight:
                               parseInt(fontSize) === size ? "bold" : "normal",
                             backgroundColor:

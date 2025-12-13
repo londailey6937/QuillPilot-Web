@@ -135,6 +135,10 @@ class EditorViewController: NSViewController {
         updateTypingAttributes(font: newFont)
     }
 
+    
+    func scrollToTop() {
+        textView.scrollToBeginningOfDocument(nil)
+    }
     func getTextContent() -> String? {
         return textView.string
     }

@@ -55,7 +55,7 @@ class SplitViewController: NSSplitViewController {
         performAnalysis()
     }
 
-    @objc func toggleSidebar(_ sender: Any?) {
+    @objc override func toggleSidebar(_ sender: Any?) {
         if let analysisItem = splitViewItems.last {
             analysisItem.animator().isCollapsed = !analysisItem.isCollapsed
         }
@@ -64,16 +64,25 @@ class SplitViewController: NSSplitViewController {
     // MARK: - Analysis
 
     private func performAnalysis() {
+        print("🔍 performAnalysis called")
         guard let text = editorViewController.getTextContent() else {
+            print("❌ No text content")
             return
         }
+        print("📝 Text length: \(text.count)")
 
         let results = analysisEngine.analyzeText(text)
+        print("✅ Analysis complete: wordCount=\(results.wordCount), sentenceCount=\(results.sentenceCount)")
+        
         analysisViewController.displayResults(results)
+        print("✅ displayResults called")
 
         // Show sidebar if collapsed
         if let analysisItem = splitViewItems.last, analysisItem.isCollapsed {
+            print("📂 Opening sidebar")
             analysisItem.animator().isCollapsed = false
+        } else {
+            print("📂 Sidebar already open")
         }
     }
 }
