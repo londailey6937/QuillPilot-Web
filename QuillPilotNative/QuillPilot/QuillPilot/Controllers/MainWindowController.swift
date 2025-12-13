@@ -133,7 +133,7 @@ class HeaderView: NSView {
         addSubview(specsPanel)
 
         // Day/Night toggle button
-        themeToggle = NSButton(title: "☀️", target: self, action: #selector(toggleTheme(_:)))
+        themeToggle = NSButton(title: "☀️", target: self, action: #selector(HeaderView.toggleTheme(_:)))
         themeToggle.bezelStyle = .rounded
         themeToggle.translatesAutoresizingMaskIntoConstraints = false
         addSubview(themeToggle)
@@ -255,8 +255,8 @@ class FormattingToolbar: NSView {
         let numberingBtn = createToolbarButton("1.")
 
         // Layout
-        let columnsBtn = NSButton(title: "Columns", target: nil, action: nil)
-        let pageBreakBtn = NSButton(title: "Page Break", target: nil, action: nil)
+        let columnsBtn = createToolbarButton("⫼") // Column icon
+        let pageBreakBtn = createToolbarButton("⤓") // Page break icon
 
         // Add all to stack view (all aligned left)
         let toolbarStack = NSStackView(views: [

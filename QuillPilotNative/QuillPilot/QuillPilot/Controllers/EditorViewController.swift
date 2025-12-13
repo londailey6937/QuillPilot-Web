@@ -145,13 +145,13 @@ class EditorViewController: NSViewController {
               let scrollView = documentView.superview as? NSScrollView else { return }
 
         let scrollWidth = scrollView.bounds.width
-        let pageWidth: CGFloat = 612
-        let margin: CGFloat = 40 // Extra margin for shadows
+        let pageWidth: CGFloat = 612 // 8.5 inches at 72 DPI
+        let margin: CGFloat = 50 // Extra margin for shadows and spacing
 
-        // Center the page horizontally
-        if scrollWidth > (pageWidth + margin * 2) {
-            let xOffset = (scrollWidth - pageWidth) / 2
-            pageContainer.frame.origin.x = xOffset
+        // Align page with ruler: center the ruler's 612pt width in the scroll view
+        let centerOffset = (scrollWidth - pageWidth) / 2
+        if centerOffset > margin {
+            pageContainer.frame.origin.x = centerOffset
         } else {
             pageContainer.frame.origin.x = margin
         }
