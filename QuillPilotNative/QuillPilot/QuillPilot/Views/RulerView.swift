@@ -70,7 +70,7 @@ class EnhancedRulerView: NSView {
 
     private func updateHandlePositions() {
         let rulerHeight = bounds.height
-        let centerOffset: CGFloat = 0  // Align ruler to left edge, no centering
+        let centerOffset = (bounds.width - pageWidth) / 2
 
         // Left margin handle at bottom
         leftMarginHandle.frame = NSRect(x: centerOffset + leftMargin - 6, y: rulerHeight - 12, width: 12, height: 10)
@@ -89,8 +89,8 @@ class EnhancedRulerView: NSView {
         let rulerHeight = bounds.height
         let fontSize: CGFloat = 9
 
-        // Align ruler markings to left edge (no centering)
-        let centerOffset: CGFloat = 0
+        // Center the ruler markings to align with page
+        let centerOffset = (bounds.width - pageWidth) / 2
 
         markingsColor.set()
 
