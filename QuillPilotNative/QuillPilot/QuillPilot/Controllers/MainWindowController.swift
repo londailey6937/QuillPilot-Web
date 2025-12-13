@@ -250,7 +250,7 @@ class FormattingToolbar: NSView {
     
     private func setupUI() {
         wantsLayer = true
-        layer?.backgroundColor = NSColor(hex: "#e5e5e5")?.cgColor
+        layer?.backgroundColor = NSColor(hex: "#f5f0e8")?.cgColor
         
         // Font family popup
         let fontPopup = NSPopUpButton(frame: .zero, pullsDown: false)
@@ -463,7 +463,7 @@ class OutlineViewController: NSViewController {
         super.viewDidLoad()
         
         view.wantsLayer = true
-        view.layer?.backgroundColor = NSColor(hex: "#f9f9f9")?.cgColor
+        view.layer?.backgroundColor = NSColor(hex: "#f9f4ed")?.cgColor
         
         let label = NSTextField(labelWithString: "Document Outline")
         label.font = NSFont.boldSystemFont(ofSize: 14)

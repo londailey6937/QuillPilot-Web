@@ -14,9 +14,9 @@ protocol EditorViewControllerDelegate: AnyObject {
 
 class EditorViewController: NSViewController {
 
+    var textView: NSTextView!
+    private var pageContainer: NSView!
     weak var delegate: EditorViewControllerDelegate?
-    private var scrollView: NSScrollView!
-    private var textView: NSTextView!
 
     override func loadView() {
         view = NSView()
@@ -24,162 +24,130 @@ class EditorViewController: NSViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-
         setupTextView()
-        configureAppearance()
     }
 
     private func setupTextView() {
-        // Create scroll view
-        scrollView = NSScrollView(frame: view.bounds)
-        scrollView.autoresizingMask = [.width, .height]
+        // Scroll view with tan background around page
+        let scrollView = NSScrollView()
         scrollView.hasVerticalScroller = true
         scrollView.hasHorizontalScroller = false
         scrollView.borderType = .noBorder
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.drawsBackground = true
-        scrollView.backgroundColor = NSColor(hex: "#fef5e7") ?? .white
-
-        // Create text view
-        let contentSize = scrollView.contentSize
-        let textContainer = NSTextContainer(containerSize: NSSize(width: contentSize.width, height: CGFloat.greatestFiniteMagnitude))
-        textContainer.widthTracksTextView = true
-
-        let layoutManager = NSLayoutManager()
-        layoutManager.addTextContainer(textContainer)
-
-        let textStorage = NSTextStorage()
-        textStorage.addLayoutManager(layoutManager)
-
-        textView = NSTextView(frame: .zero, textContainer: textContainer)
-        textView.autoresizingMask = [.width]
+        scrollView.backgroundColor = NSColor(hex: "#f5f0e8") ?? .lightGray // Tan around page
+        
+        // Page container with visible boundaries (8.5" x 11" = 612 x 792 points at 72 DPI)
+        pageContainer = NSView(frame: NSRect(x: 0, y: 0, width: 612, height: 3000))
+        pageContainer.wantsLayer = true
+        pageContainer.layer?.backgroundColor = NSColor(hex: "#fef5e7")?.cgColor // Cream page
+        pageContainer.layer?.borderWidth = 1
+        pageContainer.layer?.borderColor = NSColor(hex: "#d4c5b0")?.cgColor
+        pageContainer.layer?.shadowColor = NSColor.black.withAlphaComponent(0.15).cgColor
+        pageContainer.layer?.shadowOffset = NSSize(width: 0, height: -2)
+        pageContainer.layer?.shadowRadius = 8
+        pageContainer.layer?.shadowOpacity = 1
+        
+        // Text view with 1" margins (72 points)
+        let textFrame = pageContainer.bounds.insetBy(dx: 72, dy: 72)
+        textView = NSTextView(frame: textFrame)
+        textView.minSize = NSSize(width: textFrame.width, height: textFrame.height)
+        textView.maxSize = NSSize(width: textFrame.width, height: CGFloat.greatestFiniteMagnitude)
         textView.isVerticallyResizable = true
         textView.isHorizontallyResizable = false
+        textView.autoresizingMask = [.width]
+        
+        textView.textContainer?.containerSize = NSSize(width: textFrame.width, height: CGFloat.greatestFiniteMagnitude)
+        textView.textContainer?.widthTracksTextView = true
+        
         textView.isRichText = true
+        textView.importsGraphics = true
         textView.allowsUndo = true
-        textView.delegate = self
         textView.isAutomaticQuoteSubstitutionEnabled = true
         textView.isAutomaticDashSubstitutionEnabled = true
-        textView.isAutomaticSpellingCorrectionEnabled = true
+        textView.isAutomaticTextReplacementEnabled = true
         textView.isContinuousSpellCheckingEnabled = true
-
-        // Set text insets for comfortable writing
-        textView.textContainerInset = NSSize(width: 40, height: 40)
-
-        // Configure text appearance
-        textView.backgroundColor = NSColor(hex: "#fef5e7") ?? .white
-        textView.insertionPointColor = NSColor(hex: "#2c3e50") ?? .black
-
-        scrollView.documentView = textView
-        view.addSubview(scrollView)
-
-        // Set default font and color
-        setDefaultTextAttributes()
-    }
-
-    private func setDefaultTextAttributes() {
+        
+        textView.backgroundColor = NSColor(hex: "#fef5e7") ?? .white // Cream
+        textView.insertionPointColor = NSColor(hex: "#2c3e50") ?? .black // Navy
+        textView.textContainerInset = NSSize(width: 0, height: 0)
+        textView.delegate = self
+        
+        // Set default font and text color
         let font = NSFont(name: "Inter", size: 16) ?? NSFont.systemFont(ofSize: 16)
-        let color = NSColor(hex: "#2c3e50") ?? .black
+        textView.font = font
+        textView.textColor = NSColor(hex: "#2c3e50")
+        
+        // Configure paragraph style
         let paragraphStyle = NSMutableParagraphStyle()
-        paragraphStyle.lineSpacing = 6.0
-        paragraphStyle.paragraphSpacing = 12.0
-
-        let attributes: [NSAttributedString.Key: Any] = [
+        paragraphStyle.lineSpacing = 6
+        paragraphStyle.paragraphSpacing = 12
+        textView.defaultParagraphStyle = paragraphStyle
+        textView.typingAttributes = [
             .font: font,
-            .foregroundColor: color,
+            .foregroundColor: NSColor(hex: "#2c3e50") ?? NSColor.black,
             .paragraphStyle: paragraphStyle
         ]
-
-        textView.typingAttributes = attributes
-
-        // Add placeholder text
-        let placeholderText = "Start writing your story...\n\nQuillPilot will analyze your text for:\n• Paragraph length and pacing\n• Passive voice usage\n• Sensory detail suggestions\n\nClick the Analyze button in the toolbar to see detailed feedback."
-        textView.string = placeholderText
+        
+        pageContainer.addSubview(textView)
+        scrollView.documentView = pageContainer
+        view.addSubview(scrollView)
+        
+        NSLayoutConstraint.activate([
+            scrollView.topAnchor.constraint(equalTo: view.topAnchor),
+            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        ])
     }
 
-    private func configureAppearance() {
-        view.wantsLayer = true
-        view.layer?.backgroundColor = NSColor(hex: "#fef5e7")?.cgColor
-    }
-
-    // MARK: - Public Methods
-
-    func toggleBold() {
-        guard let font = textView.font else { return }
-
-        let fontManager = NSFontManager.shared
-        let newFont: NSFont
-
-        if font.fontDescriptor.symbolicTraits.contains(.bold) {
-            newFont = fontManager.convert(font, toNotHaveTrait: .boldFontMask)
-        } else {
-            newFont = fontManager.convert(font, toHaveTrait: .boldFontMask)
-        }
-
-        textView.font = newFont
-        updateTypingAttributes(font: newFont)
-    }
-
-    func toggleItalic() {
-        guard let font = textView.font else { return }
-
-        let fontManager = NSFontManager.shared
-        let newFont: NSFont
-
-        if font.fontDescriptor.symbolicTraits.contains(.italic) {
-            newFont = fontManager.convert(font, toNotHaveTrait: .italicFontMask)
-        } else {
-            newFont = fontManager.convert(font, toHaveTrait: .italicFontMask)
-        }
-
-        textView.font = newFont
-        updateTypingAttributes(font: newFont)
-    }
-
-    
-    func scrollToTop() {
-        textView.scrollToBeginningOfDocument(nil)
-    }
     func getTextContent() -> String? {
         return textView.string
     }
 
-    private func updateTypingAttributes(font: NSFont) {
-        var attributes = textView.typingAttributes
-        attributes[.font] = font
-        textView.typingAttributes = attributes
+    func toggleBold() {
+        guard let selectedRange = textView.selectedRanges.first?.rangeValue else { return }
+        
+        let fontManager = NSFontManager.shared
+        if let currentFont = textView.font {
+            let newFont = fontManager.convert(currentFont, toHaveTrait: .boldFontMask)
+            textView.setFont(newFont, range: selectedRange)
+        }
+    }
+
+    func toggleItalic() {
+        guard let selectedRange = textView.selectedRanges.first?.rangeValue else { return }
+        
+        let fontManager = NSFontManager.shared
+        if let currentFont = textView.font {
+            let newFont = fontManager.convert(currentFont, toHaveTrait: .italicFontMask)
+            textView.setFont(newFont, range: selectedRange)
+        }
+    }
+    
+    func scrollToTop() {
+        textView.scrollToBeginningOfDocument(nil)
+    }
+    
+    func getStats() -> (wordCount: Int, charCount: Int) {
+        let text = textView.string
+        let words = text.components(separatedBy: .whitespacesAndNewlines).filter { !$0.isEmpty }
+        let chars = text.count
+        return (words.count, chars)
     }
 }
 
-// MARK: - NSTextViewDelegate
 extension EditorViewController: NSTextViewDelegate {
     func textDidChange(_ notification: Notification) {
         delegate?.textDidChange()
-    }
-}
-
-// MARK: - NSColor Extension for Hex Colors
-extension NSColor {
-    convenience init?(hex: String) {
-        let r, g, b: CGFloat
-
-        let start = hex.index(hex.startIndex, offsetBy: hex.hasPrefix("#") ? 1 : 0)
-        let hexColor = String(hex[start...])
-
-        guard hexColor.count == 6 else {
-            return nil
+        
+        // Grow page container as needed
+        let contentHeight = textView.layoutManager?.usedRect(for: textView.textContainer!).height ?? 0
+        let minPageHeight: CGFloat = 792 // Standard page height
+        let neededHeight = max(minPageHeight, contentHeight + 144) // 144 = 72pt margins top+bottom
+        
+        if pageContainer.frame.height < neededHeight {
+            pageContainer.frame.size.height = neededHeight
         }
-
-        let scanner = Scanner(string: hexColor)
-        var hexNumber: UInt64 = 0
-
-        guard scanner.scanHexInt64(&hexNumber) else {
-            return nil
-        }
-
-        r = CGFloat((hexNumber & 0xff0000) >> 16) / 255
-        g = CGFloat((hexNumber & 0x00ff00) >> 8) / 255
-        b = CGFloat(hexNumber & 0x0000ff) / 255
-
-        self.init(red: r, green: g, blue: b, alpha: 1.0)
     }
 }
