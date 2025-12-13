@@ -45,14 +45,13 @@ class EditorViewController: NSViewController {
         pageContainer.layer?.borderWidth = 1
         pageContainer.layer?.borderColor = NSColor(hex: "#d4c5b0")?.cgColor
 
-        // Add shadows on both sides
-        pageContainer.layer?.shadowColor = NSColor.black.withAlphaComponent(0.2).cgColor
-        pageContainer.layer?.shadowOffset = NSSize(width: 0, height: 0)
-        pageContainer.layer?.shadowRadius = 12
-        pageContainer.layer?.shadowOpacity = 1
+        // Add shadows on both sides - MUST set shadowPath for shadows to render
         pageContainer.layer?.masksToBounds = false
-
-        // Text view with 1" margins (72 points)
+        pageContainer.layer?.shadowColor = NSColor.black.cgColor
+        pageContainer.layer?.shadowOpacity = 0.3
+        pageContainer.layer?.shadowOffset = NSSize(width: 0, height: 2)
+        pageContainer.layer?.shadowRadius = 10
+        pageContainer.layer?.shadowPath = CGPath(rect: CGRect(x: 0, y: 0, width: 612, height: 3000), transform: nil)        // Text view with 1" margins (72 points)
         let textFrame = pageContainer.bounds.insetBy(dx: 72, dy: 72)
         textView = NSTextView(frame: textFrame)
         textView.minSize = NSSize(width: textFrame.width, height: textFrame.height)

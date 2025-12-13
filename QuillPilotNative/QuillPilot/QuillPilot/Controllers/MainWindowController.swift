@@ -52,6 +52,7 @@ class MainWindowController: NSWindowController {
 
         // Create ruler - 30px tall
         rulerView = EnhancedRulerView()
+        rulerView.pageWidth = 612 // Match page container width
         rulerView.translatesAutoresizingMaskIntoConstraints = false
         containerView.addSubview(rulerView)
 
@@ -75,10 +76,10 @@ class MainWindowController: NSWindowController {
             toolbarView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
             toolbarView.heightAnchor.constraint(equalToConstant: 50),
 
-            // Ruler below toolbar (centered to align with page)
+            // Ruler below toolbar (full width to match container)
             rulerView.topAnchor.constraint(equalTo: toolbarView.bottomAnchor),
-            rulerView.centerXAnchor.constraint(equalTo: containerView.centerXAnchor),
-            rulerView.widthAnchor.constraint(equalToConstant: 612 + 100),
+            rulerView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
+            rulerView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
             rulerView.heightAnchor.constraint(equalToConstant: 30),
 
             // Content fills remaining space
@@ -132,7 +133,7 @@ class HeaderView: NSView {
         addSubview(specsPanel)
 
         // Day/Night toggle button
-        themeToggle = NSButton(title: "☀️", target: self, action: #selector(toggleTheme))
+        themeToggle = NSButton(title: "☀️", target: self, action: #selector(toggleTheme(_:)))
         themeToggle.bezelStyle = .rounded
         themeToggle.translatesAutoresizingMaskIntoConstraints = false
         addSubview(themeToggle)
