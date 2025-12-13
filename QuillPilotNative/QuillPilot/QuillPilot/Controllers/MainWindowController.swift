@@ -75,10 +75,10 @@ class MainWindowController: NSWindowController {
             toolbarView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
             toolbarView.heightAnchor.constraint(equalToConstant: 50),
 
-            // Ruler below toolbar
+            // Ruler below toolbar (centered to align with page)
             rulerView.topAnchor.constraint(equalTo: toolbarView.bottomAnchor),
-            rulerView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
-            rulerView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
+            rulerView.centerXAnchor.constraint(equalTo: containerView.centerXAnchor),
+            rulerView.widthAnchor.constraint(equalToConstant: 612 + 100),
             rulerView.heightAnchor.constraint(equalToConstant: 30),
 
             // Content fills remaining space
@@ -169,8 +169,9 @@ class HeaderView: NSView {
         ])
     }
 
-    @objc private func toggleTheme() {
+    @objc func toggleTheme(_ sender: Any?) {
         ThemeManager.shared.toggleTheme()
+        print("Theme toggled to: \(ThemeManager.shared.currentTheme)")
     }
 }
 

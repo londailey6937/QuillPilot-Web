@@ -44,10 +44,13 @@ class EditorViewController: NSViewController {
         pageContainer.layer?.backgroundColor = NSColor(hex: "#fef5e7")?.cgColor // Cream page
         pageContainer.layer?.borderWidth = 1
         pageContainer.layer?.borderColor = NSColor(hex: "#d4c5b0")?.cgColor
-        pageContainer.layer?.shadowColor = NSColor.black.withAlphaComponent(0.15).cgColor
-        pageContainer.layer?.shadowOffset = NSSize(width: 0, height: -2)
-        pageContainer.layer?.shadowRadius = 8
+
+        // Add shadows on both sides
+        pageContainer.layer?.shadowColor = NSColor.black.withAlphaComponent(0.2).cgColor
+        pageContainer.layer?.shadowOffset = NSSize(width: 0, height: 0)
+        pageContainer.layer?.shadowRadius = 12
         pageContainer.layer?.shadowOpacity = 1
+        pageContainer.layer?.masksToBounds = false
 
         // Text view with 1" margins (72 points)
         let textFrame = pageContainer.bounds.insetBy(dx: 72, dy: 72)
@@ -139,22 +142,26 @@ class EditorViewController: NSViewController {
     }
 
     private func updatePageCentering() {
-        guard let scrollView = textView.enclosingScrollView?.enclosingScrollView,
-              let documentView = scrollView.documentView else { return }
+        guard let documentView = pageContainer.superview,
+              let scrollView = documentView.superview as? NSScrollView else { return }
 
         let scrollWidth = scrollView.bounds.width
         let pageWidth: CGFloat = 612
+        let margin: CGFloat = 40 // Extra margin for shadows
 
-        if scrollWidth > pageWidth {
+        // Center the page horizontally
+        if scrollWidth > (pageWidth + margin * 2) {
             let xOffset = (scrollWidth - pageWidth) / 2
             pageContainer.frame.origin.x = xOffset
         } else {
-            pageContainer.frame.origin.x = 0
+            pageContainer.frame.origin.x = margin
         }
 
+        // Set document view size to accommodate centering and scrolling
+        let docWidth = max(scrollWidth, pageWidth + margin * 2)
         documentView.frame = NSRect(x: 0, y: 0,
-                                    width: max(scrollWidth, pageWidth),
-                                    height: pageContainer.frame.height)
+                                    width: docWidth,
+                                    height: pageContainer.frame.height + 100)
     }
 
     override func viewDidLayout() {
