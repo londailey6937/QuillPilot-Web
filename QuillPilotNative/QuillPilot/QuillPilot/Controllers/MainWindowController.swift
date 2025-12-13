@@ -97,7 +97,7 @@ class HeaderView: NSView {
     
     private var logoView: AnimatedLogoView!
     private var titleLabel: NSTextField!
-    private var specsPanel: SpecsPanel!
+    private var specsPanel: DocumentInfoPanel!
     private var loginButton: NSButton!
     
     override init(frame frameRect: NSRect) {
@@ -126,7 +126,7 @@ class HeaderView: NSView {
         addSubview(titleLabel)
         
         // Specs panel (word count, page count, etc.)
-        specsPanel = SpecsPanel()
+        specsPanel = DocumentInfoPanel()
         specsPanel.translatesAutoresizingMaskIntoConstraints = false
         addSubview(specsPanel)
         
@@ -193,48 +193,6 @@ class AnimatedLogoView: NSView {
 }
 
 // MARK: - Specs Panel (Word Count, Page Count)
-class SpecsPanel: NSView {
-    
-    private var wordCountLabel: NSTextField!
-    private var pageCountLabel: NSTextField!
-    
-    override init(frame frameRect: NSRect) {
-        super.init(frame: frameRect)
-        setupUI()
-    }
-    
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-    
-    private func setupUI() {
-        wordCountLabel = createLabel("Words: 0")
-        pageCountLabel = createLabel("Pages: 0")
-        
-        let stackView = NSStackView(views: [wordCountLabel, pageCountLabel])
-        stackView.orientation = .horizontal
-        stackView.spacing = 20
-        stackView.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(stackView)
-        
-        NSLayoutConstraint.activate([
-            stackView.centerXAnchor.constraint(equalTo: centerXAnchor),
-            stackView.centerYAnchor.constraint(equalTo: centerYAnchor)
-        ])
-    }
-    
-    private func createLabel(_ text: String) -> NSTextField {
-        let label = NSTextField(labelWithString: text)
-        label.font = NSFont.systemFont(ofSize: 12)
-        label.textColor = NSColor(hex: "#fef5e7")
-        return label
-    }
-    
-    func updateStats(wordCount: Int, pageCount: Int) {
-        wordCountLabel.stringValue = "Words: \(wordCount)"
-        pageCountLabel.stringValue = "Pages: \(pageCount)"
-    }
-}
 
 // MARK: - Formatting Toolbar
 class FormattingToolbar: NSView {
