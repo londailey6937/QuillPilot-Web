@@ -98,6 +98,7 @@ class HeaderView: NSView {
     private var logoView: AnimatedLogoView!
     private var titleLabel: NSTextField!
     private var specsPanel: DocumentInfoPanel!
+    private var themeToggle: NSButton!
     private var loginButton: NSButton!
 
     override init(frame frameRect: NSRect) {
@@ -131,7 +132,7 @@ class HeaderView: NSView {
         addSubview(specsPanel)
 
         // Day/Night toggle button
-        let themeToggle = NSButton(title: "☀️", target: self, action: #selector(toggleTheme))
+        themeToggle = NSButton(title: "☀️", target: self, action: #selector(toggleTheme))
         themeToggle.bezelStyle = .rounded
         themeToggle.translatesAutoresizingMaskIntoConstraints = false
         addSubview(themeToggle)
@@ -321,28 +322,21 @@ class ContentViewController: NSViewController {
 
         // Left: Outline panel
         outlineViewController = OutlineViewController()
-        let outlineItem = NSSplitViewItem(viewController: outlineViewController)
-        outlineItem.canCollapse = true
-        outlineItem.minimumThickness = 200
-        outlineItem.maximumThickness = 350
         splitView.addArrangedSubview(outlineViewController.view)
+        outlineViewController.view.widthAnchor.constraint(greaterThanOrEqualToConstant: 200).isActive = true
+        outlineViewController.view.widthAnchor.constraint(lessThanOrEqualToConstant: 350).isActive = true
 
         // Center: Editor
         editorViewController = EditorViewController()
-        let editorItem = NSSplitViewItem(viewController: editorViewController)
-        editorItem.canCollapse = false
-        editorItem.minimumThickness = 500
         splitView.addArrangedSubview(editorViewController.view)
+        editorViewController.view.widthAnchor.constraint(greaterThanOrEqualToConstant: 500).isActive = true
+        splitView.setHoldingPriority(.defaultLow - 1, forSubviewAt: 1)
 
         // Right: Analysis panel
         analysisViewController = AnalysisViewController()
-        let analysisItem = NSSplitViewItem(sidebarWithViewController: analysisViewController)
-        analysisItem.canCollapse = true
-        analysisItem.minimumThickness = 250
-        analysisItem.maximumThickness = 400
         splitView.addArrangedSubview(analysisViewController.view)
-
-        // Back to top button (floating)
+        analysisViewController.view.widthAnchor.constraint(greaterThanOrEqualToConstant: 250).isActive = true
+        analysisViewController.view.widthAnchor.constraint(lessThanOrEqualToConstant: 400).isActive = true        // Back to top button (floating)
         backToTopButton = NSButton(title: "↑ Top", target: self, action: #selector(scrollToTop))
         backToTopButton.bezelStyle = .rounded
         backToTopButton.translatesAutoresizingMaskIntoConstraints = false
