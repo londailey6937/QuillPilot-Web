@@ -12,7 +12,7 @@ class MainWindowController: NSWindowController {
     
     private var headerView: HeaderView!
     private var toolbarView: FormattingToolbar!
-    private var rulerView: RulerView!
+    private var rulerView: EnhancedRulerView!
     private var mainContentViewController: ContentViewController!
     
     convenience init() {
@@ -51,7 +51,7 @@ class MainWindowController: NSWindowController {
         containerView.addSubview(toolbarView)
         
         // Create ruler - 30px tall
-        rulerView = RulerView()
+        rulerView = EnhancedRulerView()
         rulerView.translatesAutoresizingMaskIntoConstraints = false
         containerView.addSubview(rulerView)
         
@@ -325,60 +325,6 @@ class FormattingToolbar: NSView {
 }
 
 // MARK: - Ruler View
-class RulerView: NSView {
-    
-    private var leftMarginHandle: NSView!
-    private var rightMarginHandle: NSView!
-    private var firstLineIndentHandle: NSView!
-    
-    override init(frame frameRect: NSRect) {
-        super.init(frame: frameRect)
-        setupUI()
-    }
-    
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-    
-    private func setupUI() {
-        wantsLayer = true
-        layer?.backgroundColor = NSColor(hex: "#ffffff")?.cgColor
-        layer?.borderWidth = 1
-        layer?.borderColor = NSColor(hex: "#d0d0d0")?.cgColor
-    }
-    
-    override func draw(_ dirtyRect: NSRect) {
-        super.draw(dirtyRect)
-        
-        // Draw ruler markings (inches/cm)
-        let rulerHeight = bounds.height
-        let fontSize: CGFloat = 9
-        
-        NSColor(hex: "#666666")?.set()
-        
-        // Draw tick marks every 0.5 inch (assuming 72 DPI)
-        for i in 0..<20 {
-            let x = CGFloat(i) * 36 // 0.5 inch = 36 points
-            let tickHeight: CGFloat = (i % 2 == 0) ? 8 : 4
-            
-            let path = NSBezierPath()
-            path.move(to: NSPoint(x: x + 50, y: rulerHeight - tickHeight))
-            path.line(to: NSPoint(x: x + 50, y: rulerHeight))
-            path.lineWidth = 1
-            path.stroke()
-            
-            // Draw inch numbers
-            if i % 2 == 0 && i > 0 {
-                let label = "\(i/2)"
-                let attrs: [NSAttributedString.Key: Any] = [
-                    .font: NSFont.systemFont(ofSize: fontSize),
-                    .foregroundColor: NSColor(hex: "#666666") ?? .gray
-                ]
-                label.draw(at: NSPoint(x: x + 45, y: 2), withAttributes: attrs)
-            }
-        }
-    }
-}
 
 // MARK: - Content View Controller (3-column layout)
 class ContentViewController: NSViewController {
