@@ -21,6 +21,7 @@ class EnhancedRulerView: NSView {
     private var leftMarginHandle: MarginHandle!
     private var rightMarginHandle: MarginHandle!
     private var firstLineIndentHandle: MarginHandle!
+    private var markingsColor: NSColor = ThemeManager.shared.currentTheme.rulerMarkings
 
     // Margin values in points (72pt = 1 inch)
     var leftMargin: CGFloat = 72 {
@@ -29,7 +30,7 @@ class EnhancedRulerView: NSView {
     var rightMargin: CGFloat = 72 {
         didSet { updateHandlePositions() }
     }
-    var firstLineIndent: CGFloat = 0 {
+    var firstLineIndent: CGFloat = 36 {
         didSet { updateHandlePositions() }
     }
 
@@ -47,9 +48,7 @@ class EnhancedRulerView: NSView {
 
     private func setupUI() {
         wantsLayer = true
-        layer?.backgroundColor = NSColor(hex: "#ffffff")?.cgColor
-        layer?.borderWidth = 1
-        layer?.borderColor = NSColor(hex: "#d0d0d0")?.cgColor
+        applyTheme(ThemeManager.shared.currentTheme)
 
         // Create left margin handle (down-pointing triangle)
         leftMarginHandle = MarginHandle(type: .leftMargin)
@@ -71,7 +70,7 @@ class EnhancedRulerView: NSView {
 
     private func updateHandlePositions() {
         let rulerHeight = bounds.height
-        let centerOffset = (bounds.width - pageWidth) / 2
+        let centerOffset: CGFloat = 0  // Align ruler to left edge, no centering
 
         // Left margin handle at bottom
         leftMarginHandle.frame = NSRect(x: centerOffset + leftMargin - 6, y: rulerHeight - 12, width: 12, height: 10)
@@ -90,10 +89,10 @@ class EnhancedRulerView: NSView {
         let rulerHeight = bounds.height
         let fontSize: CGFloat = 9
 
-        // Center the ruler markings
-        let centerOffset = (bounds.width - pageWidth) / 2
+        // Align ruler markings to left edge (no centering)
+        let centerOffset: CGFloat = 0
 
-        NSColor(hex: "#666666")?.set()
+        markingsColor.set()
 
         // Draw tick marks every 0.5 inch (36 points)
         for i in 0..<18 {
@@ -121,6 +120,27 @@ class EnhancedRulerView: NSView {
     override func layout() {
         super.layout()
         updateHandlePositions()
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        if event.clickCount == 2 {
+            leftMargin = 72
+            rightMargin = 72
+            firstLineIndent = 36
+            delegate?.rulerView(self, didChangeLeftMargin: leftMargin)
+            delegate?.rulerView(self, didChangeRightMargin: rightMargin)
+            delegate?.rulerView(self, didChangeFirstLineIndent: firstLineIndent)
+            return
+        }
+        super.mouseDown(with: event)
+    }
+
+    func applyTheme(_ theme: AppTheme) {
+        layer?.backgroundColor = theme.rulerBackground.cgColor
+        layer?.borderWidth = 1
+        layer?.borderColor = theme.rulerBorder.cgColor
+        markingsColor = theme.rulerMarkings
+        needsDisplay = true
     }
 }
 

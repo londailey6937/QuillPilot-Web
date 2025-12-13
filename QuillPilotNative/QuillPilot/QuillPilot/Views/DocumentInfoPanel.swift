@@ -15,6 +15,7 @@ class DocumentInfoPanel: NSView {
     private var readingLevelLabel: NSTextField!
     private var genreLabel: NSTextField!
     private var stackView: NSStackView!
+    private var statLabels: [NSTextField] = []
 
     var onTitleChanged: ((String) -> Void)?
 
@@ -80,6 +81,7 @@ class DocumentInfoPanel: NSView {
         label.font = NSFont.systemFont(ofSize: 11)
         label.textColor = NSColor(hex: "#2c3e50")?.withAlphaComponent(0.75)
         label.alignment = .center
+        statLabels.append(label)
         return label
     }
 
@@ -103,6 +105,22 @@ class DocumentInfoPanel: NSView {
 
     func getTitle() -> String {
         return titleField.stringValue
+    }
+
+    func applyTheme(_ theme: AppTheme) {
+        titleField.textColor = theme.headerText
+        let statsColor = theme.headerText.withAlphaComponent(0.85)
+        statLabels.forEach { $0.textColor = statsColor }
+        let placeholderText = titleField.placeholderAttributedString?.string ?? titleField.placeholderString
+        if let placeholder = placeholderText {
+            titleField.placeholderAttributedString = NSAttributedString(
+                string: placeholder,
+                attributes: [
+                    .foregroundColor: statsColor,
+                    .font: titleField.font ?? NSFont.boldSystemFont(ofSize: 14)
+                ]
+            )
+        }
     }
 
     // MARK: - Reading Level Calculation (Flesch-Kincaid Grade Level)
