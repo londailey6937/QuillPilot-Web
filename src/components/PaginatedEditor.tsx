@@ -3550,29 +3550,38 @@ export const PaginatedEditor = forwardRef<
                   zIndex: 1,
                 }}
               >
-                {/* Inch marks */}
+                {/* Inch marks (0-8) */}
                 {Array.from({ length: 9 }, (_, i) => i).map((inch) => (
                   <div
                     key={inch}
                     style={{
                       position: "absolute",
-                      left: inch === 8 ? "auto" : `${(inch / 8) * 100}%`,
-                      right: inch === 8 ? "0" : "auto",
+                      left: `${(inch / 8.5) * 100}%`,
                       bottom: 0,
                       width: "1px",
-                      height: inch === 0 || inch === 8 ? "16px" : "12px",
-                      backgroundColor:
-                        inch === 0 || inch === 8 ? "#b45309" : "#d97706",
+                      height: inch === 0 ? "16px" : "12px",
+                      backgroundColor: inch === 0 ? "#b45309" : "#d97706",
                     }}
                   />
                 ))}
+                {/* Final half-inch mark at 8.5 */}
+                <div
+                  style={{
+                    position: "absolute",
+                    right: 0,
+                    bottom: 0,
+                    width: "1px",
+                    height: "16px",
+                    backgroundColor: "#b45309",
+                  }}
+                />
                 {/* Half-inch marks */}
                 {Array.from({ length: 8 }, (_, i) => i).map((i) => (
                   <div
                     key={`half-${i}`}
                     style={{
                       position: "absolute",
-                      left: `${((i + 0.5) / 8) * 100}%`,
+                      left: `${((i + 0.5) / 8.5) * 100}%`,
                       bottom: 0,
                       width: "1px",
                       height: "8px",
@@ -3580,21 +3589,16 @@ export const PaginatedEditor = forwardRef<
                     }}
                   />
                 ))}
-                {/* Inch labels */}
+                {/* Inch labels (0-8) */}
                 {Array.from({ length: 9 }, (_, i) => i).map((inch) => (
                   <div
                     key={`label-${inch}`}
                     style={{
                       position: "absolute",
-                      left: inch === 8 ? "auto" : `${(inch / 8) * 100}%`,
-                      right: inch === 8 ? "0" : "auto",
+                      left: `${(inch / 8.5) * 100}%`,
                       top: "0px",
                       transform:
-                        inch === 0
-                          ? "translateX(0)"
-                          : inch === 8
-                          ? "translateX(0)"
-                          : "translateX(-50%)",
+                        inch === 0 ? "translateX(0)" : "translateX(-50%)",
                       fontSize: "9px",
                       fontWeight: 600,
                       color: "#92400e",

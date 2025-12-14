@@ -91,7 +91,7 @@ interface CustomEditorProps {
 }
 
 const INCH_IN_PX = 96;
-const PAGE_WIDTH_PX = INCH_IN_PX * 8;
+const PAGE_WIDTH_PX = INCH_IN_PX * 8.5; // 8.5 inches for US Letter
 const PAGE_HEIGHT_PX = INCH_IN_PX * 11; // 11 inches for US Letter
 // Header area: 1 inch from top for header text
 const HEADER_RESERVED_PX = INCH_IN_PX * 1;
@@ -100,7 +100,7 @@ const FOOTER_RESERVED_PX = INCH_IN_PX * 1;
 const RULER_BACKGROUND_LEFT_OVERHANG = 0;
 const RULER_BACKGROUND_RIGHT_OVERHANG = 0;
 const POINT_TO_PX = 96 / 72;
-const PAGE_WIDTH_PT = PAGE_WIDTH_PX / POINT_TO_PX; // 576pt on an 8" page
+const PAGE_WIDTH_PT = PAGE_WIDTH_PX / POINT_TO_PX; // 612pt on an 8.5" page
 const PAGE_CENTER_PT = PAGE_WIDTH_PT / 2; // 288pt (page midpoint)
 const TITLE_STYLE_POINT_SIZE = 20;
 const BLOCK_TYPE_TEXT_COLOR = palette.heading;
@@ -7041,59 +7041,58 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
             display: "flex",
             alignItems: "center",
             gap: "5px",
-                cursor: "help",
-              }}
-              title="Long Paragraphs: Break up dense text blocks. Aim for 3-5 sentences per paragraph for better readability. Consider splitting at natural thought transitions or adding dialogue breaks."
-            >
-              <div
-                style={{
-                  width: "8px",
-                  height: "8px",
-                  borderRadius: "50%",
-                  backgroundColor: "#f97316",
-                }}
-              />
-              <span>Long ¶</span>
-            </div>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "5px",
-                cursor: "help",
-              }}
-              title="Passive Voice: Strengthen your prose by converting to active voice. Change 'was done by' to direct subject-verb-object. Active voice creates urgency and clarity. Example: 'The door was opened by Sarah' → 'Sarah opened the door.'"
-            >
-              <div
-                style={{
-                  width: "8px",
-                  height: "8px",
-                  borderRadius: "50%",
-                  backgroundColor: "#8b5cf6",
-                }}
-              />
-              <span>Passive?</span>
-            </div>
+            cursor: "help",
+          }}
+          title="Long Paragraphs: Break up dense text blocks. Aim for 3-5 sentences per paragraph for better readability. Consider splitting at natural thought transitions or adding dialogue breaks."
+        >
+          <div
+            style={{
+              width: "8px",
+              height: "8px",
+              borderRadius: "50%",
+              backgroundColor: "#f97316",
+            }}
+          />
+          <span>Long ¶</span>
         </div>
         <div
           style={{
             display: "flex",
             alignItems: "center",
             gap: "5px",
-              cursor: "help",
+            cursor: "help",
+          }}
+          title="Passive Voice: Strengthen your prose by converting to active voice. Change 'was done by' to direct subject-verb-object. Active voice creates urgency and clarity. Example: 'The door was opened by Sarah' → 'Sarah opened the door.'"
+        >
+          <div
+            style={{
+              width: "8px",
+              height: "8px",
+              borderRadius: "50%",
+              backgroundColor: "#8b5cf6",
             }}
-            title="Sensory Details: Engage readers by adding specific sensory information—what characters see, hear, smell, taste, or feel. Replace abstract descriptions with concrete images. Example: 'She was upset' → 'Her hands trembled as tears blurred the page.'"
-          >
-            <div
-              style={{
-                width: "8px",
-                height: "8px",
-                borderRadius: "50%",
-                backgroundColor: "#eab308",
-              }}
-            />
-            <span>Senses?</span>
-          </div>
+          />
+          <span>Passive?</span>
+        </div>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "5px",
+            cursor: "help",
+          }}
+          title="Sensory Details: Engage readers by adding specific sensory information—what characters see, hear, smell, taste, or feel. Replace abstract descriptions with concrete images. Example: 'She was upset' → 'Her hands trembled as tears blurred the page.'"
+        >
+          <div
+            style={{
+              width: "8px",
+              height: "8px",
+              borderRadius: "50%",
+              backgroundColor: "#eab308",
+            }}
+          />
+          <span>Senses?</span>
+        </div>
       </div>
     );
   };
