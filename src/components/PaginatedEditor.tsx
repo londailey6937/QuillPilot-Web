@@ -3802,6 +3802,8 @@ export const PaginatedEditor = forwardRef<
                 {headerText && (
                   <>
                     <div
+                      className="page-header-element"
+                      contentEditable={false}
                       style={{
                         position: "absolute",
                         top: `${marginTop / 3}px`,
@@ -3901,6 +3903,8 @@ export const PaginatedEditor = forwardRef<
 
                 {/* Footer / Page number */}
                 <div
+                  className="page-footer-element"
+                  contentEditable={false}
                   style={{
                     position: "absolute",
                     bottom: `${marginBottom / 3}px`,

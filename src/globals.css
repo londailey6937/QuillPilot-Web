@@ -34,6 +34,25 @@
   pointer-events: auto;
 }
 
+/* Prevent header and footer from being selected or edited */
+.page-header-element,
+.page-footer-element {
+  user-select: none;
+  pointer-events: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+/* Ensure header/footer text cannot be selected */
+.page-header-element *,
+.page-footer-element * {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
 /* Hide scrollbar utility */
 .hide-scrollbar {
   -ms-overflow-style: none; /* IE and Edge */
