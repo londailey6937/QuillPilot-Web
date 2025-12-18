@@ -4813,51 +4813,290 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
           isParagraphLike(currentBlock)
         );
 
-        if (isParagraphLike(currentBlock)) {
-          const blockElement = currentBlock as HTMLElement;
-          const blockText = blockElement.textContent || "";
+        // Check if selection spans multiple paragraphs
+        const getSelectedParagraphs = (): HTMLElement[] => {
+          const paragraphs: HTMLElement[] = [];
 
-          // Check if the selection is a PARTIAL selection of a larger paragraph
-          // If the paragraph is significantly larger than the selection,
-          // we need to extract the selection into its own paragraph
-          const isPartialSelection =
-            selectedText.length > 0 &&
-            selectedText.length < blockText.trim().length * 0.9; // Less than 90% of block
+          if (range.collapsed) {
+            // Just cursor, single paragraph
+            if (isParagraphLike(currentBlock)) {
+              paragraphs.push(currentBlock as HTMLElement);
+            }
+            return paragraphs;
+          }
 
-          // Also check if block contains <br> tags (multiple visual lines)
-          const hasBrTags = blockElement.innerHTML.includes("<br");
+          // Multi-paragraph selection - find all paragraphs in range
+          const container = range.commonAncestorContainer;
 
-          if (
-            isPartialSelection &&
-            (hasBrTags || blockText.length > selectedText.length * 2)
-          ) {
-            // PARTIAL SELECTION: Extract selected text into its own styled paragraph
-            // This prevents styling the entire document when user only wants to style a heading
+          // Find all paragraph elements that intersect with the selection
+          const allParas: HTMLElement[] = [];
 
-            try {
-              // Get what's before and after the selection within this block
-              const beforeRange = document.createRange();
-              beforeRange.setStart(blockElement, 0);
-              beforeRange.setEnd(range.startContainer, range.startOffset);
+          // Get all elements in the common ancestor that could be paragraphs
+          const searchRoot =
+            container.nodeType === Node.ELEMENT_NODE
+              ? (container as Element)
+              : container.parentElement;
 
-              const afterRange = document.createRange();
-              afterRange.setStart(range.endContainer, range.endOffset);
-              afterRange.setEnd(blockElement, blockElement.childNodes.length);
+          if (searchRoot) {
+            // Find all paragraph-like elements - exclude div to avoid styling page containers
+            const candidates = searchRoot.querySelectorAll(
+              "p, h1, h2, h3, h4, h5, h6, blockquote, pre"
+            );
+            candidates.forEach((el) => {
+              // Skip elements that are page containers or structural elements
+              if (
+                el.classList.contains("paginated-page") ||
+                el.classList.contains("paginated-page-content") ||
+                el.classList.contains("editor-content")
+              ) {
+                return;
+              }
+              if (isParagraphLike(el) && range.intersectsNode(el)) {
+                allParas.push(el as HTMLElement);
+              }
+            });
 
-              // Clone the content
-              const beforeContent = beforeRange.cloneContents();
-              const afterContent = afterRange.cloneContents();
+            // Also check if container itself is paragraph-like (but not a page container)
+            if (
+              isParagraphLike(searchRoot) &&
+              range.intersectsNode(searchRoot) &&
+              !searchRoot.classList.contains("paginated-page") &&
+              !searchRoot.classList.contains("paginated-page-content") &&
+              !searchRoot.classList.contains("editor-content")
+            ) {
+              if (!allParas.includes(searchRoot as HTMLElement)) {
+                allParas.unshift(searchRoot as HTMLElement);
+              }
+            }
+          }
 
-              // Get text content to check if there's meaningful content before/after
-              const beforeText = beforeContent.textContent?.trim() || "";
-              const afterText = afterContent.textContent?.trim() || "";
+          console.log(
+            `[getSelectedParagraphs] Found ${allParas.length} paragraphs in selection`
+          );
 
-              // Create the styled element for the selection
-              const styledPara = document.createElement("p");
-              styledPara.className = styleMap[styleTag] || "";
-              styledPara.textContent = selectedText;
+          return allParas;
+        };
 
-              // Apply alignment if needed
+        const selectedParagraphs = getSelectedParagraphs();
+
+        console.log(
+          `[applyCustomParagraphStyle] Found ${selectedParagraphs.length} paragraphs to style`
+        );
+
+        if (selectedParagraphs.length > 0) {
+          // Apply style to ALL selected paragraphs
+          const isMultiParagraph = selectedParagraphs.length > 1;
+          const styledElements: HTMLElement[] = [];
+
+          selectedParagraphs.forEach((blockElement, index) => {
+            console.log(
+              `[applyCustomParagraphStyle] Styling paragraph ${index + 1}/${
+                selectedParagraphs.length
+              }:`,
+              blockElement.textContent?.substring(0, 50)
+            );
+            const blockText = blockElement.textContent || "";
+
+            // Skip partial selection logic for multi-paragraph selections
+            // Only do partial extraction for single paragraph with partial selection
+            const isPartialSelection =
+              !isMultiParagraph &&
+              selectedText.length > 0 &&
+              selectedText.length < blockText.trim().length * 0.9; // Less than 90% of block
+
+            // Also check if block contains <br> tags (multiple visual lines)
+            const hasBrTags = blockElement.innerHTML.includes("<br");
+
+            if (
+              isPartialSelection &&
+              (hasBrTags || blockText.length > selectedText.length * 2)
+            ) {
+              // PARTIAL SELECTION: Extract selected text into its own styled paragraph
+              // This prevents styling the entire document when user only wants to style a heading
+
+              try {
+                // Get what's before and after the selection within this block
+                const beforeRange = document.createRange();
+                beforeRange.setStart(blockElement, 0);
+                beforeRange.setEnd(range.startContainer, range.startOffset);
+
+                const afterRange = document.createRange();
+                afterRange.setStart(range.endContainer, range.endOffset);
+                afterRange.setEnd(blockElement, blockElement.childNodes.length);
+
+                // Clone the content
+                const beforeContent = beforeRange.cloneContents();
+                const afterContent = afterRange.cloneContents();
+
+                // Get text content to check if there's meaningful content before/after
+                const beforeText = beforeContent.textContent?.trim() || "";
+                const afterText = afterContent.textContent?.trim() || "";
+
+                // Create the styled element for the selection
+                const styledPara = document.createElement("p");
+                styledPara.className = styleMap[styleTag] || "";
+                styledPara.textContent = selectedText;
+
+                // Apply alignment if needed
+                const styleKey = styleTag as keyof typeof documentStyles;
+                const isCenterAligned =
+                  documentStyles[styleKey] &&
+                  "textAlign" in documentStyles[styleKey] &&
+                  (documentStyles[styleKey] as { textAlign?: string })
+                    .textAlign === "center";
+
+                if (
+                  documentStyles[styleKey] &&
+                  "textAlign" in documentStyles[styleKey]
+                ) {
+                  const align = (
+                    documentStyles[styleKey] as { textAlign?: string }
+                  ).textAlign;
+                  if (align) {
+                    styledPara.style.textAlign = align;
+                  }
+                }
+
+                // Build new structure: before paragraph(s), styled selection, after paragraph(s)
+                const fragment = document.createDocumentFragment();
+
+                // Add before content if exists
+                if (beforeText) {
+                  const beforePara = document.createElement("p");
+                  // Clean up - remove trailing <br> tags
+                  let beforeHtml = "";
+                  const tempDiv = document.createElement("div");
+                  tempDiv.appendChild(beforeContent);
+                  beforeHtml = tempDiv.innerHTML
+                    .replace(/<br\s*\/?>\s*$/, "")
+                    .trim();
+                  if (beforeHtml) {
+                    beforePara.innerHTML = beforeHtml;
+                    fragment.appendChild(beforePara);
+                  }
+                }
+
+                // Add the styled selection
+                fragment.appendChild(styledPara);
+
+                // Add after content if exists
+                if (afterText) {
+                  const afterPara = document.createElement("p");
+                  // Clean up - remove leading <br> tags
+                  const tempDiv = document.createElement("div");
+                  tempDiv.appendChild(afterContent);
+                  let afterHtml = tempDiv.innerHTML
+                    .replace(/^<br\s*\/?>\s*/, "")
+                    .trim();
+                  if (afterHtml) {
+                    afterPara.innerHTML = afterHtml;
+                    fragment.appendChild(afterPara);
+                  }
+                }
+
+                // Replace the block element with our new structure
+                blockElement.parentNode?.replaceChild(fragment, blockElement);
+
+                // Apply centering if needed
+                if (isCenterAligned) {
+                  centerText(styledPara);
+                }
+
+                // Set cursor into the styled paragraph
+                const newRange = document.createRange();
+                newRange.selectNodeContents(styledPara);
+                newRange.collapse(false);
+                activeSelection.removeAllRanges();
+                activeSelection.addRange(newRange);
+
+                setTimeout(() => {
+                  handleInput();
+                  if (isCenterAligned) {
+                    alignCenteredBlocksToRuler();
+                  }
+                }, 10);
+
+                return; // Done with partial selection handling
+              } catch (err) {
+                // Fall through to block styling below
+              }
+            }
+
+            // FULL BLOCK SELECTION: Style the entire block element
+            // NOTE: We need to convert heading elements (h1, h2, etc.) to <p> elements
+            // when applying custom paragraph styles, because our CSS targets p.doc-title etc.
+            // This ensures uploaded DOCX content (which uses h1.doc-title) can be restyled.
+
+            const newClassName = styleMap[styleTag] || "";
+            console.log(
+              `[applyCustomParagraphStyle] Applying className "${newClassName}" to paragraph ${
+                index + 1
+              }`
+            );
+
+            // Check if we need to convert a heading element to a paragraph
+            const isHeadingElement = /^H[1-6]$/i.test(blockElement.tagName);
+
+            if (isHeadingElement) {
+              // Convert heading to paragraph for custom styles
+              // Create a new paragraph with the same content
+              const newParagraph = document.createElement("p");
+              newParagraph.innerHTML = blockElement.innerHTML;
+              newParagraph.className = newClassName;
+
+              // Do NOT copy over positioning attributes - start fresh
+              // Clear all inline styles so CSS can take over
+              [
+                "transform",
+                "--center-shift",
+                "font-size",
+                "font-family",
+                "font-weight",
+                "font-style",
+                "line-height",
+                "color",
+                "background-color",
+                "text-align",
+                "text-indent",
+                "margin-left",
+                "margin-right",
+              ].forEach((prop) => newParagraph.style.removeProperty(prop));
+              newParagraph.removeAttribute("data-ruler-center");
+
+              // Clean up inline styles from child elements
+              newParagraph.querySelectorAll("span, font").forEach((child) => {
+                const el = child as HTMLElement;
+                [
+                  "font-size",
+                  "font-family",
+                  "font-weight",
+                  "font-style",
+                  "color",
+                  "background-color",
+                ].forEach((prop) => {
+                  el.style.removeProperty(prop);
+                });
+                // Remove empty spans
+                if (
+                  !el.style.cssText &&
+                  !el.className &&
+                  el.tagName === "SPAN"
+                ) {
+                  const parent = el.parentNode;
+                  while (el.firstChild) {
+                    parent?.insertBefore(el.firstChild, el);
+                  }
+                  el.remove();
+                }
+              });
+
+              // Replace the heading with the paragraph
+              blockElement.parentNode?.replaceChild(newParagraph, blockElement);
+
+              // Update reference to the new element
+              const updatedBlock = newParagraph;
+
+              // Apply text alignment
               const styleKey = styleTag as keyof typeof documentStyles;
               const isCenterAligned =
                 documentStyles[styleKey] &&
@@ -4873,95 +5112,49 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
                   documentStyles[styleKey] as { textAlign?: string }
                 ).textAlign;
                 if (align) {
-                  styledPara.style.textAlign = align;
+                  updatedBlock.style.textAlign = align;
                 }
               }
 
-              // Build new structure: before paragraph(s), styled selection, after paragraph(s)
-              const fragment = document.createDocumentFragment();
-
-              // Add before content if exists
-              if (beforeText) {
-                const beforePara = document.createElement("p");
-                // Clean up - remove trailing <br> tags
-                let beforeHtml = "";
-                const tempDiv = document.createElement("div");
-                tempDiv.appendChild(beforeContent);
-                beforeHtml = tempDiv.innerHTML
-                  .replace(/<br\s*\/?>\s*$/, "")
-                  .trim();
-                if (beforeHtml) {
-                  beforePara.innerHTML = beforeHtml;
-                  fragment.appendChild(beforePara);
-                }
-              }
-
-              // Add the styled selection
-              fragment.appendChild(styledPara);
-
-              // Add after content if exists
-              if (afterText) {
-                const afterPara = document.createElement("p");
-                // Clean up - remove leading <br> tags
-                const tempDiv = document.createElement("div");
-                tempDiv.appendChild(afterContent);
-                let afterHtml = tempDiv.innerHTML
-                  .replace(/^<br\s*\/?>\s*/, "")
-                  .trim();
-                if (afterHtml) {
-                  afterPara.innerHTML = afterHtml;
-                  fragment.appendChild(afterPara);
-                }
-              }
-
-              // Replace the block element with our new structure
-              blockElement.parentNode?.replaceChild(fragment, blockElement);
-
-              // Apply centering if needed
+              // Track for batch processing
               if (isCenterAligned) {
-                centerText(styledPara);
+                styledElements.push(updatedBlock);
               }
 
-              // Set cursor into the styled paragraph
-              const newRange = document.createRange();
-              newRange.selectNodeContents(styledPara);
-              newRange.collapse(false);
-              activeSelection.removeAllRanges();
-              activeSelection.addRange(newRange);
-
-              setTimeout(() => {
-                handleInput();
-                if (isCenterAligned) {
-                  alignCenteredBlocksToRuler();
+              // For multi-paragraph, don't set cursor - continue to next paragraph
+              // For single paragraph, set cursor at the end
+              if (!isMultiParagraph) {
+                const selection = window.getSelection();
+                if (selection) {
+                  const range = document.createRange();
+                  range.selectNodeContents(updatedBlock);
+                  range.collapse(false);
+                  selection.removeAllRanges();
+                  selection.addRange(range);
                 }
-              }, 10);
+              }
 
-              return; // Done with partial selection handling
-            } catch (err) {
-              // Fall through to block styling below
+              return;
             }
-          }
 
-          // FULL BLOCK SELECTION: Style the entire block element
-          // NOTE: We need to convert heading elements (h1, h2, etc.) to <p> elements
-          // when applying custom paragraph styles, because our CSS targets p.doc-title etc.
-          // This ensures uploaded DOCX content (which uses h1.doc-title) can be restyled.
-
-          const newClassName = styleMap[styleTag] || "";
-
-          // Check if we need to convert a heading element to a paragraph
-          const isHeadingElement = /^H[1-6]$/i.test(blockElement.tagName);
-
-          if (isHeadingElement) {
-            // Convert heading to paragraph for custom styles
-            // Create a new paragraph with the same content
-            const newParagraph = document.createElement("p");
-            newParagraph.innerHTML = blockElement.innerHTML;
-            newParagraph.className = newClassName;
-
-            // Do NOT copy over positioning attributes - start fresh
-            // Clear all inline styles so CSS can take over
+            // For non-heading elements, apply style directly
+            console.log(
+              `[applyCustomParagraphStyle] Setting className to "${newClassName}" on element:`,
+              blockElement.tagName,
+              blockElement.textContent?.substring(0, 30)
+            );
+            blockElement.className = newClassName;
+            console.log(
+              `[applyCustomParagraphStyle] After setting, className is: "${blockElement.className}"`
+            );
+            // Reset all formatting properties so style CSS can take over
             [
+              "text-indent",
+              "margin-left",
+              "margin-right",
+              "padding-left",
+              "padding-right",
+              "text-align",
               "transform",
               "--center-shift",
               "font-size",
@@ -4971,15 +5164,9 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               "line-height",
               "color",
               "background-color",
-              "text-align",
-              "text-indent",
-              "margin-left",
-              "margin-right",
-            ].forEach((prop) => newParagraph.style.removeProperty(prop));
-            newParagraph.removeAttribute("data-ruler-center");
-
-            // Clean up inline styles from child elements
-            newParagraph.querySelectorAll("span, font").forEach((child) => {
+            ].forEach((prop) => blockElement.style.removeProperty(prop));
+            // Also remove inline styles from child elements (spans with font-size, etc.)
+            blockElement.querySelectorAll("span, font").forEach((child) => {
               const el = child as HTMLElement;
               [
                 "font-size",
@@ -5001,13 +5188,6 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               }
             });
 
-            // Replace the heading with the paragraph
-            blockElement.parentNode?.replaceChild(newParagraph, blockElement);
-
-            // Update reference to the new element
-            const updatedBlock = newParagraph;
-
-            // Apply text alignment
             const styleKey = styleTag as keyof typeof documentStyles;
             const isCenterAligned =
               documentStyles[styleKey] &&
@@ -5022,107 +5202,24 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
               const align = (documentStyles[styleKey] as { textAlign?: string })
                 .textAlign;
               if (align) {
-                updatedBlock.style.textAlign = align;
+                blockElement.style.textAlign = align;
               }
             }
 
-            // Don't call centerText immediately - wait for layout to settle
-            // The setTimeout below will handle centering after DOM updates
+            blockElement.removeAttribute("data-block");
+            blockElement.removeAttribute("data-ruler-center");
 
-            // Set cursor into the new paragraph
-            const selection = window.getSelection();
-            if (selection) {
-              const range = document.createRange();
-              range.selectNodeContents(updatedBlock);
-              range.collapse(false);
-              selection.removeAllRanges();
-              selection.addRange(range);
+            if (isCenterAligned) {
+              styledElements.push(blockElement);
             }
+          }); // End forEach for selected paragraphs
 
-            // Wait for layout to settle, then apply centering
-            setTimeout(() => {
-              handleInput();
-              if (isCenterAligned) {
-                // Now it's safe to center
-                centerText(updatedBlock);
-                alignCenteredBlocksToRuler();
-              }
-            }, 50); // Increased delay for layout to fully settle
-
-            return;
-          }
-
-          // For non-heading elements, apply style directly
-          blockElement.className = newClassName;
-          // Reset all formatting properties so style CSS can take over
-          [
-            "text-indent",
-            "margin-left",
-            "margin-right",
-            "padding-left",
-            "padding-right",
-            "text-align",
-            "transform",
-            "--center-shift",
-            "font-size",
-            "font-family",
-            "font-weight",
-            "font-style",
-            "line-height",
-            "color",
-            "background-color",
-          ].forEach((prop) => blockElement.style.removeProperty(prop));
-          // Also remove inline styles from child elements (spans with font-size, etc.)
-          blockElement.querySelectorAll("span, font").forEach((child) => {
-            const el = child as HTMLElement;
-            [
-              "font-size",
-              "font-family",
-              "font-weight",
-              "font-style",
-              "color",
-              "background-color",
-            ].forEach((prop) => {
-              el.style.removeProperty(prop);
-            });
-            // Remove empty spans
-            if (!el.style.cssText && !el.className && el.tagName === "SPAN") {
-              const parent = el.parentNode;
-              while (el.firstChild) {
-                parent?.insertBefore(el.firstChild, el);
-              }
-              el.remove();
-            }
-          });
-
-          const styleKey = styleTag as keyof typeof documentStyles;
-          const isCenterAligned =
-            documentStyles[styleKey] &&
-            "textAlign" in documentStyles[styleKey] &&
-            (documentStyles[styleKey] as { textAlign?: string }).textAlign ===
-              "center";
-
-          if (
-            documentStyles[styleKey] &&
-            "textAlign" in documentStyles[styleKey]
-          ) {
-            const align = (documentStyles[styleKey] as { textAlign?: string })
-              .textAlign;
-            if (align) {
-              blockElement.style.textAlign = align;
-            }
-          }
-
-          blockElement.removeAttribute("data-block");
-          blockElement.removeAttribute("data-ruler-center");
-
-          if (isCenterAligned) {
-            centerText(blockElement);
-          }
+          // Apply centering and trigger updates ONCE after all paragraphs are styled
+          styledElements.forEach((el) => centerText(el));
 
           setTimeout(() => {
             handleInput();
-            if (isCenterAligned) {
+            if (styledElements.length > 0) {
               alignCenteredBlocksToRuler();
             }
           }, 10);

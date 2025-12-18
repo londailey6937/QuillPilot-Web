@@ -24,6 +24,11 @@
   cursor: text;
 }
 
+/* Ensure direct text nodes in pages-stack are hidden - only content in page-content should show */
+.paginated-pages-stack > :not(.paginated-page) {
+  display: none !important;
+}
+
 .paginated-page {
   user-select: text;
   pointer-events: none;

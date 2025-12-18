@@ -1302,6 +1302,44 @@ export const PaginatedEditor = forwardRef<
     }, [pages]);
 
     const handleInput = useCallback(() => {
+      // Clean up any stray text nodes or elements that got inserted directly into pages-stack
+      // This can happen when contentEditable is on the parent
+      if (pagesContainerRef.current) {
+        const strayNodes: Node[] = [];
+        pagesContainerRef.current.childNodes.forEach((node) => {
+          if (node.nodeType === Node.TEXT_NODE && node.textContent?.trim()) {
+            strayNodes.push(node);
+          } else if (node.nodeType === Node.ELEMENT_NODE) {
+            const el = node as Element;
+            if (!el.classList.contains("paginated-page")) {
+              strayNodes.push(node);
+            }
+          }
+        });
+
+        // Move stray content to the active page
+        if (strayNodes.length > 0) {
+          const activePageRef = pageRefs.current.get(
+            pages[activePageIndex]?.id
+          );
+          if (activePageRef) {
+            strayNodes.forEach((node) => {
+              if (node.nodeType === Node.TEXT_NODE) {
+                // Wrap text in a paragraph
+                const p = document.createElement("p");
+                p.textContent = node.textContent;
+                activePageRef.appendChild(p);
+              } else {
+                activePageRef.appendChild(node);
+              }
+            });
+          } else {
+            // Just remove if no active page
+            strayNodes.forEach((node) => node.parentNode?.removeChild(node));
+          }
+        }
+      }
+
       // Skip repagination if within skip window (e.g., during formatting operations)
       // Use timestamp-based check to skip multiple rapid onInput events
       if (Date.now() < skipUntilRef.current) {
@@ -1389,7 +1427,14 @@ export const PaginatedEditor = forwardRef<
           repaginate(fullHtml, true);
         }, REPAGINATE_DEBOUNCE_MS);
       }
-    }, [collectAllContent, onChange, repaginate, pages, contentHeight]);
+    }, [
+      collectAllContent,
+      onChange,
+      repaginate,
+      pages,
+      contentHeight,
+      activePageIndex,
+    ]);
 
     const handleKeyDown = useCallback(
       (e: React.KeyboardEvent, pageIndex: number) => {
@@ -1505,9 +1550,40 @@ export const PaginatedEditor = forwardRef<
           return;
         }
 
-        // Backspace at start merges with previous page
+        // Backspace at start - merge current page content into previous page
         if (e.key === "Backspace" && isAtStart && pageIndex > 0) {
-          // Let default behavior handle content deletion, then repaginate
+          e.preventDefault();
+          e.stopPropagation();
+
+          const currentPageRef = pageRefs.current.get(pages[pageIndex]?.id);
+          const prevPageRef = pageRefs.current.get(pages[pageIndex - 1]?.id);
+
+          if (prevPageRef && currentPageRef) {
+            // Get the last element in the previous page to place cursor
+            const prevLastChild = prevPageRef.lastElementChild || prevPageRef;
+
+            // Move all children from current page to previous page
+            while (currentPageRef.firstChild) {
+              prevPageRef.appendChild(currentPageRef.firstChild);
+            }
+
+            // Place cursor at the merge point
+            const range = document.createRange();
+            if (prevLastChild.nodeType === Node.ELEMENT_NODE) {
+              range.setStartAfter(prevLastChild);
+            } else {
+              range.selectNodeContents(prevPageRef);
+              range.collapse(false);
+            }
+            range.collapse(true);
+            selection.removeAllRanges();
+            selection.addRange(range);
+
+            setActivePageIndex(pageIndex - 1);
+
+            // Trigger repagination to reflow content
+            handleInput();
+          }
           return;
         }
 
