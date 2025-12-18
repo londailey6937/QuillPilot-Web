@@ -3740,8 +3740,74 @@ export const PaginatedEditor = forwardRef<
             paddingBottom: "24px",
             scrollbarWidth: "none",
             msOverflowStyle: "none",
+            position: "relative",
           }}
         >
+          {/* Headers and Footers Overlay - completely separate from contentEditable */}
+          <div
+            style={{
+              position: "absolute",
+              top: showRuler ? "0px" : "24px",
+              left: 0,
+              right: 0,
+              pointerEvents: "none",
+              zIndex: 100,
+            }}
+          >
+            {pages.map((page, index) => (
+              <div
+                key={`overlay-${page.id}`}
+                style={{
+                  width: `${pageWidthPx}px`,
+                  height: `${pageHeightPx}px`,
+                  margin: "0 auto 24px auto",
+                  position: "relative",
+                }}
+              >
+                {headerText && (
+                  <div
+                    className="page-header-element"
+                    style={{
+                      position: "absolute",
+                      top: `${marginTop / 3}px`,
+                      left: `${marginLeft}px`,
+                      right: `${marginRight}px`,
+                      fontSize: "11px",
+                      color: "#666",
+                      textAlign: "left",
+                      display: "flex",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <span>{headerText}</span>
+                    {showPageNumbers &&
+                      pageNumberPosition === "header" &&
+                      index > 0 && <span>{index + 1}</span>}
+                  </div>
+                )}
+                <div
+                  className="page-footer-element"
+                  style={{
+                    position: "absolute",
+                    bottom: `${marginBottom / 3}px`,
+                    left: `${marginLeft}px`,
+                    right: `${marginRight}px`,
+                    fontSize: "11px",
+                    color: "#666",
+                    textAlign: "left",
+                    display: "flex",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <span>{footerText}</span>
+                  {showPageNumbers &&
+                    pageNumberPosition === "footer" &&
+                    index > 0 && <span>Page {index + 1}</span>}
+                </div>
+              </div>
+            ))}
+          </div>
+
           {/* Pages */}
           <div
             ref={pagesContainerRef}
@@ -3768,9 +3834,6 @@ export const PaginatedEditor = forwardRef<
               }
             }}
             onPaste={(e) => handlePaste(e)}
-            onFocus={() => {
-              internalChangeRef.current = true;
-            }}
             style={{
               display: "flex",
               flexDirection: "column",
@@ -3798,32 +3861,6 @@ export const PaginatedEditor = forwardRef<
                   } as React.CSSProperties
                 }
               >
-                {/* Header */}
-                {headerText && (
-                  <>
-                    <div
-                      className="page-header-element"
-                      contentEditable={false}
-                      style={{
-                        position: "absolute",
-                        top: `${marginTop / 3}px`,
-                        left: `${marginLeft}px`,
-                        right: `${marginRight}px`,
-                        fontSize: "11px",
-                        color: "#666",
-                        textAlign: "left",
-                        display: "flex",
-                        justifyContent: "space-between",
-                      }}
-                    >
-                      <span>{headerText}</span>
-                      {showPageNumbers &&
-                        pageNumberPosition === "header" &&
-                        index > 0 && <span>{index + 1}</span>}
-                    </div>
-                  </>
-                )}
-
                 {/* Content area */}
                 <div
                   ref={(el) => {
@@ -3900,28 +3937,6 @@ export const PaginatedEditor = forwardRef<
                   style={contentStyle}
                   dangerouslySetInnerHTML={{ __html: page.content }}
                 />
-
-                {/* Footer / Page number */}
-                <div
-                  className="page-footer-element"
-                  contentEditable={false}
-                  style={{
-                    position: "absolute",
-                    bottom: `${marginBottom / 3}px`,
-                    left: `${marginLeft}px`,
-                    right: `${marginRight}px`,
-                    fontSize: "11px",
-                    color: "#666",
-                    textAlign: "left",
-                    display: "flex",
-                    justifyContent: "space-between",
-                  }}
-                >
-                  <span>{footerText}</span>
-                  {showPageNumbers &&
-                    pageNumberPosition === "footer" &&
-                    index > 0 && <span>Page {index + 1}</span>}
-                </div>
 
                 {/* Page edge shadow for depth */}
                 <div

@@ -2548,6 +2548,9 @@ export const ChapterCheckerV2: React.FC = () => {
       null;
 
     try {
+      // Use setTimeout to allow UI to update before heavy processing
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
       if (format === "pdf") {
         const { exportToManuscriptPdf } = await import("@/utils/pdfExport");
         await exportToManuscriptPdf({
@@ -2565,6 +2568,9 @@ export const ChapterCheckerV2: React.FC = () => {
           fileName: settings.title || fileName || "manuscript",
         });
       }
+
+      // Close the modal after successful export
+      setIsManuscriptModalOpen(false);
     } catch (err) {
       console.error("Manuscript export failed:", err);
       alert(
