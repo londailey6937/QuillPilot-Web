@@ -1541,9 +1541,34 @@ export const PaginatedEditor = forwardRef<
           return;
         }
 
-        // Pass any other keys with modifiers to external handler
+        // Handle Cmd/Ctrl+A to select all text across all pages
         const isMacCheck = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
         const hasModifier = isMacCheck ? e.metaKey : e.ctrlKey;
+
+        if (hasModifier && e.key === "a") {
+          e.preventDefault();
+
+          // Get all page content elements
+          const allPageRefs = Array.from(pageRefs.current.values());
+          if (allPageRefs.length === 0) return;
+
+          // Create a range that spans all pages
+          const range = document.createRange();
+          const firstPage = allPageRefs[0];
+          const lastPage = allPageRefs[allPageRefs.length - 1];
+
+          // Set range from start of first page to end of last page
+          range.setStart(firstPage, 0);
+          range.setEnd(lastPage, lastPage.childNodes.length);
+
+          // Apply the selection
+          selection.removeAllRanges();
+          selection.addRange(range);
+
+          return;
+        }
+
+        // Pass any other keys with modifiers to external handler
         if (hasModifier && onExternalKeyDown) {
           onExternalKeyDown(e);
         }
@@ -3721,12 +3746,38 @@ export const PaginatedEditor = forwardRef<
           <div
             ref={pagesContainerRef}
             className="paginated-pages-stack"
+            contentEditable={isEditable}
+            suppressContentEditableWarning
+            onInput={() => handleInput()}
+            onKeyDown={(e) => {
+              // Find which page the cursor is in
+              const sel = window.getSelection();
+              if (!sel || !sel.rangeCount) return;
+              const range = sel.getRangeAt(0);
+              const pageContent = range.startContainer.parentElement?.closest(
+                ".paginated-page-content"
+              );
+              if (pageContent) {
+                const pageElements = Array.from(
+                  document.querySelectorAll(".paginated-page-content")
+                );
+                const pageIndex = pageElements.indexOf(pageContent as Element);
+                if (pageIndex >= 0) {
+                  handleKeyDown(e, pageIndex);
+                }
+              }
+            }}
+            onPaste={(e) => handlePaste(e)}
+            onFocus={() => {
+              internalChangeRef.current = true;
+            }}
             style={{
               display: "flex",
               flexDirection: "column",
               gap: "24px",
               alignItems: "center",
               position: "relative",
+              outline: "none",
             }}
           >
             {pages.map((page, index) => (
@@ -3781,11 +3832,6 @@ export const PaginatedEditor = forwardRef<
                     }
                   }}
                   className="paginated-page-content editor-content"
-                  contentEditable={isEditable}
-                  suppressContentEditableWarning
-                  onInput={() => handleInput()}
-                  onKeyDown={(e) => handleKeyDown(e, index)}
-                  onPaste={(e) => handlePaste(e)}
                   onFocus={(e: React.FocusEvent<HTMLDivElement>) => {
                     internalChangeRef.current = true;
                     setActivePageIndex(index);

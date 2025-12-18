@@ -12,6 +12,28 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Text selection in paginated editor */
+.paginated-pages-stack::selection,
+.paginated-pages-stack *::selection {
+  background-color: #b3d7ff;
+  color: inherit;
+}
+
+.paginated-pages-stack {
+  user-select: text;
+  cursor: text;
+}
+
+.paginated-page {
+  user-select: text;
+  pointer-events: none;
+}
+
+.paginated-page-content {
+  user-select: text;
+  pointer-events: auto;
+}
+
 /* Hide scrollbar utility */
 .hide-scrollbar {
   -ms-overflow-style: none; /* IE and Edge */
