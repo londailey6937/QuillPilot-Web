@@ -12314,49 +12314,77 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
         )}
       {viewMode === "writer" && !isFreeMode && activeTool === "dialogue" && (
         <DialogueEnhancer
-          text={editorRef.current?.innerText || ""}
+          text={
+            paginatedEditorRef.current?.getPlainText() ||
+            editorRef.current?.innerText ||
+            ""
+          }
           onClose={() => setActiveTool(null)}
           onOpenHelp={() => onOpenHelp?.("dialogue")}
         />
       )}
       {viewMode === "writer" && !isFreeMode && activeTool === "readability" && (
         <ReadabilityAnalyzer
-          text={editorRef.current?.innerText || ""}
+          text={
+            paginatedEditorRef.current?.getPlainText() ||
+            editorRef.current?.innerText ||
+            ""
+          }
           onClose={() => setActiveTool(null)}
           onOpenHelp={() => onOpenHelp?.("readability")}
         />
       )}
       {viewMode === "writer" && !isFreeMode && activeTool === "cliche" && (
         <ClicheDetector
-          text={editorRef.current?.innerText || ""}
+          text={
+            paginatedEditorRef.current?.getPlainText() ||
+            editorRef.current?.innerText ||
+            ""
+          }
           onClose={() => setActiveTool(null)}
           onOpenHelp={() => onOpenHelp?.("cliche")}
         />
       )}
       {viewMode === "writer" && !isFreeMode && activeTool === "beats" && (
         <BeatSheetGenerator
-          text={editorRef.current?.innerText || ""}
+          text={
+            paginatedEditorRef.current?.getPlainText() ||
+            editorRef.current?.innerText ||
+            ""
+          }
           onClose={() => setActiveTool(null)}
           onOpenHelp={() => onOpenHelp?.("beatSheet")}
         />
       )}
       {viewMode === "writer" && !isFreeMode && activeTool === "pov" && (
         <POVChecker
-          text={editorRef.current?.innerText || ""}
+          text={
+            paginatedEditorRef.current?.getPlainText() ||
+            editorRef.current?.innerText ||
+            ""
+          }
           onClose={() => setActiveTool(null)}
           onOpenHelp={() => onOpenHelp?.("povChecker")}
         />
       )}
       {viewMode === "writer" && !isFreeMode && activeTool === "emotion" && (
         <EmotionTracker
-          text={editorRef.current?.innerText || ""}
+          text={
+            paginatedEditorRef.current?.getPlainText() ||
+            editorRef.current?.innerText ||
+            ""
+          }
           onClose={() => setActiveTool(null)}
           onOpenHelp={() => onOpenHelp?.("emotion")}
         />
       )}
       {viewMode === "writer" && !isFreeMode && activeTool === "motif" && (
         <MotifTracker
-          text={editorRef.current?.innerText || ""}
+          text={
+            paginatedEditorRef.current?.getPlainText() ||
+            editorRef.current?.innerText ||
+            ""
+          }
           onClose={() => setActiveTool(null)}
           onOpenHelp={() => onOpenHelp?.("motif")}
         />
@@ -12365,7 +12393,11 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
         !isFreeMode &&
         activeTool === "poetry-meter" && (
           <PoetryMeterAnalyzer
-            text={editorRef.current?.innerText || ""}
+            text={
+              paginatedEditorRef.current?.getPlainText() ||
+              editorRef.current?.innerText ||
+              ""
+            }
             onClose={() => setActiveTool(null)}
             onOpenHelp={() => onOpenHelp?.("poetryMeter")}
           />
@@ -12374,7 +12406,11 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
         !isFreeMode &&
         activeTool === "nonfiction-outline" && (
           <NonFictionOutlineGenerator
-            text={editorRef.current?.innerText || ""}
+            text={
+              paginatedEditorRef.current?.getPlainText() ||
+              editorRef.current?.innerText ||
+              ""
+            }
             onClose={() => setActiveTool(null)}
             onOpenHelp={() => onOpenHelp?.("nonfictionOutline")}
           />
@@ -12383,7 +12419,11 @@ export const CustomEditor: React.FC<CustomEditorProps> = ({
         !isFreeMode &&
         activeTool === "citation-manager" && (
           <AcademicCitationManager
-            text={editorRef.current?.innerText || ""}
+            text={
+              paginatedEditorRef.current?.getPlainText() ||
+              editorRef.current?.innerText ||
+              ""
+            }
             onClose={() => setActiveTool(null)}
             onOpenHelp={() => onOpenHelp?.("citationManager")}
           />
